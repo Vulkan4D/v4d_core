@@ -6,31 +6,32 @@
  */
 #pragma once
 
-#include <iostream>
-#include <atomic>
-#include <mutex>
-#include <fstream>
-#include <string>
-#include <sstream>
-#include <map>
+// Now included in common.hh
+	// #include <iostream>
+	// #include <atomic>
+	// #include <mutex>
+	// #include <fstream>
+	// #include <string>
+	// #include <sstream>
+	// #include <map>
 
 // Info in console
-#define LOG(x) v4d::Logger::ConsoleInstance().Log(ostringstream().flush() << x, v4d::Logger::ConsoleInstance().IsVerbose()? "1":"0");
+#define LOG(x) v4d::Logger::ConsoleInstance().Log(std::ostringstream().flush() << x, v4d::Logger::ConsoleInstance().IsVerbose()? "1":"0");
 
 // Info in console (shown only in verbose mode)
-#define LOG_VERBOSE(x) {if (v4d::Logger::ConsoleInstance().IsVerbose()) v4d::Logger::ConsoleInstance().Log(ostringstream().flush() << x, "2");}
+#define LOG_VERBOSE(x) {if (v4d::Logger::ConsoleInstance().IsVerbose()) v4d::Logger::ConsoleInstance().Log(std::ostringstream().flush() << x, "2");}
 
 // Success/Warning/Error messages in console
-#define LOG_SUCCESS(x) v4d::Logger::ConsoleInstance().Log(ostringstream().flush() << x, "1;36");
-#define LOG_WARN(x) v4d::Logger::ConsoleInstance().Log(ostringstream("WARNING: ").flush() << x << " [" << __FILE__ << ":" << __LINE__ << "]", "1;33");
-#define LOG_ERROR(x) v4d::Logger::ConsoleInstance().LogError(ostringstream("ERROR: ").flush() << x << " [" << __FILE__ << ":" << __LINE__ << "]");
+#define LOG_SUCCESS(x) v4d::Logger::ConsoleInstance().Log(std::ostringstream().flush() << x, "1;36");
+#define LOG_WARN(x) v4d::Logger::ConsoleInstance().Log(std::ostringstream("WARNING: ").flush() << x << " [" << __FILE__ << ":" << __LINE__ << "]", "1;33");
+#define LOG_ERROR(x) v4d::Logger::ConsoleInstance().LogError(std::ostringstream("ERROR: ").flush() << x << " [" << __FILE__ << ":" << __LINE__ << "]");
 
 // Logging into console only in debug mode
 #ifdef _DEBUG
-	#define DEBUG(x) v4d::Logger::ConsoleInstance().Log(ostringstream("DEBUG: ").flush() << x << " [" << __FILE__ << ":" << __LINE__ << "]", "1;33");
-	#define DEBUG_WARN(x) v4d::Logger::ConsoleInstance().LogError(ostringstream("WARNING(debug): ").flush() << x << " [" << __FILE__ << ":" << __LINE__ << "]");
-	#define DEBUG_ERROR(x) v4d::Logger::ConsoleInstance().LogError(ostringstream("ERROR(debug): ").flush() << x << " [" << __FILE__ << ":" << __LINE__ << "]");
-	#define INVALIDCODE(x) v4d::Logger::ConsoleInstance().LogError(ostringstream("INVALIDCODE(debug): ").flush() << x << " [" << __FILE__ << ":" << __LINE__ << "]");
+	#define DEBUG(x) v4d::Logger::ConsoleInstance().Log(std::ostringstream("DEBUG: ").flush() << x << " [" << __FILE__ << ":" << __LINE__ << "]", "1;33");
+	#define DEBUG_WARN(x) v4d::Logger::ConsoleInstance().LogError(std::ostringstream("WARNING(debug): ").flush() << x << " [" << __FILE__ << ":" << __LINE__ << "]");
+	#define DEBUG_ERROR(x) v4d::Logger::ConsoleInstance().LogError(std::ostringstream("ERROR(debug): ").flush() << x << " [" << __FILE__ << ":" << __LINE__ << "]");
+	#define INVALIDCODE(x) v4d::Logger::ConsoleInstance().LogError(std::ostringstream("INVALIDCODE(debug): ").flush() << x << " [" << __FILE__ << ":" << __LINE__ << "]");
 #else
 	#define DEBUG(x)
 	#define DEBUG_WARN(x)
@@ -41,7 +42,7 @@
 namespace v4d {
 	// https://misc.flogisoft.com/bash/tip_colors_and_formatting
 
-	V4DLIB class Logger {
+	class V4DLIB Logger {
 	private:
 		std::string filepath;
 		std::atomic<bool> useLogFile;

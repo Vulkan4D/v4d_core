@@ -6,9 +6,12 @@
  */
 #pragma once
 
-using namespace std;
+// Now included in common.hh
+    // #include <chrono>
 
 namespace v4d {
+
+    using namespace std;
 
     #define MILLIS_TO_SECOND 0.001
 

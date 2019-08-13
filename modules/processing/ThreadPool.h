@@ -15,11 +15,11 @@
 #include <thread>
 #include <queue>
 
-using namespace std;
-
 namespace v4d::processing {
 
-    V4DLIB class ThreadPool {
+    using namespace std;
+
+    class V4DLIB ThreadPool {
     protected:
         typedef function<void()> task;
 

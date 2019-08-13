@@ -1,9 +1,5 @@
 #include "v4d.h"
 
-#ifdef _DEBUG
-	#include "tests.cxx"
-#endif
-
 #ifdef _WINDOWS
     #include <windows.h>
     extern "C" BOOL WINAPI DllMain (
