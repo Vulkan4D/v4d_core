@@ -12,8 +12,7 @@
         LPVOID    const reserved)  // reserved
     {
         // Perform actions based on the reason for calling.
-        switch (reason)
-        {
+        switch (reason) {
         case DLL_PROCESS_ATTACH:
             // Initialize once for each new process.
             // Return FALSE to fail DLL load.

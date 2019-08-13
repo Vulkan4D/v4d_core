@@ -2,7 +2,7 @@
  * A ThreadPool for asynchronous parallel execution on a defined number of threads.
  * The pool keeps a vector of threads alive, waiting on a condition variable for some work to become available.
  *
- * @author Ivan Molodtsov
+ * @author Ivan Molodtsov, Olivier St-Laurent
  * @date 2019-06-20
  */
 #pragma once
@@ -11,7 +11,7 @@
 #include <condition_variable>
 #include <functional>
 #include <future>
-#include <vector>
+#include <map>
 #include <thread>
 #include <queue>
 
@@ -19,25 +19,28 @@ using namespace std;
 
 namespace v4d::processing {
 
-    V4DLIB class ThreadPool
-    {
-    private:
-        typedef function<void()> Task;
+    V4DLIB class ThreadPool {
+    protected:
+        typedef function<void()> task;
 
-        vector<thread> threads;
-        queue<Task> tasks;
+        map<size_t, thread> threads;
+        queue<task> tasks;
 
         mutex eventMutex;
         condition_variable eventVar;
 
         bool stopping;
+        size_t numThreads;
+
+        void StartNewThread(size_t index);
 
     public:
+
         /**
          * ThreadPool sole constructor
-         * @param nbThreads size_t number of threads
+         * @param number of threads
          */
-        ThreadPool(size_t nbThreads);
+        ThreadPool(size_t numThreads);
 
         /**
          * ThreadPool destructor
@@ -46,29 +49,64 @@ namespace v4d::processing {
         ~ThreadPool();
 
         /**
-         * Enqueue a task that will eventually be executed by one of the threads of the pool
-         * @Params: task that returns no value
+         * Set a new number of threads
+         * @param number of threads
          */
-        void enqueue(Task);
+        void SetNbThreads(size_t numThreads);
+
+        /**
+         * Enqueue a task that will eventually be executed by one of the threads of the pool
+         * @Param task that returns no value
+         */
+        void Enqueue(task);
+
+        /**
+         * Enqueue a task to be executed with a delay of at least n milliseconds
+         * @Param task that returns no value
+         * @Param delay in milliseconds
+         */
+        void Enqueue(task, unsigned int delayMilliseconds);
 
         /**
          * Enqueue a task and gives a promise to the task return value
-         * @Params: task with a return value
+         * @Param task with a return value
          * @Returns: a promise for the returned value by the task 
          */
         template<typename T>
-        auto promise(T task) -> std::future<decltype(task())>
-        {
+        auto Promise(T task) -> future<decltype(task())> {
             auto wrapper = make_shared<packaged_task<decltype(task())()>>(move(task));
-            
-            enqueue(
-                [wrapper]
-                {
+            Enqueue(
+                [wrapper] {
                     (*wrapper)();
                 }
             );
-
             return wrapper->get_future();
         }
+        
+        /**
+         * Enqueue a task to be executed with a delay of at least n milliseconds
+         * @Param task that returns no value
+         * @Param delay in milliseconds
+         */
+        template<typename T>
+        auto Promise(T task, unsigned int delayMilliseconds) -> future<future<decltype(task())>> {
+            auto f = async(launch::async, [this,delayMilliseconds,task] {
+                // Delay
+                if (delayMilliseconds > 0) std::this_thread::sleep_for(std::chrono::milliseconds{delayMilliseconds});
+
+                auto wrapper = make_shared<packaged_task<decltype(task())()>>(move(task));
+                
+                Enqueue(
+                    [wrapper] {
+                        (*wrapper)();
+                    }
+                );
+
+                return wrapper->get_future();
+            });
+            
+            return f;
+        }
+
     };
 }

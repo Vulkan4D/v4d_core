@@ -36,12 +36,23 @@ The core consists of the following structure :
 
 ## Coding Standards
 
-### Syntax
-- {} brackets starts on the next line
-- Lambdas on multiple lines
+### Formatting
+- {} brackets start on the SAME LINE, preceded by a space
 - Space after keywords (if, for, while,...)
 - Space before and After Stream operators (<< >>)
-- Lambdas [ALWAYS specify all variables here] {...}
+- Indentations are 4 spaces
+
+### Naming conventions
+- namespaces are camelCase and follow directory names/hierarchy
+- class file names are PascalCase
+- class names are PascalCase
+- method names are PascalCase
+- class members and variables are camelCase
+- const variables and macros are ALL_CAPS
+- method arguments are camelCase with the same name as an underlying class member that is directly set
+- typedefs are all_lowercase
+- file names unrelated to a class are all_lowercase
+- iterators are i,j,k and x,y,z,w
 
 ### File Extensions
 - .cpp C++ Source Files compiled via g++, must have a matching .h (except main file)
