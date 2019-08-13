@@ -11,34 +11,36 @@ void ThreadPool::StartNewThread(size_t index) {
     threads.emplace(index, 
         [this, index] {
             while(true) {
-                task task;
-                {
-                    unique_lock<mutex> lock(eventMutex);
-                    eventVar.wait(lock, [this,index] {
-                        return this->stopping || index >= this->numThreads || !this->tasks.empty();
-                    });
-
-                    // End thread if threadpool is destroyed
-                    if (stopping) {
-                        break;
-                    }
-                    
-                    // End thread if we have reduced the number of threads in the pool
-                    if (index >= this->numThreads) {
-                        break;
-                    }
-
-                    // get the next task to execute
-                    task = move(this->tasks.front());
-                    this->tasks.pop();
-                }
-
                 try {
+                    task task;
+                    {
+                        unique_lock<mutex> lock(eventMutex);
+                        eventVar.wait(lock, [this,index] {
+                            return this->stopping || index >= this->numThreads || !this->tasks.empty();
+                        });
+
+                        // End thread if threadpool is destroyed
+                        if (stopping) {
+                            break;
+                        }
+                        
+                        // End thread if we have reduced the number of threads in the pool
+                        if (index >= this->numThreads) {
+                            break;
+                        }
+
+                        // get the next task to execute
+                        task = move(this->tasks.front());
+                        this->tasks.pop();
+                    }
+
                     task();
-                } catch (std::exception& e) {
+                } catch (exception& e) {
                     LOG_ERROR("Error in a ThreadPool task: " << e.what())
+                    SLEEP(100ms)
                 } catch (...) {
                     LOG_ERROR("Unknown Error in a ThreadPool task")
+                    SLEEP(100ms)
                 }
             }
         }
@@ -47,7 +49,7 @@ void ThreadPool::StartNewThread(size_t index) {
 
 ThreadPool::~ThreadPool() {
     {
-        unique_lock<mutex> lock(eventMutex);
+        lock_guard<mutex> lock(eventMutex);
         stopping = true;
     }
 
@@ -59,7 +61,7 @@ ThreadPool::~ThreadPool() {
                 thread.second.join();
             }
         }
-    } catch (std::exception& e) {
+    } catch (exception& e) {
         LOG_ERROR("Error while joining ThreadPool threads: " << e.what())
     } catch (...) {
         LOG_ERROR("Unknown Error while joining ThreadPool threads")
@@ -68,7 +70,7 @@ ThreadPool::~ThreadPool() {
 
 void ThreadPool::SetNbThreads(size_t numThreads) {
     {
-        unique_lock<mutex> lock(eventMutex);
+        lock_guard<mutex> lock(eventMutex);
         this->numThreads = numThreads;
         while (threads.size() < numThreads) {
             StartNewThread(threads.size());
@@ -86,7 +88,7 @@ void ThreadPool::SetNbThreads(size_t numThreads) {
 
 void ThreadPool::Enqueue(task t) {
     {
-        unique_lock<mutex> lock(eventMutex);
+        lock_guard<mutex> lock(eventMutex);
         if (stopping) {
             return;
         }
@@ -97,9 +99,9 @@ void ThreadPool::Enqueue(task t) {
 }
 
 void ThreadPool::Enqueue(task task, unsigned int delayMilliseconds) {
-    std::thread([delayMilliseconds, &task, this] {
+    thread([delayMilliseconds, &task, this] {
         // Delay
-        if (delayMilliseconds > 0) std::this_thread::sleep_for(std::chrono::milliseconds{delayMilliseconds});
+        if (delayMilliseconds > 0) this_thread::sleep_for(chrono::milliseconds{delayMilliseconds});
 
         Enqueue(task);
         
