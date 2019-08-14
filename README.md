@@ -58,5 +58,5 @@ The core consists of the following structure :
 - .cpp C++ Source Files compiled via g++, must have a matching .h (except main file)
 - .hpp Header-only source files (no matching .cpp)
 - .h C++ Header files included from a matching .cpp source file
-- .cxx C++ Tests included in debug mode only
+- .cxx C++ Reserved for Unit Tests
 

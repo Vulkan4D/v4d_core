@@ -70,8 +70,8 @@ namespace v4d::tests {
             result = future5.get().get();
 
             double task6Result = future6.get().get();
-            if (task6Result < 2 || task6Result > 2.1) {
-                LOG_ERROR("v4d::tests::ThreadPool ERROR 2 (task 6 not executed after " << task6Result << " seconds instead of ~2.0-2.1)")
+            if (task6Result < 1 || task6Result > 2.1) {
+                LOG_ERROR("v4d::tests::ThreadPool ERROR 2 (task 6 executed after " << task6Result << " seconds instead of ~1.0-2.1)")
                 return 1;
             }
         }
