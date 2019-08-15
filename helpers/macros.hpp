@@ -1,19 +1,19 @@
 // Library import/export
 #if defined _WINDOWS
 	#ifdef _V4D_CORE
-    	#define V4DLIB __declspec(dllexport)
+		#define V4DLIB __declspec(dllexport)
 	#else// Project/System
 		#define V4DLIB __declspec(dllimport)
 	#endif
 	#ifdef _V4D_SYSTEM
-    	#define V4DSYSTEM extern "C" __declspec(dllexport)
+		#define V4DSYSTEM extern "C" __declspec(dllexport)
 	#else// Project/Core
 		#define V4DSYSTEM __declspec(dllimport)
 	#endif
 #else
 	#define V4DLIB
 	#ifdef _V4D_SYSTEM
-    	#define V4DSYSTEM extern "C" 
+		#define V4DSYSTEM extern "C" 
 	#else// Project/Core
 		#define V4DSYSTEM
 	#endif

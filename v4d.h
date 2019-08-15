@@ -4,9 +4,9 @@
 #define V4D_VERSION "0.0.1"
 
 #ifdef _WINDOWS
-    #include "common_windows.hh"
+	#include "common_windows.hh"
 #else
-    #include "common_linux.hh"
+	#include "common_linux.hh"
 #endif
 
 
@@ -22,7 +22,7 @@
 //////////////////////////////////////////////////////////
 // SYSTEMS LOADER
 #ifdef _V4D_SYSTEM
-    V4DSYSTEM std::string GET_V4D_SYSTEM_BUILD_VERSION() {
-        return V4D_VERSION;
-    }
+	V4DSYSTEM std::string GET_V4D_SYSTEM_BUILD_VERSION() {
+		return V4D_VERSION;
+	}
 #endif
