@@ -38,43 +38,48 @@ The core consists of the following structure :
 
 ### Formatting
 - `{}` brackets start on the SAME LINE, preceded by a space
+    ```c++
+    int main(int argc, char** args) {
+        std::cout << "Hello V4D !" << std::endl;
+    }
+    ```
 - methods and conditions on multiple lines are all or nothing (all in one line, or one line per argument)
-	```c++
-	void someLongMethodWithLotsOfArguments(
-		const int& a,
-		const int& b,
-		const std::string& str
-	) {
-		if (
-			a == b
-			&&
-			(
-				someCondition
-				||
-				someOtherCondition
-			)
-		) {
-			// ...
-		}
-	}
-	```
+    ```c++
+    void someLongMethodWithLotsOfArguments(
+        const int& a,
+        const int& b,
+        const std::string& str
+    ) {
+        if (
+            a == b
+            &&
+            (
+                someCondition
+                ||
+                someOtherCondition
+            )
+        ) {
+            // ...
+        }
+    }
+    ```
 - Space after keywords (`if`, `for`, `while`,...)
 - Space before and After Stream operators (`<<` `>>`)
 - Indentations are tabs, not spaces
 - Comments symbols `//` are between spaces
 - Assignments and comparison operators (`=` and `==`) have spaces before and after
 - All math and binary operators (`+`, `-`, `*`, /, `&`, `|`,...) are between spaces and not stuck on variables or numbers
-	- `int b = a + 5;` GOOD
-	- `int b=a+5;` BAD
+    - `int b = a + 5;` GOOD
+    - `int b=a+5;` BAD
 - Pointers and references (where to place the `*` and `&` symbols) : 
-	- Declarations have the symbol sticking on the type
-		- Pointer declarations : `int* ptr;`
-		- Pointer type arguments in methods : `void func(int* arg) {`
-		- Argument by reference in methods : `void func(int& arg) {`
-	- Dereferencing and getting the address have the symbol sticking on the variable name
-		- Assigning the referenced value of a pointer variable : `int val = *prt;`
-		- Assigning a variable by reference : `int var2 = &var1;`
-		- Assigning a value to a dereferenced pointer : `*ptr = 5;`
+    - Declarations have the symbol sticking on the type
+        - Pointer declarations : `int* ptr;`
+        - Pointer type arguments in methods : `void func(int* arg) {`
+        - Argument by reference in methods : `void func(int& arg) {`
+    - Dereferencing and getting the address have the symbol sticking on the variable name
+        - Assigning the referenced value of a pointer variable : `int val = *prt;`
+        - Assigning a variable by reference : `int var2 = &var1;`
+        - Assigning a value to a dereferenced pointer : `*ptr = 5;`
 
 ### Naming conventions
 - namespaces are camelCase and follow directory names/hierarchy
