@@ -1,29 +1,28 @@
 #include "v4d.h"
 
-struct ___TestClassForEvent {
-	int test() {
-		return 2;
-	}
-};
+struct ___TestClassForEvent {int x; int y;};
 
-DEFINE_EVENT_TYPE(TEST1)
-DEFINE_EVENT_TYPE(TEST2, int)
-DEFINE_EVENT_TYPE(TEST3, std::string, float)
-DEFINE_EVENT_TYPE(TEST4, ___TestClassForEvent)
+DEFINE_EVENT(EVT1, ___TestClassForEvent)
+// DEFINE_EVENT(EVT2)
+// DEFINE_EVENT(EVT3, int, std::string)
+DEFINE_EVENT(EVT4, int)
 
 namespace v4d::tests {
 
 	int Event() {
-		int result = 10;
-		v4d::event::TEST1 << [&result](){result--;};
-		v4d::event::TEST2 << [&result](int a){result -= a;};
-		v4d::event::TEST3 << [&result](std::string b, int a){result -= a;};
-		v4d::event::TEST4 << [&result](___TestClassForEvent a){result -= a.test();};
+		int result = 15;
 
-		v4d::event::TEST1();
-		v4d::event::TEST2(4);
-		v4d::event::TEST3("test", 3);
-		v4d::event::TEST4(___TestClassForEvent());
+		v4d::event::EVT1 << [&result](___TestClassForEvent t){ result -= t.x; result -= t.y; };
+		v4d::event::EVT1({4,6});
+
+		// v4d::event::EVT2 << [&result](){ result -= 2; };
+		// v4d::event::EVT2();
+
+		// v4d::event::EVT3 << [&result](int a, std::string b){ result -= a; };
+		// v4d::event::EVT3(3);
+
+		v4d::event::EVT4 << [&result](int a){ result -= a; };
+		v4d::event::EVT4(5);
 
 		return result;
 	}

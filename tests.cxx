@@ -13,7 +13,7 @@ namespace v4d::tests {
 		int result = 0;
 		{
 			
-			RUN_UNIT_TESTS( ThreadPool )
+			// RUN_UNIT_TESTS( ThreadPool )
 			RUN_UNIT_TESTS( Event )
 
 

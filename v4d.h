@@ -14,7 +14,8 @@
 //////////////////////////////////////////////////////////
 // Library import/export
 
-#define EXTERN extern "C++"
+#define EXTERNC extern "C"
+#define EXTERNCPP extern "C++"
 #if defined _WINDOWS
 	#define DLLEXPORT __declspec(dllexport)
 	#define DLLIMPORT __declspec(dllimport)
@@ -28,11 +29,11 @@
 	#define V4DLIB DLLIMPORT
 #endif
 #ifdef _V4D_SYSTEM
-	#define V4DSYSTEM EXTERN DLLEXPORT
-	#define V4DSYSTEM_CLASS(className) EXTERN class DLLEXPORT className
+	#define V4DSYSTEM EXTERNC DLLEXPORT
+	#define V4DSYSTEM_CLASS(className) EXTERNC class DLLEXPORT className
 #else// Project/Core
-	#define V4DSYSTEM EXTERN DLLIMPORT
-	#define V4DSYSTEM_CLASS(className) EXTERN class DLLIMPORT className
+	#define V4DSYSTEM
+	#define V4DSYSTEM_CLASS(className)
 #endif
 
 
@@ -66,8 +67,8 @@ namespace v4d {
 //////////////////////////////////////////////////////////
 // V4D global events
 
-// DEFINE_EVENT_TYPE(V4D_CORE_INIT)
-// DEFINE_EVENT_TYPE(V4D_CORE_DESTROY)
+DEFINE_EXTERN_EVENT_HEADER(V4D_CORE_INIT, void*)
+DEFINE_EXTERN_EVENT_HEADER(V4D_CORE_DESTROY, void*)
 
 
 //////////////////////////////////////////////////////////
