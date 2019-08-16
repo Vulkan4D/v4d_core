@@ -1,8 +1,5 @@
-#include "v4d.h"
-
 #include "modules/processing/ThreadPool.cxx"
 #include "helpers/event.cxx"
-
 
 #define RUN_UNIT_TESTS(funcName) { LOG("Running tests for " << #funcName << " ..."); result += funcName(); if (result > 0) { LOG_ERROR("UNIT TESTS FAILED"); return result; } }
 #define START_UNIT_TESTS using namespace v4d::tests; int main() { LOG("Started unit tests"); int result = 0; {
@@ -13,7 +10,7 @@ namespace v4d::tests {
 		int result = 0;
 		{
 			
-			// RUN_UNIT_TESTS( ThreadPool )
+			RUN_UNIT_TESTS( ThreadPool )
 			RUN_UNIT_TESTS( Event )
 
 

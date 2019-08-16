@@ -32,6 +32,7 @@ The core consists of the following structure :
 - `v4d.cpp` Main Source File compiled only in the core library
 - `tests.cxx` Unit Tests
 - `README.md` this documentation
+- `common.hh`, `common_*.hh`,... precompiled headers
 
 
 ## Coding Standards
@@ -98,4 +99,5 @@ The core consists of the following structure :
 - .hpp Header-only source files (no matching .cpp)
 - .h C++ Header files included from a matching .cpp source file
 - .cxx C++ Reserved for Unit Tests
+- .hh C++ header-only files without any associated code
 

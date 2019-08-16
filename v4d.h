@@ -55,6 +55,13 @@
 
 
 //////////////////////////////////////////////////////////
+// V4D global events
+
+DEFINE_CORE_EVENT_HEADER(V4D_CORE_INIT, int)
+DEFINE_CORE_EVENT_HEADER(V4D_CORE_DESTROY, int)
+
+
+//////////////////////////////////////////////////////////
 // V4D global functions
 
 namespace v4d {
@@ -62,13 +69,6 @@ namespace v4d {
 	V4DLIB void Init();
 	V4DLIB void Destroy();
 }
-
-
-//////////////////////////////////////////////////////////
-// V4D global events
-
-DEFINE_EXTERN_EVENT_HEADER(V4D_CORE_INIT, void*)
-DEFINE_EXTERN_EVENT_HEADER(V4D_CORE_DESTROY, void*)
 
 
 //////////////////////////////////////////////////////////
