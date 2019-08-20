@@ -4,10 +4,18 @@
 
 #define V4D_VERSION "0.0.1"
 
-#ifdef _WINDOWS
-	#include "common_windows.hh"
+#ifdef _V4D_CORE
+	#ifdef _WINDOWS
+		#include "common_core.windows.hh"
+	#else
+		#include "common_core.linux.hh"
+	#endif
 #else
-	#include "common_linux.hh"
+	#ifdef _WINDOWS
+		#include "common.windows.hh"
+	#else
+		#include "common.linux.hh"
+	#endif
 #endif
 
 
@@ -40,6 +48,7 @@
 //////////////////////////////////////////////////////////
 // HELPERS
 
+#include "helpers/types.hpp"
 #include "helpers/macros.hpp"
 #include "helpers/Timer.hpp"
 #include "helpers/Logger.hpp"
