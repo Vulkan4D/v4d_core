@@ -12,7 +12,7 @@ namespace v4d {
 		std::string path;
 		DLL_FILE_HANDLER handle;
 
-		SharedLibraryInstance(const std::string name, const std::string path, bool lazyLoad = true) : name(name), path(path) {
+		SharedLibraryInstance(const std::string& name, const std::string& path, const bool& lazyLoad = true) : name(name), path(path) {
 			#ifdef _WINDOWS
 				this->path += ".dll";
 				this->handle = LoadLibrary(this->path.c_str());
@@ -47,8 +47,8 @@ namespace v4d {
 
 	public:
 	
-		SharedLibraryInstance* Load(std::string name, std::string path = "", bool lazyLoad = true) {
-			lock_guard<mutex> lock(loadedLibrariesMutex);
+		SharedLibraryInstance* Load(const std::string& name, std::string path = "", const bool& lazyLoad = true) {
+			std::lock_guard<std::mutex> lock(loadedLibrariesMutex);
 			if (path == "") path = name;
 			if (loadedLibraries.find(name) == loadedLibraries.end()) {
 				SharedLibraryInstance* instance = new SharedLibraryInstance(name, path, lazyLoad);
@@ -61,16 +61,16 @@ namespace v4d {
 			return loadedLibraries[name];
 		}
 
-		void Unload(std::string name) {
-			lock_guard<mutex> lock(loadedLibrariesMutex);
+		void Unload(const std::string& name) {
+			std::lock_guard<std::mutex> lock(loadedLibrariesMutex);
 			if (loadedLibraries.find(name) != loadedLibraries.end()) {
 				delete loadedLibraries[name];
 				loadedLibraries.erase(name);
 			}
 		}
 
-		void Reload(std::string name, bool lazyLoad = true) {
-			lock_guard<mutex> lock(loadedLibrariesMutex);
+		void Reload(const std::string& name, const bool& lazyLoad = true) {
+			std::lock_guard<std::mutex> lock(loadedLibrariesMutex);
 			if (loadedLibraries.find(name) != loadedLibraries.end()) {
 				std::string path = loadedLibraries[name]->path;
 				Unload(name);

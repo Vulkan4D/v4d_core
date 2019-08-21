@@ -2,19 +2,19 @@
 
 using namespace v4d::processing;
 
-ThreadPool::ThreadPool(size_t numThreads) {
+ThreadPool::ThreadPool(const index_255& numThreads) {
 	stopping = false;
 	SetNbThreads(numThreads);
 }
 
-void ThreadPool::StartNewThread(size_t index) {
+void ThreadPool::StartNewThread(const index_255& index) {
 	threads.emplace(index, 
 		[this, index] {
 			while(true) {
 				try {
-					task task;
+					std::function<void()> task;
 					{
-						unique_lock<mutex> lock(eventMutex);
+						std::unique_lock<std::mutex> lock(eventMutex);
 						eventVar.wait(lock, [this,index] {
 							return this->stopping || index >= this->numThreads || !this->tasks.empty();
 						});
@@ -35,7 +35,7 @@ void ThreadPool::StartNewThread(size_t index) {
 					}
 
 					task();
-				} catch (exception& e) {
+				} catch (std::exception& e) {
 					LOG_ERROR("Error in a ThreadPool task: " << e.what())
 					SLEEP(100ms)
 				} catch (...) {
@@ -49,7 +49,7 @@ void ThreadPool::StartNewThread(size_t index) {
 
 ThreadPool::~ThreadPool() {
 	{
-		lock_guard<mutex> lock(eventMutex);
+		std::lock_guard<std::mutex> lock(eventMutex);
 		stopping = true;
 	}
 
@@ -61,16 +61,16 @@ ThreadPool::~ThreadPool() {
 				thread.second.join();
 			}
 		}
-	} catch (exception& e) {
+	} catch (std::exception& e) {
 		LOG_ERROR("Error while joining ThreadPool threads: " << e.what())
 	} catch (...) {
 		LOG_ERROR("Unknown Error while joining ThreadPool threads")
 	}
 }
 
-void ThreadPool::SetNbThreads(size_t numThreads) {
+void ThreadPool::SetNbThreads(const index_255& numThreads) {
 	{
-		lock_guard<mutex> lock(eventMutex);
+		std::lock_guard<std::mutex> lock(eventMutex);
 		this->numThreads = numThreads;
 		while (threads.size() < numThreads) {
 			StartNewThread(threads.size());
@@ -86,24 +86,3 @@ void ThreadPool::SetNbThreads(size_t numThreads) {
 	}
 }
 
-void ThreadPool::Enqueue(task t) {
-	{
-		lock_guard<mutex> lock(eventMutex);
-		if (stopping) {
-			return;
-		}
-		tasks.emplace(t);
-	}
-
-	eventVar.notify_all();
-}
-
-void ThreadPool::Enqueue(task task, unsigned int delayMilliseconds) {
-	thread([delayMilliseconds, &task, this] {
-		// Delay
-		if (delayMilliseconds > 0) this_thread::sleep_for(chrono::milliseconds{delayMilliseconds});
-
-		Enqueue(task);
-		
-	}).detach();
-}

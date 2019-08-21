@@ -4,7 +4,7 @@
 
 namespace v4d {
 	struct SystemInstance : public SharedLibraryInstance {
-		SystemInstance(SharedLibraryInstance* instance, std::string systemName) {
+		SystemInstance(SharedLibraryInstance* instance, const std::string& systemName) {
 			name = systemName;
 			path = instance->path;
 			handle = instance->handle;
@@ -17,8 +17,8 @@ namespace v4d {
 		std::map<std::string, SystemInstance*> loadedSystems;
 
 	public:
-		SystemInstance* LoadSystem(std::string systemName) {
-			lock_guard<mutex> lock(loadedSystemsMutex);
+		SystemInstance* LoadSystem(const std::string& systemName) {
+			std::lock_guard<std::mutex> lock(loadedSystemsMutex);
 			std::string libName = std::string("V4D_SYSTEM:") + systemName;
 			if (loadedSystems.find(systemName) == loadedSystems.end()) {
 				auto instance = Load(libName, std::string("systems/") + systemName + "/" + systemName);

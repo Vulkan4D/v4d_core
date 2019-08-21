@@ -7,7 +7,6 @@
 #pragma once
 
 // Requires Logger.hpp
-	// #include "helpers/Logger.hpp"
 
 // Fatal errors that should terminate the application
 // error message in console and exit(1)

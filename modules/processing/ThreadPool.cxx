@@ -10,6 +10,8 @@ namespace v4d::tests {
 		{
 			v4d::processing::ThreadPool threadPool(3);
 
+			using namespace std::literals::chrono_literals;
+
 			// Task 1
 			auto future1 = threadPool.Promise([&timer] {
 				SLEEP(2s)
@@ -51,8 +53,12 @@ namespace v4d::tests {
 
 			// Task 5
 			auto future5 = threadPool.Promise([&future1, &future2, &future3, &timer] {
-				return future1.get() + future2.get() + future3.get();
-			}, 4000); // delay of 4 seconds
+				try {
+					return future1.get() + future2.get() + future3.get();
+				} catch (...) {
+					return 0;
+				}
+			}, 4s); // delay of 4 seconds
 			if (timer.GetElapsedMilliseconds() > 100) {
 				LOG_ERROR("v4d::tests::ThreadPool ERROR 1.5 (task not enqueued asynchronously)")
 				return 1;
@@ -61,18 +67,30 @@ namespace v4d::tests {
 			// Task 6
 			auto future6 = threadPool.Promise([&timer] {
 				return timer.GetElapsedSeconds();
-			}, 1000); // delay of 1 second
+			}, 1000ms); // delay of 1 second
 			if (timer.GetElapsedMilliseconds() > 100) {
 				LOG_ERROR("v4d::tests::ThreadPool ERROR 1.6 (task not enqueued asynchronously)")
 				return 1;
 			}
 
-			result = future5.get().get();
+			try {
+				result = future5.get().get();
+			} catch (std::exception& e) {
+				LOG_ERROR("v4d::tests::ThreadPool EXCEPTION 1 : " << e.what())
+			} catch (...) {
+				LOG_ERROR("v4d::tests::ThreadPool UNKNOWN EXCEPTION 1")
+			}
 
-			double task6Result = future6.get().get();
-			if (task6Result < 1 || task6Result > 2.1) {
-				LOG_ERROR("v4d::tests::ThreadPool ERROR 2 (task 6 executed after " << task6Result << " seconds instead of ~1.0-2.1)")
-				return 1;
+			try {
+				double task6Result = future6.get().get();
+				if (task6Result < 1 || task6Result > 2.1) {
+					LOG_ERROR("v4d::tests::ThreadPool ERROR 2 (task 6 executed after " << task6Result << " seconds instead of ~1.0-2.1)")
+					return 1;
+				}
+			} catch (std::exception& e) {
+				LOG_ERROR("v4d::tests::ThreadPool EXCEPTION 2 : " << e.what())
+			} catch (...) {
+				LOG_ERROR("v4d::tests::ThreadPool UNKNOWN EXCEPTION 2")
 			}
 		}
 
@@ -100,8 +118,14 @@ namespace v4d::tests {
 					SLEEP(1s)
 					return 0;
 				});
-				t1.get();
-				t2.get();
+				try {
+					t1.get();
+					t2.get();
+				} catch (std::exception& e) {
+					LOG_ERROR("v4d::tests::ThreadPool EXCEPTION 3 : " << e.what())
+				} catch (...) {
+					LOG_ERROR("v4d::tests::ThreadPool UNKNOWN EXCEPTION 3")
+				}
 			}
 			elapsedTime = timer.GetElapsedSeconds();
 			if (elapsedTime < 2 || elapsedTime > 2.1) {
@@ -124,9 +148,15 @@ namespace v4d::tests {
 					SLEEP(1s)
 					return 0;
 				});
-				t1.get();
-				t2.get();
-				t3.get();
+				try {
+					t1.get();
+					t2.get();
+					t3.get();
+				} catch (std::exception& e) {
+					LOG_ERROR("v4d::tests::ThreadPool EXCEPTION 4 : " << e.what())
+				} catch (...) {
+					LOG_ERROR("v4d::tests::ThreadPool UNKNOWN EXCEPTION 4")
+				}
 			}
 			elapsedTime = timer.GetElapsedSeconds();
 			if (elapsedTime < 1 || elapsedTime > 1.1) {
@@ -149,9 +179,15 @@ namespace v4d::tests {
 					SLEEP(1s)
 					return 0;
 				});
-				t1.get();
-				t2.get();
-				t3.get();
+				try {
+					t1.get();
+					t2.get();
+					t3.get();
+				} catch (std::exception& e) {
+					LOG_ERROR("v4d::tests::ThreadPool EXCEPTION 5 : " << e.what())
+				} catch (...) {
+					LOG_ERROR("v4d::tests::ThreadPool UNKNOWN EXCEPTION 5")
+				}
 			}
 			elapsedTime = timer.GetElapsedSeconds();
 			if (elapsedTime < 2 || elapsedTime > 2.1) {

@@ -7,13 +7,13 @@
 #ifdef _V4D_CORE
 	#ifdef _WINDOWS
 		#include "common_core.windows.hh"
-	#else
+	#else// _LINUX
 		#include "common_core.linux.hh"
 	#endif
 #else
 	#ifdef _WINDOWS
 		#include "common.windows.hh"
-	#else
+	#else// _LINUX
 		#include "common.linux.hh"
 	#endif
 #endif
@@ -66,15 +66,20 @@
 //////////////////////////////////////////////////////////
 // V4D global events
 
-DEFINE_CORE_EVENT_HEADER(V4D_CORE_INIT, int)
-DEFINE_CORE_EVENT_HEADER(V4D_CORE_DESTROY, int)
+namespace v4d {
+	struct CoreInitEvent {};
+	struct CoreDestroyEvent {};
+}
+
+DEFINE_CORE_EVENT_HEADER(V4D_CORE_INIT, CoreInitEvent&)
+DEFINE_CORE_EVENT_HEADER(V4D_CORE_DESTROY, CoreDestroyEvent&)
 
 
 //////////////////////////////////////////////////////////
 // V4D global functions
 
 namespace v4d {
-	V4DLIB std::string GET_V4D_CORE_BUILD_VERSION();
+	V4DLIB const std::string GET_V4D_CORE_BUILD_VERSION() noexcept;
 	V4DLIB void Init();
 	V4DLIB void Destroy();
 }

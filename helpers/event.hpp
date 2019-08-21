@@ -27,12 +27,14 @@
 			}; \
 			___EVENTEXPORT ___EVENT_TYPE_ ## eventName eventName; \
 		}
-	#define DEFINE_CORE_EVENT_BODY(eventName, ...) \
-		void v4d::event:: ___EVENT_TYPE_ ## eventName ::operator<<(std::function<void(__VA_ARGS__)> func) { \
-			std::lock_guard<std::mutex> lock(mu); \
-			listeners.emplace_back(func); \
-		} \
-		v4d::event:: ___EVENT_TYPE_ ## eventName v4d::event:: eventName;
+	#ifdef _V4D_CORE
+		#define DEFINE_CORE_EVENT_BODY(eventName, ...) \
+			void v4d::event:: ___EVENT_TYPE_ ## eventName ::operator<<(std::function<void(__VA_ARGS__)> func) { \
+				std::lock_guard<std::mutex> lock(mu); \
+				listeners.emplace_back(func); \
+			} \
+			v4d::event:: ___EVENT_TYPE_ ## eventName v4d::event:: eventName;
+	#endif
 	#define DEFINE_EVENT(eventName, ...) \
 		namespace v4d::event { \
 			class { \
@@ -66,18 +68,20 @@
 			}; \
 			___EVENTEXPORT ___EVENT_TYPE_ ## eventName eventName; \
 		}
-	#define DEFINE_CORE_EVENT_BODY(eventName, objType) \
-		void v4d::event:: ___EVENT_TYPE_ ## eventName ::operator<<(std::function<void(objType)> func) { \
-			std::lock_guard<std::mutex> lock(mu); \
-			listeners.emplace_back(func); \
-		} \
-		void v4d::event:: ___EVENT_TYPE_ ## eventName ::operator()(objType obj) { \
-			std::lock_guard<std::mutex> lock(mu); \
-			for (auto ev : listeners) { \
-				ev(std::forward<objType>(obj)); \
+	#ifdef _V4D_CORE
+		#define DEFINE_CORE_EVENT_BODY(eventName, objType) \
+			void v4d::event:: ___EVENT_TYPE_ ## eventName ::operator<<(std::function<void(objType)> func) { \
+				std::lock_guard<std::mutex> lock(mu); \
+				listeners.emplace_back(func); \
 			} \
-		} \
-		v4d::event:: ___EVENT_TYPE_ ## eventName v4d::event:: eventName;
+			void v4d::event:: ___EVENT_TYPE_ ## eventName ::operator()(objType obj) { \
+				std::lock_guard<std::mutex> lock(mu); \
+				for (auto ev : listeners) { \
+					ev(std::forward<objType>(obj)); \
+				} \
+			} \
+			v4d::event:: ___EVENT_TYPE_ ## eventName v4d::event:: eventName;
+	#endif
 	#define DEFINE_EVENT(eventName, objType) \
 		namespace v4d::event { \
 			class { \

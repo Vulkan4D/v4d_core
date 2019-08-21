@@ -6,14 +6,86 @@
  */
 #pragma once
 
-// Now included in common.hh
-	// #include <iostream>
-	// #include <atomic>
-	// #include <mutex>
-	// #include <fstream>
-	// #include <string>
-	// #include <sstream>
-	// #include <map>
+namespace v4d {
+	// https://misc.flogisoft.com/bash/tip_colors_and_formatting
+
+	class V4DLIB Logger {
+	private:
+		std::string filepath;
+		std::atomic<bool> useLogFile;
+		bool verbose;
+
+		std::mutex mu;
+		std::once_flag once;
+		std::ofstream file;
+
+		inline void LogToFile(const std::string& message) {
+			std::call_once(once, [&f=file, &filepath=filepath, &message](){
+				f.open(filepath);
+			});
+			file << message << std::endl;
+		}
+
+	public:
+		Logger() : filepath(""), useLogFile(false), verbose(false) {}
+
+		~Logger() {
+			file.close();
+		}
+
+		static Logger& ConsoleInstance(const bool& verbose = false) {
+			static Logger consoleLogger;
+			consoleLogger.SetVerbose(verbose);
+			return consoleLogger;
+		}
+		
+		static Logger& FileInstance(const std::string& filepath, const bool& verbose = false) {
+			static std::map<std::string, Logger> fileInstances;
+			fileInstances[filepath].Init(filepath, verbose);
+			return fileInstances[filepath];
+		}
+
+		INLINE void Log(std::ostream& message, const char* style = "0") {
+			std::string msg = dynamic_cast<std::ostringstream&>(message).str();
+			mu.lock();
+			try {
+				if (useLogFile) {
+					LogToFile(msg);
+				} else {
+					#ifdef _WINDOWS
+						std::cout << msg << std::endl;
+					#else
+						std::cout << "\033[" << style << 'm' << msg << "\033[0m" << std::endl;
+					#endif
+				}
+			} catch(...) {}
+			mu.unlock();
+		}
+
+		INLINE void LogError(std::ostream& message) {
+			Log(message, "1;31");
+		}
+
+		INLINE bool IsVerbose() const {
+			return verbose;
+		}
+
+		INLINE void Init(const std::string& filepath = "", const bool& verbose = false) {
+			this->filepath = filepath;
+			this->useLogFile = (filepath != "");
+			this->verbose = verbose;
+		}
+
+		INLINE void SetVerbose(const bool& isVerbose = true) {
+			verbose = isVerbose;
+		}
+
+		Logger(Logger const&) = delete;
+		void operator=(Logger const&) = delete;
+	};
+
+
+}
 
 // Info in console
 #define LOG(x) v4d::Logger::ConsoleInstance().Log(std::ostringstream().flush() << x, v4d::Logger::ConsoleInstance().IsVerbose()? "1":"0");
@@ -38,84 +110,3 @@
 	#define DEBUG_ERROR(x)
 	#define INVALIDCODE(x)
 #endif
-
-namespace v4d {
-	// https://misc.flogisoft.com/bash/tip_colors_and_formatting
-
-	class V4DLIB Logger {
-	private:
-		std::string filepath;
-		std::atomic<bool> useLogFile;
-		bool verbose;
-
-		std::mutex mu;
-		std::once_flag once;
-		std::ofstream file;
-
-		inline void LogToFile(const std::string &message) {
-			std::call_once(once, [&f=file, &filepath=filepath, &message](){
-				f.open(filepath);
-			});
-			file << message << endl;
-		}
-
-	public:
-		Logger() : filepath(""), useLogFile(false), verbose(false) {}
-
-		~Logger() {
-			file.close();
-		}
-
-		static Logger& ConsoleInstance(const bool verbose = false) {
-			static Logger consoleLogger;
-			consoleLogger.SetVerbose(verbose);
-			return consoleLogger;
-		}
-		
-		static Logger& FileInstance(const std::string filepath, const bool verbose = false) {
-			static std::map<std::string, Logger> fileInstances;
-			fileInstances[filepath].Init(filepath, verbose);
-			return fileInstances[filepath];
-		}
-
-		inline void Log(std::ostream &message, const char* style = "0") {
-			string msg = dynamic_cast<std::ostringstream&>(message).str();
-			mu.lock();
-			try {
-				if (useLogFile) {
-					LogToFile(msg);
-				} else {
-					#ifdef _WINDOWS
-						std::cout << msg << std::endl;
-					#else
-						std::cout << "\033[" << style << 'm' << msg << "\033[0m" << std::endl;
-					#endif
-				}
-			} catch(...) {}
-			mu.unlock();
-		}
-
-		inline void LogError(std::ostream& message) {
-			Log(message, "1;31");
-		}
-
-		inline bool IsVerbose() {
-			return verbose;
-		}
-
-		inline void Init(std::string filepath = "", bool verbose = false) {
-			this->filepath = filepath;
-			this->useLogFile = (filepath != "");
-			this->verbose = verbose;
-		}
-
-		inline void SetVerbose(bool isVerbose = true) {
-			verbose = isVerbose;
-		}
-
-		Logger(Logger const&) = delete;
-		void operator=(Logger const&) = delete;
-	};
-
-
-}
