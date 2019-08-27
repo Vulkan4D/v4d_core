@@ -70,23 +70,32 @@ namespace v4d {
 		}
 
 
-		// Strings
-		INLINE ByteStream& Write(const std::string& data) {
-			size_t size = data.size();
+		// Variable-Size items
+		INLINE void WriteSize(const size_t& size) {
 			if (size < 255) {
 				Write((byte)size);
 			} else {
 				Write((byte)255);
 				Write((size_t)size);
 			}
-			WriteBytes(reinterpret_cast<const byte*>(data.c_str()), size);
-			return *this;
 		}
-		INLINE ByteStream& Read(std::string& data) {
-			size_t size(Read<byte>());
+		INLINE size_t ReadSize() {
+			size_t size = Read<byte>();
 			if (size == 255) {
 				Read(size);
 			}
+			return size;
+		}
+
+
+		// Strings
+		INLINE ByteStream& Write(const std::string& data) {
+			WriteSize(data.size());
+			WriteBytes(reinterpret_cast<const byte*>(data.c_str()), data.size());
+			return *this;
+		}
+		INLINE ByteStream& Read(std::string& data) {
+			size_t size(ReadSize());
 			char chars[size];
 			ReadBytes(reinterpret_cast<byte*>(chars), size);
 			data.insert(0, chars, size);
@@ -97,13 +106,13 @@ namespace v4d {
 		// Containers (vector or other containers that have the following methods: .size(), .clear(), .reserve() and .push_back())
 		template<template<typename, typename> class Container, typename T>
 		INLINE ByteStream& Write(const Container<T, std::allocator<T>>& data) {
-			*this << (size_t)data.size();
+			WriteSize(data.size());
 			for (const T& item : data) Write(item);
 			return *this;
 		}
 		template<template<typename, typename> class Container, typename T>
 		INLINE ByteStream& Read(Container<T, std::allocator<T>>& data) {
-			size_t size = Read<size_t>();
+			size_t size(ReadSize());
 			data.clear();
 			data.reserve(size);
 			for (size_t i = 0; i < size; i++) data.push_back(Read<T>());

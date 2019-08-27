@@ -1,5 +1,7 @@
 #include <v4d.h>
 
+#define LONG_ASS_STRING "3p9nm845y97348 57 4325 4732t5964bn325v435/4g3/5v/ghégéfv étg435 w3 T%$ V%$/$v45/%$C/45/%ff6 & & trFGD $%#$#$ J HG h FFgfsd fsdf sdfbsfw7f48 4 f87 H^%$ % ^$^ %&^&%$#^ *^$^%^&*^&*#@ @*%&( ytrgh df'eèèefààfdêf ebfwu 78ew78wew<fdsf\tdsfd\nfs fdsfdsfsdfsdfsddfsa fdsa fdsaf dsaf dsaf sadf asdf sadfsadf sadf sadfsad f  8439853956387 543 534534tg3 34 4t fsdfsdf"
+
 namespace v4d::tests {
 	int ByteStream() {
 		int result = 100;
@@ -145,12 +147,12 @@ namespace v4d::tests {
 			result = 100;
 			std::thread tRead([&bs,&result]{
 				std::string str(bs.Read<std::string>());
-				if (str == "Helloé patatà !") {
+				if (str == "Hello !") {
 					result -= 100;
 				}
 			});
 
-			bs << std::string("Helloé patatà !");
+			bs << std::string("Hello !");
 			bs.Flush();
 
 			tRead.join();
@@ -165,12 +167,12 @@ namespace v4d::tests {
 			std::thread tRead([&bs,&result]{
 				std::vector<std::string> strList;
 				bs >> strList;
-				if (strList[0] == "000" && strList[1] == "111" && strList[2] == "222") {
+				if (strList[0] == "000" && strList[1] == "111" && strList[2] == "222" && strList[3] == "" && strList[4] == "444" && strList[5] == LONG_ASS_STRING) {
 					result -= 100;
 				}
 			});
 
-			std::vector<std::string> strList = {"000", "111", "222"};
+			std::vector<std::string> strList = {"000", "111", "222", "", "444", LONG_ASS_STRING};
 			bs << strList;
 			bs.Flush();
 
