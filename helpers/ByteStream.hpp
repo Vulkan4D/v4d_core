@@ -59,19 +59,46 @@ namespace v4d {
 			ReadBytes(reinterpret_cast<byte*>(&data), sizeof(T));
 			return *this;
 		}
+
+
+		// Return-Read
 		template<typename T>
 		INLINE T Read() {
 			T data;
-			Read<T>(data);
+			Read(data);
 			return data;
 		}
 
 
-		// Lists
+		// Strings
+		INLINE ByteStream& Write(const std::string& data) {
+			size_t size = data.size();
+			if (size < 255) {
+				Write((byte)size);
+			} else {
+				Write((byte)255);
+				Write((size_t)size);
+			}
+			WriteBytes(reinterpret_cast<const byte*>(data.c_str()), size);
+			return *this;
+		}
+		INLINE ByteStream& Read(std::string& data) {
+			size_t size(Read<byte>());
+			if (size == 255) {
+				Read(size);
+			}
+			char chars[size];
+			ReadBytes(reinterpret_cast<byte*>(chars), size);
+			data.insert(0, chars, size);
+			return *this;
+		}
+
+
+		// Containers (vector or other containers that have the following methods: .size(), .clear(), .reserve() and .push_back())
 		template<template<typename, typename> class Container, typename T>
 		INLINE ByteStream& Write(const Container<T, std::allocator<T>>& data) {
 			*this << (size_t)data.size();
-			for (const T& item : data) *this << (T)item;
+			for (const T& item : data) Write(item);
 			return *this;
 		}
 		template<template<typename, typename> class Container, typename T>
@@ -90,17 +117,20 @@ namespace v4d {
 		}
 
 
-		// Operators overloading
+		// Stream Operators overloading (generic)
 		template<typename T>
 		INLINE ByteStream& operator<<(const T& data) {
-			Write<T>(data);
+			Write(data);
 			return *this;
 		}
 		template<typename T>
 		INLINE ByteStream& operator>>(T& data) {
-			Read<T>(data);
+			Read(data);
 			return *this;
 		}
+
+
+		// Stream Operators overloading (containers)
 		template<template<typename, typename> class Container, typename T>
 		INLINE ByteStream& operator<<(const Container<T, std::allocator<T>>& data) {
 			Write<Container, T>(data);
