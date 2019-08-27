@@ -1,13 +1,6 @@
-/**
- * This helper is part of Vulkan4D (open source project)
- * 
- * @author Ivan Molodtsov, Olivier St-Laurent
- * @date 2019-06-18
- */
 #pragma once
 
-// Now included in common.hh
-	// #include <chrono>
+// #include <chrono>
 
 namespace v4d {
 

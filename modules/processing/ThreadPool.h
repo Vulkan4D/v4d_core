@@ -1,10 +1,3 @@
-/**
- * A ThreadPool for asynchronous parallel execution on a defined number of threads.
- * The pool keeps a vector of threads alive, waiting on a condition variable for some work to become available.
- *
- * @author Ivan Molodtsov, Olivier St-Laurent
- * @date 2019-06-20
- */
 #pragma once
 
 #include "v4d.h"

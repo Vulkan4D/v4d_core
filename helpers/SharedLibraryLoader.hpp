@@ -47,11 +47,11 @@ namespace v4d {
 
 	public:
 	
-		SharedLibraryInstance* Load(const std::string& name, std::string path = "", const bool& lazyLoad = true) {
+		virtual SharedLibraryInstance* Load(const std::string& name, std::string path = "") {
 			std::lock_guard<std::mutex> lock(loadedLibrariesMutex);
 			if (path == "") path = name;
 			if (loadedLibraries.find(name) == loadedLibraries.end()) {
-				SharedLibraryInstance* instance = new SharedLibraryInstance(name, path, lazyLoad);
+				SharedLibraryInstance* instance = new SharedLibraryInstance(name, path);
 				if (!instance->handle) {
 					delete instance;
 					return nullptr;
@@ -61,7 +61,7 @@ namespace v4d {
 			return loadedLibraries[name];
 		}
 
-		void Unload(const std::string& name) {
+		virtual void Unload(const std::string& name) {
 			std::lock_guard<std::mutex> lock(loadedLibrariesMutex);
 			if (loadedLibraries.find(name) != loadedLibraries.end()) {
 				delete loadedLibraries[name];
@@ -69,36 +69,38 @@ namespace v4d {
 			}
 		}
 
-		void Reload(const std::string& name, const bool& lazyLoad = true) {
+		virtual void Reload(const std::string& name) {
 			std::lock_guard<std::mutex> lock(loadedLibrariesMutex);
 			if (loadedLibraries.find(name) != loadedLibraries.end()) {
 				std::string path = loadedLibraries[name]->path;
 				Unload(name);
-				Load(name, path, lazyLoad);
+				Load(name, path);
 			}
 		}
 		
+		virtual ~SharedLibraryLoader() {
+			std::lock_guard<std::mutex> lock(loadedLibrariesMutex);
+			for (auto lib : loadedLibraries) {
+				delete lib.second;
+			}
+		}
 	};
 }
 
 #ifdef _WINDOWS
 	#define LOAD_DLL_FUNC(instance, returntype, funcName, ...) \
 		returntype (*funcName)(__VA_ARGS__); \
-		*(void **)(&funcName) = (void*)GetProcAddress(instance->handle, #funcName); \
-		{ \
-			auto err = GetLastError(); \
-			if (!funcName) { \
-				LOG_ERROR("Error getting symbol pointer for '" << #funcName << "' in shared library '" << instance->name << "' : " << err) \
-			} \
-		}
+		*(void **)(&funcName) = (void*)GetProcAddress(instance->handle, #funcName);
 #else// LINUX
 	#define LOAD_DLL_FUNC(instance, returntype, funcName, ...) \
 		returntype (*funcName)(__VA_ARGS__); \
-		*(void **)(&funcName) = dlsym(instance->handle, #funcName); \
-		{ \
-			char* err = dlerror(); \
-			if (err != NULL) { \
-				LOG_ERROR("Error getting symbol pointer for '" << #funcName << "' in shared library '" << instance->name << "' : " << err) \
-			} \
-		}
+		*(void **)(&funcName) = dlsym(instance->handle, #funcName);
+#endif
+
+#ifdef _WINDOWS
+	#define LOAD_DLL_ERR \
+		 GetLastError()
+#else// LINUX
+	#define LOAD_DLL_ERR \
+		dlerror()
 #endif

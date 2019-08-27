@@ -92,5 +92,14 @@ namespace v4d {
 	V4DSYSTEM std::string GET_V4D_SYSTEM_BUILD_VERSION() {
 		return V4D_VERSION;
 	}
+	V4DSYSTEM std::string GetSystemName() {
+		return THIS_SYSTEM_NAME;
+	}
+	V4DSYSTEM int GetSystemRevision() {
+		return THIS_SYSTEM_REVISION;
+	}
+	V4DSYSTEM std::string GetSystemDescription() {
+		return THIS_SYSTEM_DESCRIPTION;
+	}
 #endif
 

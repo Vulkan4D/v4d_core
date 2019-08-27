@@ -1,9 +1,3 @@
-/**
- * This helper is part of Vulkan4D (open source project)
- * 
- * @author Olivier St-Laurent
- * @date 2019-06-18
- */
 #pragma once
 
 namespace v4d {
