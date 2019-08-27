@@ -8,7 +8,7 @@ namespace v4d::tests {
 		v4d::ByteStream bs(1024);
 
 		{// Test 1
-			bs  << (int)	54
+			bs	<< (int)	54
 				<< (bool)	true
 				<< (float)	40.5
 				<< (double)	5.5

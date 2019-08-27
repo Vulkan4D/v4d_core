@@ -4,6 +4,8 @@
 	typedef std::uint8_t byte;
 #endif
 
+#define BYTE_MAX_VALUE 255
+
 typedef std::uint16_t ushort;
 typedef std::uint32_t uint;
 typedef std::uint64_t ulong;

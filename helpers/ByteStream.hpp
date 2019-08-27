@@ -18,7 +18,7 @@ namespace v4d {
 			readBufferCursor = 0;
 		}
 
-		INLINE virtual void WriteBytes(const byte* data, size_t n) {
+		INLINE virtual void WriteBytes(const byte* data, const size_t& n) {
 			std::lock_guard lock(writeMutex);
 			if ((writeBuffer.size() + n) > writeBuffer.capacity()) {
 				Flush();
@@ -26,7 +26,7 @@ namespace v4d {
 			writeBuffer.insert(writeBuffer.end(), data, data+n);
 		}
 
-		INLINE virtual void ReadBytes(byte* data, size_t n) {
+		INLINE virtual void ReadBytes(byte* data, const size_t& n) {
 			std::unique_lock lock(readMutex);
 			readBufferCondition.wait(lock, [this, n]{
 				return n <= (this->readBuffer.size() - this->readBufferCursor);
@@ -70,18 +70,18 @@ namespace v4d {
 		}
 
 
-		// Variable-Size items
+		// Variable-Size size (1 or 9 bytes)
 		INLINE void WriteSize(const size_t& size) {
-			if (size < 255) {
+			if (size < BYTE_MAX_VALUE) {
 				Write((byte)size);
 			} else {
-				Write((byte)255);
+				Write((byte)BYTE_MAX_VALUE);
 				Write((size_t)size);
 			}
 		}
 		INLINE size_t ReadSize() {
 			size_t size = Read<byte>();
-			if (size == 255) {
+			if (size == BYTE_MAX_VALUE) {
 				Read(size);
 			}
 			return size;
