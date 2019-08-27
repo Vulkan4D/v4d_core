@@ -95,9 +95,9 @@ The core consists of the following structure :
 - iterators are `i`,`j`,`k` and `x`,`y`,`z`,`w`
 
 ### File Extensions
-- .cpp C++ Source Files compiled via g++, must have a matching .h (except main file)
-- .hpp Header-only source files (no matching .cpp)
-- .h C++ Header files included from a matching .cpp source file
-- .cxx C++ Reserved for Unit Tests
-- .hh C++ header-only files without any associated code
+- `.cpp` C++ Source Files compiled via g++, must have a matching .h (except main file)
+- `.hpp` C++ Header-only source files (no matching .cpp)
+- `.h` C++ Header files included from a matching .cpp source file
+- `.cxx` C++ source files Reserved for Unit Tests
+- `.hh` C++ header-only files without any associated code
 

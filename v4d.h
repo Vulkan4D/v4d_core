@@ -38,10 +38,10 @@
 #endif
 #ifdef _V4D_SYSTEM
 	#define V4DSYSTEM EXTERNC DLLEXPORT
-	#define V4DSYSTEM_CLASS(className) EXTERNC class DLLEXPORT className
+	// #define V4DSYSTEM_CLASS(className) EXTERNC class DLLEXPORT className
 #else// Project/Core
 	#define V4DSYSTEM
-	#define V4DSYSTEM_CLASS(className)
+	// #define V4DSYSTEM_CLASS(className)
 #endif
 
 
@@ -53,8 +53,9 @@
 #include "helpers/Timer.hpp"
 #include "helpers/Logger.hpp"
 #include "helpers/error.hpp"
-#include "helpers/SystemsLoader.hpp"
 #include "helpers/event.hpp"
+#include "helpers/SystemsLoader.hpp"
+#include "helpers/ByteStream.hpp"
 
 
 //////////////////////////////////////////////////////////
@@ -89,17 +90,22 @@ namespace v4d {
 // SYSTEMS
 
 #ifdef _V4D_SYSTEM
+	v4d::SystemsLoader* systemsLoader;
+
 	V4DSYSTEM std::string GET_V4D_SYSTEM_BUILD_VERSION() {
 		return V4D_VERSION;
 	}
-	V4DSYSTEM std::string GetSystemName() {
+	V4DSYSTEM std::string __GetSystemName() {
 		return THIS_SYSTEM_NAME;
 	}
-	V4DSYSTEM int GetSystemRevision() {
+	V4DSYSTEM int __GetSystemRevision() {
 		return THIS_SYSTEM_REVISION;
 	}
-	V4DSYSTEM std::string GetSystemDescription() {
+	V4DSYSTEM std::string __GetSystemDescription() {
 		return THIS_SYSTEM_DESCRIPTION;
+	}
+	V4DSYSTEM void __InitSystem(v4d::SystemsLoader* sysLoader) {
+		systemsLoader = sysLoader;
 	}
 #endif
 

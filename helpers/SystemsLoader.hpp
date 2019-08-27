@@ -17,46 +17,53 @@
 }
 
 namespace v4d {
+	class SystemsLoader;
+
 	struct SystemInstance : public SharedLibraryInstance {
 		std::string systemName;
 		std::string systemDescription;
 		int systemRevision;
+		SystemsLoader* systemsLoader;
 		bool loaded = false;
 
 		// System Metadata
-		__DEFINE_SYSTEM_FUNC(std::string, GetSystemName)
-		__DEFINE_SYSTEM_FUNC(std::string, GetSystemDescription)
-		__DEFINE_SYSTEM_FUNC(int, GetSystemRevision)
+		__DEFINE_SYSTEM_FUNC(std::string, __GetSystemName)
+		__DEFINE_SYSTEM_FUNC(std::string, __GetSystemDescription)
+		__DEFINE_SYSTEM_FUNC(int, __GetSystemRevision)
+		__DEFINE_SYSTEM_FUNC(void, __InitSystem, SystemsLoader*)
 		// Predefined optional functions
-		__DEFINE_SYSTEM_FUNC(void, OnSystemLoad)
-		__DEFINE_SYSTEM_FUNC(void, OnSystemDestroy)
+		__DEFINE_SYSTEM_FUNC(void, OnLoad)
+		__DEFINE_SYSTEM_FUNC(void, OnDestroy)
 
 		bool __LoadSystemFunctions() {
 			// System Metadata
-			__LOAD_SYSTEM_FUNC_REQUIRED(GetSystemName)
-			__LOAD_SYSTEM_FUNC_REQUIRED(GetSystemDescription)
-			__LOAD_SYSTEM_FUNC_REQUIRED(GetSystemRevision)
+			__LOAD_SYSTEM_FUNC_REQUIRED(__GetSystemName)
+			__LOAD_SYSTEM_FUNC_REQUIRED(__GetSystemDescription)
+			__LOAD_SYSTEM_FUNC_REQUIRED(__GetSystemRevision)
+			__LOAD_SYSTEM_FUNC_REQUIRED(__InitSystem)
 			// Predefined optional functions
-			__LOAD_SYSTEM_FUNC(OnSystemLoad)
-			__LOAD_SYSTEM_FUNC(OnSystemDestroy)
+			__LOAD_SYSTEM_FUNC(OnLoad)
+			__LOAD_SYSTEM_FUNC(OnDestroy)
 
 			return true;
 		}
 
-		SystemInstance(SharedLibraryInstance* libInstance, const std::string& sysName) {
+		SystemInstance(SharedLibraryInstance* libInstance, const std::string& sysName, SystemsLoader* loader) {
 			name = sysName;
 			path = libInstance->path;
 			handle = libInstance->handle;
+			systemsLoader = loader;
 			loaded = __LoadSystemFunctions();
 			if (loaded) {
-				systemName = GetSystemName();
-				systemDescription = GetSystemDescription();
-				systemRevision = GetSystemRevision();
-				if (OnSystemLoad) OnSystemLoad();
+				systemName = __GetSystemName();
+				systemDescription = __GetSystemDescription();
+				systemRevision = __GetSystemRevision();
+				__InitSystem(systemsLoader);
+				if (OnLoad) OnLoad();
 			}
 		}
 		~SystemInstance() {
-			if (loaded && OnSystemDestroy) OnSystemDestroy();
+			if (loaded && OnDestroy) OnDestroy();
 		}
 	};
 
@@ -73,9 +80,8 @@ namespace v4d {
 
 		SystemInstance* Load(const std::string& sysName) {
 			std::lock_guard<std::mutex> lock(loadedSystemsMutex);
-			SystemInstance* systemInstance;
-			std::string libName = GetLibName(sysName);
 			if (loadedSystems.find(sysName) == loadedSystems.end()) {
+				std::string libName = GetLibName(sysName);
 				auto libInstance = SharedLibraryLoader::Load(libName, std::string("systems/") + sysName + "/" + sysName);
 				if (!libInstance) {
 					return nullptr;
@@ -95,7 +101,7 @@ namespace v4d {
 					return nullptr;
 				}
 
-				systemInstance = new SystemInstance(libInstance, sysName);
+				SystemInstance* systemInstance = new SystemInstance(libInstance, sysName, this);
 				if (!systemInstance->loaded) {
 					delete systemInstance;
 					SharedLibraryLoader::Unload(libName);
@@ -103,8 +109,9 @@ namespace v4d {
 				}
 
 				loadedSystems.emplace(sysName, systemInstance);
+				return systemInstance;
 			}
-			return systemInstance;
+			return loadedSystems[sysName];
 		}
 
 		void Unload(const std::string& sysName) override {

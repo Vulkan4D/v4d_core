@@ -29,7 +29,7 @@ namespace v4d {
 
 		SharedLibraryInstance(){}
 
-		~SharedLibraryInstance() {
+		virtual ~SharedLibraryInstance() {
 			if (handle) {
 				#ifdef _WINDOWS
 					FreeLibrary(handle);
