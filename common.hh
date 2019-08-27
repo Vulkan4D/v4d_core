@@ -14,4 +14,5 @@
 #include <future>
 #include <thread>
 #include <queue>
+#include <cstring>
 

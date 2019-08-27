@@ -1,6 +1,5 @@
 #include <limits>
 #include <vector>
-#include <cstring>
 #include <regex>
 #include <condition_variable>
 #include <cstdint>
