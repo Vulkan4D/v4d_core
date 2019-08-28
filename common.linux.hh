@@ -5,4 +5,6 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
+#define MAXBYTE 0xFF
+
 #include "common.hh"

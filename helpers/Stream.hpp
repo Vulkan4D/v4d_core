@@ -63,16 +63,16 @@ namespace v4d {
 		// Variable-Size size (1 or 9 bytes)
 		INLINE void WriteSize(const size_t& size) {
 			std::lock_guard lock(writeMutex);
-			if (size < BYTE_MAX_VALUE) {
+			if (size < MAXBYTE) {
 				Write((byte)size);
 			} else {
-				Write((byte)BYTE_MAX_VALUE);
+				Write((byte)MAXBYTE);
 				Write((size_t)size);
 			}
 		}
 		INLINE size_t ReadSize() {
 			size_t size = Read<byte>();
-			if (size == BYTE_MAX_VALUE) {
+			if (size == MAXBYTE) {
 				Read(size);
 			}
 			return size;

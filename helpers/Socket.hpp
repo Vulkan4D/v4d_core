@@ -6,6 +6,13 @@
 	#define SOCKET_BUFFER_SIZE 1024
 #endif
 
+#ifdef _WINDOWS
+	#define MSG_DONTWAIT 0
+	#define SO_REUSEPORT 0
+#else
+	#define INVALID_SOCKET -1
+#endif
+
 // https://docs.microsoft.com/en-us/windows/win32/winsock/porting-socket-applications-to-winsock
 
 namespace v4d {
@@ -24,20 +31,29 @@ namespace v4d {
 	protected:
 		SOCKET_TYPE type;
 		SOCKET_PROTOCOL protocol;
-		fd socket = -1;
-		bool bound = false, connected = false;
+		SOCKET socket = INVALID_SOCKET;
+		std::atomic<bool>	bound = false, 
+							connected = false, 
+							listening = false;
 		short port;
-		int so_reuse = 1;
-		int so_nodelay = 1;
+		char so_reuse = 1;
+		char so_nodelay = 1;
 		struct hostent *remoteHost;
-    	struct sockaddr_in serverAddr, clientAddr;
+    	struct sockaddr_in remoteAttr; // Used for bind, connect and sending data
+    	struct sockaddr_in incomingAddr; // Used as temporary addr for receiving(UDP) and listening(TCP)
 
 	public:
-		Socket(SOCKET_TYPE type, SOCKET_PROTOCOL protocol = IPV4) : Stream(SOCKET_BUFFER_SIZE), type(type), protocol(protocol) {
+		Socket(SOCKET_TYPE type, SOCKET_PROTOCOL protocol = IPV4)
+		 : Stream(SOCKET_BUFFER_SIZE), type(type), protocol(protocol) {
 			socket = ::socket(protocol, type, 0);
-			memset((char*) &serverAddr, 0, sizeof(serverAddr));
-			memset((char*) &clientAddr, 0, sizeof(clientAddr));
-			serverAddr.sin_family = protocol;
+			memset((char*) &remoteAttr, 0, sizeof(remoteAttr));
+			remoteAttr.sin_family = protocol;
+		}
+
+		Socket(SOCKET socket, const sockaddr_in& addr, int addrLen, SOCKET_TYPE type, SOCKET_PROTOCOL protocol = IPV4)
+		 : Stream(SOCKET_BUFFER_SIZE), type(type), protocol(protocol), socket(socket) {
+			memset((char*) &remoteAttr, 0, sizeof(remoteAttr));
+			memcpy((char*) &remoteAttr, &addr, addrLen);
 		}
 
 		~Socket() {
@@ -54,10 +70,18 @@ namespace v4d {
 			std::lock_guard lock(writeMutex);
 			if (IsValid() && IsConnected()) {
 				if (IsTCP()) {
-					::send(socket, writeBuffer.data(), writeBuffer.size(), MSG_DONTWAIT);
+					#if _WINDOWS
+						::send(socket, reinterpret_cast<const char*>(writeBuffer.data()), writeBuffer.size(), MSG_DONTWAIT);
+					#else
+						::send(socket, writeBuffer.data(), writeBuffer.size(), MSG_DONTWAIT);
+					#endif
 				} else 
 				if (IsUDP()) {
-					::sendto(socket, writeBuffer.data(), writeBuffer.size(), MSG_DONTWAIT, (const struct sockaddr*) &serverAddr, sizeof(serverAddr));
+					#if _WINDOWS
+						::sendto(socket, reinterpret_cast<const char*>(writeBuffer.data()), writeBuffer.size(), MSG_DONTWAIT, (const struct sockaddr*) &remoteAttr, sizeof(remoteAttr));
+					#else
+						::sendto(socket, writeBuffer.data(), writeBuffer.size(), MSG_DONTWAIT, (const struct sockaddr*) &remoteAttr, sizeof(remoteAttr));
+					#endif
 				}
 			}
 			writeBuffer.resize(0);
@@ -67,11 +91,20 @@ namespace v4d {
 		virtual Socket& ReadBytes(byte* data, const size_t& n) override {
 			if (IsValid() && IsConnected()) {
 				if (IsTCP()) {
-					::recv(socket, data, n, MSG_WAITALL);
+					#if _WINDOWS
+						::recv(socket, reinterpret_cast<char*>(data), n, MSG_WAITALL);
+					#else
+						::recv(socket, data, n, MSG_WAITALL);
+					#endif
 				} else 
 				if (IsUDP()) {
+					memset((char*) &incomingAddr, 0, sizeof(incomingAddr));
 					socklen_t addrLen;
-					::recvfrom(socket, data, n, MSG_WAITALL, (struct sockaddr*) &clientAddr, &addrLen);
+					#if _WINDOWS
+						::recvfrom(socket, reinterpret_cast<char*>(data), n, MSG_WAITALL, (struct sockaddr*) &incomingAddr, &addrLen);
+					#else
+						::recvfrom(socket, data, n, MSG_WAITALL, (struct sockaddr*) &incomingAddr, &addrLen);
+					#endif
 				}
 			}
 			return *this;
@@ -101,13 +134,13 @@ namespace v4d {
 
 		////////////////////////////////////////////////////////////////////////////
 
-		virtual bool Bind(short port, in_addr_t addr = INADDR_ANY) {
+		virtual bool Bind(short port, long addr = INADDR_ANY) {
 			if (!IsValid() || IsBound()) return false;
 
 			this->port = port;
 
-			serverAddr.sin_port = htons(port);
-			serverAddr.sin_addr.s_addr = htonl(addr);
+			remoteAttr.sin_port = htons(port);
+			remoteAttr.sin_addr.s_addr = htonl(addr);
 			
 			// Socket Options
 			::setsockopt(socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &so_reuse, sizeof(so_reuse));
@@ -116,24 +149,27 @@ namespace v4d {
 			}
 			
 			// Bind socket
-			bound = (::bind(socket, (const struct sockaddr*) &serverAddr, sizeof(serverAddr)) >= 0);
+			bound = (::bind(socket, (const struct sockaddr*) &remoteAttr, sizeof(remoteAttr)) >= 0);
 			return bound;
 		}
 
 		virtual bool Connect(const std::string& host, const short& port) {
 			if (!IsValid() || IsBound() || IsConnected()) return false;
 
-			serverAddr.sin_port = htons(port);
+			remoteAttr.sin_port = htons(port);
 
-			// Quick method, must include <arpa/inet.h>
-				// ::inet_pton(protocol, host.c_str(), &serverAddr.sin_addr);
+			//TODO try all these
+			// Quick method (for Linux), must include <arpa/inet.h>
+				// ::inet_pton(protocol, host.c_str(), &remoteAttr.sin_addr);
+			// Quick method (for Windows)
+				// remoteAttr.sin_addr.s_addr = ::inet_addr(host.c_str());
 			// Complex method, no additional include
 				remoteHost = gethostbyname(host.c_str());
 				if (remoteHost == NULL) return false;
-				memcpy((char *) &serverAddr.sin_addr.s_addr, (char *) remoteHost->h_addr, remoteHost->h_length);
+				memcpy((char *) &remoteAttr.sin_addr.s_addr, (char *) remoteHost->h_addr, remoteHost->h_length);
 
 			if (IsTCP()) {
-				connected = (::connect(socket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) >= 0);
+				connected = (::connect(socket, (struct sockaddr*)&remoteAttr, sizeof(remoteAttr)) >= 0);
 			} else {
 				connected = true;
 			}
@@ -145,10 +181,18 @@ namespace v4d {
 			//TODO
 		}
 
-		virtual void StartListening() {
-			if (!IsTCP()) return;
+		virtual void StartListening(std::function<void(Socket)> newSocketCallback, int backlog = SOMAXCONN) {
 			if (!IsValid() || !IsBound()) return;
-			//TODO
+			if (IsTCP()) {
+				listening = (::listen(socket, backlog) >= 0);
+				while (listening) {
+					memset((char*) &incomingAddr, 0, sizeof(incomingAddr));
+					socklen_t addrLen;
+					SOCKET clientSocket = ::accept(socket, (struct sockaddr*)&incomingAddr, &addrLen);
+					newSocketCallback(Socket(clientSocket, incomingAddr, addrLen, type, protocol));
+				}
+			}
+			listening = false;
 		}
 
 	};
