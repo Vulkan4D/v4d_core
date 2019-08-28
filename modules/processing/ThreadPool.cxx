@@ -14,39 +14,39 @@ namespace v4d::tests {
 
 			// Task 1
 			auto future1 = threadPool.Promise([&timer] {
-				SLEEP(2s)
+				SLEEP(200ms)
 				return 111;
 			});
-			if (timer.GetElapsedMilliseconds() > 100) {
+			if (timer.GetElapsedMilliseconds() > 10) {
 				LOG_ERROR("v4d::tests::ThreadPool ERROR 1.1 (task not enqueued asynchronously)")
 				return 1;
 			}
 
 			// Task 2
 			auto future2 = threadPool.Promise([&timer] {
-				SLEEP(1s)
+				SLEEP(100ms)
 				return 222;
 			});
-			if (timer.GetElapsedMilliseconds() > 100) {
+			if (timer.GetElapsedMilliseconds() > 10) {
 				LOG_ERROR("v4d::tests::ThreadPool ERROR 1.2 (task not enqueued asynchronously)")
 				return 1;
 			}
 
 			// Task 3
 			auto future3 = threadPool.Promise([&timer] {
-				SLEEP(3s)
+				SLEEP(300ms)
 				return 333;
 			});
-			if (timer.GetElapsedMilliseconds() > 100) {
+			if (timer.GetElapsedMilliseconds() > 10) {
 				LOG_ERROR("v4d::tests::ThreadPool ERROR 1.3 (task not enqueued asynchronously)")
 				return 1;
 			}
 
 			// Task 4
 			threadPool.Enqueue([&timer] {
-				SLEEP(4s)
-			}, 1000);
-			if (timer.GetElapsedMilliseconds() > 100) {
+				SLEEP(400ms)
+			}, 100);
+			if (timer.GetElapsedMilliseconds() > 10) {
 				LOG_ERROR("v4d::tests::ThreadPool ERROR 1.4 (task not enqueued asynchronously)")
 				return 1;
 			}
@@ -58,17 +58,17 @@ namespace v4d::tests {
 				} catch (...) {
 					return 0;
 				}
-			}, 4s); // delay of 4 seconds
-			if (timer.GetElapsedMilliseconds() > 100) {
+			}, 400ms); // delay of 400 milliseconds
+			if (timer.GetElapsedMilliseconds() > 10) {
 				LOG_ERROR("v4d::tests::ThreadPool ERROR 1.5 (task not enqueued asynchronously)")
 				return 1;
 			}
 
 			// Task 6
 			auto future6 = threadPool.Promise([&timer] {
-				return timer.GetElapsedSeconds();
-			}, 1000ms); // delay of 1 second
-			if (timer.GetElapsedMilliseconds() > 100) {
+				return timer.GetElapsedMilliseconds();
+			}, 100ms); // delay of 100 milliseconds
+			if (timer.GetElapsedMilliseconds() > 10) {
 				LOG_ERROR("v4d::tests::ThreadPool ERROR 1.6 (task not enqueued asynchronously)")
 				return 1;
 			}
@@ -83,8 +83,8 @@ namespace v4d::tests {
 
 			try {
 				double task6Result = future6.get().get();
-				if (task6Result < 1 || task6Result > 2.1) {
-					LOG_ERROR("v4d::tests::ThreadPool ERROR 2 (task 6 executed after " << task6Result << " seconds instead of ~1.0-2.1)")
+				if (task6Result < 100 || task6Result > 203) {
+					LOG_ERROR("v4d::tests::ThreadPool ERROR 2 (task 6 executed after " << task6Result << " milliseconds instead of ~100-203)")
 					return 1;
 				}
 			} catch (std::exception& e) {
@@ -99,9 +99,9 @@ namespace v4d::tests {
 			return 1;
 		}
 
-		double elapsedTime = timer.GetElapsedSeconds();
-		if (elapsedTime < 5 || elapsedTime > 5.1) {
-			LOG_ERROR("v4d::tests::ThreadPool ERROR 4 (execution time was " << elapsedTime << " seconds instead of ~5.0-5.1 seconds)")
+		double elapsedTime = timer.GetElapsedMilliseconds();
+		if (elapsedTime < 500 || elapsedTime > 503) {
+			LOG_ERROR("v4d::tests::ThreadPool ERROR 4 (execution time was " << elapsedTime << " milliseconds instead of ~500-503)")
 			return 1;
 		}
 
@@ -111,11 +111,11 @@ namespace v4d::tests {
 			v4d::processing::ThreadPool threadPool(1);
 			{
 				auto t1 = threadPool.Promise([] {
-					SLEEP(1s)
+					SLEEP(100ms)
 					return 0;
 				});
 				auto t2 = threadPool.Promise([] {
-					SLEEP(1s)
+					SLEEP(100ms)
 					return 0;
 				});
 				try {
@@ -127,9 +127,9 @@ namespace v4d::tests {
 					LOG_ERROR("v4d::tests::ThreadPool UNKNOWN EXCEPTION 3")
 				}
 			}
-			elapsedTime = timer.GetElapsedSeconds();
-			if (elapsedTime < 2 || elapsedTime > 2.1) {
-				LOG_ERROR("v4d::tests::ThreadPool ERROR 5 (execution time was " << elapsedTime << " seconds instead of ~2.0-2.1 seconds)")
+			elapsedTime = timer.GetElapsedMilliseconds();
+			if (elapsedTime < 200 || elapsedTime > 203) {
+				LOG_ERROR("v4d::tests::ThreadPool ERROR 5 (execution time was " << elapsedTime << " milliseconds instead of ~200-203)")
 				return 1;
 			}
 
@@ -137,15 +137,15 @@ namespace v4d::tests {
 			threadPool.SetNbThreads(3);
 			{
 				auto t1 = threadPool.Promise([] {
-					SLEEP(1s)
+					SLEEP(100ms)
 					return 0;
 				});
 				auto t2 = threadPool.Promise([] {
-					SLEEP(1s)
+					SLEEP(100ms)
 					return 0;
 				});
 				auto t3 = threadPool.Promise([] {
-					SLEEP(1s)
+					SLEEP(100ms)
 					return 0;
 				});
 				try {
@@ -158,9 +158,9 @@ namespace v4d::tests {
 					LOG_ERROR("v4d::tests::ThreadPool UNKNOWN EXCEPTION 4")
 				}
 			}
-			elapsedTime = timer.GetElapsedSeconds();
-			if (elapsedTime < 1 || elapsedTime > 1.1) {
-				LOG_ERROR("v4d::tests::ThreadPool ERROR 6 (execution time was " << elapsedTime << " seconds instead of ~1.0-1.1 seconds)")
+			elapsedTime = timer.GetElapsedMilliseconds();
+			if (elapsedTime < 100 || elapsedTime > 103) {
+				LOG_ERROR("v4d::tests::ThreadPool ERROR 6 (execution time was " << elapsedTime << " milliseconds instead of ~100-103)")
 				return 1;
 			}
 
@@ -168,15 +168,15 @@ namespace v4d::tests {
 			threadPool.SetNbThreads(2);
 			{
 				auto t1 = threadPool.Promise([] {
-					SLEEP(1s)
+					SLEEP(100ms)
 					return 0;
 				});
 				auto t2 = threadPool.Promise([] {
-					SLEEP(1s)
+					SLEEP(100ms)
 					return 0;
 				});
 				auto t3 = threadPool.Promise([] {
-					SLEEP(1s)
+					SLEEP(100ms)
 					return 0;
 				});
 				try {
@@ -189,9 +189,9 @@ namespace v4d::tests {
 					LOG_ERROR("v4d::tests::ThreadPool UNKNOWN EXCEPTION 5")
 				}
 			}
-			elapsedTime = timer.GetElapsedSeconds();
-			if (elapsedTime < 2 || elapsedTime > 2.1) {
-				LOG_ERROR("v4d::tests::ThreadPool ERROR 7 (execution time was " << elapsedTime << " seconds instead of ~2.0-2.1 seconds)")
+			elapsedTime = timer.GetElapsedMilliseconds();
+			if (elapsedTime < 200 || elapsedTime > 203) {
+				LOG_ERROR("v4d::tests::ThreadPool ERROR 7 (execution time was " << elapsedTime << " milliseconds instead of ~200-203)")
 				return 1;
 			}
 

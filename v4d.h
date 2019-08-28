@@ -55,7 +55,9 @@
 #include "helpers/error.hpp"
 #include "helpers/event.hpp"
 #include "helpers/SystemsLoader.hpp"
-#include "helpers/ByteStream.hpp"
+#include "helpers/Stream.hpp"
+#include "helpers/DataStream.hpp"
+#include "helpers/Socket.hpp"
 
 
 //////////////////////////////////////////////////////////

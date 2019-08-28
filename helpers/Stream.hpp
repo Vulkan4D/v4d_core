@@ -3,61 +3,51 @@
 #include <v4d.h>
 
 namespace v4d {
-	class ByteStream {
+	class Stream {
 	protected:
-		std::mutex readMutex, writeMutex;
-		std::vector<byte> readBuffer, writeBuffer;
-		std::condition_variable readBufferCondition;
-		index_int readBufferCursor;
+		std::recursive_mutex writeMutex;
+		std::vector<byte> writeBuffer;
 
 	public:
 
-		ByteStream(size_t writeBufferSize) {
+		Stream(size_t writeBufferSize) {
 			writeBuffer.reserve(writeBufferSize);
-			readBuffer.reserve(writeBufferSize);
-			readBufferCursor = 0;
 		}
 
-		INLINE virtual void WriteBytes(const byte* data, const size_t& n) {
+		virtual ~Stream(){}
+
+		virtual Stream& WriteBytes(const byte* data, const size_t& n) {
 			std::lock_guard lock(writeMutex);
 			if ((writeBuffer.size() + n) > writeBuffer.capacity()) {
 				Flush();
 			}
 			writeBuffer.insert(writeBuffer.end(), data, data+n);
+			return *this;
 		}
 
-		INLINE virtual void ReadBytes(byte* data, const size_t& n) {
-			std::unique_lock lock(readMutex);
-			readBufferCondition.wait(lock, [this, n]{
-				return n <= (this->readBuffer.size() - this->readBufferCursor);
-			});
-			std::memcpy(data, readBuffer.data() + readBufferCursor, n);
-			readBufferCursor += n;
+
+		// Lock / Unlock
+		INLINE void LockWriteBuffer() {
+			writeMutex.lock();
+		}
+		INLINE void UnlockWriteBuffer() {
+			writeMutex.unlock();
 		}
 
-		INLINE virtual void Flush() {
-			std::scoped_lock lock(readMutex, writeMutex);
-			if (readBufferCursor == readBuffer.size()) {
-				readBuffer = writeBuffer;
-				readBufferCursor = 0;
-			} else {
-				readBuffer.insert(readBuffer.end(), writeBuffer.begin(), writeBuffer.end());
-			}
-			writeBuffer.resize(0);
-			readBufferCondition.notify_one();
-		}
+
+		// Pure-Virtual methods (MUST override)
+		virtual Stream& ReadBytes(byte* data, const size_t& n) = 0;
+		virtual Stream& Flush() = 0;
 
 
 		// Read/Write methods
 		template<typename T>
-		INLINE ByteStream& Write(const T& data) {
-			WriteBytes(reinterpret_cast<const byte*>(&data), sizeof(T));
-			return *this;
+		INLINE Stream& Write(const T& data) {
+			return WriteBytes(reinterpret_cast<const byte*>(&data), sizeof(T));
 		}
 		template<typename T>
-		INLINE ByteStream& Read(T& data) {
-			ReadBytes(reinterpret_cast<byte*>(&data), sizeof(T));
-			return *this;
+		INLINE Stream& Read(T& data) {
+			return ReadBytes(reinterpret_cast<byte*>(&data), sizeof(T));
 		}
 
 
@@ -72,6 +62,7 @@ namespace v4d {
 
 		// Variable-Size size (1 or 9 bytes)
 		INLINE void WriteSize(const size_t& size) {
+			std::lock_guard lock(writeMutex);
 			if (size < BYTE_MAX_VALUE) {
 				Write((byte)size);
 			} else {
@@ -89,12 +80,13 @@ namespace v4d {
 
 
 		// Strings
-		INLINE ByteStream& Write(const std::string& data) {
+		INLINE Stream& Write(const std::string& data) {
+			std::lock_guard lock(writeMutex);
 			WriteSize(data.size());
 			WriteBytes(reinterpret_cast<const byte*>(data.c_str()), data.size());
 			return *this;
 		}
-		INLINE ByteStream& Read(std::string& data) {
+		INLINE Stream& Read(std::string& data) {
 			size_t size(ReadSize());
 			char chars[size];
 			ReadBytes(reinterpret_cast<byte*>(chars), size);
@@ -105,19 +97,21 @@ namespace v4d {
 
 		// Containers (vector or other containers that have the following methods: .size(), .clear(), .reserve() and .push_back())
 		template<template<typename, typename> class Container, typename T>
-		INLINE ByteStream& Write(const Container<T, std::allocator<T>>& data) {
+		INLINE Stream& Write(const Container<T, std::allocator<T>>& data) {
+			std::lock_guard lock(writeMutex);
 			WriteSize(data.size());
 			for (const T& item : data) Write(item);
 			return *this;
 		}
 		template<template<typename, typename> class Container, typename T>
-		INLINE ByteStream& Read(Container<T, std::allocator<T>>& data) {
+		INLINE Stream& Read(Container<T, std::allocator<T>>& data) {
 			size_t size(ReadSize());
 			data.clear();
 			data.reserve(size);
 			for (size_t i = 0; i < size; i++) data.push_back(Read<T>());
 			return *this;
 		}
+		// Return-Read with container
 		template<template<typename, typename> class Container, typename T>
 		INLINE Container<T, std::allocator<T>> Read() {
 			Container<T, std::allocator<T>> data;
@@ -128,37 +122,34 @@ namespace v4d {
 
 		// Stream Operators overloading (generic)
 		template<typename T>
-		INLINE ByteStream& operator<<(const T& data) {
-			Write(data);
-			return *this;
+		INLINE Stream& operator<<(const T& data) {
+			return Write(data);
 		}
 		template<typename T>
-		INLINE ByteStream& operator>>(T& data) {
-			Read(data);
-			return *this;
+		INLINE Stream& operator>>(T& data) {
+			return Read(data);
 		}
 
 
 		// Stream Operators overloading (containers)
 		template<template<typename, typename> class Container, typename T>
-		INLINE ByteStream& operator<<(const Container<T, std::allocator<T>>& data) {
-			Write<Container, T>(data);
-			return *this;
+		INLINE Stream& operator<<(const Container<T, std::allocator<T>>& data) {
+			return Write<Container, T>(data);
 		}
 		template<template<typename, typename> class Container, typename T>
-		INLINE ByteStream& operator>>(Container<T, std::allocator<T>>& data) {
-			Read<Container, T>(data);
-			return *this;
+		INLINE Stream& operator>>(Container<T, std::allocator<T>>& data) {
+			return Read<Container, T>(data);
 		}
 
 
 		// Variadic templates
 		template<typename ...Args>
-		INLINE ByteStream& Write(const Args&... args) {
+		INLINE Stream& Write(const Args&... args) {
+			std::lock_guard lock(writeMutex);
 			return (..., this->Write<Args>(args));
 		}
 		template<typename ...Args>
-		INLINE ByteStream& Read(Args&... args) {
+		INLINE Stream& Read(Args&... args) {
 			return (..., this->Read<Args>(args));
 		}
 

@@ -15,3 +15,4 @@ typedef std::uint16_t index_65k;
 typedef std::uint32_t index_int;
 typedef std::uint64_t index_long;
 
+typedef int fd;
