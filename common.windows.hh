@@ -1,6 +1,6 @@
 #ifdef _WINDOWS
-	#include <direct.h>
 	#include <winsock2.h>
+	#include <direct.h>
 	#include <ws2tcpip.h>
 	#include <windows.h>
 

@@ -83,8 +83,8 @@ namespace v4d::tests {
 
 			try {
 				double task6Result = future6.get().get();
-				if (task6Result < 100 || task6Result > 203) {
-					LOG_ERROR("v4d::tests::ThreadPool ERROR 2 (task 6 executed after " << task6Result << " milliseconds instead of ~100-203)")
+				if (task6Result < 100 || task6Result > 210) {
+					LOG_ERROR("v4d::tests::ThreadPool ERROR 2 (task 6 executed after " << task6Result << " milliseconds instead of ~100-210)")
 					return 1;
 				}
 			} catch (std::exception& e) {
@@ -100,8 +100,8 @@ namespace v4d::tests {
 		}
 
 		double elapsedTime = timer.GetElapsedMilliseconds();
-		if (elapsedTime < 500 || elapsedTime > 503) {
-			LOG_ERROR("v4d::tests::ThreadPool ERROR 4 (execution time was " << elapsedTime << " milliseconds instead of ~500-503)")
+		if (elapsedTime < 500 || elapsedTime > 510) {
+			LOG_ERROR("v4d::tests::ThreadPool ERROR 4 (execution time was " << elapsedTime << " milliseconds instead of ~500-510)")
 			return 1;
 		}
 
@@ -128,8 +128,8 @@ namespace v4d::tests {
 				}
 			}
 			elapsedTime = timer.GetElapsedMilliseconds();
-			if (elapsedTime < 200 || elapsedTime > 203) {
-				LOG_ERROR("v4d::tests::ThreadPool ERROR 5 (execution time was " << elapsedTime << " milliseconds instead of ~200-203)")
+			if (elapsedTime < 200 || elapsedTime > 210) {
+				LOG_ERROR("v4d::tests::ThreadPool ERROR 5 (execution time was " << elapsedTime << " milliseconds instead of ~200-210)")
 				return 1;
 			}
 
@@ -159,8 +159,8 @@ namespace v4d::tests {
 				}
 			}
 			elapsedTime = timer.GetElapsedMilliseconds();
-			if (elapsedTime < 100 || elapsedTime > 103) {
-				LOG_ERROR("v4d::tests::ThreadPool ERROR 6 (execution time was " << elapsedTime << " milliseconds instead of ~100-103)")
+			if (elapsedTime < 100 || elapsedTime > 110) {
+				LOG_ERROR("v4d::tests::ThreadPool ERROR 6 (execution time was " << elapsedTime << " milliseconds instead of ~100-110)")
 				return 1;
 			}
 
@@ -190,8 +190,8 @@ namespace v4d::tests {
 				}
 			}
 			elapsedTime = timer.GetElapsedMilliseconds();
-			if (elapsedTime < 200 || elapsedTime > 203) {
-				LOG_ERROR("v4d::tests::ThreadPool ERROR 7 (execution time was " << elapsedTime << " milliseconds instead of ~200-203)")
+			if (elapsedTime < 200 || elapsedTime > 210) {
+				LOG_ERROR("v4d::tests::ThreadPool ERROR 7 (execution time was " << elapsedTime << " milliseconds instead of ~200-210)")
 				return 1;
 			}
 

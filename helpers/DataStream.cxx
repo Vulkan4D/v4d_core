@@ -7,7 +7,7 @@ namespace v4d::tests {
 		int result = 100;
 		v4d::DataStream bs(1024);
 
-		{// Test 1
+		{// Test 1 (int, bool, float, double... using stream operators)
 			bs	<< (int)	54
 				<< (bool)	true
 				<< (float)	40.5
@@ -36,7 +36,7 @@ namespace v4d::tests {
 			}
 		}
 
-		{// Test 2
+		{// Test 2 (long, short... with a negative value)
 			result = 100;
 			std::thread tRead([&bs,&result]{
 				result -= bs.Read<long>();
@@ -54,7 +54,7 @@ namespace v4d::tests {
 			}
 		}
 
-		{// Test 3
+		{// Test 3 (multiple flush, each with multiple values of different sizes)
 			result = 100;
 			std::thread tRead([&bs,&result]{
 				result -= bs.Read<int>();
@@ -82,7 +82,7 @@ namespace v4d::tests {
 			}
 		}
 
-		{// Test 4
+		{// Test 4 (std::vector)
 			result = 100;
 			std::thread tRead([&bs,&result]{
 				for (const int& item : bs.Read<std::vector, int>()) {
@@ -101,7 +101,7 @@ namespace v4d::tests {
 			}
 		}
 
-		{// Test 5
+		{// Test 5 (std::array)
 			result = 100;
 			std::thread tRead([&bs,&result]{
 				std::array<int, 4> arr;
@@ -122,7 +122,7 @@ namespace v4d::tests {
 			}
 		}
 
-		{// Test 6
+		{// Test 6 (multidimentional arrays)
 			result = 100;
 			std::thread tRead([&bs,&result]{
 				int arr[4][2];
@@ -143,7 +143,7 @@ namespace v4d::tests {
 			}
 		}
 
-		{// Test 7
+		{// Test 7 (simple string)
 			result = 100;
 			std::thread tRead([&bs,&result]{
 				std::string str(bs.Read<std::string>());
@@ -162,7 +162,7 @@ namespace v4d::tests {
 			}
 		}
 
-		{// Test 8
+		{// Test 8 (long string list)
 			result = 100;
 			std::thread tRead([&bs,&result]{
 				std::vector<std::string> strList;
@@ -179,6 +179,25 @@ namespace v4d::tests {
 			tRead.join();
 			if (result != 0) {
 				LOG_ERROR(result << " Failed DataStream test8")
+				return result;
+			}
+		}
+
+		{// Test 9 (Variadic args)
+			result = 100;
+			std::thread tRead([&bs,&result]{
+				int a,b,c;
+				double d;
+				bs.Read<int, int, int, double>(a,b,c,d);
+				result -= a + b + c + d;
+			});
+
+			bs.Write<int, int, int, double>(50, 40, 20, -10.0);
+			bs.Flush();
+
+			tRead.join();
+			if (result != 0) {
+				LOG_ERROR(result << " Failed DataStream test9")
 				return result;
 			}
 		}

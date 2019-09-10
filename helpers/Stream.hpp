@@ -43,11 +43,29 @@ namespace v4d {
 		// Read/Write methods
 		template<typename T>
 		INLINE Stream& Write(const T& data) {
-			return WriteBytes(reinterpret_cast<const byte*>(&data), sizeof(T));
+			if constexpr (std::is_same_v<T, std::string>) {
+				// std::string
+				std::lock_guard lock(writeMutex);
+				WriteSize(data.size());
+				return WriteBytes(reinterpret_cast<const byte*>(data.c_str()), data.size());
+			} else {
+				// Any other type
+				return WriteBytes(reinterpret_cast<const byte*>(&data), sizeof(T));
+			}
 		}
 		template<typename T>
 		INLINE Stream& Read(T& data) {
-			return ReadBytes(reinterpret_cast<byte*>(&data), sizeof(T));
+			if constexpr (std::is_same_v<T, std::string>) {
+				// std::string
+				size_t size(ReadSize());
+				char chars[size];
+				ReadBytes(reinterpret_cast<byte*>(chars), size);
+				data.insert(0, chars, size);
+				return *this;
+			} else {
+				// Any other type
+				return ReadBytes(reinterpret_cast<byte*>(&data), sizeof(T));
+			}
 		}
 
 
@@ -64,10 +82,10 @@ namespace v4d {
 		INLINE void WriteSize(const size_t& size) {
 			std::lock_guard lock(writeMutex);
 			if (size < MAXBYTE) {
-				Write((byte)size);
+				Write((const byte)size);
 			} else {
-				Write((byte)MAXBYTE);
-				Write((size_t)size);
+				Write((const byte)MAXBYTE);
+				Write((const size_t)size);
 			}
 		}
 		INLINE size_t ReadSize() {
@@ -76,22 +94,6 @@ namespace v4d {
 				Read(size);
 			}
 			return size;
-		}
-
-
-		// Strings
-		INLINE Stream& Write(const std::string& data) {
-			std::lock_guard lock(writeMutex);
-			WriteSize(data.size());
-			WriteBytes(reinterpret_cast<const byte*>(data.c_str()), data.size());
-			return *this;
-		}
-		INLINE Stream& Read(std::string& data) {
-			size_t size(ReadSize());
-			char chars[size];
-			ReadBytes(reinterpret_cast<byte*>(chars), size);
-			data.insert(0, chars, size);
-			return *this;
 		}
 
 
@@ -123,7 +125,7 @@ namespace v4d {
 		// Stream Operators overloading (generic)
 		template<typename T>
 		INLINE Stream& operator<<(const T& data) {
-			return Write(data);
+			return Write((const T&)data);
 		}
 		template<typename T>
 		INLINE Stream& operator>>(T& data) {
@@ -146,7 +148,7 @@ namespace v4d {
 		template<typename ...Args>
 		INLINE Stream& Write(const Args&... args) {
 			std::lock_guard lock(writeMutex);
-			return (..., this->Write<Args>(args));
+			return (..., this->Write<const Args&>(args));
 		}
 		template<typename ...Args>
 		INLINE Stream& Read(Args&... args) {
@@ -156,3 +158,4 @@ namespace v4d {
 
 	};
 }
+
