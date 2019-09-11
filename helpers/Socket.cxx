@@ -8,10 +8,9 @@ namespace v4d::tests {
 
 			v4d::Socket server(TCP);
 
-			// DOES NOT WORK IN WINDOWS YET...
 			server.Bind(44444);
 
-			server.StartListening([](v4d::Socket s){
+			server.StartListeningThread([](v4d::Socket& s){
 				auto msg = s.Read<std::string>();
 				int a = s.Read<int>();
 				s.Write<int>(a * 2);
@@ -39,39 +38,41 @@ namespace v4d::tests {
 			}
 		}
 
-		// {// Test 2 (UDP)
-		// 	int result = 100;
+		{// Test 2 (UDP)
+			int result = 100;
 
-		// 	v4d::Socket server(UDP);
-		// 	server.Bind(44444);
+			v4d::Socket server(UDP);
+			server.Bind(44444);
 
-		// 	server.StartListeningUDP([&server](){
-		// 		auto msg = server.Read<std::string>();
-		// 		int a = server.Read<int>();
-		// 		server.Write<int>(a * 2);
-		// 		server.Write<long>(50);
-		// 		server.Write<short>(msg=="Hello Socket!"? 8 : 0);
-		// 		server.Flush();
-		// 	});
+			server.StartListeningThread([](v4d::Socket& s, int& result){
+				std::string msg;
+				msg = s.Read<std::string>();
+				int a = s.Read<int>();
+				int b = s.Read<int>();
+				if (msg == "Hello UDP!") result -= a + b + 45;
+			}, result);
 
-		// 	v4d::Socket client(UDP);
-		// 	client.Connect("127.0.0.1", 44444);
-		// 	client.Write<std::string>("Hello Socket!");
-		// 	client.Write<int>(21);
-		// 	client.Flush();
+			SLEEP(100ms)
+			
+			server.StopListening();
 
-		// 	result -= client.Read<int>();
-		// 	result -= client.Read<long>();
-		// 	result -= client.Read<short>();
+			v4d::Socket client(UDP);
+			client.Connect("127.0.0.1", 44444);
+			client.Write<std::string>("Hello UDP!");
+			client.Write<int>(20);
+			client.Write<int>(35);
+			client.Flush();
 
-		// 	client.Disconnect();
-		// 	server.Disconnect();
+			SLEEP(100ms)
+			
+			client.Disconnect();
+			server.Disconnect();
 
-		// 	if (result != 0) {
-		// 		LOG_ERROR("v4d::tests::Socket Error test2")
-		// 		return 1;
-		// 	}
-		// }
+			if (result != 0) {
+				LOG_ERROR(result << " v4d::tests::Socket Error test2")
+				return 2;
+			}
+		}
 
 		return 0;
 	}

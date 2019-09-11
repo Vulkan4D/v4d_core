@@ -39,6 +39,7 @@ namespace v4d {
 
 		// Socket Options
 		#if _WINDOWS
+			WSADATA wsaData;
 			char so_reuse = 1;
 			char so_nodelay = 1;
 		#else
@@ -53,74 +54,105 @@ namespace v4d {
 
 		std::thread listeningThread;
 
+		virtual void Send() override {
+			if (IsConnected()) {
+				if (IsTCP()) {
+					#if _WINDOWS
+						::send(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), _GetWriteBuffer_().size(), MSG_DONTWAIT);
+					#else
+						::send(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT);
+    					// ::write(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size());
+					#endif
+				} else 
+				if (IsUDP()) {
+					#if _WINDOWS
+						::sendto(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), _GetWriteBuffer_().size(), MSG_DONTWAIT, (const struct sockaddr*) &remoteAddr, sizeof remoteAddr);
+					#else
+						::sendto(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT, (const struct sockaddr*) &remoteAddr, sizeof remoteAddr);
+					#endif
+				}
+			} else {
+				//TODO error Not Connected ???
+				Disconnect();
+			}
+		}
+
+		virtual size_t Receive(byte* data, const size_t& maxBytesToRead) override {
+			size_t bytesRead = 0;
+			if (IsConnected()) {
+				if (IsTCP()) {
+					#if _WINDOWS
+						bytesRead = ::recv(socket, reinterpret_cast<char*>(data), maxBytesToRead, MSG_WAITALL);
+					#else
+						bytesRead = ::recv(socket, data, maxBytesToRead, MSG_WAITALL);
+						// bytesRead = ::read(socket, data, maxBytesToRead);
+					#endif
+				} else 
+				if (IsUDP()) {
+					memset((char*) &incomingAddr, 0, sizeof incomingAddr);
+					#if _WINDOWS
+						bytesRead = ::recvfrom(socket, reinterpret_cast<char*>(data), maxBytesToRead, MSG_WAITALL, (struct sockaddr*) &incomingAddr, &addrLen);
+					#else
+						bytesRead = ::recvfrom(socket, data, maxBytesToRead, MSG_WAITALL, (struct sockaddr*) &incomingAddr, &addrLen);
+					#endif
+				}
+			} else {
+				try {
+					memset(data, 0, maxBytesToRead);
+				} catch (...) {}
+				//TODO error Not Connected ???
+				Disconnect();
+			}
+			return bytesRead;
+		}
+
+		////////////////////////////////////////////////////////////////////////////
+
 	public:
 		Socket(SOCKET_TYPE type, SOCKET_PROTOCOL protocol = IPV4)
-		 : Stream(SOCKET_BUFFER_SIZE), type(type), protocol(protocol) {
+		 : Stream(SOCKET_BUFFER_SIZE, /*useReadBuffer*/type==UDP), type(type), protocol(protocol) {
+			#if _WINDOWS
+				if (WSAStartup(MAKEWORD(2,2), &wsaData) != 0) {
+					socket = INVALID_SOCKET;
+					return;
+				}
+				// LOG("WINSOCK STATUS: " << wsaData.szSystemStatus)
+			#endif
 			socket = ::socket(protocol, type, 0);
 			memset(&remoteAddr, 0, addrLen);
 			remoteAddr.sin_family = protocol;
 		}
 
 		Socket(SOCKET socket, const sockaddr_in& remoteAddr, SOCKET_TYPE type, SOCKET_PROTOCOL protocol = IPV4)
-		 : Stream(SOCKET_BUFFER_SIZE), type(type), protocol(protocol), socket(socket), connected(true), remoteAddr(remoteAddr) {}
+		 : Stream(SOCKET_BUFFER_SIZE, /*useReadBuffer*/type==UDP), type(type), protocol(protocol), socket(socket), connected(true), remoteAddr(remoteAddr) {}
 
 		~Socket() {
 			Disconnect();
 		}
 
-		virtual Socket& Flush() override {
-			std::lock_guard lock(writeMutex);
-			if (IsConnected()) {
-				if (IsTCP()) {
-					#if _WINDOWS
-						::send(socket, reinterpret_cast<const char*>(writeBuffer.data()), writeBuffer.size(), MSG_DONTWAIT);
-					#else
-						::send(socket, writeBuffer.data(), writeBuffer.size(), MSG_DONTWAIT);
-    					// ::write(socket, writeBuffer.data(), writeBuffer.size());
-					#endif
-				} else 
-				if (IsUDP()) {
-					#if _WINDOWS
-						::sendto(socket, reinterpret_cast<const char*>(writeBuffer.data()), writeBuffer.size(), MSG_DONTWAIT, (const struct sockaddr*) &remoteAddr, sizeof remoteAddr);
-					#else
-						::sendto(socket, writeBuffer.data(), writeBuffer.size(), MSG_DONTWAIT, (const struct sockaddr*) &remoteAddr, sizeof remoteAddr);
-					#endif
-				}
-			} else {
-				//TODO error Not Connected ???
-				Disconnect();
-			}
-			writeBuffer.resize(0);
-			return *this;
+		std::string GetLastError() const {
+			#if _WINDOWS
+				return std::to_string(WSAGetLastError());
+			#else
+				return "";
+			#endif
 		}
 
-		virtual Socket& ReadBytes(byte* data, const size_t& n) override {
-			if (IsConnected()) {
-				if (IsTCP()) {
-					#if _WINDOWS
-						::recv(socket, reinterpret_cast<char*>(data), n, MSG_WAITALL);
-					#else
-						::recv(socket, data, n, MSG_WAITALL);
-						// ::read(socket, data, n);
-					#endif
-				} else 
-				if (IsUDP()) {
-					memset((char*) &incomingAddr, 0, sizeof incomingAddr);
-					#if _WINDOWS
-						::recvfrom(socket, reinterpret_cast<char*>(data), n, MSG_WAITALL, (struct sockaddr*) &incomingAddr, &addrLen);
-					#else
-						::recvfrom(socket, data, n, MSG_WAITALL, (struct sockaddr*) &incomingAddr, &addrLen);
-					#endif
-				}
-			} else {
-				memset(data, 0, n);
-				//TODO error Not Connected ???
-				Disconnect();
-			}
-			return *this;
+		INLINE sockaddr_in GetRemoteAddress() const {
+			return remoteAddr;
 		}
 
-		////////////////////////////////////////////////////////////////////////////
+		INLINE sockaddr_in GetIncomingAddress() const {
+			return incomingAddr;
+		}
+
+		INLINE std::string GetRemoteIP() const {
+			return inet_ntoa(remoteAddr.sin_addr);
+		}
+
+		INLINE std::string GetIncomingIP() const {
+			return inet_ntoa(incomingAddr.sin_addr);
+		}
 
 		INLINE bool IsValid() const {
 			#ifdef _WINDOWS
@@ -171,15 +203,18 @@ namespace v4d {
 
 			remoteAddr.sin_port = htons(port);
 
-			//TODO try all these
-			// Quick method (for Linux), must include <arpa/inet.h>
-				// ::inet_pton(protocol, host.c_str(), &remoteAddr.sin_addr);
+			// Convert IP to socket address
+			#if _WINDOWS
 			// Quick method (for Windows)
-				// remoteAddr.sin_addr.s_addr = ::inet_addr(host.c_str());
+				remoteAddr.sin_addr.s_addr = ::inet_addr(host.c_str());
+			#else
+			// Quick method (for Linux), must include <arpa/inet.h>
+				::inet_pton(protocol, host.c_str(), &remoteAddr.sin_addr);
+			#endif
 			// Complex method, no additional include
-				remoteHost = gethostbyname(host.c_str());
-				if (remoteHost == NULL) return false;
-				memcpy((char *) &remoteAddr.sin_addr.s_addr, (char *) remoteHost->h_addr, remoteHost->h_length);
+				// remoteHost = gethostbyname(host.c_str());
+				// if (remoteHost == NULL) return false;
+				// memcpy((char *) &remoteAddr.sin_addr.s_addr, (char *) remoteHost->h_addr, remoteHost->h_length);
 
 			if (IsTCP()) {
 				connected = (::connect(socket, (struct sockaddr*)&remoteAddr, sizeof remoteAddr) >= 0);
@@ -191,32 +226,41 @@ namespace v4d {
 		}
 
 		virtual void Disconnect() {
-			if (listening) {
-				listening = false;
-				if (IsTCP()) {
-					::connect(::socket(protocol, type, 0), (struct sockaddr*)&remoteAddr, sizeof remoteAddr);
-				}
+			StopListening();
+			if (listeningThread.joinable()) {
 				listeningThread.join();
 			}
 			#ifdef _WINDOWS
 				::closesocket(socket);
+				WSACleanup();
 			#else
 				::close(socket);
 			#endif
 			socket = INVALID_SOCKET;
 		}
 
-		template<class Func>
-		void StartListening(Func newSocketCallback, int backlog = SOMAXCONN) {
+		virtual void StopListening() {
+			if (listening) {
+				listening = false;
+				if (IsTCP()) {
+					//TODO find a better way to stop listening on TCP socket
+					::connect(::socket(protocol, type, 0), (struct sockaddr*)&remoteAddr, sizeof remoteAddr);
+				}
+			}
+		}
+
+		template<class Func, class ...FuncArgs>
+		void StartListeningThread(Func newSocketCallback, FuncArgs&&... args) {
 			if (!IsBound()) return;
 			if (IsTCP()) {
-				listening = (::listen(socket, backlog) >= 0);
-				listeningThread = std::thread([this, &newSocketCallback]{
+				listening = (::listen(socket, SOMAXCONN) >= 0);
+				listeningThread = std::thread([this, &newSocketCallback, &args...]{
 					while (listening) {
 						memset(&incomingAddr, 0, addrLen);
 						SOCKET clientSocket = ::accept(socket, (struct sockaddr*)&incomingAddr, &addrLen);
 						if (listening) {
-							newSocketCallback(Socket(clientSocket, incomingAddr, type, protocol));
+							Socket s(clientSocket, incomingAddr, type, protocol);
+							newSocketCallback(s, args...);
 						} else {
 							#ifdef _WINDOWS
 								::closesocket(clientSocket);
@@ -227,22 +271,32 @@ namespace v4d {
 					}
 					listening = false;
 				});
+			} else if (IsUDP()) {
+				listening = true;
+				listeningThread = std::thread([this, &newSocketCallback, &args...]{
+					Socket s(socket, remoteAddr, type, protocol);
+					while (listening) {
+						newSocketCallback(s, args...);
+					}
+					listening = false;
+				});
 			}
 		}
 
-		// template<class Func>
-		// void StartListeningUDP(Func newSocketCallback, int backlog = SOMAXCONN) {
-		// 	if (!IsBound()) return;
-		// 	if (IsUDP()) {
-		// 		listening = true;
-		// 		listeningThread = std::thread([this, &newSocketCallback]{
-		// 			while (listening) {
-		// 				newSocketCallback();
-		// 			}
-		// 			listening = false;
-		// 		});
-		// 	}
-		// }
+		ReadOnlyStream ReadStream() {
+			std::lock_guard lock(readMutex);
+			size_t size = ReadSize();
+			byte data[size];
+			ReadBytes(data, size);
+			return ReadOnlyStream(data, size);
+		}
+
+		void WriteStream(Stream stream) {
+			std::lock_guard lock(writeMutex);
+			size_t size(stream._GetWriteBuffer_().size());
+			WriteSize(size);
+			WriteBytes(stream._GetWriteBuffer_().data(), size);
+		}
 
 	};
 }

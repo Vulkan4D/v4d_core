@@ -4,17 +4,98 @@
 
 namespace v4d {
 	class Stream {
-	protected:
-		std::recursive_mutex writeMutex;
+
+	private: // members
+
+		// Optional Read Buffer
+		bool useReadBuffer = false;
+		index_int readBufferCursor;
+		std::vector<byte> readBuffer;
+
 		std::vector<byte> writeBuffer;
 
-	public:
 
-		Stream(size_t writeBufferSize) {
-			writeBuffer.reserve(writeBufferSize);
+	public: // members
+
+		std::recursive_mutex writeMutex, readMutex;
+
+
+	protected: // Virtual methods to override for data sources
+
+		virtual void Send() {}
+		virtual size_t Receive(byte* data, const size_t& maxBytesToRead) {return 0;}
+
+
+	public: // Utility methods
+
+		// Lock / Unlock
+		INLINE void LockWrite() {
+			writeMutex.lock();
+		}
+		INLINE void UnlockWrite() {
+			writeMutex.unlock();
+		}
+		INLINE void LockRead() {
+			readMutex.lock();
+		}
+		INLINE void UnlockRead() {
+			readMutex.unlock();
+		}
+
+		// Buffer access
+		INLINE size_t GetReadBufferSize() {
+			std::lock_guard lock(readMutex);
+			return readBuffer.size();
+		}
+		INLINE size_t GetWriteBufferSize() {
+			std::lock_guard lock(readMutex);
+			return readBuffer.size();
+		}
+		INLINE void ClearReadBuffer() {
+			std::lock_guard lock(readMutex);
+			readBuffer.resize(0);
+		}
+		INLINE void ClearWriteBuffer() {
+			std::lock_guard lock(writeMutex);
+			writeBuffer.resize(0);
+		}
+		INLINE std::vector<byte>& _GetReadBuffer_() {
+			return readBuffer;
+		}
+		INLINE std::vector<byte>& _GetWriteBuffer_() {
+			return writeBuffer;
+		}
+
+
+	public: // Constructor & Destructor
+
+		Stream(size_t bufferSize, bool useReadBuffer = false) : useReadBuffer(useReadBuffer), readBufferCursor(0) {
+			if (bufferSize > 0) {
+				writeBuffer.reserve(bufferSize);
+			}
+			if (useReadBuffer) {
+				readBuffer.reserve(bufferSize);
+			}
 		}
 
 		virtual ~Stream(){}
+
+
+	public: // Read & Write
+
+		// Flush
+		virtual Stream& Flush() {
+			std::lock_guard lock(writeMutex);
+			Send();
+			writeBuffer.resize(0);
+			return *this;
+		}
+
+		INLINE void ResetReadBuffer() {
+			std::lock_guard lock(readMutex);
+			readBuffer.resize(0);
+			readBufferCursor = 0;
+		}
 
 		virtual Stream& WriteBytes(const byte* data, const size_t& n) {
 			std::lock_guard lock(writeMutex);
@@ -25,22 +106,61 @@ namespace v4d {
 			return *this;
 		}
 
-
-		// Lock / Unlock
-		INLINE void LockWriteBuffer() {
-			writeMutex.lock();
+		virtual Stream& ReadBytes(byte* data, const size_t& n) {
+			std::lock_guard lock(readMutex);
+			if (useReadBuffer) {
+				// Reset read buffer if we have read it completely
+				if (readBufferCursor == readBuffer.size()) {
+					ResetReadBuffer();
+				}
+				size_t remainingDataInBuffer = readBuffer.size() - readBufferCursor;
+				// If we are missing data from buffer, fetch more from source
+				if (remainingDataInBuffer < n) {
+					size_t remainingDataToReceive = n - remainingDataInBuffer;
+					size_t maxReadSize = readBuffer.capacity() - readBufferCursor;
+					// If we dont have enough space left in our buffer, remove elements that are already read
+					if (maxReadSize < remainingDataToReceive) {
+						if (readBufferCursor == readBuffer.size()) {
+							// If we were finished with the buffer, we should reset it
+							maxReadSize = readBuffer.capacity();
+						} else {
+							// Erase only the part that we already read from the buffer
+							readBuffer.erase(readBuffer.begin(), readBuffer.begin() + readBufferCursor);
+							maxReadSize = readBuffer.capacity() - readBuffer.size();
+						}
+						readBufferCursor = 0;
+						// If we still dont have enough space left in our buffer, ERROR
+						if (maxReadSize < remainingDataToReceive) {
+							LOG_ERROR("Stream ReadBuffer capacity exceeded")
+							ResetReadBuffer();
+							std::memset(data, 0, n);
+							return *this;
+						}
+					}
+					// temporary resize the buffer to fit new data
+					readBuffer.resize(readBufferCursor + maxReadSize);
+					// Actually receive the new data (and put it directly in the buffer)
+					size_t bytesRead = Receive(readBuffer.data(), maxReadSize);
+					if (bytesRead == 0) {
+						LOG_ERROR("Stream ReadBuffer received 0 bytes")
+						ResetReadBuffer();
+						std::memset(data, 0, n);
+						return *this;
+					}
+					// Resize the buffer to its final size to include the new data received
+					if (bytesRead != maxReadSize) readBuffer.resize(readBufferCursor + bytesRead);
+				}
+				std::memcpy(data, readBuffer.data() + readBufferCursor, n);
+				readBufferCursor += n;
+			} else {
+				Receive(data, n);
+			}
+			return *this;
 		}
-		INLINE void UnlockWriteBuffer() {
-			writeMutex.unlock();
-		}
 
 
-		// Pure-Virtual methods (MUST override)
-		virtual Stream& ReadBytes(byte* data, const size_t& n) = 0;
-		virtual Stream& Flush() = 0;
+	public: // Read & Write (Overloads & Templates)
 
-
-		// Read/Write methods
 		template<typename T>
 		INLINE Stream& Write(const T& data) {
 			if constexpr (std::is_same_v<T, std::string>) {
@@ -57,6 +177,7 @@ namespace v4d {
 		INLINE Stream& Read(T& data) {
 			if constexpr (std::is_same_v<T, std::string>) {
 				// std::string
+				std::lock_guard lock(readMutex);
 				size_t size(ReadSize());
 				char chars[size];
 				ReadBytes(reinterpret_cast<byte*>(chars), size);
@@ -89,6 +210,7 @@ namespace v4d {
 			}
 		}
 		INLINE size_t ReadSize() {
+			std::lock_guard lock(readMutex);
 			size_t size = Read<byte>();
 			if (size == MAXBYTE) {
 				Read(size);
@@ -107,6 +229,7 @@ namespace v4d {
 		}
 		template<template<typename, typename> class Container, typename T>
 		INLINE Stream& Read(Container<T, std::allocator<T>>& data) {
+			std::lock_guard lock(readMutex);
 			size_t size(ReadSize());
 			data.clear();
 			data.reserve(size);
@@ -152,6 +275,7 @@ namespace v4d {
 		}
 		template<typename ...Args>
 		INLINE Stream& Read(Args&... args) {
+			std::lock_guard lock(readMutex);
 			return (..., this->Read<Args>(args));
 		}
 

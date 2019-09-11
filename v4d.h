@@ -57,6 +57,7 @@
 #include "helpers/SystemsLoader.hpp"
 #include "helpers/Stream.hpp"
 #include "helpers/DataStream.hpp"
+#include "helpers/ReadOnlyStream.hpp"
 #include "helpers/Socket.hpp"
 
 

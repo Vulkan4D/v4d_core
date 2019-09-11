@@ -31,7 +31,7 @@ namespace v4d::tests {
 				result -= (c+d);
 			}
 			if (result != 0) {
-				LOG_ERROR("Failed DataStream test1")
+				LOG_ERROR(result << " Failed DataStream test1")
 				return result;
 			}
 		}
@@ -49,7 +49,7 @@ namespace v4d::tests {
 
 			tRead.join();
 			if (result != 0) {
-				LOG_ERROR("Failed DataStream test2")
+				LOG_ERROR(result << " Failed DataStream test2")
 				return result;
 			}
 		}
@@ -77,7 +77,7 @@ namespace v4d::tests {
 
 			tRead.join();
 			if (result != 0) {
-				LOG_ERROR("Failed DataStream test3")
+				LOG_ERROR(result << " Failed DataStream test3")
 				return result;
 			}
 		}
