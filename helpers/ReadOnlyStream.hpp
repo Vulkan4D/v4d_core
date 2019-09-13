@@ -12,7 +12,7 @@ namespace v4d {
 
 		ReadOnlyStream() : Stream(0) {}
 
-		ReadOnlyStream(byte* data, const size_t& size) : Stream(0) {
+		ReadOnlyStream(byte* data, const size_t& size) : Stream(0), dataBufferCursor(0) {
 			ImportData(data, size);
 		}
 

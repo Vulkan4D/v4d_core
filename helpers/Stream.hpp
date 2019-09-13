@@ -148,7 +148,14 @@ namespace v4d {
 						return *this;
 					}
 					// Resize the buffer to its final size to include the new data received
-					if (bytesRead != maxReadSize) readBuffer.resize(readBufferCursor + bytesRead);
+					if (bytesRead > maxReadSize) {
+						LOG_ERROR("Stream Receive bytesRead exceeded maxReadSize")
+						ResetReadBuffer();
+						std::memset(data, 0, n);
+						return *this;
+					} else if (bytesRead != maxReadSize) {
+						readBuffer.resize(readBufferCursor + bytesRead);
+					}
 				}
 				std::memcpy(data, readBuffer.data() + readBufferCursor, n);
 				readBufferCursor += n;

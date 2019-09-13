@@ -82,7 +82,13 @@ namespace v4d {
 			if (IsConnected()) {
 				if (IsTCP()) {
 					#if _WINDOWS
-						bytesRead = ::recv(socket, reinterpret_cast<char*>(data), maxBytesToRead, MSG_WAITALL);
+						int rec = ::recv(socket, reinterpret_cast<char*>(data), maxBytesToRead, MSG_WAITALL);
+						if (rec <= 0) {
+							// LOG_ERROR("TCP SOCKET RECEIVE ERROR: " << WSAGetLastError())
+							bytesRead = 0;
+						} else {
+							bytesRead = (size_t)rec;
+						}
 					#else
 						bytesRead = ::recv(socket, data, maxBytesToRead, MSG_WAITALL);
 						// bytesRead = ::read(socket, data, maxBytesToRead);
@@ -91,9 +97,15 @@ namespace v4d {
 				if (IsUDP()) {
 					memset((char*) &incomingAddr, 0, sizeof incomingAddr);
 					#if _WINDOWS
-						bytesRead = ::recvfrom(socket, reinterpret_cast<char*>(data), maxBytesToRead, MSG_WAITALL, (struct sockaddr*) &incomingAddr, &addrLen);
+						int rec = ::recvfrom(socket, reinterpret_cast<char*>(data), maxBytesToRead, 0, (struct sockaddr*) &incomingAddr, &addrLen);
+						if (rec <= 0) {
+							// LOG_ERROR("UDP SOCKET RECEIVE ERROR: " << WSAGetLastError())
+							bytesRead = 0;
+						} else {
+							bytesRead = (size_t)rec;
+						}
 					#else
-						bytesRead = ::recvfrom(socket, data, maxBytesToRead, MSG_WAITALL, (struct sockaddr*) &incomingAddr, &addrLen);
+						bytesRead = ::recvfrom(socket, data, maxBytesToRead, 0, (struct sockaddr*) &incomingAddr, &addrLen);
 					#endif
 				}
 			} else {
@@ -132,6 +144,7 @@ namespace v4d {
 
 		std::string GetLastError() const {
 			#if _WINDOWS
+				// https://docs.microsoft.com/en-us/windows/win32/winsock/windows-sockets-error-codes-2
 				return std::to_string(WSAGetLastError());
 			#else
 				return "";
@@ -283,6 +296,10 @@ namespace v4d {
 			}
 		}
 
+		void SetConnected() {
+			connected = true;
+		}
+
 		ReadOnlyStream ReadStream() {
 			std::lock_guard lock(readMutex);
 			size_t size = ReadSize();
@@ -291,11 +308,13 @@ namespace v4d {
 			return ReadOnlyStream(data, size);
 		}
 
-		void WriteStream(Stream stream) {
+		void WriteStream(Stream& stream) {
 			std::lock_guard lock(writeMutex);
+			stream.LockWrite();
 			size_t size(stream._GetWriteBuffer_().size());
 			WriteSize(size);
 			WriteBytes(stream._GetWriteBuffer_().data(), size);
+			stream.UnlockWrite();
 		}
 
 	};

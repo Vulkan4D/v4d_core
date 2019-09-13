@@ -45,8 +45,7 @@ namespace v4d::tests {
 			server.Bind(44444);
 
 			server.StartListeningThread([](v4d::Socket& s, int& result){
-				std::string msg;
-				msg = s.Read<std::string>();
+				std::string msg = s.Read<std::string>();
 				int a = s.Read<int>();
 				int b = s.Read<int>();
 				if (msg == "Hello UDP!") result -= a + b + 45;
@@ -71,6 +70,46 @@ namespace v4d::tests {
 			if (result != 0) {
 				LOG_ERROR(result << " v4d::tests::Socket Error test2")
 				return 2;
+			}
+		}
+
+		{//TODO test 3 (DataStream via UDP)
+			int result = 100;
+
+			v4d::Socket server(UDP);
+			server.Bind(44444);
+
+			server.StartListeningThread([](v4d::Socket& s, int& result){
+				auto stream = s.ReadStream();
+				result -= stream.Read<int>();
+				result -= stream.Read<short>();
+				result -= stream.Read<double>();
+				result -= 9.5;
+			}, result);
+
+			SLEEP(100ms)
+			
+			server.StopListening();
+
+			v4d::Socket client(UDP);
+			client.Connect("127.0.0.1", 44444);
+
+			v4d::Stream stream(1024);
+			stream.Write<int>(20);
+			stream.Write<short>(35);
+			stream.Write<double>(35.5);
+
+			client.WriteStream(stream);
+			client.Flush();
+
+			SLEEP(100ms)
+			
+			client.Disconnect();
+			server.Disconnect();
+
+			if (result != 0) {
+				LOG_ERROR(result << " v4d::tests::Socket Error test3")
+				return 3;
 			}
 		}
 
