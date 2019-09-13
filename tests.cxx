@@ -1,4 +1,5 @@
 #include "modules/processing/ThreadPool.cxx"
+#include "modules/networking/networking.cxx"
 #include "helpers/event.cxx"
 #include "helpers/DataStream.cxx"
 #include "helpers/Socket.cxx"
@@ -16,6 +17,7 @@ namespace v4d::tests {
 			RUN_UNIT_TESTS( Event )
 			RUN_UNIT_TESTS( DataStream )
 			RUN_UNIT_TESTS( Socket )
+			RUN_UNIT_TESTS( Networking )
 
 
 

@@ -11,17 +11,22 @@
 	//////////////////////////////////////////////////////////
 	// V4D global functions
 
-	const std::string v4d::GET_V4D_CORE_BUILD_VERSION() noexcept {
+	const std::string v4d::GetCoreBuildVersion() noexcept {
 		return V4D_VERSION;
 	}
 
-	void v4d::Init() {
+
+	//////////////////////////////////////////////////////////
+	// V4D Core Instance
+
+	bool v4d::CoreInstance::Init() {
 		CoreInitEvent e;
 		//...
 		v4d::event::V4D_CORE_INIT(e);
+		return true;
 	}
 
-	void v4d::Destroy() {
+	void v4d::CoreInstance::Destroy() {
 		CoreDestroyEvent e;
 		v4d::event::V4D_CORE_DESTROY(e);
 		//...

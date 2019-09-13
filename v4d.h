@@ -65,6 +65,9 @@
 // MODULES
 
 #include "modules/processing/ThreadPool.h"
+#include "modules/networking/OutgoingConnection.h"
+#include "modules/networking/IncomingConnection.h"
+#include "modules/networking/ListeningServer.h"
 
 
 //////////////////////////////////////////////////////////
@@ -80,12 +83,16 @@ DEFINE_CORE_EVENT_HEADER(V4D_CORE_DESTROY, CoreDestroyEvent&)
 
 
 //////////////////////////////////////////////////////////
-// V4D global functions
+// V4D CoreInstance and global functions
 
 namespace v4d {
-	V4DLIB const std::string GET_V4D_CORE_BUILD_VERSION() noexcept;
-	V4DLIB void Init();
-	V4DLIB void Destroy();
+	V4DLIB const std::string GetCoreBuildVersion() noexcept;
+	class CoreInstance {
+	public:
+		V4DLIB bool Init();
+		V4DLIB void Destroy();
+		~CoreInstance(){Destroy();}
+	};
 }
 
 
@@ -95,7 +102,7 @@ namespace v4d {
 #ifdef _V4D_SYSTEM
 	v4d::SystemsLoader* systemsLoader;
 
-	V4DSYSTEM std::string GET_V4D_SYSTEM_BUILD_VERSION() {
+	V4DSYSTEM std::string __GetCoreBuildVersion() {
 		return V4D_VERSION;
 	}
 	V4DSYSTEM std::string __GetSystemName() {
@@ -112,3 +119,27 @@ namespace v4d {
 	}
 #endif
 
+
+//////////////////////////////////////////////////////////
+// PROJECT
+
+#ifdef _V4D_PROJECT
+
+	namespace v4d {
+		bool CheckCoreVersion() {
+			if (V4D_VERSION != v4d::GetCoreBuildVersion()) {
+				LOG_ERROR("V4D Core Library version mismatch (PROJECT:" << V4D_VERSION << ", V4D_CORE:" << v4d::GetCoreBuildVersion() << ")")
+				return false;
+			}
+			return true;
+		}
+	}
+
+	#define V4D_PROJECT_INSTANTIATE_CORE_IN_MAIN(instanceName) \
+		if (!v4d::CheckCoreVersion()) return -1; \
+		v4d::CoreInstance instanceName; \
+		if (!instanceName.Init()) { \
+			return -1; \
+		}
+	
+#endif

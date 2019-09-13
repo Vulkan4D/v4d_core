@@ -35,8 +35,8 @@
 			} \
 			v4d::event:: ___EVENT_TYPE_ ## eventName v4d::event:: eventName;
 	#endif
-	#define DEFINE_EVENT(eventName, ...) \
-		namespace v4d::event { \
+	#define DEFINE_EVENT(nameSpace, eventName, ...) \
+		namespace nameSpace::event { \
 			class { \
 			private: \
 				std::mutex mu; \
@@ -82,8 +82,8 @@
 			} \
 			v4d::event:: ___EVENT_TYPE_ ## eventName v4d::event:: eventName;
 	#endif
-	#define DEFINE_EVENT(eventName, objType) \
-		namespace v4d::event { \
+	#define DEFINE_EVENT(nameSpace, eventName, objType) \
+		namespace nameSpace::event { \
 			class { \
 			private: \
 				std::mutex mu; \

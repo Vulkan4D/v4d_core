@@ -27,6 +27,7 @@ namespace v4d {
 		bool loaded = false;
 
 		// System Metadata
+		__DEFINE_SYSTEM_FUNC(std::string, __GetCoreBuildVersion)
 		__DEFINE_SYSTEM_FUNC(std::string, __GetSystemName)
 		__DEFINE_SYSTEM_FUNC(std::string, __GetSystemDescription)
 		__DEFINE_SYSTEM_FUNC(int, __GetSystemRevision)
@@ -37,6 +38,7 @@ namespace v4d {
 
 		bool __LoadSystemFunctions() {
 			// System Metadata
+			__LOAD_SYSTEM_FUNC_REQUIRED(__GetCoreBuildVersion)
 			__LOAD_SYSTEM_FUNC_REQUIRED(__GetSystemName)
 			__LOAD_SYSTEM_FUNC_REQUIRED(__GetSystemDescription)
 			__LOAD_SYSTEM_FUNC_REQUIRED(__GetSystemRevision)
@@ -87,14 +89,14 @@ namespace v4d {
 					return nullptr;
 				}
 				
-				LOAD_DLL_FUNC(libInstance, std::string, GET_V4D_SYSTEM_BUILD_VERSION)
-				if (!GET_V4D_SYSTEM_BUILD_VERSION) {
-					LOG_ERROR("Error getting symbol pointer for GET_V4D_SYSTEM_BUILD_VERSION. " << LOAD_DLL_ERR)
+				LOAD_DLL_FUNC(libInstance, std::string, __GetCoreBuildVersion)
+				if (!__GetCoreBuildVersion) {
+					LOG_ERROR("Error getting symbol pointer for __GetCoreBuildVersion. " << LOAD_DLL_ERR)
 					SharedLibraryLoader::Unload(libName);
 					return nullptr;
 				}
 
-				std::string systemV4dVersion = GET_V4D_SYSTEM_BUILD_VERSION();
+				std::string systemV4dVersion = __GetCoreBuildVersion();
 				if (systemV4dVersion != V4D_VERSION) {
 					LOG_ERROR("V4D Core Libs version mismatch (App:" << V4D_VERSION << " != System:" << systemV4dVersion << ")")
 					SharedLibraryLoader::Unload(libName);

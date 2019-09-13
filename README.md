@@ -93,6 +93,8 @@ The core consists of the following structure :
 - typedefs are all_lowercase
 - file names unrelated to a class are all_lowercase
 - iterators are `i`,`j`,`k` and `x`,`y`,`z`,`w`
+- Unsafe method/member names are surrounded by underscores : _UnsafeMethod_()
+- Public method/member names intended for internal use start with two underscores : __SomeMethod()
 
 ### File Extensions
 - `.cpp` C++ Source Files compiled via g++, must have a matching .h (except main file)
