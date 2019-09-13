@@ -88,10 +88,14 @@ DEFINE_CORE_EVENT_HEADER(V4D_CORE_DESTROY, CoreDestroyEvent&)
 namespace v4d {
 	V4DLIB const std::string GetCoreBuildVersion() noexcept;
 	class CoreInstance {
+	protected:
+		std::string projectName = "V4D Project";
 	public:
 		V4DLIB bool Init();
 		V4DLIB void Destroy();
 		~CoreInstance(){Destroy();}
+		V4DLIB void SetProjectName(std::string);
+		V4DLIB std::string GetProjectName() const;
 	};
 }
 
@@ -101,6 +105,7 @@ namespace v4d {
 
 #ifdef _V4D_SYSTEM
 	v4d::SystemsLoader* systemsLoader;
+	v4d::CoreInstance* v4dCore;
 
 	V4DSYSTEM std::string __GetCoreBuildVersion() {
 		return V4D_VERSION;
@@ -116,6 +121,7 @@ namespace v4d {
 	}
 	V4DSYSTEM void __InitSystem(v4d::SystemsLoader* sysLoader) {
 		systemsLoader = sysLoader;
+		v4dCore = sysLoader->v4dCore;
 	}
 #endif
 

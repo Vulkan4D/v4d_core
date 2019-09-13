@@ -32,4 +32,11 @@
 		//...
 	}
 
+	void v4d::CoreInstance::SetProjectName(std::string projectName) {
+		this->projectName = projectName;
+	}
+	std::string v4d::CoreInstance::GetProjectName() const {
+		return this->projectName;
+	}
+
 #endif

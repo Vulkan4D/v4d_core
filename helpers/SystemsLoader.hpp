@@ -18,6 +18,7 @@
 
 namespace v4d {
 	class SystemsLoader;
+	class CoreInstance;
 
 	struct SystemInstance : public SharedLibraryInstance {
 		std::string systemName;
@@ -79,6 +80,16 @@ namespace v4d {
 		}
 
 	public:
+		CoreInstance* v4dCore;
+
+		SystemsLoader(CoreInstance* v4dCore) : SharedLibraryLoader(), v4dCore(v4dCore) {}
+		
+		virtual ~SystemsLoader() {
+			std::lock_guard<std::mutex> lock(loadedSystemsMutex);
+			for (auto sys : loadedSystems) {
+				delete sys.second;
+			}
+		}
 
 		SystemInstance* Load(const std::string& sysName) {
 			std::lock_guard<std::mutex> lock(loadedSystemsMutex);
@@ -132,12 +143,6 @@ namespace v4d {
 				Load(sysName);
 			}
 		}
-		
-		virtual ~SystemsLoader() {
-			std::lock_guard<std::mutex> lock(loadedSystemsMutex);
-			for (auto sys : loadedSystems) {
-				delete sys.second;
-			}
-		}
+
 	};
 }
