@@ -6,11 +6,11 @@ namespace v4d::tests {
 		{// Test 1 (TCP)
 			int result = 100;
 
-			v4d::Socket server(TCP);
+			v4d::io::Socket server(v4d::io::TCP);
 
 			server.Bind(44444);
 
-			server.StartListeningThread([](v4d::Socket& s){
+			server.StartListeningThread([](v4d::io::Socket& s){
 				auto msg = s.Read<std::string>();
 				int a = s.Read<int>();
 				s.Write<int>(a * 2);
@@ -19,7 +19,7 @@ namespace v4d::tests {
 				s.Flush();
 			});
 
-			v4d::Socket client(TCP);
+			v4d::io::Socket client(v4d::io::TCP);
 			client.Connect("127.0.0.1", 44444);
 			client.Write<std::string>("Hello Socket!");
 			client.Write<int>(21);
@@ -41,10 +41,10 @@ namespace v4d::tests {
 		{// Test 2 (UDP)
 			int result = 100;
 
-			v4d::Socket server(UDP);
+			v4d::io::Socket server(v4d::io::UDP);
 			server.Bind(44444);
 
-			server.StartListeningThread([](v4d::Socket& s, int& result){
+			server.StartListeningThread([](v4d::io::Socket& s, int& result){
 				std::string msg = s.Read<std::string>();
 				int a = s.Read<int>();
 				int b = s.Read<int>();
@@ -55,7 +55,7 @@ namespace v4d::tests {
 			
 			server.StopListening();
 
-			v4d::Socket client(UDP);
+			v4d::io::Socket client(v4d::io::UDP);
 			client.Connect("127.0.0.1", 44444);
 			client.Write<std::string>("Hello UDP!");
 			client.Write<int>(20);
@@ -76,10 +76,10 @@ namespace v4d::tests {
 		{//TODO test 3 (DataStream via UDP)
 			int result = 100;
 
-			v4d::Socket server(UDP);
+			v4d::io::Socket server(v4d::io::UDP);
 			server.Bind(44444);
 
-			server.StartListeningThread([](v4d::Socket& s, int& result){
+			server.StartListeningThread([](v4d::io::Socket& s, int& result){
 				auto stream = s.ReadStream();
 				result -= stream.Read<int>();
 				result -= stream.Read<short>();
@@ -91,7 +91,7 @@ namespace v4d::tests {
 			
 			server.StopListening();
 
-			v4d::Socket client(UDP);
+			v4d::io::Socket client(v4d::io::UDP);
 			client.Connect("127.0.0.1", 44444);
 
 			v4d::Stream stream(1024);

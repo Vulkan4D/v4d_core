@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SharedLibraryLoader.hpp"
+#include "SharedLibraryLoader.h"
 
 #define __DEFINE_SYSTEM_FUNC(returntype, funcName, ...) returntype (*funcName)(__VA_ARGS__);
 #ifdef _WINDOWS
@@ -16,15 +16,11 @@
 	} \
 }
 
-namespace v4d {
-	class SystemsLoader;
-	class CoreInstance;
-
+namespace v4d::io {
 	struct SystemInstance : public SharedLibraryInstance {
 		std::string systemName;
 		std::string systemDescription;
 		int systemRevision;
-		SystemsLoader* systemsLoader;
 		bool loaded = false;
 
 		// System Metadata
@@ -32,7 +28,7 @@ namespace v4d {
 		__DEFINE_SYSTEM_FUNC(std::string, __GetSystemName)
 		__DEFINE_SYSTEM_FUNC(std::string, __GetSystemDescription)
 		__DEFINE_SYSTEM_FUNC(int, __GetSystemRevision)
-		__DEFINE_SYSTEM_FUNC(void, __InitSystem, SystemsLoader*)
+		__DEFINE_SYSTEM_FUNC(void, __InitSystem, v4d::Core*)
 		// Predefined optional functions
 		__DEFINE_SYSTEM_FUNC(void, OnLoad)
 		__DEFINE_SYSTEM_FUNC(void, OnDestroy)
@@ -51,17 +47,16 @@ namespace v4d {
 			return true;
 		}
 
-		SystemInstance(SharedLibraryInstance* libInstance, const std::string& sysName, SystemsLoader* loader) {
+		SystemInstance(SharedLibraryInstance* libInstance, const std::string& sysName, v4d::Core* v4dCore) {
 			name = sysName;
 			path = libInstance->path;
 			handle = libInstance->handle;
-			systemsLoader = loader;
 			loaded = __LoadSystemFunctions();
 			if (loaded) {
 				systemName = __GetSystemName();
 				systemDescription = __GetSystemDescription();
 				systemRevision = __GetSystemRevision();
-				__InitSystem(systemsLoader);
+				__InitSystem(v4dCore);
 				if (OnLoad) OnLoad();
 			}
 		}
@@ -80,9 +75,9 @@ namespace v4d {
 		}
 
 	public:
-		CoreInstance* v4dCore;
+		v4d::Core* v4dCore;
 
-		SystemsLoader(CoreInstance* v4dCore) : SharedLibraryLoader(), v4dCore(v4dCore) {}
+		SystemsLoader(v4d::Core* v4dCore) : SharedLibraryLoader(), v4dCore(v4dCore) {}
 		
 		virtual ~SystemsLoader() {
 			std::lock_guard<std::mutex> lock(loadedSystemsMutex);
@@ -114,7 +109,7 @@ namespace v4d {
 					return nullptr;
 				}
 
-				SystemInstance* systemInstance = new SystemInstance(libInstance, sysName, this);
+				SystemInstance* systemInstance = new SystemInstance(libInstance, sysName, v4dCore);
 				if (!systemInstance->loaded) {
 					delete systemInstance;
 					SharedLibraryLoader::Unload(libName);

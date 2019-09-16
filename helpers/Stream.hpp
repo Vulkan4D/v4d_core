@@ -25,6 +25,8 @@ namespace v4d {
 		virtual void Send() {}
 		virtual size_t Receive(byte* data, const size_t& maxBytesToRead) {return 0;}
 
+		virtual void ReadBytes_OnError(const char* str) {}
+
 
 	public: // Utility methods
 
@@ -131,7 +133,7 @@ namespace v4d {
 						readBufferCursor = 0;
 						// If we still dont have enough space left in our buffer, ERROR
 						if (maxReadSize < remainingDataToReceive) {
-							LOG_ERROR("Stream ReadBuffer capacity exceeded")
+							ReadBytes_OnError("Stream ReadBuffer capacity exceeded");
 							ResetReadBuffer();
 							std::memset(data, 0, n);
 							return *this;
@@ -142,14 +144,14 @@ namespace v4d {
 					// Actually receive the new data (and put it directly in the buffer)
 					size_t bytesRead = Receive(readBuffer.data(), maxReadSize);
 					if (bytesRead == 0) {
-						LOG_ERROR("Stream ReadBuffer received 0 bytes")
+						ReadBytes_OnError("Stream ReadBuffer received 0 bytes");
 						ResetReadBuffer();
 						std::memset(data, 0, n);
 						return *this;
 					}
 					// Resize the buffer to its final size to include the new data received
 					if (bytesRead > maxReadSize) {
-						LOG_ERROR("Stream Receive bytesRead exceeded maxReadSize")
+						ReadBytes_OnError("Stream Receive bytesRead exceeded maxReadSize");
 						ResetReadBuffer();
 						std::memset(data, 0, n);
 						return *this;

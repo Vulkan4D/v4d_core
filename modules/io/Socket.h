@@ -15,7 +15,7 @@
 
 // https://docs.microsoft.com/en-us/windows/win32/winsock/porting-socket-applications-to-winsock
 
-namespace v4d {
+namespace v4d::io {
 
 	enum SOCKET_TYPE {
 		TCP = SOCK_STREAM,
@@ -27,14 +27,15 @@ namespace v4d {
 		IPV6 = AF_INET6,
 	};
 
-	class Socket : public Stream {
+	class V4DLIB Socket : public Stream {
 	protected:
 		SOCKET_TYPE type;
 		SOCKET_PROTOCOL protocol;
 		SOCKET socket = INVALID_SOCKET;
 		std::atomic<bool>	bound = false, 
 							connected = false, 
-							listening = false;
+							listening = false,
+							logErrors = true;
 		short port;
 
 		// Socket Options
@@ -61,7 +62,7 @@ namespace v4d {
 						::send(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), _GetWriteBuffer_().size(), MSG_DONTWAIT);
 					#else
 						::send(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT);
-    					// ::write(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size());
+						// ::write(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size());
 					#endif
 				} else 
 				if (IsUDP()) {
@@ -118,6 +119,10 @@ namespace v4d {
 			return bytesRead;
 		}
 
+		virtual void ReadBytes_OnError(const char* str) override {
+			if (logErrors) LOG_ERROR(str)
+		}
+
 		////////////////////////////////////////////////////////////////////////////
 
 	public:
@@ -149,6 +154,10 @@ namespace v4d {
 			#else
 				return "";
 			#endif
+		}
+
+		void SetLogErrors(bool logErrors) {
+			this->logErrors = logErrors;
 		}
 
 		INLINE sockaddr_in GetRemoteAddress() const {
@@ -299,23 +308,16 @@ namespace v4d {
 		void SetConnected() {
 			connected = true;
 		}
+		
 
-		ReadOnlyStream ReadStream() {
-			std::lock_guard lock(readMutex);
-			size_t size = ReadSize();
-			byte data[size];
-			ReadBytes(data, size);
-			return ReadOnlyStream(data, size);
-		}
+		////////////////////////////////////////////////////////////////////////////////
+		// Other Read/Write methods
 
-		void WriteStream(Stream& stream) {
-			std::lock_guard lock(writeMutex);
-			stream.LockWrite();
-			size_t size(stream._GetWriteBuffer_().size());
-			WriteSize(size);
-			WriteBytes(stream._GetWriteBuffer_().data(), size);
-			stream.UnlockWrite();
-		}
+		// Stream
+		ReadOnlyStream ReadStream();
+		void WriteStream(Stream& stream);
+		
 
 	};
 }
+

@@ -6,7 +6,7 @@
 	#define DLL_FILE_HANDLER void*
 #endif
 
-namespace v4d {
+namespace v4d::io {
 	struct SharedLibraryInstance {
 		std::string name;
 		std::string path;

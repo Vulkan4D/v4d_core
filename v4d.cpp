@@ -15,28 +15,42 @@
 		return V4D_VERSION;
 	}
 
-
 	//////////////////////////////////////////////////////////
 	// V4D Core Instance
 
-	bool v4d::CoreInstance::Init() {
+	std::shared_ptr<v4d::io::Logger> v4d::Core::coreLogger = v4d::io::Logger::ConsoleInstance();
+	
+	bool v4d::Core::Init() {
+		return Init(nullptr);
+	}
+
+	bool v4d::Core::Init(std::shared_ptr<v4d::io::Logger> coreLogger) {
 		CoreInitEvent e;
+		if (coreLogger) v4d::Core::coreLogger = coreLogger;
 		//...
 		v4d::event::V4D_CORE_INIT(e);
 		return true;
 	}
 
-	void v4d::CoreInstance::Destroy() {
+	void v4d::Core::Destroy() {
 		CoreDestroyEvent e;
 		v4d::event::V4D_CORE_DESTROY(e);
 		//...
 	}
 
-	void v4d::CoreInstance::SetProjectName(std::string projectName) {
+	void v4d::Core::SetProjectName(std::string projectName) {
 		this->projectName = projectName;
 	}
-	std::string v4d::CoreInstance::GetProjectName() const {
+	std::string v4d::Core::GetProjectName() const {
 		return this->projectName;
+	}
+
+	v4d::io::SystemsLoader* v4d::Core::GetSystemsLoader() {
+		static v4d::io::SystemsLoader systemsLoader(this);
+		return &systemsLoader;
+	}
+	v4d::io::SystemInstance* v4d::Core::GetSystem(const std::string& name) {
+		return GetSystemsLoader()->Load(name);
 	}
 
 #endif

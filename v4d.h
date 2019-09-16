@@ -38,7 +38,8 @@
 #endif
 #ifdef _V4D_SYSTEM
 	#define V4DSYSTEM EXTERNC DLLEXPORT
-	// #define V4DSYSTEM_CLASS(className) EXTERNC class DLLEXPORT className
+	// https://www.tldp.org/HOWTO/pdf/C++-dlopen.pdf
+	// #define V4DSYSTEM_CLASS(className) EXTERNCPP class DLLEXPORT className
 #else// Project/Core
 	#define V4DSYSTEM
 	// #define V4DSYSTEM_CLASS(className)
@@ -50,24 +51,11 @@
 
 #include "helpers/types.hpp"
 #include "helpers/macros.hpp"
-#include "helpers/Timer.hpp"
-#include "helpers/Logger.hpp"
-#include "helpers/error.hpp"
 #include "helpers/event.hpp"
-#include "helpers/SystemsLoader.hpp"
+#include "helpers/Timer.hpp"
 #include "helpers/Stream.hpp"
 #include "helpers/DataStream.hpp"
 #include "helpers/ReadOnlyStream.hpp"
-#include "helpers/Socket.hpp"
-
-
-//////////////////////////////////////////////////////////
-// MODULES
-
-#include "modules/processing/ThreadPool.h"
-#include "modules/networking/OutgoingConnection.h"
-#include "modules/networking/IncomingConnection.h"
-#include "modules/networking/ListeningServer.h"
 
 
 //////////////////////////////////////////////////////////
@@ -83,29 +71,52 @@ DEFINE_CORE_EVENT_HEADER(V4D_CORE_DESTROY, CoreDestroyEvent&)
 
 
 //////////////////////////////////////////////////////////
-// V4D CoreInstance and global functions
+// V4D Core and global functions
+
+// Modules prototypes
+namespace v4d::io {
+	class Logger;
+	class SystemsLoader;
+	class SystemInstance;
+}
 
 namespace v4d {
 	V4DLIB const std::string GetCoreBuildVersion() noexcept;
-	class CoreInstance {
+	class V4DLIB Core {
 	protected:
 		std::string projectName = "V4D Project";
 	public:
-		V4DLIB bool Init();
-		V4DLIB void Destroy();
-		~CoreInstance(){Destroy();}
-		V4DLIB void SetProjectName(std::string);
-		V4DLIB std::string GetProjectName() const;
+		bool Init();
+		bool Init(std::shared_ptr<v4d::io::Logger> coreLogger);
+		static std::shared_ptr<v4d::io::Logger> coreLogger;
+		void Destroy();
+		~Core(){Destroy();}
+		void SetProjectName(std::string);
+		std::string GetProjectName() const;
+		v4d::io::SystemsLoader* GetSystemsLoader();
+		v4d::io::SystemInstance* GetSystem(const std::string& name);
 	};
 }
+
+
+//////////////////////////////////////////////////////////
+// MODULES
+
+#include "modules/io/Logger.h"
+#include "modules/processing/ThreadPool.h"
+#include "modules/io/SystemsLoader.h"
+#include "modules/io/Socket.h"
+#include "modules/networking/OutgoingConnection.h"
+#include "modules/networking/IncomingConnection.h"
+#include "modules/networking/ListeningServer.h"
+
 
 
 //////////////////////////////////////////////////////////
 // SYSTEMS
 
 #ifdef _V4D_SYSTEM
-	v4d::SystemsLoader* systemsLoader;
-	v4d::CoreInstance* v4dCore;
+	v4d::Core* v4dCore;
 
 	V4DSYSTEM std::string __GetCoreBuildVersion() {
 		return V4D_VERSION;
@@ -119,9 +130,8 @@ namespace v4d {
 	V4DSYSTEM std::string __GetSystemDescription() {
 		return THIS_SYSTEM_DESCRIPTION;
 	}
-	V4DSYSTEM void __InitSystem(v4d::SystemsLoader* sysLoader) {
-		systemsLoader = sysLoader;
-		v4dCore = sysLoader->v4dCore;
+	V4DSYSTEM void __InitSystem(v4d::Core* instance) {
+		v4dCore = instance;
 	}
 #endif
 
@@ -141,10 +151,10 @@ namespace v4d {
 		}
 	}
 
-	#define V4D_PROJECT_INSTANTIATE_CORE_IN_MAIN(instanceName) \
+	#define V4D_PROJECT_INSTANTIATE_CORE_IN_MAIN(v4dCore, ...) \
 		if (!v4d::CheckCoreVersion()) return -1; \
-		v4d::CoreInstance instanceName; \
-		if (!instanceName.Init()) { \
+		v4d::Core v4dCore; \
+		if (!v4dCore.Init(__VA_ARGS__)) { \
 			return -1; \
 		}
 	

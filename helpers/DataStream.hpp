@@ -5,10 +5,10 @@
 namespace v4d {
 	class DataStream : public Stream {
 	protected:
+		index_int dataBufferCursor;
 		std::vector<byte> dataBuffer;
 		std::mutex dataWaitMutex;
 		std::condition_variable dataBufferWaitCondition;
-		index_int dataBufferCursor;
 
 	public:
 
@@ -20,6 +20,8 @@ namespace v4d {
 			dataBuffer.resize(size);
 			memcpy(dataBuffer.data(), data, size);
 		}
+
+		DELETE_COPY_MOVE_CONSTRUCTORS(DataStream)
 
 	protected:
 
