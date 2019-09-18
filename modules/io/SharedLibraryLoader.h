@@ -7,7 +7,7 @@
 #endif
 
 namespace v4d::io {
-	struct SharedLibraryInstance {
+	struct V4DLIB SharedLibraryInstance {
 		std::string name;
 		std::string path;
 		DLL_FILE_HANDLER handle;
@@ -17,7 +17,7 @@ namespace v4d::io {
 		virtual ~SharedLibraryInstance();
 	};
 
-	class SharedLibraryLoader {
+	class V4DLIB SharedLibraryLoader {
 	private:
 		std::mutex loadedLibrariesMutex;
 		std::map<std::string, SharedLibraryInstance*> loadedLibraries;
