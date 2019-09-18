@@ -89,14 +89,15 @@ namespace v4d {
 		bool Init();
 		bool Init(std::shared_ptr<v4d::io::Logger> coreLogger);
 		static std::shared_ptr<v4d::io::Logger> coreLogger;
+		v4d::io::SystemsLoader* systemsLoader;
 		void Destroy();
-		~Core(){Destroy();}
+		~Core();
 		void SetProjectName(std::string);
 		std::string GetProjectName() const;
-		v4d::io::SystemsLoader* GetSystemsLoader();
-		v4d::io::SystemInstance* GetSystem(const std::string& name);
+		v4d::io::SystemInstance* LoadSystem(const std::string& name);
 	};
 }
+typedef std::shared_ptr<v4d::Core> v4d_core;
 
 
 //////////////////////////////////////////////////////////
@@ -153,8 +154,9 @@ namespace v4d {
 
 	#define V4D_PROJECT_INSTANTIATE_CORE_IN_MAIN(v4dCore, ...) \
 		if (!v4d::CheckCoreVersion()) return -1; \
-		v4d::Core v4dCore; \
-		if (!v4dCore.Init(__VA_ARGS__)) { \
+		v4d_core v4dCore = std::make_shared<v4d::Core>(); \
+		v4dCore->systemsLoader = new v4d::io::SystemsLoader(v4dCore); \
+		if (!v4dCore->Init(__VA_ARGS__)) { \
 			return -1; \
 		}
 	

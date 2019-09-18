@@ -33,7 +33,7 @@ namespace v4d::io {
 		__DEFINE_SYSTEM_FUNC(void, OnLoad)
 		__DEFINE_SYSTEM_FUNC(void, OnDestroy)
 
-		bool __LoadSystemFunctions() {
+		virtual bool __LoadSystemFunctions() {
 			// System Metadata
 			__LOAD_SYSTEM_FUNC_REQUIRED(__GetCoreBuildVersion)
 			__LOAD_SYSTEM_FUNC_REQUIRED(__GetSystemName)
@@ -47,7 +47,7 @@ namespace v4d::io {
 			return true;
 		}
 
-		SystemInstance(SharedLibraryInstance* libInstance, const std::string& sysName, v4d::Core* v4dCore) {
+		SystemInstance(SharedLibraryInstance* libInstance, const std::string& sysName, v4d_core v4dCore) {
 			name = sysName;
 			path = libInstance->path;
 			handle = libInstance->handle;
@@ -56,7 +56,7 @@ namespace v4d::io {
 				systemName = __GetSystemName();
 				systemDescription = __GetSystemDescription();
 				systemRevision = __GetSystemRevision();
-				__InitSystem(v4dCore);
+				__InitSystem(v4dCore.get());
 				if (OnLoad) OnLoad();
 			}
 		}
@@ -75,9 +75,9 @@ namespace v4d::io {
 		}
 
 	public:
-		v4d::Core* v4dCore;
+		v4d_core v4dCore;
 
-		SystemsLoader(v4d::Core* v4dCore) : SharedLibraryLoader(), v4dCore(v4dCore) {}
+		SystemsLoader(v4d_core v4dCore) : SharedLibraryLoader(), v4dCore(v4dCore) {}
 		
 		virtual ~SystemsLoader() {
 			std::lock_guard<std::mutex> lock(loadedSystemsMutex);

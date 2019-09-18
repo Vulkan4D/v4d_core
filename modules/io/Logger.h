@@ -52,6 +52,11 @@ namespace v4d::io {
 			mu.unlock();
 		}
 
+		template<typename T>
+		INLINE void Log(T&& message, const char* style = "0") {
+			Log(std::ostringstream().flush() << message, style);
+		}
+		
 		INLINE void LogError(std::ostream& message) {
 			Log(message, "1;31");
 		}

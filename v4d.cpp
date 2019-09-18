@@ -32,6 +32,11 @@
 		return true;
 	}
 
+	v4d::Core::~Core(){
+		Destroy();
+		if (systemsLoader) delete systemsLoader;
+	}
+
 	void v4d::Core::Destroy() {
 		CoreDestroyEvent e;
 		v4d::event::V4D_CORE_DESTROY(e);
@@ -45,12 +50,8 @@
 		return this->projectName;
 	}
 
-	v4d::io::SystemsLoader* v4d::Core::GetSystemsLoader() {
-		static v4d::io::SystemsLoader systemsLoader(this);
-		return &systemsLoader;
-	}
-	v4d::io::SystemInstance* v4d::Core::GetSystem(const std::string& name) {
-		return GetSystemsLoader()->Load(name);
+	v4d::io::SystemInstance* v4d::Core::LoadSystem(const std::string& name) {
+		return systemsLoader->Load(name);
 	}
 
 #endif
