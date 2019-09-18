@@ -9,30 +9,35 @@ It must be linked with when building a game using the Vulkan4D Engine.
 # Vulkan4D
 Vulkan4D is a revolutionary game engine built from the ground up for Space Games/Simulations and with Vulkan as the sole rendering API, so that we can take full advantage of the new technology. 
 
+
 ### Project Structure
-- `Core Modules and Helpers` Compiled into `v4d.dll` and linked into the Launcher
-- `Systems` Game functionalities (and mods) compiled into individual .dll files that are loaded at runtime
+- `Core & Modules` Compiled into `v4d.dll` and linked into the Project
+- `Helpers` Simple-but-useful header-only source files, compiled into anything that is part of V4D
+- `Systems` Game functionalities (and plugins/mods) compiled into individual .dll files that are loaded at runtime
 - `Libraries` Other libraries used in the project
 - `Resources` Icons, Textures, Music, ...
-- `Launcher` App that puts it all together to run the game
+- `Project` App that puts it all together to run the game
+- `Tools` Useful tools to help programmers (build scripts, shader compiler, ...)
 
 
 ## V4D Core Modules
 
 Core Modules are a solid part of Vulkan4D's Core to provide developers with interfaces to the Hardware. 
 
-They are split into six categories (`Audio`, `FileSystem`, `Graphics`, `Input`, `Networking`, `Processing`)
+They are split into 5 categories (`Audio`, `Graphics`, `IO`, `Networking`, `Processing`)
 
 
 ## File Structure
 The core consists of the following structure :
-- `helpers/` Contains header-only (.hpp) files with helper methods
-- `modules/` Contains subdirectories for module categories with all their modules, each consisting of up to three files with the same [Module] name and different extensions (.cpp, .h, .cxx) and other subdirectories such as `shaders/`
-- `v4d.h` Main Header file to be included when linking against this library
-- `v4d.cpp` Main Source File compiled only in the core library
+- `helpers/*` Contains header-only `.hpp` files with helper methods
+- `modules/*` Contains subdirectories for module categories with all their modules, each consisting of up to three files with the same [Module] name and different extensions (`.cpp`, `.h`, `.cxx`) and other subdirectories such as `shaders/` or `res/`
+- `v4d.h` Main Header file to be included in anything that is part of V4D
+- `Core.h` Core header file
+- `Core.cpp` Core Source File compiled only in the core library
 - `tests.cxx` Unit Tests
 - `README.md` this documentation
-- `common.hh`, `common_*.hh`,... precompiled headers
+- `common/*` precompiled headers
+- `*.hh` Header files included in v4d.h
 
 
 ## Coding Standards
@@ -44,26 +49,8 @@ The core consists of the following structure :
         std::cout << "Hello V4D !" << std::endl;
     }
     ```
-- methods and conditions on multiple lines are all or nothing (all in one line, or one line per argument)
-    ```c++
-    void someLongMethodWithLotsOfArguments(
-        const int& a,
-        const int& b,
-        const std::string& str
-    ) {
-        if (
-            a == b
-            &&
-            (
-                someCondition
-                ||
-                someOtherCondition
-            )
-        ) {
-            // ...
-        }
-    }
-    ```
+- Methods and conditions on multiple lines are all or nothing (all in one line, or one line per argument)
+- There is no limit on horizontal scrolling, as long as it is easy to read
 - Space after keywords (`if`, `for`, `while`,...)
 - Space before and After Stream operators (`<<` `>>`)
 - Indentations are tabs, not spaces
