@@ -147,7 +147,7 @@ namespace v4d::io {
 			Disconnect();
 		}
 
-		std::string GetLastError() const {
+		INLINE std::string GetLastError() const {
 			#if _WINDOWS
 				// https://docs.microsoft.com/en-us/windows/win32/winsock/windows-sockets-error-codes-2
 				return std::to_string(::WSAGetLastError());
@@ -156,7 +156,7 @@ namespace v4d::io {
 			#endif
 		}
 
-		void SetLogErrors(bool logErrors) {
+		INLINE void SetLogErrors(bool logErrors) {
 			this->logErrors = logErrors;
 		}
 
@@ -247,11 +247,8 @@ namespace v4d::io {
 			return connected;
 		}
 
-		virtual void Disconnect() {
+		INLINE void Disconnect() {
 			StopListening();
-			if (listeningThread.joinable()) {
-				listeningThread.join();
-			}
 			#ifdef _WINDOWS
 				::closesocket(socket);
 				::WSACleanup();
@@ -261,13 +258,18 @@ namespace v4d::io {
 			socket = INVALID_SOCKET;
 		}
 
-		virtual void StopListening() {
+		INLINE void StopListening() {
 			if (listening) {
 				listening = false;
 			}
+
+			// WEIRD SHIT : If this method is not forced inline, it crashes in Windows when trying to join the thread below
+			if (listeningThread.joinable()) {
+				listeningThread.join();
+			}
 		}
 
-		int Poll(int timeoutMilliseconds = 0) {
+		INLINE int Poll(int timeoutMilliseconds = 0) {
 			pollfd fds[1] = {pollfd{socket, POLLIN, 0}};
 			#ifdef _WINDOWS
 				return ::WSAPoll(fds, 1, timeoutMilliseconds);
@@ -277,18 +279,18 @@ namespace v4d::io {
 		}
 
 		template<class Func, class ...FuncArgs>
-		void StartListeningThread(Func newSocketCallback, FuncArgs&&... args) {
+		void StartListeningThread(int waitIntervalMilliseconds, Func newSocketCallback, FuncArgs&&... args) {
 			if (!IsBound()) return;
 			if (IsTCP()) {
 				listening = (::listen(socket, SOMAXCONN) >= 0);
-				listeningThread = std::thread([this, &newSocketCallback, &args...]{
+				listeningThread = std::thread([this, &newSocketCallback, waitIntervalMilliseconds, &args...]{
 					while (listening) {
 
 						// Check if there is a connection waiting in the socket
-						int polled = Poll(1000);
+						int polled = Poll(waitIntervalMilliseconds);
 						if (polled == 0) continue; // timeout, keep going
 						if (polled == -1) { // error, stop here
-							LOG_ERROR("Socket Listening error")
+							LOG_ERROR("TCP Socket Listening Poll error")
 							listening = false;
 							break;
 						}
@@ -314,16 +316,26 @@ namespace v4d::io {
 				});
 			} else if (IsUDP()) {
 				listening = true;
-				listeningThread = std::thread([this, &newSocketCallback, &args...]{
+				listeningThread = std::thread([this, &newSocketCallback, waitIntervalMilliseconds, &args...]{
 					Socket s(socket, remoteAddr, type, protocol);
 					while (listening) {
+
+						// Check if there is a connection waiting in the socket
+						int polled = s.Poll(waitIntervalMilliseconds);
+						if (polled == 0) continue; // timeout, keep going
+						if (polled == -1) { // error, stop here
+							LOG_ERROR("UDP Socket Listening Poll error")
+							listening = false;
+							break;
+						}
+
 						newSocketCallback(s, args...);
 					}
 				});
 			}
 		}
 
-		void SetConnected() {
+		INLINE void SetConnected() {
 			connected = true;
 		}
 		

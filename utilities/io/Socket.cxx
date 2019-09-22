@@ -10,7 +10,7 @@ namespace v4d::tests {
 
 			server.Bind(44444);
 
-			server.StartListeningThread([](v4d::io::Socket& s){
+			server.StartListeningThread(10, [](v4d::io::Socket& s){
 				auto msg = s.Read<std::string>();
 				int a = s.Read<int>();
 				s.Write<int>(a * 2);
@@ -29,6 +29,8 @@ namespace v4d::tests {
 			result -= (int)client.Read<long>();
 			result -= client.Read<short>();
 
+			SLEEP(100ms)
+			
 			client.Disconnect();
 			server.Disconnect();
 
@@ -44,16 +46,12 @@ namespace v4d::tests {
 			v4d::io::Socket server(v4d::io::UDP);
 			server.Bind(44444);
 
-			server.StartListeningThread([](v4d::io::Socket& s, int& result){
+			server.StartListeningThread(10, [](v4d::io::Socket& s, int& result){
 				std::string msg = s.Read<std::string>();
 				int a = s.Read<int>();
 				int b = s.Read<int>();
 				if (msg == "Hello UDP!") result -= a + b + 45;
 			}, result);
-
-			SLEEP(100ms)
-			
-			server.StopListening();
 
 			v4d::io::Socket client(v4d::io::UDP);
 			client.Connect("127.0.0.1", 44444);
@@ -79,16 +77,12 @@ namespace v4d::tests {
 			v4d::io::Socket server(v4d::io::UDP);
 			server.Bind(44444);
 
-			server.StartListeningThread([](v4d::io::Socket& s, int& result){
+			server.StartListeningThread(10, [](v4d::io::Socket& s, int& result){
 				auto stream = s.ReadStream();
 				result -= stream.Read<int>();
 				result -= stream.Read<short>();
 				result -= (int)stream.Read<double>();
 			}, result);
-
-			SLEEP(100ms)
-			
-			server.StopListening();
 
 			v4d::io::Socket client(v4d::io::UDP);
 			client.Connect("127.0.0.1", 44444);
