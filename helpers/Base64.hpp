@@ -64,7 +64,7 @@ namespace v4d {
 				}
 			}
 
-			if (i) {
+			if (i > 0) {
 				for (j = i; j < 4; j++) chrArr4[j] = 0;
 				for (j = 0; j < 4; j++) chrArr4[j] = (int)base64Chars.find((char)chrArr4[j]);
 
