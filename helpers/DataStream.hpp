@@ -16,7 +16,7 @@ namespace v4d {
 			dataBuffer.reserve(bufferSize);
 		}
 
-		DataStream(byte* data, const size_t& size) : Stream(size) {
+		DataStream(byte* data, size_t size) : Stream(size) {
 			dataBuffer.resize(size);
 			memcpy(dataBuffer.data(), data, size);
 		}

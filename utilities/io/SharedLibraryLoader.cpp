@@ -45,8 +45,8 @@ SharedLibraryInstance* SharedLibraryLoader::Load(const std::string& name, std::s
 
 SharedLibraryLoader::~SharedLibraryLoader() {
 	std::lock_guard<std::mutex> lock(loadedLibrariesMutex);
-	for (auto lib : loadedLibraries) {
-		delete lib.second;
+	for (auto [name, lib] : loadedLibraries) {
+		delete lib;
 	}
 }
 

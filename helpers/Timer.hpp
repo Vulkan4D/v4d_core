@@ -16,7 +16,7 @@ namespace v4d {
 		 * Default constructor, initialize timePoint to current system time
 		 * @param startNow bool (starts the timer immediately)
 		 */
-		Timer(const bool& startNow = false) {
+		Timer(bool startNow = false) {
 			if (startNow)
 				Start();
 		}

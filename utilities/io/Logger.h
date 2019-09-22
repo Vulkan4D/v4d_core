@@ -23,7 +23,7 @@ namespace v4d::io {
 	public:
 
 		Logger() : filepath(""), useLogFile(false), verbose(false) {}
-		Logger(const std::string& filepath, const bool& verbose = false) : filepath(filepath), useLogFile(filepath != ""), verbose(verbose) {}
+		Logger(const std::string& filepath, bool verbose = false) : filepath(filepath), useLogFile(filepath != ""), verbose(verbose) {}
 
 		~Logger() {
 			file.close();
@@ -31,9 +31,9 @@ namespace v4d::io {
 
 		DELETE_COPY_CONSTRUCTORS(Logger)
 
-		static std::shared_ptr<Logger> ConsoleInstance(const bool& verbose = false);
+		static std::shared_ptr<Logger> ConsoleInstance(bool verbose = false);
 		
-		static std::shared_ptr<Logger> FileInstance(const std::string& filepath, const bool& verbose = false);
+		static std::shared_ptr<Logger> FileInstance(const std::string& filepath, bool verbose = false);
 
 		INLINE void Log(std::ostream& message, const char* style = "0") {
 			std::string msg = dynamic_cast<std::ostringstream&>(message).str();
@@ -71,7 +71,7 @@ namespace v4d::io {
 			return verbose;
 		}
 
-		INLINE void SetVerbose(const bool& isVerbose = true) {
+		INLINE void SetVerbose(bool isVerbose = true) {
 			verbose = isVerbose;
 		}
 

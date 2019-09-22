@@ -24,8 +24,8 @@ ModuleInstance::~ModuleInstance() {
 
 ModulesLoader::~ModulesLoader() {
 	std::lock_guard<std::mutex> lock(loadedModulesMutex);
-	for (auto sys : loadedModules) {
-		delete sys.second;
+	for (auto [name, sys] : loadedModules) {
+		delete sys;
 	}
 }
 

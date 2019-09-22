@@ -15,7 +15,7 @@ namespace v4d::processing {
 		bool stopping;
 		size_t numThreads;
 
-		void StartNewThread(const size_t& index);
+		void StartNewThread(size_t index);
 
 	public:
 
@@ -23,7 +23,7 @@ namespace v4d::processing {
 		 * ThreadPool sole constructor
 		 * @param number of threads
 		 */
-		ThreadPool(const size_t& numThreads);
+		ThreadPool(size_t numThreads);
 
 		/**
 		 * ThreadPool destructor
@@ -35,7 +35,7 @@ namespace v4d::processing {
 		 * Set a new number of threads
 		 * @param number of threads
 		 */
-		void SetNbThreads(const size_t& numThreads);
+		void SetNbThreads(size_t numThreads);
 
 		/**
 		 * Enqueue a task that will eventually be executed by one of the threads of the pool
@@ -57,7 +57,7 @@ namespace v4d::processing {
 		 * @Param task that returns no value
 		 * @Param delay in milliseconds
 		 */
-		inline void Enqueue(std::function<void()> task, const uint& delayMilliseconds) {
+		inline void Enqueue(std::function<void()> task, uint delayMilliseconds) {
 			Enqueue<uint, std::milli>(std::move(task), std::chrono::milliseconds{delayMilliseconds});
 		}
 		template<typename rep, typename period>
@@ -93,7 +93,7 @@ namespace v4d::processing {
 		 * @Param delay in milliseconds
 		 */
 		template<typename T>
-		inline auto Promise(T task, const uint& delayMilliseconds) -> std::future<std::future<decltype(task())>> {
+		inline auto Promise(T task, uint delayMilliseconds) -> std::future<std::future<decltype(task())>> {
 			return Promise<T, uint, std::milli>(std::move(task), std::chrono::milliseconds{delayMilliseconds});
 		}
 		template<typename T, typename rep, typename period>

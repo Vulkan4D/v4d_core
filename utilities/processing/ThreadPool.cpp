@@ -2,12 +2,12 @@
 
 using namespace v4d::processing;
 
-ThreadPool::ThreadPool(const size_t& numThreads) {
+ThreadPool::ThreadPool(size_t numThreads) {
 	stopping = false;
 	SetNbThreads(numThreads);
 }
 
-void ThreadPool::StartNewThread(const size_t& index) {
+void ThreadPool::StartNewThread(size_t index) {
 	threads.emplace(index, 
 		[this, index] {
 			while(true) {
@@ -56,9 +56,9 @@ ThreadPool::~ThreadPool() {
 	eventVar.notify_all();
 
 	try {
-		for (auto& thread : threads) {
-			if (thread.second.joinable()) {
-				thread.second.join();
+		for (auto& [index, thread] : threads) {
+			if (thread.joinable()) {
+				thread.join();
 			}
 		}
 	} catch (std::exception& e) {
@@ -68,7 +68,7 @@ ThreadPool::~ThreadPool() {
 	}
 }
 
-void ThreadPool::SetNbThreads(const size_t& numThreads) {
+void ThreadPool::SetNbThreads(size_t numThreads) {
 	{
 		std::lock_guard<std::mutex> lock(eventMutex);
 		this->numThreads = numThreads;
@@ -79,9 +79,9 @@ void ThreadPool::SetNbThreads(const size_t& numThreads) {
 
 	eventVar.notify_all();
 
-	for (auto& thread : threads) {
-		if (thread.first >= numThreads) {
-			thread.second.join();
+	for (auto& [index, thread] : threads) {
+		if (index >= numThreads) {
+			thread.join();
 		}
 	}
 }

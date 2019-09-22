@@ -85,7 +85,7 @@ namespace v4d::tests {
 		{// Test 4 (std::vector)
 			result = 100;
 			std::thread tRead([&bs,&result]{
-				for (const int& item : bs.Read<std::vector, int>()) {
+				for (int item : bs.Read<std::vector, int>()) {
 					result -= item;
 				}
 			});

@@ -264,10 +264,6 @@ namespace v4d::io {
 		virtual void StopListening() {
 			if (listening) {
 				listening = false;
-				if (IsTCP()) {
-					//TODO find a better way to stop listening on TCP socket
-					::connect(::socket(protocol, type, 0), (struct sockaddr*)&remoteAddr, sizeof remoteAddr);
-				}
 			}
 		}
 
@@ -278,20 +274,38 @@ namespace v4d::io {
 				listening = (::listen(socket, SOMAXCONN) >= 0);
 				listeningThread = std::thread([this, &newSocketCallback, &args...]{
 					while (listening) {
-						memset(&incomingAddr, 0, (size_t)addrLen);
-						SOCKET clientSocket = ::accept(socket, (struct sockaddr*)&incomingAddr, &addrLen);
-						if (listening) {
-							Socket s(clientSocket, incomingAddr, type, protocol);
-							newSocketCallback(s, args...);
+
+						// Check if there is a connection waiting in the socket
+						timeval tv{0, 10000}; // 10ms
+						fd_set rfds;
+						FD_ZERO(&rfds);
+						FD_SET(socket, &rfds);
+						int recVal = select((int)socket + 1, &rfds, NULL, NULL, &tv);
+						if (recVal == 0) continue; // timeout, keep going
+						if (recVal == -1) { // error, stop here
+							LOG_ERROR("Socket Listening error")
+							listening = false;
+							break;
+						}
+
+						if (FD_ISSET(socket, &rfds)) {
+							// We have an incoming connection awaiting... Accept it !
+							memset(&incomingAddr, 0, (size_t)addrLen);
+							SOCKET clientSocket = ::accept(socket, (struct sockaddr*)&incomingAddr, &addrLen);
+							if (listening) {
+								Socket s(clientSocket, incomingAddr, type, protocol);
+								newSocketCallback(s, args...);
+							} else {
+								#ifdef _WINDOWS
+									::closesocket(clientSocket);
+								#else
+									::close(clientSocket);
+								#endif
+							}
 						} else {
-							#ifdef _WINDOWS
-								::closesocket(clientSocket);
-							#else
-								::close(clientSocket);
-							#endif
+							INVALIDCODE("FD_ISSET returned false")
 						}
 					}
-					listening = false;
 				});
 			} else if (IsUDP()) {
 				listening = true;
@@ -300,7 +314,6 @@ namespace v4d::io {
 					while (listening) {
 						newSocketCallback(s, args...);
 					}
-					listening = false;
 				});
 			}
 		}

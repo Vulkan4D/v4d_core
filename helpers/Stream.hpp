@@ -203,26 +203,26 @@ namespace v4d {
 		template<typename T>
 		INLINE T Read() {
 			T data;
-			Read(data);
+			Read<T>(data);
 			return data;
 		}
 
 
 		// Variable-Size size (1 or 9 bytes)
-		INLINE void WriteSize(const size_t& size) {
+		INLINE void WriteSize(size_t size) {
 			std::lock_guard lock(writeMutex);
 			if (size < MAXBYTE) {
-				Write((byte)size);
+				Write<byte>((byte)size);
 			} else {
-				Write((byte)MAXBYTE);
-				Write(size);
+				Write<byte>((byte)MAXBYTE);
+				Write<size_t>(size);
 			}
 		}
 		INLINE size_t ReadSize() {
 			std::lock_guard lock(readMutex);
 			size_t size = Read<byte>();
 			if (size == MAXBYTE) {
-				Read(size);
+				Read<size_t>(size);
 			}
 			return size;
 		}
@@ -233,13 +233,13 @@ namespace v4d {
 		INLINE Stream& Write(const Container<T, std::allocator<T>>& data) {
 			std::lock_guard lock(writeMutex);
 			WriteSize(data.size());
-			for (const T& item : data) Write(item);
+			for (const T& item : data) Write<T>(item);
 			return *this;
 		}
 		template<template<typename, typename> class Container, typename T>
 		INLINE Stream& Read(Container<T, std::allocator<T>>& data) {
 			std::lock_guard lock(readMutex);
-			size_t size(ReadSize());
+			size_t size{ReadSize()};
 			data.clear();
 			data.reserve(size);
 			for (size_t i = 0; i < size; i++) data.push_back(Read<T>());
@@ -257,11 +257,11 @@ namespace v4d {
 		// Stream Operators overloading (generic)
 		template<typename T>
 		INLINE Stream& operator<<(const T& data) {
-			return Write((const T&)data);
+			return Write<T>((const T&)data);
 		}
 		template<typename T>
 		INLINE Stream& operator>>(T& data) {
-			return Read(data);
+			return Read<T>(data);
 		}
 
 
