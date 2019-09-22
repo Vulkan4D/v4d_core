@@ -43,9 +43,15 @@ namespace v4d::io {
 					LogToFile(msg);
 				} else {
 					#ifdef _WINDOWS
-						std::cout << msg << std::endl;
+						if (strcmp(style, "1"))
+							std::cerr << msg << std::endl;
+						else
+							std::cout << msg << std::endl;
 					#else
-						std::cout << "\033[" << style << 'm' << msg << "\033[0m" << std::endl;
+						if (strcmp(style, "1"))
+							std::cerr << "\033[" << style << 'm' << msg << "\033[0m" << std::endl;
+						else
+							std::cout << "\033[" << style << 'm' << msg << "\033[0m" << std::endl;
 					#endif
 				}
 			} catch(...) {}

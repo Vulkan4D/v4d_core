@@ -13,7 +13,7 @@ namespace v4d::io {
 		DLL_FILE_HANDLER handle;
 
 		SharedLibraryInstance(){}
-		SharedLibraryInstance(const std::string& name, const std::string& path, const bool& lazyLoad);
+		SharedLibraryInstance(const std::string& name, const std::string& path);
 		virtual ~SharedLibraryInstance();
 	};
 

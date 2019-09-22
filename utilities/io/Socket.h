@@ -36,7 +36,7 @@ namespace v4d::io {
 							connected = false, 
 							listening = false,
 							logErrors = true;
-		short port;
+		uint16_t port;
 
 		// Socket Options
 		#if _WINDOWS
@@ -59,7 +59,7 @@ namespace v4d::io {
 			if (IsConnected()) {
 				if (IsTCP()) {
 					#if _WINDOWS
-						::send(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), _GetWriteBuffer_().size(), MSG_DONTWAIT);
+						::send(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_DONTWAIT);
 					#else
 						::send(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT);
 						// ::write(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size());
@@ -67,7 +67,7 @@ namespace v4d::io {
 				} else 
 				if (IsUDP()) {
 					#if _WINDOWS
-						::sendto(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), _GetWriteBuffer_().size(), MSG_DONTWAIT, (const struct sockaddr*) &remoteAddr, sizeof remoteAddr);
+						::sendto(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_DONTWAIT, (const struct sockaddr*) &remoteAddr, sizeof remoteAddr);
 					#else
 						::sendto(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT, (const struct sockaddr*) &remoteAddr, sizeof remoteAddr);
 					#endif
@@ -78,12 +78,12 @@ namespace v4d::io {
 			}
 		}
 
-		virtual size_t Receive(byte* data, const size_t& maxBytesToRead) override {
-			size_t bytesRead = 0;
+		virtual size_t Receive(byte* data, size_t maxBytesToRead) override {
+			ssize_t bytesRead = 0;
 			if (IsConnected()) {
 				if (IsTCP()) {
 					#if _WINDOWS
-						int rec = ::recv(socket, reinterpret_cast<char*>(data), maxBytesToRead, MSG_WAITALL);
+						int rec = ::recv(socket, reinterpret_cast<char*>(data), (int)maxBytesToRead, MSG_WAITALL);
 						if (rec <= 0) {
 							// LOG_ERROR("TCP SOCKET RECEIVE ERROR: " << WSAGetLastError())
 							bytesRead = 0;
@@ -98,7 +98,7 @@ namespace v4d::io {
 				if (IsUDP()) {
 					memset((char*) &incomingAddr, 0, sizeof incomingAddr);
 					#if _WINDOWS
-						int rec = ::recvfrom(socket, reinterpret_cast<char*>(data), maxBytesToRead, 0, (struct sockaddr*) &incomingAddr, &addrLen);
+						int rec = ::recvfrom(socket, reinterpret_cast<char*>(data), (int)maxBytesToRead, 0, (struct sockaddr*) &incomingAddr, &addrLen);
 						if (rec <= 0) {
 							// LOG_ERROR("UDP SOCKET RECEIVE ERROR: " << WSAGetLastError())
 							bytesRead = 0;
@@ -116,7 +116,7 @@ namespace v4d::io {
 				//TODO error Not Connected ???
 				Disconnect();
 			}
-			return bytesRead;
+			return (size_t)bytesRead;
 		}
 
 		virtual void ReadBytes_OnError(const char* str) override {
@@ -136,7 +136,7 @@ namespace v4d::io {
 				// LOG("WINSOCK STATUS: " << wsaData.szSystemStatus)
 			#endif
 			socket = ::socket(protocol, type, 0);
-			memset(&remoteAddr, 0, addrLen);
+			memset(&remoteAddr, 0, (size_t)addrLen);
 			remoteAddr.sin_family = protocol;
 		}
 
@@ -201,7 +201,7 @@ namespace v4d::io {
 
 		////////////////////////////////////////////////////////////////////////////
 
-		virtual bool Bind(short port, long addr = INADDR_ANY) {
+		virtual bool Bind(uint16_t port, uint32_t addr = INADDR_ANY) {
 			if (!IsValid() || IsBound()) return false;
 
 			this->port = port;
@@ -220,7 +220,7 @@ namespace v4d::io {
 			return bound;
 		}
 
-		virtual bool Connect(const std::string& host, const short& port) {
+		virtual bool Connect(const std::string& host, uint16_t port) {
 			if (!IsValid() || IsBound() || IsConnected()) return false;
 
 			remoteAddr.sin_port = htons(port);
@@ -278,7 +278,7 @@ namespace v4d::io {
 				listening = (::listen(socket, SOMAXCONN) >= 0);
 				listeningThread = std::thread([this, &newSocketCallback, &args...]{
 					while (listening) {
-						memset(&incomingAddr, 0, addrLen);
+						memset(&incomingAddr, 0, (size_t)addrLen);
 						SOCKET clientSocket = ::accept(socket, (struct sockaddr*)&incomingAddr, &addrLen);
 						if (listening) {
 							Socket s(clientSocket, incomingAddr, type, protocol);

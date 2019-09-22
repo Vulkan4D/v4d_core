@@ -9,7 +9,7 @@ namespace v4d {
 
 		// Optional Read Buffer
 		bool useReadBuffer = false;
-		index_int readBufferCursor;
+		size_t readBufferCursor;
 		std::vector<byte> readBuffer;
 
 		std::vector<byte> writeBuffer;
@@ -23,9 +23,9 @@ namespace v4d {
 	protected: // Virtual methods to override for data sources
 
 		virtual void Send() {}
-		virtual size_t Receive(byte* data, const size_t& maxBytesToRead) {return 0;}
+		virtual size_t Receive(byte*, size_t) {return 0;}
 
-		virtual void ReadBytes_OnError(const char* str) {}
+		virtual void ReadBytes_OnError(const char*) {}
 
 
 	public: // Utility methods
@@ -99,7 +99,7 @@ namespace v4d {
 			readBufferCursor = 0;
 		}
 
-		virtual Stream& WriteBytes(const byte* data, const size_t& n) {
+		virtual Stream& WriteBytes(const byte* data, size_t n) {
 			std::lock_guard lock(writeMutex);
 			if ((writeBuffer.size() + n) > writeBuffer.capacity()) {
 				Flush();
@@ -108,7 +108,7 @@ namespace v4d {
 			return *this;
 		}
 
-		virtual Stream& ReadBytes(byte* data, const size_t& n) {
+		virtual Stream& ReadBytes(byte* data, size_t n) {
 			std::lock_guard lock(readMutex);
 			if (useReadBuffer) {
 				// Reset read buffer if we have read it completely
@@ -127,7 +127,7 @@ namespace v4d {
 							maxReadSize = readBuffer.capacity();
 						} else {
 							// Erase only the part that we already read from the buffer
-							readBuffer.erase(readBuffer.begin(), readBuffer.begin() + readBufferCursor);
+							readBuffer.erase(readBuffer.begin(), readBuffer.begin() + (long)readBufferCursor);
 							maxReadSize = readBuffer.capacity() - readBuffer.size();
 						}
 						readBufferCursor = 0;
@@ -212,10 +212,10 @@ namespace v4d {
 		INLINE void WriteSize(const size_t& size) {
 			std::lock_guard lock(writeMutex);
 			if (size < MAXBYTE) {
-				Write((const byte)size);
+				Write((byte)size);
 			} else {
-				Write((const byte)MAXBYTE);
-				Write((const size_t)size);
+				Write((byte)MAXBYTE);
+				Write(size);
 			}
 		}
 		INLINE size_t ReadSize() {

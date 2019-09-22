@@ -2,12 +2,12 @@
 
 using namespace v4d::processing;
 
-ThreadPool::ThreadPool(const index_255& numThreads) {
+ThreadPool::ThreadPool(const size_t& numThreads) {
 	stopping = false;
 	SetNbThreads(numThreads);
 }
 
-void ThreadPool::StartNewThread(const index_255& index) {
+void ThreadPool::StartNewThread(const size_t& index) {
 	threads.emplace(index, 
 		[this, index] {
 			while(true) {
@@ -68,7 +68,7 @@ ThreadPool::~ThreadPool() {
 	}
 }
 
-void ThreadPool::SetNbThreads(const index_255& numThreads) {
+void ThreadPool::SetNbThreads(const size_t& numThreads) {
 	{
 		std::lock_guard<std::mutex> lock(eventMutex);
 		this->numThreads = numThreads;

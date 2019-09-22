@@ -2,14 +2,14 @@
 
 using namespace v4d::io;
 
-SharedLibraryInstance::SharedLibraryInstance(const std::string& name, const std::string& path, const bool& lazyLoad = true) : name(name), path(path) {
+SharedLibraryInstance::SharedLibraryInstance(const std::string& name, const std::string& path) : name(name), path(path) {
 	#ifdef _WINDOWS
 		this->path += ".dll";
 		this->handle = LoadLibrary(this->path.c_str());
 		auto err = GetLastError();
 	#else// LINUX
 		this->path += ".so";
-		this->handle = dlopen(this->path.c_str(), lazyLoad? RTLD_LAZY : RTLD_NOW);
+		this->handle = dlopen(this->path.c_str(), RTLD_LAZY); // or RTLD_NOW
 		auto err = dlerror();
 	#endif
 	if (!handle) {

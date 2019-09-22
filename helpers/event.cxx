@@ -38,7 +38,7 @@ namespace v4d::tests {
 			v4d::tests::event::EVT2 << [&result](int a){ result -= a; };
 			v4d::tests::event::EVT2(5);
 
-			v4d::tests::event::EVT3 << [&result](std::string b){ result -= 3; };
+			v4d::tests::event::EVT3 << [&result](std::string){ result -= 3; };
 			v4d::tests::event::EVT3("test");
 
 			v4d::tests::event::EVT4 << [&result](void*){ result -= 2; };

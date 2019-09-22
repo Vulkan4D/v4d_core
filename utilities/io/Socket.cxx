@@ -26,7 +26,7 @@ namespace v4d::tests {
 			client.Flush();
 
 			result -= client.Read<int>();
-			result -= client.Read<long>();
+			result -= (int)client.Read<long>();
 			result -= client.Read<short>();
 
 			client.Disconnect();
@@ -83,8 +83,7 @@ namespace v4d::tests {
 				auto stream = s.ReadStream();
 				result -= stream.Read<int>();
 				result -= stream.Read<short>();
-				result -= stream.Read<double>();
-				result -= 9.5;
+				result -= (int)stream.Read<double>();
 			}, result);
 
 			SLEEP(100ms)
@@ -97,7 +96,7 @@ namespace v4d::tests {
 			v4d::Stream stream(1024);
 			stream.Write<int>(20);
 			stream.Write<short>(35);
-			stream.Write<double>(35.5);
+			stream.Write<double>(45.5);
 
 			client.WriteStream(stream);
 			client.Flush();

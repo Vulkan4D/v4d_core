@@ -33,7 +33,7 @@ ModuleInstance* ModulesLoader::Load(const std::string& sysName) {
 	std::lock_guard<std::mutex> lock(loadedModulesMutex);
 	if (loadedModules.find(sysName) == loadedModules.end()) {
 		std::string libName = GetLibName(sysName);
-		auto libInstance = SharedLibraryLoader::Load(libName, std::string("modules/") + sysName + "/" + sysName);
+		auto libInstance = sharedLibraryLoader.Load(libName, std::string("modules/") + sysName + "/" + sysName);
 		if (!libInstance) {
 			return nullptr;
 		}
@@ -41,21 +41,21 @@ ModuleInstance* ModulesLoader::Load(const std::string& sysName) {
 		LOAD_DLL_FUNC(libInstance, std::string, __GetCoreBuildVersion)
 		if (!__GetCoreBuildVersion) {
 			LOG_ERROR("Error getting symbol pointer for __GetCoreBuildVersion. " << LOAD_DLL_ERR)
-			SharedLibraryLoader::Unload(libName);
+			sharedLibraryLoader.Unload(libName);
 			return nullptr;
 		}
 
 		std::string moduleV4dVersion = __GetCoreBuildVersion();
 		if (moduleV4dVersion != V4D_VERSION) {
 			LOG_ERROR("V4D Core Libs version mismatch (App:" << V4D_VERSION << " != Module:" << moduleV4dVersion << ")")
-			SharedLibraryLoader::Unload(libName);
+			sharedLibraryLoader.Unload(libName);
 			return nullptr;
 		}
 
 		ModuleInstance* moduleInstance = new ModuleInstance(libInstance, sysName, v4dCore);
 		if (!moduleInstance->loaded) {
 			delete moduleInstance;
-			SharedLibraryLoader::Unload(libName);
+			sharedLibraryLoader.Unload(libName);
 			return nullptr;
 		}
 
@@ -70,7 +70,7 @@ void ModulesLoader::Unload(const std::string& sysName) {
 	if (loadedModules.find(sysName) != loadedModules.end()) {
 		delete loadedModules[sysName];
 		loadedModules.erase(sysName);
-		SharedLibraryLoader::Unload(GetLibName(sysName));
+		sharedLibraryLoader.Unload(GetLibName(sysName));
 	}
 }
 

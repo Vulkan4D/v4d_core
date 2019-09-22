@@ -17,7 +17,11 @@
 }
 
 namespace v4d::io {
-	struct V4DLIB ModuleInstance : public SharedLibraryInstance {
+	struct V4DLIB ModuleInstance {
+		std::string name;
+		std::string path;
+		DLL_FILE_HANDLER handle;
+		
 		std::string moduleName;
 		std::string moduleDescription;
 		int moduleRevision;
@@ -48,11 +52,12 @@ namespace v4d::io {
 		}
 
 		ModuleInstance(SharedLibraryInstance* libInstance, const std::string& sysName, v4d_core_weak v4dCore);
-		~ModuleInstance();
+		virtual ~ModuleInstance();
 	};
 
-	class V4DLIB ModulesLoader : public SharedLibraryLoader {
+	class V4DLIB ModulesLoader {
 	private:
+		SharedLibraryLoader sharedLibraryLoader;
 		std::mutex loadedModulesMutex;
 		std::map<std::string, ModuleInstance*> loadedModules;
 
@@ -63,11 +68,11 @@ namespace v4d::io {
 	public:
 		v4d_core_weak v4dCore;
 
-		ModulesLoader(v4d_core_weak v4dCore) : SharedLibraryLoader(), v4dCore(v4dCore) {}
+		ModulesLoader(v4d_core_weak v4dCore) : v4dCore(v4dCore) {}
 		virtual ~ModulesLoader();
 
-		ModuleInstance* Load(const std::string& sysName);
-		void Unload(const std::string& sysName) override;
-		void Reload(const std::string& sysName) override;
+		virtual ModuleInstance* Load(const std::string& sysName);
+		virtual void Unload(const std::string& sysName);
+		virtual void Reload(const std::string& sysName);
 	};
 }

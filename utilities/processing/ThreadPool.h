@@ -6,16 +6,16 @@ namespace v4d::processing {
 
 	class V4DLIB ThreadPool {
 	protected:
-		std::unordered_map<index_255, std::thread> threads;
+		std::unordered_map<size_t, std::thread> threads;
 		std::queue<std::function<void()>> tasks;
 
 		std::mutex eventMutex;
 		std::condition_variable eventVar;
 
 		bool stopping;
-		index_255 numThreads;
+		size_t numThreads;
 
-		void StartNewThread(const index_255& index);
+		void StartNewThread(const size_t& index);
 
 	public:
 
@@ -23,7 +23,7 @@ namespace v4d::processing {
 		 * ThreadPool sole constructor
 		 * @param number of threads
 		 */
-		ThreadPool(const index_255& numThreads);
+		ThreadPool(const size_t& numThreads);
 
 		/**
 		 * ThreadPool destructor
@@ -35,7 +35,7 @@ namespace v4d::processing {
 		 * Set a new number of threads
 		 * @param number of threads
 		 */
-		void SetNbThreads(const index_255& numThreads);
+		void SetNbThreads(const size_t& numThreads);
 
 		/**
 		 * Enqueue a task that will eventually be executed by one of the threads of the pool

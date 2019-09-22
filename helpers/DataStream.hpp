@@ -5,7 +5,7 @@
 namespace v4d {
 	class DataStream : public Stream {
 	protected:
-		index_int dataBufferCursor;
+		size_t dataBufferCursor;
 		std::vector<byte> dataBuffer;
 		std::mutex dataWaitMutex;
 		std::condition_variable dataBufferWaitCondition;
@@ -44,7 +44,7 @@ namespace v4d {
 			dataBufferWaitCondition.notify_one();
 		}
 
-		virtual size_t Receive(byte* data, const size_t& n) override {
+		virtual size_t Receive(byte* data, size_t n) override {
 			std::unique_lock lock(dataWaitMutex);
 			dataBufferWaitCondition.wait(lock, [this, n]{
 				return n <= this->GetDataBufferRemaining();

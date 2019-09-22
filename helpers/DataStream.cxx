@@ -10,7 +10,7 @@ namespace v4d::tests {
 		{// Test 1 (int, bool, float, double... using stream operators)
 			bs	<< (int)	54
 				<< (bool)	true
-				<< (float)	40.5
+				<< (float)	40.5f
 				<< (double)	5.5
 			;
 			bs.Flush();
@@ -28,7 +28,7 @@ namespace v4d::tests {
 
 			if (b) {
 				result -= a;
-				result -= (c+d);
+				result -= (int)(c+(float)d);
 			}
 			if (result != 0) {
 				LOG_ERROR(result << " Failed DataStream test1")
@@ -39,7 +39,7 @@ namespace v4d::tests {
 		{// Test 2 (long, short... with a negative value)
 			result = 100;
 			std::thread tRead([&bs,&result]{
-				result -= bs.Read<long>();
+				result -= (int)bs.Read<long>();
 				result -= bs.Read<short>();
 			});
 
@@ -59,12 +59,12 @@ namespace v4d::tests {
 			std::thread tRead([&bs,&result]{
 				result -= bs.Read<int>();
 				result -= bs.Read<short>();
-				result -= bs.Read<float>();
+				result -= (int)bs.Read<float>();
 
 				int a,b,c;
 				double d;
 				bs.Read(a, b, c, d);
-				result -= (a+b+c+d);
+				result -= (a+b+c+(int)d);
 			});
 
 			bs.Write(
@@ -189,7 +189,7 @@ namespace v4d::tests {
 				int a,b,c;
 				double d;
 				bs.Read<int, int, int, double>(a,b,c,d);
-				result -= a + b + c + d;
+				result -= a + b + c + (int)d;
 			});
 
 			bs.Write<int, int, int, double>(50, 40, 20, -10.0);

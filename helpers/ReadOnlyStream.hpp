@@ -6,7 +6,7 @@ namespace v4d {
 	class ReadOnlyStream : public Stream {
 	protected:
 		std::vector<byte> dataBuffer;
-		index_int dataBufferCursor;
+		size_t dataBufferCursor;
 
 	public:
 
@@ -33,7 +33,7 @@ namespace v4d {
 
 		virtual void Send() override {}
 
-		virtual size_t Receive(byte* data, const size_t& n) override {
+		virtual size_t Receive(byte* data, size_t n) override {
 			if (n > GetDataBufferRemaining()) {
 				return 0;
 			}
