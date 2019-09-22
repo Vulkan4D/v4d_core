@@ -20,8 +20,8 @@
 // V4D Core class (Compiled into v4d.dll)
 #include "Core.h"
 
-// This includes all V4D Modules (Also Compiled into v4d.dll)
-#include "modules.hh"
+// This includes all V4D Core Utilities (Also Compiled into v4d.dll)
+#include "utilities.hh"
 
 // Initial source code for all V4D Systems (Which will all be compiled as individual dlls loaded at runtime, also used for modding/plugins)
 #include "systems.hh"

@@ -1,5 +1,5 @@
 # v4d_core
-Source files for **Vulkan4D Core Library** (Core Modules and Helper functions)
+Source files for **Vulkan4D Core Library** (Core Utilities and Helper functions)
 
 These source files compile into `v4d.dll`
 
@@ -11,7 +11,7 @@ Vulkan4D is a revolutionary game engine built from the ground up for Space Games
 
 
 ### Project Structure
-- `Core & Modules` Compiled into `v4d.dll` and linked into the Project
+- `Core` Compiled into `v4d.dll` and linked into the Project
 - `Helpers` Simple-but-useful header-only source files, compiled into anything that is part of V4D
 - `Systems` Game functionalities (and plugins/mods) compiled into individual .dll files that are loaded at runtime
 - `Libraries` Other libraries used in the project
@@ -20,9 +20,9 @@ Vulkan4D is a revolutionary game engine built from the ground up for Space Games
 - `Tools` Useful tools to help programmers (build scripts, shader compiler, ...)
 
 
-## V4D Core Modules
+## V4D Core Utilities
 
-Core Modules are a solid part of Vulkan4D's Core to provide developers with interfaces to the Hardware. 
+Core Utilities are a solid part of Vulkan4D's Core to provide developers with interfaces to the Hardware. 
 
 They are split into 5 categories (`Audio`, `Graphics`, `IO`, `Networking`, `Processing`)
 
@@ -30,7 +30,7 @@ They are split into 5 categories (`Audio`, `Graphics`, `IO`, `Networking`, `Proc
 ## File Structure
 The core consists of the following structure :
 - `helpers/*` Contains header-only `.hpp` files with helper methods
-- `modules/*` Contains subdirectories for module categories with all their modules, each consisting of up to three files with the same [Module] name and different extensions (`.cpp`, `.h`, `.cxx`) and other subdirectories such as `shaders/` or `res/`
+- `utilities/*` Contains subdirectories for utility categories with all their utilities, each consisting of up to three files with the same [Utility] name and different extensions (`.cpp`, `.h`, `.cxx`) and other subdirectories such as `shaders/` or `res/`
 - `v4d.h` Main Header file to be included in anything that is part of V4D
 - `Core.h` Core header file
 - `Core.cpp` Core Source File compiled only in the core library

@@ -16,7 +16,7 @@ DEFINE_CORE_EVENT_HEADER(V4D_CORE_DESTROY, CoreDestroyEvent&)
 
 
 //////////////////////////////////////////////////////////
-// Some modules prototypes
+// Some utilities prototypes
 namespace v4d::io {
 	class Logger;
 	class SystemsLoader;

@@ -1,8 +1,8 @@
-#include "modules/processing/ThreadPool.cxx"
-#include "modules/networking/networking.cxx"
+#include "utilities/processing/ThreadPool.cxx"
+#include "utilities/networking/networking.cxx"
 #include "helpers/event.cxx"
 #include "helpers/DataStream.cxx"
-#include "modules/io/Socket.cxx"
+#include "utilities/io/Socket.cxx"
 
 #define RUN_UNIT_TESTS(funcName, ...) { LOG("Running tests for " << #funcName << " ..."); result += funcName(__VA_ARGS__); if (result != 0) { LOG_ERROR("UNIT TESTS FAILED"); return result; } }
 #define START_UNIT_TESTS using namespace v4d::tests; int main() { LOG("Started unit tests"); int result = 0; { V4D_PROJECT_INSTANTIATE_CORE_IN_MAIN( v4dCore ) 

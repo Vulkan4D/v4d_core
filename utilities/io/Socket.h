@@ -49,8 +49,8 @@ namespace v4d::io {
 		#endif
 
 		struct hostent *remoteHost;
-    	struct sockaddr_in remoteAddr; // Used for bind, connect and sending data
-    	struct sockaddr_in incomingAddr; // Used as temporary addr for receiving(UDP) and listening(TCP)
+		struct sockaddr_in remoteAddr; // Used for bind, connect and sending data
+		struct sockaddr_in incomingAddr; // Used as temporary addr for receiving(UDP) and listening(TCP)
 		socklen_t addrLen = sizeof incomingAddr;
 
 		std::thread listeningThread;
@@ -316,7 +316,7 @@ namespace v4d::io {
 		// Stream
 		ReadOnlyStream ReadStream();
 		void WriteStream(Stream& stream);
-		
+
 
 	};
 }
