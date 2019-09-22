@@ -85,7 +85,7 @@ namespace v4d::io {
 					#if _WINDOWS
 						int rec = ::recv(socket, reinterpret_cast<char*>(data), (int)maxBytesToRead, MSG_WAITALL);
 						if (rec <= 0) {
-							// LOG_ERROR("TCP SOCKET RECEIVE ERROR: " << WSAGetLastError())
+							// LOG_ERROR("TCP SOCKET RECEIVE ERROR: " << ::WSAGetLastError())
 							bytesRead = 0;
 						} else {
 							bytesRead = (size_t)rec;
@@ -100,7 +100,7 @@ namespace v4d::io {
 					#if _WINDOWS
 						int rec = ::recvfrom(socket, reinterpret_cast<char*>(data), (int)maxBytesToRead, 0, (struct sockaddr*) &incomingAddr, &addrLen);
 						if (rec <= 0) {
-							// LOG_ERROR("UDP SOCKET RECEIVE ERROR: " << WSAGetLastError())
+							// LOG_ERROR("UDP SOCKET RECEIVE ERROR: " << ::WSAGetLastError())
 							bytesRead = 0;
 						} else {
 							bytesRead = (size_t)rec;
@@ -129,7 +129,7 @@ namespace v4d::io {
 		Socket(SOCKET_TYPE type, SOCKET_PROTOCOL protocol = IPV4)
 		 : Stream(SOCKET_BUFFER_SIZE, /*useReadBuffer*/type==UDP), type(type), protocol(protocol) {
 			#if _WINDOWS
-				if (WSAStartup(MAKEWORD(2,2), &wsaData) != 0) {
+				if (::WSAStartup(MAKEWORD(2,2), &wsaData) != 0) {
 					socket = INVALID_SOCKET;
 					return;
 				}
@@ -150,7 +150,7 @@ namespace v4d::io {
 		std::string GetLastError() const {
 			#if _WINDOWS
 				// https://docs.microsoft.com/en-us/windows/win32/winsock/windows-sockets-error-codes-2
-				return std::to_string(WSAGetLastError());
+				return std::to_string(::WSAGetLastError());
 			#else
 				return "";
 			#endif
@@ -254,7 +254,7 @@ namespace v4d::io {
 			}
 			#ifdef _WINDOWS
 				::closesocket(socket);
-				WSACleanup();
+				::WSACleanup();
 			#else
 				::close(socket);
 			#endif
@@ -267,6 +267,15 @@ namespace v4d::io {
 			}
 		}
 
+		int Poll(int timeoutMilliseconds = 0) {
+			pollfd fds[1] = {pollfd{socket, POLLIN, 0}};
+			#ifdef _WINDOWS
+				return ::WSAPoll(fds, 1, timeoutMilliseconds);
+			#else
+				return ::poll(fds, 1, timeoutMilliseconds);
+			#endif
+		}
+
 		template<class Func, class ...FuncArgs>
 		void StartListeningThread(Func newSocketCallback, FuncArgs&&... args) {
 			if (!IsBound()) return;
@@ -276,19 +285,15 @@ namespace v4d::io {
 					while (listening) {
 
 						// Check if there is a connection waiting in the socket
-						timeval tv{0, 10000}; // 10ms
-						fd_set rfds;
-						FD_ZERO(&rfds);
-						FD_SET(socket, &rfds);
-						int recVal = select((int)socket + 1, &rfds, NULL, NULL, &tv);
-						if (recVal == 0) continue; // timeout, keep going
-						if (recVal == -1) { // error, stop here
+						int polled = Poll(1000);
+						if (polled == 0) continue; // timeout, keep going
+						if (polled == -1) { // error, stop here
 							LOG_ERROR("Socket Listening error")
 							listening = false;
 							break;
 						}
 
-						if (FD_ISSET(socket, &rfds)) {
+						if (polled == 1) {
 							// We have an incoming connection awaiting... Accept it !
 							memset(&incomingAddr, 0, (size_t)addrLen);
 							SOCKET clientSocket = ::accept(socket, (struct sockaddr*)&incomingAddr, &addrLen);
@@ -303,7 +308,7 @@ namespace v4d::io {
 								#endif
 							}
 						} else {
-							INVALIDCODE("FD_ISSET returned false")
+							INVALIDCODE("polled > 1")
 						}
 					}
 				});
