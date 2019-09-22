@@ -17,7 +17,7 @@
 	#define V4D_PROJECT_INSTANTIATE_CORE_IN_MAIN(v4dCore, ...) \
 		if (!v4d::CheckCoreVersion()) return -1; \
 		v4d_core v4dCore = std::make_shared<v4d::Core>(); \
-		v4dCore->systemsLoader = new v4d::io::SystemsLoader(v4dCore); \
+		v4dCore->modulesLoader = new v4d::io::ModulesLoader(v4dCore); \
 		if (!v4dCore->Init(__VA_ARGS__)) { \
 			return -1; \
 		}

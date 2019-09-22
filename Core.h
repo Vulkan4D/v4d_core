@@ -19,8 +19,8 @@ DEFINE_CORE_EVENT_HEADER(V4D_CORE_DESTROY, CoreDestroyEvent&)
 // Some utilities prototypes
 namespace v4d::io {
 	class Logger;
-	class SystemsLoader;
-	class SystemInstance;
+	class ModulesLoader;
+	class ModuleInstance;
 }
 
 //////////////////////////////////////////////////////////
@@ -35,12 +35,12 @@ namespace v4d {
 		bool Init();
 		bool Init(std::shared_ptr<v4d::io::Logger> coreLogger);
 		static std::shared_ptr<v4d::io::Logger> coreLogger;
-		v4d::io::SystemsLoader* systemsLoader;
+		v4d::io::ModulesLoader* modulesLoader;
 		void Destroy();
 		~Core();
 		void SetProjectName(std::string);
 		std::string GetProjectName() const;
-		v4d::io::SystemInstance* LoadSystem(const std::string& name);
+		v4d::io::ModuleInstance* LoadModule(const std::string& name);
 	};
 }
 

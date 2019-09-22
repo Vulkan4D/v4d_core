@@ -38,15 +38,15 @@
 #endif
 #ifdef _V4D_CORE
 	#define V4DLIB DLLEXPORT
-#else// Project/System
+#else// Project/Module
 	#define V4DLIB DLLIMPORT
 #endif
-#ifdef _V4D_SYSTEM
-	#define V4DSYSTEM EXTERNC DLLEXPORT
+#ifdef _V4D_MODULE
+	#define V4DMODULE EXTERNC DLLEXPORT
 	// https://www.tldp.org/HOWTO/pdf/C++-dlopen.pdf
-	// #define V4DSYSTEM_CLASS(className) EXTERNCPP class DLLEXPORT className
+	// #define V4DMODULE_CLASS(className) EXTERNCPP class DLLEXPORT className
 #else// Project/Core
-	#define V4DSYSTEM
-	// #define V4DSYSTEM_CLASS(className)
+	#define V4DMODULE
+	// #define V4DMODULE_CLASS(className)
 #endif
 

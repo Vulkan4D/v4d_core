@@ -34,7 +34,7 @@
 
 	v4d::Core::~Core(){
 		Destroy();
-		if (systemsLoader) delete systemsLoader;
+		if (modulesLoader) delete modulesLoader;
 	}
 
 	void v4d::Core::Destroy() {
@@ -50,8 +50,8 @@
 		return this->projectName;
 	}
 
-	v4d::io::SystemInstance* v4d::Core::LoadSystem(const std::string& name) {
-		return systemsLoader->Load(name);
+	v4d::io::ModuleInstance* v4d::Core::LoadModule(const std::string& name) {
+		return modulesLoader->Load(name);
 	}
 
 #endif

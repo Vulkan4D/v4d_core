@@ -5,7 +5,7 @@
 
 
 #define V4D_VERSION "0.0.0" 
-// Version must be the same for everyting (project, core, all systems...). The version check is automatically done upon loading
+// Version must be the same for everyting (project, core, all modules...). The version check is automatically done upon loading
 
 
 //////////////////////////////////////////////////////
@@ -23,8 +23,8 @@
 // This includes all V4D Core Utilities (Also Compiled into v4d.dll)
 #include "utilities.hh"
 
-// Initial source code for all V4D Systems (Which will all be compiled as individual dlls loaded at runtime, also used for modding/plugins)
-#include "systems.hh"
+// Initial source code for all V4D Modules (Which will all be compiled as individual dlls loaded at runtime, also used for modding/plugins)
+#include "modules.hh"
 
 // Initial source code for the End-Project
 #include "project.hh"
