@@ -2,6 +2,7 @@
 #include "utilities/networking/networking.cxx"
 #include "helpers/event.cxx"
 #include "helpers/DataStream.cxx"
+#include "helpers/Base64.cxx"
 #include "utilities/io/Socket.cxx"
 
 #define RUN_UNIT_TESTS(funcName, ...) { LOG("Running tests for " << #funcName << " ..."); result += funcName(__VA_ARGS__); if (result != 0) { LOG_ERROR("UNIT TESTS FAILED"); return result; } }
@@ -15,6 +16,7 @@ namespace v4d::tests {
 			
 			RUN_UNIT_TESTS( ThreadPool )
 			RUN_UNIT_TESTS( Event )
+			RUN_UNIT_TESTS( Base64 )
 			RUN_UNIT_TESTS( DataStream )
 			RUN_UNIT_TESTS( Socket )
 			RUN_UNIT_TESTS( Networking )

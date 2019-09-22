@@ -6,13 +6,15 @@ namespace v4d {
 	class ReadOnlyStream : public Stream {
 	protected:
 		std::vector<byte> dataBuffer;
-		size_t dataBufferCursor;
+		size_t dataBufferCursor = 0;
 
 	public:
 
 		ReadOnlyStream() : Stream(0) {}
 
-		ReadOnlyStream(byte* data, size_t size) : Stream(0), dataBufferCursor(0) {
+		ReadOnlyStream(std::vector<byte> bytes) : ReadOnlyStream(bytes.data(), bytes.size()) {}
+
+		ReadOnlyStream(byte* data, size_t size) : Stream(0) {
 			ImportData(data, size);
 		}
 
