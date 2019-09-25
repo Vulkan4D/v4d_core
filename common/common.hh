@@ -15,8 +15,7 @@
 #include <thread>
 #include <queue>
 #include <cstring>
-
-
 #include <stdexcept>
+#include <algorithm>
 #include <unistd.h>
 

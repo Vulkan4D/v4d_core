@@ -202,7 +202,7 @@ namespace v4d {
 		// Return-Read
 		template<typename T>
 		INLINE T Read() {
-			T data;
+			T data{};
 			Read<T>(data);
 			return data;
 		}

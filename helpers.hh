@@ -11,5 +11,6 @@
 #include "helpers/Stream.hpp"
 #include "helpers/DataStream.hpp"
 #include "helpers/ReadOnlyStream.hpp"
+#include "helpers/Base16.hpp"
 #include "helpers/Base64.hpp"
 

@@ -7,6 +7,10 @@ namespace v4d {
 	class Base64 {
 	public:
 
+		INLINE static std::string Encode(std::vector<byte> data) {
+			return Encode(data.data(), data.size());
+		}
+
 		static std::string Encode(const byte* data, size_t dataLen) {
 			std::string ret;
 
