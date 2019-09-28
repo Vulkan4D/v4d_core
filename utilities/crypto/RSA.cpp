@@ -35,6 +35,10 @@ size_t v4d::crypto::RSA::GetBits() const {
 	return (size_t)RSA_bits((::RSA*)rsaHandle);
 }
 
+size_t v4d::crypto::RSA::GetMaxBlockSize() const {
+	return GetSize() - RSA_PKCS1_PADDING_SIZE;
+}
+
 std::string v4d::crypto::RSA::GetPrivateKeyPEM() const {
 	BIO* bio = BIO_new(BIO_s_mem());
 	PEM_write_bio_RSAPrivateKey(bio, (::RSA*)rsaHandle, NULL, NULL, 0, NULL, NULL);
@@ -72,9 +76,14 @@ v4d::crypto::RSA v4d::crypto::RSA::FromPublicKeyPEM(const std::string& pem) {
 	return v4d::crypto::RSA{rsa};
 }
 
-std::vector<byte> v4d::crypto::RSA::Encrypt(const std::vector<byte>& data) {
+std::vector<byte> v4d::crypto::RSA::Encrypt(const byte* data, size_t size) {
 	std::vector<byte> encryptedData(GetSize());
-	int res = RSA_public_encrypt((int)data.size(), data.data(), encryptedData.data(), (::RSA*)rsaHandle, RSA_PKCS1_OAEP_PADDING);
+	if (size > GetMaxBlockSize()) {
+		LOG_ERROR("RSA Encrypt Error: Max block size exceeded")
+		encryptedData.clear();
+		return encryptedData;
+	}
+	int res = RSA_public_encrypt((int)size, data, encryptedData.data(), (::RSA*)rsaHandle, RSA_PKCS1_PADDING);
 	if (res != (int)GetSize())  {
 		OPENSSL_RSA_ERR("Encrypt")
 		encryptedData.clear();
@@ -83,9 +92,13 @@ std::vector<byte> v4d::crypto::RSA::Encrypt(const std::vector<byte>& data) {
 	return encryptedData;
 }
 
-std::vector<byte> v4d::crypto::RSA::Decrypt(const std::vector<byte>& encryptedData) {
+std::vector<byte> v4d::crypto::RSA::Decrypt(const byte* encryptedData, size_t size) {
+	if (size != GetSize()) {
+		LOG_ERROR("RSA Decrypt Error: invalid input data (block size does not match)")
+		return std::vector<byte>{};
+	}
 	std::vector<byte> data(GetSize());
-	int decryptedSize = RSA_private_decrypt((int)encryptedData.size(), encryptedData.data(), data.data(), (::RSA*)rsaHandle, RSA_PKCS1_OAEP_PADDING);
+	int decryptedSize = RSA_private_decrypt((int)size, encryptedData, data.data(), (::RSA*)rsaHandle, RSA_PKCS1_PADDING);
 	if (decryptedSize == -1) {
 		OPENSSL_RSA_ERR("Decrypt")
 		data.clear();
@@ -95,10 +108,10 @@ std::vector<byte> v4d::crypto::RSA::Decrypt(const std::vector<byte>& encryptedDa
 	return data;
 }
 
-std::vector<byte> v4d::crypto::RSA::Sign(const std::vector<byte>& data) {
+std::vector<byte> v4d::crypto::RSA::Sign(const byte* data, size_t size) {
 	std::vector<byte> signature(GetSize());
-	unsigned int size;
-	if (RSA_sign(NID_sha1, data.data(), (unsigned int)data.size(), signature.data(), &size, (::RSA*)rsaHandle) == 0) {
+	unsigned int s;
+	if (RSA_sign(NID_sha1, data, (unsigned int)size, signature.data(), &s, (::RSA*)rsaHandle) == 0) {
 		OPENSSL_RSA_ERR("Sign")
 		signature.clear();
 		return signature;
@@ -106,6 +119,14 @@ std::vector<byte> v4d::crypto::RSA::Sign(const std::vector<byte>& data) {
 	return signature;
 }
 
+bool v4d::crypto::RSA::Verify(const byte* data, size_t size, const std::vector<byte>& signature) {
+	return RSA_verify(NID_sha1, data, (unsigned int)size, signature.data(), (unsigned int)signature.size(), (::RSA*)rsaHandle) == 1;
+}
+
+std::vector<byte> v4d::crypto::RSA::Sign(const std::vector<byte>& data) {
+	return Sign(data.data(), data.size());
+}
+
 bool v4d::crypto::RSA::Verify(const std::vector<byte>& data, const std::vector<byte>& signature) {
-	return RSA_verify(NID_sha1, data.data(), (unsigned int)data.size(), signature.data(), (unsigned int)signature.size(), (::RSA*)rsaHandle) == 1;
+	return Verify(data.data(), data.size(), signature);
 }

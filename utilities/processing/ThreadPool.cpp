@@ -7,7 +7,7 @@ ThreadPool::ThreadPool(size_t numThreads) {
 	SetNbThreads(numThreads);
 }
 
-void ThreadPool::StartNewThread(size_t index) {
+void ThreadPool::StartNewThread(index_t index) {
 	threads.emplace(index, 
 		[this, index] {
 			while(true) {
@@ -30,7 +30,7 @@ void ThreadPool::StartNewThread(size_t index) {
 						}
 
 						// get the next task to execute
-						task = move(this->tasks.front());
+						task = std::move(this->tasks.front());
 						this->tasks.pop();
 					}
 

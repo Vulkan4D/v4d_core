@@ -4,7 +4,7 @@
 
 namespace v4d::crypto {
 
-	class V4DLIB RSA {
+	class V4DLIB RSA : public Crypto {
 	private:
 		void* rsaHandle;
 		RSA(void*);
@@ -12,8 +12,9 @@ namespace v4d::crypto {
 	public:
 		std::string GetPrivateKeyPEM() const;
 		std::string GetPublicKeyPEM() const;
-		inline size_t GetSize() const;
-		inline size_t GetBits() const;
+		size_t GetSize() const;
+		size_t GetBits() const;
+		size_t GetMaxBlockSize() const;
 		static RSA FromPrivateKeyPEM(const std::string&);
 		static RSA FromPublicKeyPEM(const std::string&);
 		
@@ -21,8 +22,15 @@ namespace v4d::crypto {
 		~RSA();
 		DELETE_COPY_CONSTRUCTORS(RSA)
 
-		std::vector<byte> Encrypt(const std::vector<byte>& data);
-		std::vector<byte> Decrypt(const std::vector<byte>& encryptedData);
+		using Crypto::Encrypt;
+		using Crypto::Decrypt;
+
+		std::vector<byte> Encrypt(const byte* data, size_t) override;
+		std::vector<byte> Decrypt(const byte* data, size_t) override;
+
+		std::vector<byte> Sign(const byte* data, size_t size);
+		bool Verify(const byte* data, size_t size, const std::vector<byte>& signature);
+
 		std::vector<byte> Sign(const std::vector<byte>& data);
 		bool Verify(const std::vector<byte>& data, const std::vector<byte>& signature);
 	};

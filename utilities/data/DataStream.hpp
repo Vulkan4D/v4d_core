@@ -2,8 +2,8 @@
 
 #include <v4d.h>
 
-namespace v4d {
-	class DataStream : public Stream {
+namespace v4d::data {
+	class V4DLIB DataStream : public Stream {
 	protected:
 		size_t dataBufferCursor;
 		std::vector<byte> dataBuffer;
@@ -22,6 +22,12 @@ namespace v4d {
 		}
 
 		DELETE_COPY_MOVE_CONSTRUCTORS(DataStream)
+
+		inline virtual std::vector<byte> GetData() override {
+			std::scoped_lock lock(dataWaitMutex);
+			// Copy and return buffer
+			return dataBuffer;
+		};
 
 	protected:
 

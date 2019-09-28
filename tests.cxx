@@ -1,12 +1,12 @@
 #include "utilities/processing/ThreadPool.cxx"
 #include "utilities/networking/networking.cxx"
 #include "helpers/event.cxx"
-#include "helpers/DataStream.cxx"
 #include "helpers/Base16.cxx"
 #include "helpers/Base64.cxx"
 #include "utilities/crypto/AES.cxx"
 #include "utilities/crypto/RSA.cxx"
 #include "utilities/crypto/SHA.cxx"
+#include "utilities/data/DataStream.cxx"
 #include "utilities/io/Socket.cxx"
 
 #define RUN_UNIT_TESTS(funcName, ...) { LOG("Running tests for " << #funcName << " ..."); result += funcName(__VA_ARGS__); if (result != 0) { LOG_ERROR("UNIT TESTS FAILED"); return result; } }
@@ -20,13 +20,13 @@ namespace v4d::tests {
 			
 			RUN_UNIT_TESTS( ThreadPool )
 			RUN_UNIT_TESTS( Event )
-			RUN_UNIT_TESTS( DataStream )
-			RUN_UNIT_TESTS( Socket )
 			RUN_UNIT_TESTS( Base16 )
 			RUN_UNIT_TESTS( Base64 )
 			RUN_UNIT_TESTS( AES )
 			RUN_UNIT_TESTS( RSA )
 			RUN_UNIT_TESTS( SHA )
+			RUN_UNIT_TESTS( DataStream )
+			RUN_UNIT_TESTS( Socket )
 			RUN_UNIT_TESTS( Networking )
 
 

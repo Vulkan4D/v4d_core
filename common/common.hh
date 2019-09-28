@@ -18,4 +18,6 @@
 #include <stdexcept>
 #include <algorithm>
 #include <unistd.h>
-
+#include <cstdint>
+#include <stdio.h>
+#include <type_traits>

@@ -6,7 +6,7 @@ namespace v4d::tests {
 
 		{// Test1: Encrypt / Decrypt
 			result = 100;
-			v4d::Stream stream(1024);
+			v4d::data::Stream stream(1024);
 			stream << 20;
 			stream << true;
 			stream << std::string("testing AES...");
@@ -24,8 +24,8 @@ namespace v4d::tests {
 				return -1;
 			}
 
-			auto encryptedData = aes.Encrypt(stream._GetWriteBuffer_());
-			v4d::ReadOnlyStream decryptedStream(aes.Decrypt(encryptedData));
+			auto encryptedData = aes.EncryptStream(stream);
+			auto decryptedStream = aes.DecryptStream(encryptedData);
 
 			result -= (int)decryptedStream.GetDataBufferRemaining();
 
@@ -44,6 +44,35 @@ namespace v4d::tests {
 			}
 
 			if (result != 0) LOG_ERROR("ERROR: AES Test1 failed")
+		}
+
+		{// Test2: Encrypt / Decrypt String
+			v4d::crypto::AES aes(256);
+			auto aesHex = aes.GetHexKey();
+			v4d::crypto::AES aes2(aesHex);
+
+			auto encryptedData = aes2.EncryptString("Hello AES!");
+			auto decryptedString = aes2.DecryptString(encryptedData);
+
+			if (decryptedString != "Hello AES!") {
+				LOG_ERROR("ERROR: AES Test2 failed")
+				return 2;
+			}
+		}
+
+		{// Test3: Encrypt / Decrypt Array of bytes
+			result = 100;
+			
+			v4d::crypto::AES aes(256);
+
+			byte bytes[6] = {3, 17, 50, 10, 12, 8};
+
+			auto encryptedData = aes.Encrypt(bytes, 6);
+			auto decryptedData = aes.Decrypt(encryptedData);
+
+			for (byte b : decryptedData) result -= b;
+
+			if (result != 0) LOG_ERROR("ERROR: AES Test3 failed")
 		}
 
 		return result;

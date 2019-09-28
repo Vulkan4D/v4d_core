@@ -27,7 +27,7 @@ namespace v4d::io {
 		IPV6 = AF_INET6,
 	};
 
-	class V4DLIB Socket : public Stream {
+	class V4DLIB Socket : public v4d::data::Stream {
 	protected:
 		SOCKET_TYPE type;
 		SOCKET_PROTOCOL protocol;
@@ -53,13 +53,22 @@ namespace v4d::io {
 		struct sockaddr_in incomingAddr; // Used as temporary addr for receiving(UDP) and listening(TCP)
 		socklen_t addrLen = sizeof incomingAddr;
 
-		std::thread listeningThread;
+		std::thread* listeningThread = nullptr;
 
 		virtual void Send() override {
 			if (IsConnected()) {
 				if (IsTCP()) {
 					#if _WINDOWS
-						::send(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_DONTWAIT);
+
+						#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
+							::send(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_DONTWAIT);
+						#else
+							size_t size = _GetWriteBuffer_().size();
+							char data[size];
+							memcpy(data, _GetWriteBuffer_().data(), size);
+							::send(socket, data, (int)size, MSG_DONTWAIT);
+						#endif
+
 					#else
 						::send(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT);
 						// ::write(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size());
@@ -67,14 +76,23 @@ namespace v4d::io {
 				} else 
 				if (IsUDP()) {
 					#if _WINDOWS
-						::sendto(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_DONTWAIT, (const struct sockaddr*) &remoteAddr, sizeof remoteAddr);
+					
+						#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
+							::sendto(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_DONTWAIT, (const struct sockaddr*) &remoteAddr, sizeof remoteAddr);
+						#else
+							size_t size = _GetWriteBuffer_().size();
+							char data[size];
+							memcpy(data, _GetWriteBuffer_().data(), size);
+							::sendto(socket, data, (int)size, MSG_DONTWAIT, (const struct sockaddr*) &remoteAddr, sizeof remoteAddr);
+						#endif
+
 					#else
 						::sendto(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT, (const struct sockaddr*) &remoteAddr, sizeof remoteAddr);
 					#endif
 				}
 			} else {
-				//TODO error Not Connected ???
-				Disconnect();
+				LOG_ERROR("Not Connected")
+				// Disconnect();
 			}
 		}
 
@@ -83,9 +101,17 @@ namespace v4d::io {
 			if (IsConnected()) {
 				if (IsTCP()) {
 					#if _WINDOWS
-						int rec = ::recv(socket, reinterpret_cast<char*>(data), (int)maxBytesToRead, MSG_WAITALL);
+
+						#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
+							int rec = ::recv(socket, reinterpret_cast<char*>(data), (int)maxBytesToRead, MSG_WAITALL);
+						#else
+							char bytes[maxBytesToRead];
+							int rec = ::recv(socket, bytes, (int)maxBytesToRead, MSG_WAITALL);
+							memcpy(data, bytes, maxBytesToRead);
+						#endif
+
 						if (rec <= 0) {
-							// LOG_ERROR("TCP SOCKET RECEIVE ERROR: " << ::WSAGetLastError())
+							LOG_ERROR("TCP SOCKET RECEIVE ERROR: " << ::WSAGetLastError())
 							bytesRead = 0;
 						} else {
 							bytesRead = (size_t)rec;
@@ -98,9 +124,17 @@ namespace v4d::io {
 				if (IsUDP()) {
 					memset((char*) &incomingAddr, 0, sizeof incomingAddr);
 					#if _WINDOWS
-						int rec = ::recvfrom(socket, reinterpret_cast<char*>(data), (int)maxBytesToRead, 0, (struct sockaddr*) &incomingAddr, &addrLen);
+
+						#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
+							int rec = ::recvfrom(socket, reinterpret_cast<char*>(data), (int)maxBytesToRead, 0, (struct sockaddr*) &incomingAddr, &addrLen);
+						#else
+							char bytes[maxBytesToRead];
+							int rec = ::recvfrom(socket, bytes, (int)maxBytesToRead, 0, (struct sockaddr*) &incomingAddr, &addrLen);
+							memcpy(data, bytes, maxBytesToRead);
+						#endif
+						
 						if (rec <= 0) {
-							// LOG_ERROR("UDP SOCKET RECEIVE ERROR: " << ::WSAGetLastError())
+							LOG_ERROR("UDP SOCKET RECEIVE ERROR: " << ::WSAGetLastError())
 							bytesRead = 0;
 						} else {
 							bytesRead = (size_t)rec;
@@ -113,8 +147,8 @@ namespace v4d::io {
 				try {
 					memset(data, 0, maxBytesToRead);
 				} catch (...) {}
-				//TODO error Not Connected ???
-				Disconnect();
+				LOG_ERROR("Not Connected")
+				// Disconnect();
 			}
 			return (size_t)bytesRead;
 		}
@@ -143,9 +177,19 @@ namespace v4d::io {
 		Socket(SOCKET socket, const sockaddr_in& remoteAddr, SOCKET_TYPE type, SOCKET_PROTOCOL protocol = IPV4)
 		 : Stream(SOCKET_BUFFER_SIZE, /*useReadBuffer*/type==UDP), type(type), protocol(protocol), socket(socket), connected(true), remoteAddr(remoteAddr) {}
 
-		~Socket() {
+		virtual ~Socket() {
 			Disconnect();
 		}
+
+		DELETE_COPY_MOVE_CONSTRUCTORS(Socket)
+
+		inline virtual std::vector<byte> GetData() override {
+			std::scoped_lock lock(readMutex);
+			// Copy and return buffer
+			std::vector<byte> data(_GetReadBuffer_().size());
+			memcpy(data.data(), _GetReadBuffer_().data(), _GetReadBuffer_().size());
+			return data;
+		};
 
 		INLINE std::string GetLastError() const {
 			#if _WINDOWS
@@ -256,20 +300,21 @@ namespace v4d::io {
 				::close(socket);
 			#endif
 			socket = INVALID_SOCKET;
+			connected = false;
 		}
 
 		INLINE void StopListening() {
-			if (listening) {
-				listening = false;
-			}
-
-			// WEIRD SHIT : If this method is not forced inline, it crashes in Windows when trying to join the thread below
-			if (listeningThread.joinable()) {
-				listeningThread.join();
+			listening = false;
+			if (listeningThread) {
+				if (listeningThread->joinable()) {
+					listeningThread->join();
+					delete listeningThread;
+					listeningThread = nullptr;
+				}
 			}
 		}
 
-		INLINE int Poll(int timeoutMilliseconds = 0) {
+		inline int Poll(int timeoutMilliseconds = 0) {
 			pollfd fds[1] = {pollfd{socket, POLLIN, 0}};
 			#ifdef _WINDOWS
 				return ::WSAPoll(fds, 1, timeoutMilliseconds);
@@ -279,12 +324,12 @@ namespace v4d::io {
 		}
 
 		template<class Func, class ...FuncArgs>
-		void StartListeningThread(int waitIntervalMilliseconds, Func newSocketCallback, FuncArgs&&... args) {
+		void StartListeningThread(int waitIntervalMilliseconds, Func&& newSocketCallback, FuncArgs&&... args) {
 			if (!IsBound()) return;
 			if (IsTCP()) {
 				listening = (::listen(socket, SOMAXCONN) >= 0);
-				listeningThread = std::thread([this, &newSocketCallback, waitIntervalMilliseconds, &args...]{
-					while (listening) {
+				listeningThread = new std::thread([this, waitIntervalMilliseconds](Func&& newSocketCallback, FuncArgs&&... args){
+					while (IsListening()) {
 
 						// Check if there is a connection waiting in the socket
 						int polled = Poll(waitIntervalMilliseconds);
@@ -299,9 +344,8 @@ namespace v4d::io {
 							// We have an incoming connection awaiting... Accept it !
 							memset(&incomingAddr, 0, (size_t)addrLen);
 							SOCKET clientSocket = ::accept(socket, (struct sockaddr*)&incomingAddr, &addrLen);
-							if (listening) {
-								Socket s(clientSocket, incomingAddr, type, protocol);
-								newSocketCallback(s, args...);
+							if (IsListening()) {
+								newSocketCallback(std::make_shared<Socket>(clientSocket, incomingAddr, type, protocol), std::forward<FuncArgs>(args)...);
 							} else {
 								#ifdef _WINDOWS
 									::closesocket(clientSocket);
@@ -313,15 +357,15 @@ namespace v4d::io {
 							INVALIDCODE("polled > 1")
 						}
 					}
-				});
+				}, std::forward<Func>(newSocketCallback), std::forward<FuncArgs>(args)...);
 			} else if (IsUDP()) {
 				listening = true;
-				listeningThread = std::thread([this, &newSocketCallback, waitIntervalMilliseconds, &args...]{
-					Socket s(socket, remoteAddr, type, protocol);
-					while (listening) {
+				listeningThread = new std::thread([this, waitIntervalMilliseconds](Func&& newSocketCallback, FuncArgs&&... args){
+					std::shared_ptr<Socket> s = std::make_shared<Socket>(socket, remoteAddr, type, protocol);
+					while (IsListening()) {
 
 						// Check if there is a connection waiting in the socket
-						int polled = s.Poll(waitIntervalMilliseconds);
+						int polled = s->Poll(waitIntervalMilliseconds);
 						if (polled == 0) continue; // timeout, keep going
 						if (polled == -1) { // error, stop here
 							LOG_ERROR("UDP Socket Listening Poll error")
@@ -329,9 +373,11 @@ namespace v4d::io {
 							break;
 						}
 
-						newSocketCallback(s, args...);
+						if (IsListening()) {
+							newSocketCallback(s, std::forward<FuncArgs>(args)...);
+						}
 					}
-				});
+				}, std::forward<Func>(newSocketCallback), std::forward<FuncArgs>(args)...);
 			}
 		}
 
@@ -339,15 +385,9 @@ namespace v4d::io {
 			connected = true;
 		}
 		
-
-		////////////////////////////////////////////////////////////////////////////////
-		// Other Read/Write methods
-
-		// Stream
-		ReadOnlyStream ReadStream();
-		void WriteStream(Stream& stream);
-
-
 	};
+	
+	typedef std::shared_ptr<v4d::io::Socket> SharedSocket;
+
 }
 

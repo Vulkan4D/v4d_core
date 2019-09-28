@@ -5,7 +5,7 @@ namespace v4d::tests {
 	int Base64() {
 		int result = 100;
 
-		v4d::Stream stream(1024);
+		v4d::data::Stream stream(1024);
 		stream << 40;
 		stream << true;
 		stream << std::string("testing Base64...");
@@ -13,7 +13,7 @@ namespace v4d::tests {
 		stream << 10.0;
 
 		std::string encodedString = v4d::Base64::Encode(stream._GetWriteBuffer_());
-		v4d::ReadOnlyStream decodedStream(v4d::Base64::Decode(encodedString));
+		v4d::data::ReadOnlyStream decodedStream(v4d::Base64::Decode(encodedString));
 
 		int a = 0;
 		bool b = false;

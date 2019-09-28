@@ -5,7 +5,7 @@
 namespace v4d::tests {
 	int DataStream() {
 		int result = 100;
-		v4d::DataStream bs(1024);
+		v4d::data::DataStream bs(1024);
 
 		{// Test 1 (int, bool, float, double... using stream operators)
 			bs	<< (int)	54

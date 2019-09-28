@@ -2,8 +2,8 @@
 
 #include <v4d.h>
 
-namespace v4d {
-	class ReadOnlyStream : public Stream {
+namespace v4d::data {
+	class V4DLIB ReadOnlyStream : public Stream {
 	protected:
 		std::vector<byte> dataBuffer;
 		size_t dataBufferCursor = 0;
@@ -30,6 +30,13 @@ namespace v4d {
 		INLINE bool IsDataBufferEnd() const {
 			return dataBufferCursor == dataBuffer.size();
 		}
+
+		inline virtual std::vector<byte> GetData() override {
+			std::lock_guard lock(readMutex);
+			// Copy and return buffer
+			return dataBuffer;
+		}
+
 
 	protected:
 

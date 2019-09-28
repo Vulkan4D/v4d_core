@@ -33,38 +33,6 @@ v4d::crypto::AES::~AES() {
 	delete (AES_KEY*)AesKeyDecryptHandle;
 }
 
-std::vector<byte> v4d::crypto::AES::Encrypt(std::vector<byte> data) {
-	// Resize data
-	size_t actualDataSize = data.size();
-	size_t paddingSize = AES_BLOCK_SIZE - ((data.size()+sizeof(size_t)) % AES_BLOCK_SIZE);
-	data.resize(data.size() + paddingSize + sizeof(size_t));
-	std::vector<byte> encryptedData(data.size() + IV_SIZE);
-	// Add zeroes as padding
-	memset(data.data() + (long)actualDataSize, 0, paddingSize);
-	// Add actual data size after padding
-	memcpy(data.data() + (long)actualDataSize + paddingSize, &actualDataSize, sizeof(size_t));
-	// Add IV at the end of future encrypted data (iv stays unencrypted)
-	memcpy(encryptedData.data() + (long)data.size(), iv.data(), IV_SIZE);
-	// Encrypt
-	AES_cbc_encrypt(data.data(), encryptedData.data(), data.size(), (AES_KEY*)AesKeyHandle, iv.data()/* IV will be modified here */, AES_ENCRYPT);
-	return encryptedData;
-}
-
-std::vector<byte> v4d::crypto::AES::Decrypt(const std::vector<byte>& encryptedData) {
-	// Prepare decrypted data vector
-	std::vector<byte> decryptedData(encryptedData.size() - IV_SIZE);
-	// Read IV from encrypted data
-	byte _iv[IV_SIZE];
-	memcpy(_iv, encryptedData.data() + (long)decryptedData.size(), IV_SIZE);
-	// Decrypt
-	AES_cbc_encrypt(encryptedData.data(), decryptedData.data(), encryptedData.size() - IV_SIZE, (const AES_KEY*) AesKeyDecryptHandle, _iv, AES_DECRYPT);
-	// Read size from decrypted data and resize final decrypted data
-	size_t actualDataSize;
-	memcpy(&actualDataSize, decryptedData.data() + (long)decryptedData.size() - sizeof(size_t), sizeof(size_t));
-	decryptedData.resize(actualDataSize);
-	return decryptedData;
-}
-
 // Hex Key format : base16Hex( keySizeByte + key )
 std::string v4d::crypto::AES::GetHexKey() const {
 	std::vector<byte> sizeAndKey;
@@ -80,4 +48,37 @@ v4d::crypto::AES::AES(const std::string& hexKey) {
 	key.resize(keySize);
 	memcpy(key.data(), sizeAndKey.data() + 1, keySize);
 	InitAes();
+}
+
+std::vector<byte> v4d::crypto::AES::Encrypt(const byte* data, size_t size) {
+	// Copy and Resize data
+	std::vector<byte> copiedData(size);
+	memcpy(copiedData.data(), data, size);
+	size_t paddingSize = AES_BLOCK_SIZE - ((copiedData.size()+sizeof(size_t)) % AES_BLOCK_SIZE);
+	copiedData.resize(copiedData.size() + paddingSize + sizeof(size_t));
+	std::vector<byte> encryptedData(copiedData.size() + IV_SIZE);
+	// Add zeroes as padding
+	memset(copiedData.data() + (long)size, 0, paddingSize);
+	// Add actual data size after padding
+	memcpy(copiedData.data() + (long)size + paddingSize, &size, sizeof(size_t));
+	// Add IV at the end of future encrypted data (iv stays unencrypted)
+	memcpy(encryptedData.data() + (long)copiedData.size(), iv.data(), IV_SIZE);
+	// Encrypt
+	AES_cbc_encrypt(copiedData.data(), encryptedData.data(), copiedData.size(), (AES_KEY*)AesKeyHandle, iv.data()/* IV will be modified here */, AES_ENCRYPT);
+	return encryptedData;
+}
+
+std::vector<byte> v4d::crypto::AES::Decrypt(const byte* encryptedData, size_t size) {
+	// Prepare decrypted data vector
+	std::vector<byte> decryptedData(size - IV_SIZE);
+	// Read IV from encrypted data
+	byte _iv[IV_SIZE];
+	memcpy(_iv, encryptedData + (long)decryptedData.size(), IV_SIZE);
+	// Decrypt
+	AES_cbc_encrypt(encryptedData, decryptedData.data(), decryptedData.size(), (const AES_KEY*) AesKeyDecryptHandle, _iv, AES_DECRYPT);
+	// Read size from decrypted data and resize final decrypted data
+	size_t actualDataSize;
+	memcpy(&actualDataSize, decryptedData.data() + (long)decryptedData.size() - sizeof(size_t), sizeof(size_t));
+	decryptedData.resize(actualDataSize);
+	return decryptedData;
 }

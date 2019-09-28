@@ -2,6 +2,7 @@
 
 #include <openssl/sha.h>
 
+// SHA1
 std::string v4d::crypto::SHA1(const byte* data, size_t size) {
 	byte hash[SHA_DIGEST_LENGTH];
 	char outputBuffer[SHA_DIGEST_LENGTH*2+1];
@@ -22,6 +23,7 @@ std::string v4d::crypto::SHA1(const std::string& str) {
 	return SHA1((byte*)str.c_str(), str.length());
 }
 
+// SHA256
 std::string v4d::crypto::SHA256(const byte* data, size_t size) {
 	byte hash[SHA256_DIGEST_LENGTH];
 	char outputBuffer[SHA256_DIGEST_LENGTH*2+1];
@@ -40,4 +42,25 @@ std::string v4d::crypto::SHA256(const std::vector<byte>& data) {
 }
 std::string v4d::crypto::SHA256(const std::string& str) {
 	return SHA256((byte*)str.c_str(), str.length());
+}
+
+// SHA512
+std::string v4d::crypto::SHA512(const byte* data, size_t size) {
+	byte hash[SHA512_DIGEST_LENGTH];
+	char outputBuffer[SHA512_DIGEST_LENGTH*2+1];
+    SHA512_CTX sha512;
+    SHA512_Init(&sha512);
+    SHA512_Update(&sha512, data, size);
+    SHA512_Final(hash, &sha512);
+    for (int i = 0; i < SHA512_DIGEST_LENGTH; i++) {
+        sprintf(outputBuffer + (i * 2), "%02x", hash[i]);
+    }
+    outputBuffer[SHA512_DIGEST_LENGTH * 2] = 0;
+	return std::string(outputBuffer);
+}
+std::string v4d::crypto::SHA512(const std::vector<byte>& data) {
+	return SHA512(data.data(), data.size());
+}
+std::string v4d::crypto::SHA512(const std::string& str) {
+	return SHA512((byte*)str.c_str(), str.length());
 }

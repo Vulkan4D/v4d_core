@@ -13,15 +13,15 @@ namespace v4d::tests {
 
 		{// Test1: Encrypt / Decrypt
 			result = 100;
-			v4d::Stream stream(1024);
+			v4d::data::Stream stream(1024);
 			stream << 30;
 			stream << true;
 			stream << std::string("testing RSA Encryption...");
 			stream << 55;
 			stream << 15.0;
 
-			auto encryptedData = publicKey.Encrypt(stream._GetWriteBuffer_());
-			v4d::ReadOnlyStream decryptedStream(privateKey.Decrypt(encryptedData));
+			auto encryptedData = publicKey.EncryptStream(stream);
+			auto decryptedStream = privateKey.DecryptStream(encryptedData);
 
 			int a = 0;
 			bool b = false;
@@ -37,12 +37,42 @@ namespace v4d::tests {
 				result -= (int)e;
 			}
 
-			if (result != 0) LOG_ERROR("ERROR: RSA Test1 failed")
+			if (result != 0) {
+				LOG_ERROR("ERROR: RSA Test1 failed")
+				return 1;
+			}
 		}
 
-		{// Test2: Sign / Verify
+		{// Test2: Encrypt / Decrypt String
+
+			auto encryptedData = rsa.EncryptString("Hello RSA!");
+			auto decryptedString = rsa.DecryptString(encryptedData);
+
+			if (decryptedString != "Hello RSA!") {
+				LOG_ERROR("ERROR: RSA Test2 failed")
+				return 2;
+			}
+		}
+
+		{// Test3: Encrypt / Decrypt Array of bytes
 			result = 100;
-			v4d::Stream stream(1024);
+			
+			byte bytes[6] = {3, 17, 50, 10, 12, 8};
+
+			auto encryptedData = rsa.Encrypt(bytes, 6);
+			auto decryptedData = rsa.Decrypt(encryptedData);
+
+			for (byte b : decryptedData) result -= b;
+
+			if (result != 0) {
+				LOG_ERROR("ERROR: RSA Test3 failed")
+				return 3;
+			}
+		}
+
+		{// Test4: Sign / Verify
+			result = 100;
+			v4d::data::Stream stream(1024);
 			stream << 15;
 			stream << true;
 			stream << std::string("testing RSA Signature...");
@@ -67,7 +97,10 @@ namespace v4d::tests {
 				result -= 30;
 			}
 
-			if (result != 0) LOG_ERROR("ERROR: RSA Test2 failed")
+			if (result != 0) {
+				LOG_ERROR("ERROR: RSA Test4 failed")
+				return 4;
+			}
 		}
 
 		return result;

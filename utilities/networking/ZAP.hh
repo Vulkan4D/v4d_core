@@ -16,18 +16,33 @@ namespace v4d::networking::ZAP {
 
 	// Basic responses
 	const byte	ACK 	= 17;	// Acknowledged previous request
-	const byte	DENY	= 18;	// Denied
+	const byte	DENY	= 18;	// Denied / Failed
 	const byte	OK  	= 19;	// Approved / Success
 
-	// Client requests to Server
-	const byte	CONN	= 24;	// Connect (+ APPNAME + VERSION + CLIENT_TYPE) (No response from server. Server may immediately close the connection)
-	const byte	AUTH	= 25;	// Authenticate (+ rsaEncrypted_auth_data) (Server responds with OK+rsaSignature_of_decrypted_auth_data | DENY+errcode+errmsg)
-	const byte	ENCRYPT	= 26;	// Send encryption key (+ rsaEncrypted_AES_KEY) (Server responds with aesEncrypted_token)
+	// AUTHTYPE Client to Server (Each connection requires sending HELLO + APPNAME + VERSION + CLIENT_TYPE + AUTHTYPE)
+	const byte	AUTH	= 24;	// Connect with AUTH (+ rsaEncrypted_auth_data + rsaEncrypted_AES_KEY) Server response: OK+rsaSignature_of_decrypted_auth_data+aesEncrypted_token_and_id | DENY+errcode+errmsg
+	const byte	TOKEN	= 25;	// Connect with Token (+ (ulong)id + aesEncrypted_token) Server response: OK | DENY+errcode+errmsg
+	const byte	ANONYM	= 26;	// Connect anonymously ... Server response: OK | DENY+errcode+errmsg
 
 	// Server requests to client
 	const byte	MSG 	= 29;	// Message (+ string) (No response from client). The client may display that message for the user to read.
 
 	// Misc...
-	const byte	HELLO	= 254;	// First byte upon connection for any communication from both sides. If not received, the connection may be closed after 500ms
-	const byte	EXT 	= 255;	// Extended Requests (for app-specific request types)
+	const byte	HELLO	= 254;	// First byte upon connection for any communication from both sides. If not received, the connection may be closed after 100ms
+	const byte	EXT 	= 255;	// Extended Requests (for application-specific request types)
 }
+
+#define DEFINE_ZAP_CODE(code, name, msg) namespace v4d::networking::ZAP_CODES { const int name = code; const std::string name ## _text = msg; }
+
+DEFINE_ZAP_CODE(101, DENY_ANONYMOUS, "Cannot connect anonymously to this server")
+DEFINE_ZAP_CODE(102, APPNAME_MISMATCH, "App incompatible with server")
+DEFINE_ZAP_CODE(103, VERSION_MISMATCH, "App version does not match server version")
+DEFINE_ZAP_CODE(104, AUTH_FAILED, "Authentication failed")
+DEFINE_ZAP_CODE(105, AUTH_FAILED_INVALID_ID, "Authentication failed: invalid ID")
+DEFINE_ZAP_CODE(106, AUTH_FAILED_INVALID_TOKEN, "Authentication failed: invalid TOKEN")
+DEFINE_ZAP_CODE(107, AUTH_FAILED_HANDSHAKE, "Authentication failed: handshake failed")
+DEFINE_ZAP_CODE(108, AUTH_FAILED_RSA_DECRYPTION, "Authentication failed: Data not encrypted correctly")
+DEFINE_ZAP_CODE(109, SERVER_RESPONSE_TIMEOUT, "Server did not respond in time")
+DEFINE_ZAP_CODE(110, SERVER_SIGNATURE_FAILED, "Server authenticity check has failed: Invalid Signature")
+
+// For definitions of application-specific ZAP CODES, use integers above 1000

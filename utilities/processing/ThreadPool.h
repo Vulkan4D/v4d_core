@@ -6,7 +6,7 @@ namespace v4d::processing {
 
 	class V4DLIB ThreadPool {
 	protected:
-		std::unordered_map<size_t, std::thread> threads;
+		std::unordered_map<index_t, std::thread> threads;
 		std::queue<std::function<void()>> tasks;
 
 		std::mutex eventMutex;
@@ -15,7 +15,7 @@ namespace v4d::processing {
 		bool stopping;
 		size_t numThreads;
 
-		void StartNewThread(size_t index);
+		void StartNewThread(index_t);
 
 	public:
 
