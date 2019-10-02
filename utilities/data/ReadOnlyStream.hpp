@@ -5,7 +5,7 @@
 namespace v4d::data {
 	class V4DLIB ReadOnlyStream : public Stream {
 	protected:
-		std::vector<byte> dataBuffer;
+		std::vector<byte> dataBuffer{};
 		size_t dataBufferCursor = 0;
 
 	public:

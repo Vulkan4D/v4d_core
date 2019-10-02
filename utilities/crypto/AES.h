@@ -17,7 +17,7 @@ namespace v4d::crypto {
 		AES(const std::string& hexKey);
 		AES(const std::vector<byte>& key);
 		~AES();
-		DELETE_COPY_CONSTRUCTORS(AES)
+		DELETE_COPY_MOVE_CONSTRUCTORS(AES)
 
 		using Crypto::Encrypt;
 		using Crypto::Decrypt;

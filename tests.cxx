@@ -17,7 +17,8 @@ namespace v4d::tests {
 	int V4D_CORE() {
 		int result = 0;
 		{
-			
+			LOGGER_INSTANCE->SetVerbose(true);
+
 			RUN_UNIT_TESTS( ThreadPool )
 			RUN_UNIT_TESTS( Event )
 			RUN_UNIT_TESTS( Base16 )

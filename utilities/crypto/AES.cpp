@@ -42,6 +42,12 @@ std::string v4d::crypto::AES::GetHexKey() const {
 	return v4d::Base16::Encode(sizeAndKey);
 }
 v4d::crypto::AES::AES(const std::string& hexKey) {
+	if (hexKey == "") {
+		key.resize((size_t)256/8);
+		RAND_bytes(key.data(), 256/8);
+		InitAes();
+		return;
+	}
 	auto sizeAndKey = v4d::Base16::Decode(hexKey);
 	if (sizeAndKey.size() == 0) return; // Fix for compiler complaining about potential null pointer dereference...
 	size_t keySize = sizeAndKey[0];
@@ -79,6 +85,11 @@ std::vector<byte> v4d::crypto::AES::Decrypt(const byte* encryptedData, size_t si
 	// Read size from decrypted data and resize final decrypted data
 	size_t actualDataSize;
 	memcpy(&actualDataSize, decryptedData.data() + (long)decryptedData.size() - sizeof(size_t), sizeof(size_t));
-	decryptedData.resize(actualDataSize);
+	if (actualDataSize <= size - sizeof(size_t) - IV_SIZE) {
+		decryptedData.resize(actualDataSize);
+	} else {
+		decryptedData.clear();
+		LOG_ERROR_VERBOSE("Data decryption failed")
+	}
 	return decryptedData;
 }

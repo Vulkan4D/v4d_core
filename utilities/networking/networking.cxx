@@ -1,5 +1,15 @@
 #include <v4d.h>
 
+std::atomic<int> result = 100;
+
+namespace v4d::networking::ZAP::data {
+	ZAPDATA( Auth, 
+		String username;
+		String password;
+		Vector<Int32> stuff;
+	)
+}
+
 class TestServer : public v4d::networking::ListeningServer{
 public:
 	using ListeningServer::ListeningServer;
@@ -13,8 +23,16 @@ public:
 
 	ulong Authenticate(v4d::data::ReadOnlyStream* authStream) override {
 		if (authStream) {
-			authStream->Read<std::string>(); // bob
-			return 1; // ID
+			auto[username, password, stuff] = zapdata::Auth::ReadFrom(authStream);
+			if (username == "bob" && password == "12345") {
+				if (stuff.size() == 3 && stuff[0] == 4 && stuff[1] == 16 && stuff[2] == 512) {
+					return 16488; // ID
+				} else {
+					return 0;
+				}
+			} else {
+				return 0;
+			}
 		} else {
 			// Anonymous
 			return 0;
@@ -22,12 +40,12 @@ public:
 	}
 
 	void RunClient(v4d::io::SharedSocket, std::shared_ptr<v4d::networking::IncomingClient>, byte /*clientType*/) override {
-		//...
+		result -= 30;
 	}
 
 };
 
-class TestClient : public v4d::networking::OutgoingConnection{
+class TestClient : public v4d::networking::OutgoingConnection {
 public:
 	using OutgoingConnection::OutgoingConnection;
 
@@ -39,17 +57,20 @@ public:
 	}
 
 	void Authenticate(v4d::data::Stream* authStream) override {
-		authStream->Write<std::string>("bob");
+		*authStream << zapdata::Auth{"bob", "12345", {4,16,512}};
 	}
 	
 	void Run(v4d::io::Socket& /*socket*/) override {
-		//...
+		result -= 20;
 	}
 
 };
 
 namespace v4d::tests {
 	int Networking() {
+
+		// LOGGER_INSTANCE->SetVerbose(true);
+
 		v4d::crypto::RSA rsa(2048, 3);
 
 		{// Test1
@@ -59,13 +80,34 @@ namespace v4d::tests {
 			// Client
 			TestClient client(v4d::io::TCP, &rsa);
 			if (client.Connect("127.0.0.1", 44444, 1)) {
-				return 0;
+				if (client.id != 16488) {
+					LOG_ERROR("Networking Error Test1: Wrong ID")
+					return 3;
+				}
+				client.Disconnect();
+				SLEEP(100ms) // wait for server to have the time to decrement result
+				if (result != 50) {
+					LOG_ERROR(result << "  Networking Error Test1: Wrong result after first connect")
+					return 4;
+				}
+				TestClient client2(client);
+				if (client2.Connect("127.0.0.1", 44444, 2)) {
+					// SUCCESS
+					SLEEP(100ms) // wait for server to have the time to decrement result
+					if (result != 0) {
+						LOG_ERROR(result << "  Networking Error Test1: Wrong result after second connect")
+					}
+					return result;// If fails without error, then final result is not good.
+				} else {
+					LOG_ERROR("Networking Error Test1: TOKEN Connection failed")
+					return 2;
+				}
 			} else {
-				LOG_ERROR("Networking Error Test1: Connection failed")
+				LOG_ERROR("Networking Error Test1: AUTH Connection failed")
 				return 1;
 			}
 		}
 
-		return 0;
+		return -1;
 	}
 }

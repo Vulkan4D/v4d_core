@@ -14,7 +14,7 @@ namespace v4d::io {
 
 		SharedLibraryInstance(){}
 		SharedLibraryInstance(const std::string& name, const std::string& path);
-		virtual ~SharedLibraryInstance();
+		~SharedLibraryInstance();
 	};
 
 	class V4DLIB SharedLibraryLoader {
@@ -24,10 +24,10 @@ namespace v4d::io {
 
 	public:
 	
-		virtual SharedLibraryInstance* Load(const std::string& name, std::string path);
-		virtual void Unload(const std::string& name);
-		virtual void Reload(const std::string& name);
-		virtual ~SharedLibraryLoader();
+		SharedLibraryInstance* Load(const std::string& name, std::string path);
+		void Unload(const std::string& name);
+		void Reload(const std::string& name);
+		~SharedLibraryLoader();
 	};
 }
 

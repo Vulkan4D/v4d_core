@@ -51,7 +51,7 @@ namespace v4d::tests {
 			auto aesHex = aes.GetHexKey();
 			v4d::crypto::AES aes2(aesHex);
 
-			auto encryptedData = aes2.EncryptString("Hello AES!");
+			auto encryptedData = aes.EncryptString("Hello AES!");
 			auto decryptedString = aes2.DecryptString(encryptedData);
 
 			if (decryptedString != "Hello AES!") {
@@ -74,6 +74,19 @@ namespace v4d::tests {
 
 			if (result != 0) LOG_ERROR("ERROR: AES Test3 failed")
 		}
+
+		{// Test4: Encrypt / Decrypt ZAP String
+			v4d::crypto::AES aes(256);
+			auto aesHex = aes.GetHexKey();
+			v4d::crypto::AES aes2(aesHex);
+
+			std::string token = "123456789";
+			auto data = zapdata::ClientToken{1, 4, zapdata::EncryptedString{}.Encrypt(&aes, token)};
+			std::string token2 = data.token.Decrypt(&aes2);
+
+			if (strcmp(token.c_str(), token2.c_str()) != 0) LOG_ERROR("ERROR: AES Test4 failed")
+		}
+
 
 		return result;
 	}

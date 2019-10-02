@@ -21,3 +21,4 @@
 #include <cstdint>
 #include <stdio.h>
 #include <type_traits>
+#include <csignal>

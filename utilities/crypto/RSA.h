@@ -20,7 +20,7 @@ namespace v4d::crypto {
 		
 		RSA(int bits, long unsigned int exponent);
 		~RSA();
-		DELETE_COPY_CONSTRUCTORS(RSA)
+		DELETE_COPY_MOVE_CONSTRUCTORS(RSA)
 
 		using Crypto::Encrypt;
 		using Crypto::Decrypt;

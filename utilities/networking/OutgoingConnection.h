@@ -21,11 +21,18 @@ namespace v4d::networking {
 		OutgoingConnection(v4d::io::SOCKET_TYPE type = v4d::io::TCP, v4d::crypto::RSA* serverPublicKey = nullptr, int aesBits = 256)
 		 : id(0), token(""), socket(type), rsa(serverPublicKey), aes(aesBits) {}
 
-		OutgoingConnection(ulong id, std::string token, v4d::io::SOCKET_TYPE type = v4d::io::TCP, v4d::crypto::RSA* serverPublicKey = nullptr, int aesBits = 256)
-		 : id(id), token(token), socket(type), rsa(serverPublicKey), aes(aesBits) {}
+		OutgoingConnection(ulong id, std::string token, v4d::io::SOCKET_TYPE type = v4d::io::TCP, v4d::crypto::RSA* serverPublicKey = nullptr, std::string aesHex = "")
+		 : id(id), token(token), socket(type), rsa(serverPublicKey), aes(aesHex) {}
+
+		OutgoingConnection(OutgoingConnection& c)
+		 : id(c.id), token(c.token), socket(c.socket.IsTCP()?v4d::io::TCP:v4d::io::UDP), rsa(c.rsa), aes(c.aes.GetHexKey()) {}
 
 		virtual ~OutgoingConnection(){
-			// socket.Disconnect();
+			Disconnect();
+		}
+
+		void Disconnect() {
+			socket.Disconnect();
 			if (asyncRunThread) {
 				if (asyncRunThread->joinable()) {
 					asyncRunThread->join();
@@ -35,7 +42,6 @@ namespace v4d::networking {
 			}
 		}
 
-		DELETE_COPY_MOVE_CONSTRUCTORS(OutgoingConnection)
 
 	// Pure-Virtual methods
 		virtual std::string GetAppName() const = 0;

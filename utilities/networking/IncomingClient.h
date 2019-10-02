@@ -9,6 +9,7 @@ namespace v4d::networking {
 		std::string token;
 		v4d::crypto::AES aes;
 		std::vector<std::thread> threads{};
+		std::atomic<ulong> requestIncrement = 0;
 		IncomingClient(ulong id, std::string token, std::string aesHex) : id(id), token(token), aes(aesHex) {}
 		IncomingClient(ulong id) : id(id), token(""), aes(256) {}
 		~IncomingClient() {

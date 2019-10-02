@@ -5,6 +5,7 @@
 namespace v4d::networking {
 
 	class V4DLIB ListeningServer {
+		const ulong REQ_INCREMENT_MAX_DIFF = 100000; // maximum acceptable difference in the increment index between two requests
 	private:
 		v4d::io::Socket listeningSocket;
 		v4d::crypto::RSA* rsa;
@@ -17,7 +18,7 @@ namespace v4d::networking {
 		 : listeningSocket(type), rsa(serverPrivateKey) {}
 
 		virtual ~ListeningServer() {
-			// listeningSocket.Disconnect();
+			listeningSocket.Disconnect();
 		}
 
 		DELETE_COPY_MOVE_CONSTRUCTORS(ListeningServer)

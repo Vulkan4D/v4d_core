@@ -17,9 +17,9 @@ namespace v4d::data {
 		// Optional Read Buffer
 		bool useReadBuffer = false;
 		size_t readBufferCursor;
-		std::vector<byte> readBuffer;
+		std::vector<byte> readBuffer{};
 
-		std::vector<byte> writeBuffer;
+		std::vector<byte> writeBuffer{};
 
 
 	public: // members
@@ -84,18 +84,18 @@ namespace v4d::data {
 
 	public: // Constructor & Destructor
 
-		Stream(size_t bufferSize, bool useReadBuffer = false) : useReadBuffer(useReadBuffer), readBufferCursor(0) {
+		Stream(size_t bufferSize = 1024, bool useReadBuffer = false) : useReadBuffer(useReadBuffer), readBufferCursor(0) {
 			if (bufferSize > 0) {
 				writeBuffer.reserve(bufferSize);
 			}
-			if (useReadBuffer) {
+			if (useReadBuffer && bufferSize > 0) {
 				readBuffer.reserve(bufferSize);
 			}
 		}
 
 		virtual ~Stream() {}
 
-		DELETE_COPY_CONSTRUCTORS(Stream)
+		DELETE_COPY_MOVE_CONSTRUCTORS(Stream)
 
 
 	public: // Read & Write
@@ -106,6 +106,11 @@ namespace v4d::data {
 			Send();
 			writeBuffer.resize(0);
 			return *this;
+		}
+		virtual Stream& FlushDebug() {
+			std::lock_guard lock(writeMutex);
+			DEBUG("Debug Flush " << writeBuffer)
+			return Flush();
 		}
 
 		inline void ResetReadBuffer() {
@@ -253,7 +258,7 @@ namespace v4d::data {
 		// Return-Read with container
 		template<template<typename, typename> class Container, typename T>
 		inline Container<T, std::allocator<T>> Read() {
-			Container<T, std::allocator<T>> data;
+			Container<T, std::allocator<T>> data{};
 			Read<Container, T>(data);
 			return data;
 		}
@@ -262,11 +267,11 @@ namespace v4d::data {
 		// Stream Operators overloading (generic)
 		template<typename T>
 		inline Stream& operator<<(const T& data) {
-			return Write<T>((const T&)data);
+			return Write((const T&)data);
 		}
 		template<typename T>
 		inline Stream& operator>>(T& data) {
-			return Read<T>(data);
+			return Read(data);
 		}
 
 

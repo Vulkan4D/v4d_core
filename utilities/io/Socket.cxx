@@ -2,9 +2,10 @@
 
 namespace v4d::tests {
 	int Socket() {
+		// LOGGER_INSTANCE->SetVerbose(true);
 
 		{// Test 1 (TCP)
-			LOG("    Running Test 1")
+			LOG_VERBOSE("    Running Test 1")
 			int result = 100;
 
 			v4d::io::Socket server(v4d::io::TCP);
@@ -40,7 +41,7 @@ namespace v4d::tests {
 		}
 
 		{// Test 2 (vectors via TCP)
-			LOG("    Running Test 2")
+			LOG_VERBOSE("    Running Test 2")
 			int result = 100;
 
 			v4d::io::Socket server(v4d::io::TCP);
@@ -78,7 +79,7 @@ namespace v4d::tests {
 		}
 
 		{// Test 3 (UDP)
-			LOG("    Running Test 3")
+			LOG_VERBOSE("    Running Test 3")
 			int result = 100;
 
 			v4d::io::Socket server(v4d::io::UDP);
@@ -110,7 +111,7 @@ namespace v4d::tests {
 		}
 
 		{// Test 4 (DataStream via UDP)
-			LOG("    Running Test 4")
+			LOG_VERBOSE("    Running Test 4")
 			int result = 100;
 
 			v4d::io::Socket server(v4d::io::UDP);
@@ -148,7 +149,7 @@ namespace v4d::tests {
 		auto rsa = v4d::crypto::RSA(2048, 3);
 
 		{// Test 5 (Encrypted data via TCP)
-			LOG("    Running Test 5")
+			LOG_VERBOSE("    Running Test 5")
 			int result = 100;
 
 			v4d::io::Socket server(v4d::io::TCP);
@@ -184,7 +185,7 @@ namespace v4d::tests {
 		}
 
 		{// Test 6 (Encrypted DataStream via UDP)
-			LOG("    Running Test 6")
+			LOG_VERBOSE("    Running Test 6")
 			int result = 100;
 
 			v4d::io::Socket server(v4d::io::UDP);

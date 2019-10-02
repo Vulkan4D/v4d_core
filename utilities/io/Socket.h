@@ -91,8 +91,7 @@ namespace v4d::io {
 					#endif
 				}
 			} else {
-				LOG_ERROR("Not Connected")
-				// Disconnect();
+				LOG_ERROR_VERBOSE("Cannot Send Data over Socket: Not Connected")
 			}
 		}
 
@@ -144,11 +143,8 @@ namespace v4d::io {
 					#endif
 				}
 			} else {
-				try {
-					memset(data, 0, maxBytesToRead);
-				} catch (...) {}
-				LOG_ERROR("Not Connected")
-				// Disconnect();
+				memset(data, 0, maxBytesToRead);
+				LOG_ERROR_VERBOSE("Cannot Read Data from Socket: Not Connected")
 			}
 			return (size_t)bytesRead;
 		}
@@ -344,14 +340,15 @@ namespace v4d::io {
 							// We have an incoming connection awaiting... Accept it !
 							memset(&incomingAddr, 0, (size_t)addrLen);
 							SOCKET clientSocket = ::accept(socket, (struct sockaddr*)&incomingAddr, &addrLen);
-							if (IsListening()) {
+							if (IsListening() && clientSocket != INVALID_SOCKET) {
 								newSocketCallback(std::make_shared<Socket>(clientSocket, incomingAddr, type, protocol), std::forward<FuncArgs>(args)...);
 							} else {
-								#ifdef _WINDOWS
-									::closesocket(clientSocket);
-								#else
-									::close(clientSocket);
-								#endif
+								listening = false;
+								// #ifdef _WINDOWS
+								// 	::closesocket(clientSocket);
+								// #else
+								// 	::close(clientSocket);
+								// #endif
 							}
 						} else {
 							INVALIDCODE("polled > 1")

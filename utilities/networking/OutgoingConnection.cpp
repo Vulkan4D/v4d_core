@@ -6,25 +6,27 @@ bool OutgoingConnection::Connect(std::string ip, uint16_t port, byte clientType)
 	Connect:
 	socket.Connect(ip, port);
 
-	// Hello + AppName + Version + ClientType
-	socket << ZAP::HELLO << GetAppName() << GetVersion() << clientType;
+	// Begin Handshake
+	socket << ZAP::HELLO << zapdata::ClientHello{GetAppName(), GetVersion(), clientType};
 
 	if (id) {
 		socket << ZAP::TOKEN;
+		LOG_VERBOSE("Connecting using TOKEN....")
 		if (!TokenRequest()) {
-			LOG_ERROR("Token Connection failed, will try Auth connection...")
+			LOG_ERROR_VERBOSE("Token Connection failed, will try Auth connection...")
 			id = 0;
 			goto Connect;
 		}
+		return true;
 	} else {
 		v4d::data::Stream authData(rsa? rsa->GetMaxBlockSize() : 256);
 		Authenticate(&authData);
 		if (authData.GetWriteBufferSize() == 0) {
-			// LOG("Connecting anonymously....")
+			LOG_VERBOSE("Connecting anonymously....")
 			socket << ZAP::ANONYM;
 			return AnonymousRequest();
 		} else {
-			// LOG("Connecting using AUTH....")
+			LOG_VERBOSE("Connecting using AUTH....")
 			socket << ZAP::AUTH;
 			return AuthRequest(authData);
 		}
@@ -39,8 +41,9 @@ bool OutgoingConnection::ConnectRunAsync(std::string ip, uint16_t port, byte cli
 }
 
 bool OutgoingConnection::TokenRequest() {
-	socket << id;
-	socket << aes.EncryptString(token);
+	static std::atomic<ulong> requestIncrement = 0;
+	socket << zapdata::ClientToken{id, ++requestIncrement, zapdata::EncryptedString{}.Encrypt(&aes, token)};
+	if (socket.IsUDP()) return true;
 	socket.Flush();
 	if (socket.Poll(connectionTimeoutMilliseconds) <= 0) {
 		Error(ZAP_CODES::SERVER_RESPONSE_TIMEOUT, ZAP_CODES::SERVER_RESPONSE_TIMEOUT_text);
@@ -51,8 +54,8 @@ bool OutgoingConnection::TokenRequest() {
 			return HandleConnection();
 		break;
 		case ZAP::DENY:
-			int errCode = socket.Read<int>();
-			Error(errCode, "Error while trying to connect to server: " + socket.Read<std::string>());
+			auto[errCode, errMsg] = zapdata::Error::ReadFrom(socket);
+			Error(errCode, "Error while trying to connect to server: " + errMsg);
 			return false;
 	}
 	return false;
@@ -69,8 +72,8 @@ bool OutgoingConnection::AnonymousRequest() {
 			return HandleConnection();
 		break;
 		case ZAP::DENY:
-			int errCode = socket.Read<int>();
-			Error(errCode, "Error while trying to connect to server: " + socket.Read<std::string>());
+			auto[errCode, errMsg] = zapdata::Error::ReadFrom(socket);
+			Error(errCode, "Error while trying to connect to server: " + errMsg);
 			return false;
 	}
 	return false;
@@ -107,10 +110,8 @@ bool OutgoingConnection::AuthRequest(v4d::data::Stream& authData) {
 			}
 		break;
 		case ZAP::DENY:
-			{
-				int errCode = socket.Read<int>();
-				Error(errCode, "Error while trying to connect to server: " + socket.Read<std::string>());
-			}
+			auto[errCode, errMsg] = zapdata::Error::ReadFrom(socket);
+			Error(errCode, "Error while trying to connect to server: " + errMsg);
 			return false;
 	}
 	return false;

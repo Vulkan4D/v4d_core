@@ -13,7 +13,7 @@ namespace v4d::crypto {
 	public:
 		Crypto();
 		virtual ~Crypto();
-		DELETE_COPY_CONSTRUCTORS(Crypto)
+		DELETE_COPY_MOVE_CONSTRUCTORS(Crypto)
 
 		virtual std::vector<byte> Encrypt(const byte* data, size_t) = 0;
 		virtual std::vector<byte> Decrypt(const byte* data, size_t) = 0;

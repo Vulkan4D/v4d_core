@@ -29,11 +29,11 @@ namespace v4d::io {
 			file.close();
 		}
 
-		DELETE_COPY_CONSTRUCTORS(Logger)
+		DELETE_COPY_MOVE_CONSTRUCTORS(Logger)
 
-		static std::shared_ptr<Logger> ConsoleInstance(bool verbose = false);
+		static std::shared_ptr<Logger> ConsoleInstance(std::optional<bool> verbose = std::nullopt);
 		
-		static std::shared_ptr<Logger> FileInstance(const std::string& filepath, bool verbose = false);
+		static std::shared_ptr<Logger> FileInstance(const std::string& filepath, std::optional<bool> verbose = std::nullopt);
 
 		INLINE void Log(std::ostream& message, const char* style = "0") {
 			std::string msg = dynamic_cast<std::ostringstream&>(message).str();
@@ -79,6 +79,14 @@ namespace v4d::io {
 }
 
 
+/////////////////////////////////////////////////////////////////////////
+// stream casts
+V4DLIB std::ostream& operator<<(std::ostream& stream, std::vector<byte> bytes);
+
+
+/////////////////////////////////////////////////////////////////////////
+// MACROS
+
 #ifdef _V4D_CORE
 	#define LOGGER_INSTANCE v4d::Core::coreLogger
 #else
@@ -103,15 +111,19 @@ namespace v4d::io {
 #endif
 
 // Info in console
-#define LOG(msg) LOGGER_INSTANCE->Log(std::ostringstream().flush() << msg, LOGGER_INSTANCE->IsVerbose()? "1":"0");
+#define LOG(msg) LOGGER_INSTANCE->Log(std::ostringstream("").flush() << msg, LOGGER_INSTANCE->IsVerbose()? "1":"0");
 
 // Info in console (shown only in verbose mode)
-#define LOG_VERBOSE(msg) {if (LOGGER_INSTANCE->IsVerbose()) LOGGER_INSTANCE->Log(std::ostringstream().flush() << msg, "2");}
+#define LOG_VERBOSE(msg) {if (LOGGER_INSTANCE->IsVerbose()) LOGGER_INSTANCE->Log(std::ostringstream("").flush() << msg, "2");}
 
 // Success/Warning/Error messages in console
-#define LOG_SUCCESS(msg) LOGGER_INSTANCE->Log(std::ostringstream().flush() << msg, "1;36");
+#define LOG_SUCCESS(msg) LOGGER_INSTANCE->Log(std::ostringstream("").flush() << msg, "1;36");
 #define LOG_WARN(msg) LOGGER_INSTANCE->Log(std::ostringstream("WARNING: ").flush() << msg __LOG_APPEND_FILE_AND_LINE__, "1;33");
 #define LOG_ERROR(msg) LOGGER_INSTANCE->LogError(std::ostringstream("ERROR: ").flush() << msg __LOG_APPEND_FILE_AND_LINE__);
+// Verbose
+#define LOG_SUCCESS_VERBOSE(msg) {if (LOGGER_INSTANCE->IsVerbose()) LOG_SUCCESS(msg)};
+#define LOG_WARN_VERBOSE(msg) {if (LOGGER_INSTANCE->IsVerbose()) LOG_WARN(msg)};
+#define LOG_ERROR_VERBOSE(msg) {if (LOGGER_INSTANCE->IsVerbose()) LOG_ERROR(msg)};
 
 
 // Fatal errors that should Log the event and terminate the application
