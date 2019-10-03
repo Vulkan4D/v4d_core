@@ -19,6 +19,9 @@ namespace v4d::networking::ZAP {
 	const byte	DENY	= 18;	// Denied / Failed
 	const byte	OK  	= 19;	// Approved / Success
 
+	// Client requests to server
+	const byte 	PUBKEY	= 21; // Client asks server to send its public key (RSA)
+
 	// AUTHTYPE Client to Server (Each connection requires sending HELLO + APPNAME + VERSION + CLIENT_TYPE + AUTHTYPE)
 	const byte	AUTH	= 24;	// Connect with AUTH (+ rsaEncrypted_auth_data + rsaEncrypted_AES_KEY) Server response: OK+rsaSignature_of_decrypted_auth_data+aesEncrypted_token_and_id | DENY+errcode+errmsg
 	const byte	TOKEN	= 25;	// Connect with Token (+ (ulong)id + aesEncrypted_token) Server response: OK | DENY+errcode+errmsg
@@ -37,12 +40,28 @@ namespace v4d::networking::ZAP {
 	/*
 	Client									<-->	Server
 	------------------------------------------------------
-	ClientHello								---> 
-	AUTH(Byte)								--->
-	AuthDataAndAesKey(EncryptedStream) rsa	--->
-											<---	OK
-											<---	Signature Of AuthDataAndAesKey (Vector<Byte>) rsa
-											<---	tokenAndId(EncryptedStream) aes
+	Get Public Key : 
+		ClientHello								---> 
+		PUBKEY (Byte)							--->
+												<---	OK (Byte)
+												<---	PublicKey (String PEM)
+														Disconnect
+	------------------------------------------------------
+	AUTH connection : 
+		ClientHello								---> 
+		AUTH (Byte)								--->
+		AuthDataAndAesKey (EncryptedStream) rsa	--->	(server decrypts and confirms auth data)
+												<---	OK (Byte)
+												<---	Signature Of AuthDataAndAesKey (Vector<Byte>) rsa
+												<---	tokenAndId (EncryptedStream) aes
+														Stay connected
+	------------------------------------------------------
+	TOKEN connection : 
+		ClientHello								---> 
+		TOKEN (Byte)							--->
+		ClientToken aesEncrypted				--->	(server decrypts and checks id, token and increment>lastIncrement)
+												<---	OK (Byte)
+														Stay connected
 	*/
 
 

@@ -39,8 +39,8 @@ namespace v4d::io {
 		uint16_t port;
 
 		// Socket Options
-		#if _WINDOWS
-			WSADATA wsaData;
+		#ifdef _WINDOWS
+			static WSADATA wsaData;
 			char so_reuse = 1;
 			char so_nodelay = 1;
 		#else
@@ -58,7 +58,7 @@ namespace v4d::io {
 		virtual void Send() override {
 			if (IsConnected()) {
 				if (IsTCP()) {
-					#if _WINDOWS
+					#ifdef _WINDOWS
 
 						#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
 							::send(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_DONTWAIT);
@@ -75,7 +75,7 @@ namespace v4d::io {
 					#endif
 				} else 
 				if (IsUDP()) {
-					#if _WINDOWS
+					#ifdef _WINDOWS
 					
 						#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
 							::sendto(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_DONTWAIT, (const struct sockaddr*) &remoteAddr, sizeof remoteAddr);
@@ -99,7 +99,7 @@ namespace v4d::io {
 			ssize_t bytesRead = 0;
 			if (IsConnected()) {
 				if (IsTCP()) {
-					#if _WINDOWS
+					#ifdef _WINDOWS
 
 						#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
 							int rec = ::recv(socket, reinterpret_cast<char*>(data), (int)maxBytesToRead, MSG_WAITALL);
@@ -121,8 +121,8 @@ namespace v4d::io {
 					#endif
 				} else 
 				if (IsUDP()) {
-					memset((char*) &incomingAddr, 0, sizeof incomingAddr);
-					#if _WINDOWS
+					memset((char*) &incomingAddr, 0, sizeof(incomingAddr));
+					#ifdef _WINDOWS
 
 						#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
 							int rec = ::recvfrom(socket, reinterpret_cast<char*>(data), (int)maxBytesToRead, 0, (struct sockaddr*) &incomingAddr, &addrLen);
@@ -158,16 +158,7 @@ namespace v4d::io {
 	public:
 		Socket(SOCKET_TYPE type, SOCKET_PROTOCOL protocol = IPV4)
 		 : Stream(SOCKET_BUFFER_SIZE, /*useReadBuffer*/type==UDP), type(type), protocol(protocol) {
-			#if _WINDOWS
-				if (::WSAStartup(MAKEWORD(2,2), &wsaData) != 0) {
-					socket = INVALID_SOCKET;
-					return;
-				}
-				// LOG("WINSOCK STATUS: " << wsaData.szSystemStatus)
-			#endif
-			socket = ::socket(protocol, type, 0);
-			memset(&remoteAddr, 0, (size_t)addrLen);
-			remoteAddr.sin_family = protocol;
+			ResetSocket();
 		}
 
 		Socket(SOCKET socket, const sockaddr_in& remoteAddr, SOCKET_TYPE type, SOCKET_PROTOCOL protocol = IPV4)
@@ -179,6 +170,25 @@ namespace v4d::io {
 
 		DELETE_COPY_MOVE_CONSTRUCTORS(Socket)
 
+		inline void ResetSocket() {
+			#ifdef _WINDOWS
+				static bool WSAinit = false;
+				if (!WSAinit) {
+					WSAinit = true;
+					LOG_VERBOSE("WSA Startup...")
+					if (::WSAStartup(MAKEWORD(2,2), &wsaData) != 0) {
+						socket = INVALID_SOCKET;
+						LOG_ERROR("WSA Startup Error")
+						return;
+					}
+					LOG_VERBOSE("WSA status: " << wsaData.szSystemStatus)
+				}
+			#endif
+			socket = ::socket(protocol, type, 0);
+			memset(&remoteAddr, 0, sizeof(remoteAddr));
+			remoteAddr.sin_family = protocol;
+		}
+
 		inline virtual std::vector<byte> GetData() override {
 			std::scoped_lock lock(readMutex);
 			// Copy and return buffer
@@ -188,7 +198,7 @@ namespace v4d::io {
 		};
 
 		INLINE std::string GetLastError() const {
-			#if _WINDOWS
+			#ifdef _WINDOWS
 				// https://docs.microsoft.com/en-us/windows/win32/winsock/windows-sockets-error-codes-2
 				return std::to_string(::WSAGetLastError());
 			#else
@@ -220,7 +230,14 @@ namespace v4d::io {
 			#ifdef _WINDOWS
 				return socket != INVALID_SOCKET;
 			#else
-				return socket >= 0;
+				return socket >= 0 && socket != INVALID_SOCKET;
+			#endif
+		}
+		INLINE static bool IsValid(SOCKET s) {
+			#ifdef _WINDOWS
+				return s != INVALID_SOCKET;
+			#else
+				return s >= 0 && s != INVALID_SOCKET;
 			#endif
 		}
 		INLINE bool IsBound() const {
@@ -261,12 +278,20 @@ namespace v4d::io {
 		}
 
 		virtual bool Connect(const std::string& host, uint16_t port) {
-			if (!IsValid() || IsBound() || IsConnected()) return false;
+			if (!IsValid()) ResetSocket();
+			if (IsBound()) {
+				LOG_ERROR("Socket already bound")
+				return false;
+			}
+			if (IsConnected()) {
+				LOG_ERROR("Socket already connected")
+				return false;
+			}
 
 			remoteAddr.sin_port = htons(port);
 
 			// Convert IP to socket address
-			#if _WINDOWS
+			#ifdef _WINDOWS
 			// Quick method (for Windows)
 				remoteAddr.sin_addr.s_addr = ::inet_addr(host.c_str());
 			#else
@@ -288,24 +313,33 @@ namespace v4d::io {
 		}
 
 		INLINE void Disconnect() {
-			StopListening();
-			#ifdef _WINDOWS
-				::closesocket(socket);
-				::WSACleanup();
-			#else
-				::close(socket);
-			#endif
-			socket = INVALID_SOCKET;
 			connected = false;
+			StopListening();
+			if (IsValid()) {
+				#ifdef _WINDOWS
+					::closesocket(socket);
+					// ::WSACleanup(); // Only call this at the end of the program...
+				#else
+					::close(socket);
+				#endif
+				socket = INVALID_SOCKET;
+			}
 		}
 
 		INLINE void StopListening() {
 			listening = false;
 			if (listeningThread) {
 				if (listeningThread->joinable()) {
-					listeningThread->join();
-					delete listeningThread;
-					listeningThread = nullptr;
+					LOG("*** Socket " << socket << " Before join thread " << listeningThread->get_id())
+					try {
+						listeningThread->join();
+						LOG("*** Socket " << socket << " After join thread")
+						delete listeningThread;
+						listeningThread = nullptr;
+					} catch (...) {
+						LOG_ERROR("Failed to join listeningThread...")
+						SLEEP(100ms)
+					}
 				}
 			}
 		}
@@ -321,9 +355,16 @@ namespace v4d::io {
 
 		template<class Func, class ...FuncArgs>
 		void StartListeningThread(int waitIntervalMilliseconds, Func&& newSocketCallback, FuncArgs&&... args) {
-			if (!IsBound()) return;
+			if (!IsBound()) {
+				LOG_ERROR("Cannot start listening on socket: Not bound on port")
+				return;
+			}
 			if (IsTCP()) {
 				listening = (::listen(socket, SOMAXCONN) >= 0);
+				if (!listening) {
+					LOG_ERROR("Failed to listen on Socket")
+					return;
+				}
 				listeningThread = new std::thread([this, waitIntervalMilliseconds](Func&& newSocketCallback, FuncArgs&&... args){
 					while (IsListening()) {
 
@@ -332,18 +373,18 @@ namespace v4d::io {
 						if (polled == 0) continue; // timeout, keep going
 						if (polled == -1) { // error, stop here
 							LOG_ERROR("TCP Socket Listening Poll error")
-							listening = false;
+							// listening = false;
 							break;
 						}
 
 						if (polled == 1) {
 							// We have an incoming connection awaiting... Accept it !
-							memset(&incomingAddr, 0, (size_t)addrLen);
+							memset(&incomingAddr, 0, sizeof(incomingAddr));
 							SOCKET clientSocket = ::accept(socket, (struct sockaddr*)&incomingAddr, &addrLen);
-							if (IsListening() && clientSocket != INVALID_SOCKET) {
+							if (IsListening() && IsValid(clientSocket)) {
 								newSocketCallback(std::make_shared<Socket>(clientSocket, incomingAddr, type, protocol), std::forward<FuncArgs>(args)...);
 							} else {
-								listening = false;
+								// listening = false;
 								// #ifdef _WINDOWS
 								// 	::closesocket(clientSocket);
 								// #else
@@ -354,7 +395,9 @@ namespace v4d::io {
 							INVALIDCODE("polled > 1")
 						}
 					}
+					LOG("ListeningThread Finished")
 				}, std::forward<Func>(newSocketCallback), std::forward<FuncArgs>(args)...);
+				LOG("Listening socket " << socket << " Thread " << listeningThread->get_id())
 			} else if (IsUDP()) {
 				listening = true;
 				listeningThread = new std::thread([this, waitIntervalMilliseconds](Func&& newSocketCallback, FuncArgs&&... args){
@@ -366,7 +409,7 @@ namespace v4d::io {
 						if (polled == 0) continue; // timeout, keep going
 						if (polled == -1) { // error, stop here
 							LOG_ERROR("UDP Socket Listening Poll error")
-							listening = false;
+							// listening = false;
 							break;
 						}
 

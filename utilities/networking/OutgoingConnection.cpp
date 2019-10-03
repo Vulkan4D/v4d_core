@@ -2,12 +2,14 @@
 
 using namespace v4d::networking;
 
+void OutgoingConnection::SendHello(byte clientType) {
+	socket << ZAP::HELLO << zapdata::ClientHello{GetAppName(), GetVersion(), clientType};
+}
+
 bool OutgoingConnection::Connect(std::string ip, uint16_t port, byte clientType) {
 	Connect:
 	socket.Connect(ip, port);
-
-	// Begin Handshake
-	socket << ZAP::HELLO << zapdata::ClientHello{GetAppName(), GetVersion(), clientType};
+	SendHello(clientType);
 
 	if (id) {
 		socket << ZAP::TOKEN;
@@ -38,6 +40,20 @@ bool OutgoingConnection::Connect(std::string ip, uint16_t port, byte clientType)
 bool OutgoingConnection::ConnectRunAsync(std::string ip, uint16_t port, byte clientType) {
 	runAsync = true;
 	return Connect(ip, port, clientType);
+}
+
+std::string OutgoingConnection::GetServerPublicKey(std::string ip, uint16_t port) {
+	std::string publicKey{""};
+	socket.Connect(ip, port);
+	SendHello();
+	LOG_VERBOSE("Getting server public key....")
+	socket << ZAP::PUBKEY;
+	socket.Flush();
+	if (socket.Read<byte>() == ZAP::OK) {
+		publicKey = socket.Read<std::string>();
+	}
+	socket.Disconnect();
+	return publicKey;
 }
 
 bool OutgoingConnection::TokenRequest() {

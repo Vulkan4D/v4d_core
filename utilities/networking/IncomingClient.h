@@ -13,7 +13,11 @@ namespace v4d::networking {
 		IncomingClient(ulong id, std::string token, std::string aesHex) : id(id), token(token), aes(aesHex) {}
 		IncomingClient(ulong id) : id(id), token(""), aes(256) {}
 		~IncomingClient() {
-			for (std::thread& t : threads) if (t.joinable()) t.join();
+			for (std::thread& t : threads) {
+				if (t.joinable()) {
+					t.join();
+				}
+			}
 		}
 		DELETE_COPY_MOVE_CONSTRUCTORS(IncomingClient)
 	};

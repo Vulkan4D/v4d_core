@@ -9,6 +9,7 @@
 #include "utilities/crypto/AES.h"
 #include "utilities/crypto/RSA.h"
 #include "utilities/crypto/SHA.h"
+#include "utilities/crypto/Random.h"
 #include "utilities/data/Stream.h"
 #include "utilities/data/DataStream.hpp"
 #include "utilities/data/ReadOnlyStream.hpp"

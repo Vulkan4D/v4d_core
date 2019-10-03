@@ -52,8 +52,10 @@ namespace v4d::networking {
 		virtual void Run(v4d::io::Socket& socket) = 0;
 
 	public:
+		virtual void SendHello(byte clientType = 0);
 		virtual bool Connect(std::string ip, uint16_t port, byte clientType = 1);
 		virtual bool ConnectRunAsync(std::string ip, uint16_t port, byte clientType = 1);
+		virtual std::string GetServerPublicKey(std::string ip, uint16_t port);
 
 		virtual bool TokenRequest();
 		virtual bool AnonymousRequest();

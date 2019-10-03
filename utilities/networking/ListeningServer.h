@@ -18,7 +18,7 @@ namespace v4d::networking {
 		 : listeningSocket(type), rsa(serverPrivateKey) {}
 
 		virtual ~ListeningServer() {
-			listeningSocket.Disconnect();
+			Stop();
 		}
 
 		DELETE_COPY_MOVE_CONSTRUCTORS(ListeningServer)
@@ -26,7 +26,11 @@ namespace v4d::networking {
 		int listenInterval = 10;
 		int newConnectionFirstByteTimeout = 500;
 
-		virtual void Start(uint16_t port);
+		void Start(uint16_t port);
+
+		void Stop() {
+			listeningSocket.Disconnect();
+		}
 
 	// Pure-Virtual methods
 		virtual std::string GetAppName() const = 0;

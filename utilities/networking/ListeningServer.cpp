@@ -50,10 +50,18 @@ void ListeningServer::HandleNewConnection(v4d::io::SharedSocket socket){
 		break;
 
 		// Other requests
+
+		case ZAP::PUBKEY:
+			*socket << ZAP::OK;
+			*socket << (rsa? rsa->GetPublicKeyPEM() : std::string(""));
+			socket->Flush();
+			socket->Disconnect();
+		break;
 		
 		case ZAP::PING:
 			*socket << ZAP::PONG;
 			socket->Flush();
+			socket->Disconnect();
 		break;
 
 		case ZAP::EXT:
@@ -61,7 +69,7 @@ void ListeningServer::HandleNewConnection(v4d::io::SharedSocket socket){
 		break;
 
 		default:
-			LOG_ERROR("Unrecognized request")
+			LOG_ERROR("ListeningServer: Received unrecognized request")
 			socket->Disconnect();
 	}
 }
@@ -207,5 +215,7 @@ void ListeningServer::HandleNewClient(v4d::io::SharedSocket socket, ulong client
 }
 
 std::string ListeningServer::GenerateToken() const {
-	return "123456789"; //TODO
+	std::vector<byte> randomBytes(50);
+	v4d::crypto::Random::Generate(randomBytes);
+	return v4d::crypto::SHA1(randomBytes);
 }

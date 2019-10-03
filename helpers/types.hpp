@@ -1,6 +1,6 @@
 #pragma once
 
-#if _LINUX // Fore matching Windows counterparts
+#ifdef _LINUX // Fore matching Windows counterparts
 typedef std::uint8_t byte;
 typedef int SOCKET;
 #endif
