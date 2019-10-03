@@ -96,10 +96,6 @@ namespace v4d::tests {
 					return 4;
 				}
 
-
-				// server.Stop();
-				// return 0;
-
 				TestClient client2(client);
 				if (client2.Connect("127.0.0.1", 44444, 2)) {
 					// SUCCESS
