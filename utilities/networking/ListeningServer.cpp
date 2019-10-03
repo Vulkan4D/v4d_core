@@ -9,6 +9,10 @@ void ListeningServer::Start(uint16_t port) {
 	});
 }
 
+void ListeningServer::Stop()  {
+	listeningSocket.Disconnect();
+}
+
 void ListeningServer::HandleNewConnection(v4d::io::SharedSocket socket){
 	// If receive nothing after timeout, Disconnect now!
 	if (socket->Poll(newConnectionFirstByteTimeout) <= 0) {

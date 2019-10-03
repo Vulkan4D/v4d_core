@@ -28,9 +28,7 @@ namespace v4d::networking {
 
 		void Start(uint16_t port);
 
-		void Stop() {
-			listeningSocket.Disconnect();
-		}
+		void Stop();
 
 	// Pure-Virtual methods
 		virtual std::string GetAppName() const = 0;
