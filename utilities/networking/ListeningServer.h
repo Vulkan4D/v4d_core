@@ -14,12 +14,9 @@ namespace v4d::networking {
 
 	public:
 
-		ListeningServer(v4d::io::SOCKET_TYPE type = v4d::io::TCP, v4d::crypto::RSA* serverPrivateKey = nullptr)
-		 : listeningSocket(type), rsa(serverPrivateKey) {}
+		ListeningServer(v4d::io::SOCKET_TYPE type = v4d::io::TCP, v4d::crypto::RSA* serverPrivateKey = nullptr);
 
-		virtual ~ListeningServer() {
-			Stop();
-		}
+		virtual ~ListeningServer();
 
 		DELETE_COPY_MOVE_CONSTRUCTORS(ListeningServer)
 

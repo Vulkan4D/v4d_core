@@ -7,7 +7,7 @@ namespace v4d::networking {
 	public:
 		ulong id;
 		std::string token;
-	private:
+	protected:
 		v4d::io::Socket socket;
 		v4d::crypto::RSA* rsa;
 		v4d::crypto::AES aes;
@@ -18,29 +18,13 @@ namespace v4d::networking {
 	public:
 		int connectionTimeoutMilliseconds = 2000;
 
-		OutgoingConnection(v4d::io::SOCKET_TYPE type = v4d::io::TCP, v4d::crypto::RSA* serverPublicKey = nullptr, int aesBits = 256)
-		 : id(0), token(""), socket(type), rsa(serverPublicKey), aes(aesBits) {}
+		OutgoingConnection(v4d::io::SOCKET_TYPE type = v4d::io::TCP, v4d::crypto::RSA* serverPublicKey = nullptr, int aesBits = 256);
+		OutgoingConnection(ulong id, std::string token, v4d::io::SOCKET_TYPE type = v4d::io::TCP, v4d::crypto::RSA* serverPublicKey = nullptr, std::string aesHex = "");
+		OutgoingConnection(OutgoingConnection&);
 
-		OutgoingConnection(ulong id, std::string token, v4d::io::SOCKET_TYPE type = v4d::io::TCP, v4d::crypto::RSA* serverPublicKey = nullptr, std::string aesHex = "")
-		 : id(id), token(token), socket(type), rsa(serverPublicKey), aes(aesHex) {}
+		virtual ~OutgoingConnection();
 
-		OutgoingConnection(OutgoingConnection& c)
-		 : id(c.id), token(c.token), socket(c.socket.IsTCP()?v4d::io::TCP:v4d::io::UDP), rsa(c.rsa), aes(c.aes.GetHexKey()) {}
-
-		virtual ~OutgoingConnection(){
-			Disconnect();
-		}
-
-		void Disconnect() {
-			socket.Disconnect();
-			if (asyncRunThread) {
-				if (asyncRunThread->joinable()) {
-					asyncRunThread->join();
-					delete asyncRunThread;
-					asyncRunThread = nullptr;
-				}
-			}
-		}
+		void Disconnect();
 
 
 	// Pure-Virtual methods
@@ -48,7 +32,7 @@ namespace v4d::networking {
 		virtual std::string GetVersion() const = 0;
 
 	protected: // Pure-Virtual methods
-		virtual void Authenticate(v4d::data::Stream* /*authStream*/) = 0;
+		virtual void Authenticate(v4d::data::Stream* authStream) = 0;
 		virtual void Run(v4d::io::Socket& socket) = 0;
 
 	public:
@@ -63,9 +47,7 @@ namespace v4d::networking {
 
 		virtual bool HandleConnection();
 
-		virtual void Error(int code, std::string message) const {
-			LOG_ERROR("(" << code << ") " << message);
-		}
+		virtual void Error(int code, std::string message) const;
 
 	};
 }

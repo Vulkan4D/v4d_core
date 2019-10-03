@@ -117,12 +117,12 @@ namespace v4d::tests {
 			v4d::io::Socket server(v4d::io::UDP);
 			server.Bind(44444);
 
-			server.StartListeningThread(10, [/*&result*/](v4d::io::SharedSocket socket, int& result){
+			server.StartListeningThread(10, [&result](v4d::io::SharedSocket socket){
 				auto stream = socket->ReadStream();
 				result -= stream.Read<int>();
 				result -= stream.Read<short>();
 				result -= (int)stream.Read<double>();
-			}, std::ref(result));
+			});
 
 			v4d::io::Socket client(v4d::io::UDP);
 			client.Connect("127.0.0.1", 44444);

@@ -69,11 +69,7 @@ public:
 namespace v4d::tests {
 	int Networking() {
 
-		// LOGGER_INSTANCE->SetVerbose(true);
-
 		v4d::crypto::RSA rsa(2048, 3);
-
-		LOG("Parent thread " << std::this_thread::get_id())
 
 		{// Test1
 			// Server

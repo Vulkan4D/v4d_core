@@ -2,6 +2,13 @@
 
 using namespace v4d::networking;
 
+ListeningServer::ListeningServer(v4d::io::SOCKET_TYPE type, v4d::crypto::RSA* serverPrivateKey)
+	: listeningSocket(type), rsa(serverPrivateKey) {}
+
+ListeningServer::~ListeningServer() {
+	Stop();
+}
+
 void ListeningServer::Start(uint16_t port) {
 	listeningSocket.Bind(port);
 	listeningSocket.StartListeningThread(listenInterval, [this](v4d::io::SharedSocket socket){
