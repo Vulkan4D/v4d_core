@@ -91,27 +91,27 @@ namespace v4d::tests {
 				}
 				SLEEP(100ms) // wait for server to have the time to decrement result
 				client.Disconnect();
-				server.Stop();
 				if (result != 50) {
 					LOG_ERROR(result << "  Networking Error Test1: Wrong result after first connect")
 					return 4;
 				}
 
 
-				return 0;
+				// server.Stop();
+				// return 0;
 
-				// TestClient client2(client);
-				// if (client2.Connect("127.0.0.1", 44444, 2)) {
-				// 	// SUCCESS
-				// 	SLEEP(100ms) // wait for server to have the time to decrement result
-				// 	if (result != 0) {
-				// 		LOG_ERROR(result << "  Networking Error Test1: Wrong result after second connect")
-				// 	}
-				// 	return result;// If fails without error, then final result is not good.
-				// } else {
-				// 	LOG_ERROR("Networking Error Test1: TOKEN Connection failed")
-				// 	return 2;
-				// }
+				TestClient client2(client);
+				if (client2.Connect("127.0.0.1", 44444, 2)) {
+					// SUCCESS
+					SLEEP(100ms) // wait for server to have the time to decrement result
+					if (result != 0) {
+						LOG_ERROR(result << "  Networking Error Test1: Wrong result after second connect")
+					}
+					return result;// If fails without error, then final result is not good.
+				} else {
+					LOG_ERROR("Networking Error Test1: TOKEN Connection failed")
+					return 2;
+				}
 
 
 			} else {

@@ -183,6 +183,10 @@ void ListeningServer::AuthRequest(v4d::io::SharedSocket& socket, byte clientType
 		// Prepare response
 		std::string token = GenerateToken();
 		std::string aesHexKey = authStream.Read<std::string>();
+		if (clients.find(clientID) != clients.end()) {
+			// Destroy any existing client with the same id
+			clients.erase(clientID);
+		}
 		clients[clientID] = std::make_shared<IncomingClient>(clientID, token, aesHexKey);
 		v4d::data::Stream tokenAndId(10+token.size() + sizeof(clientID));
 		tokenAndId << token << clientID;

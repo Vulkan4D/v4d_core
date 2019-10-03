@@ -5,8 +5,8 @@
 namespace v4d::networking {
 
 	class V4DLIB ListeningServer {
+	protected:
 		const ulong REQ_INCREMENT_MAX_DIFF = 100000; // maximum acceptable difference in the increment index between two requests
-	private:
 		v4d::io::Socket listeningSocket;
 		v4d::crypto::RSA* rsa;
 
@@ -40,10 +40,10 @@ namespace v4d::networking {
 		virtual ulong Authenticate(v4d::data::ReadOnlyStream* /*authStream*/) = 0;
 		virtual void RunClient(v4d::io::SharedSocket, std::shared_ptr<IncomingClient>, byte /*clientType*/) = 0;
 
-	private:
+	protected:
 		virtual void HandleNewConnection(v4d::io::SharedSocket socket);
 		
-		virtual bool ValidateAppName(v4d::io::SharedSocket& /*socket*/, const std::string& /*clientAppName*/);
+		virtual bool ValidateAppName(v4d::io::SharedSocket& socket, const std::string& clientAppName);
 		virtual bool ValidateVersion(v4d::io::SharedSocket& socket, const std::string& clientVersion);
 		
 		virtual void ExtendedRequest(v4d::io::SharedSocket& socket, byte clientType);
