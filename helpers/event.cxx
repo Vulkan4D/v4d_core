@@ -3,10 +3,10 @@
 struct ___TestClassForEvent {int x; int y;};
 
 #ifdef EVENT_DEFINITIONS_VARIADIC
-	DEFINE_EVENT(EVT1, ___TestClassForEvent)
-	DEFINE_EVENT(EVT2)
-	DEFINE_EVENT(EVT3, int, std::string)
-	DEFINE_EVENT(EVT4, int)
+	DEFINE_EVENT(v4d::tests, EVT1, ___TestClassForEvent)
+	DEFINE_EVENT(v4d::tests, EVT2)
+	DEFINE_EVENT(v4d::tests, EVT3, int, std::string)
+	DEFINE_EVENT(v4d::tests, EVT4, int)
 #else
 	DEFINE_EVENT(v4d::tests, EVT1, ___TestClassForEvent)
 	DEFINE_EVENT(v4d::tests, EVT2, int)
@@ -26,7 +26,7 @@ namespace v4d::tests {
 			v4d::tests::event::EVT2 << [&result](){ result -= 2; };
 			v4d::tests::event::EVT2();
 
-			v4d::tests::event::EVT3 << [&result](int a, std::string b){ result -= a; };
+			v4d::tests::event::EVT3 << [&result](int a, std::string str){ if (str == "test") result -= a; };
 			v4d::tests::event::EVT3(3, "test");
 
 			v4d::tests::event::EVT4 << [&result](int a){ result -= a; };

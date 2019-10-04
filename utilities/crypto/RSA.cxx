@@ -81,19 +81,19 @@ namespace v4d::tests {
 
 			auto rsa2 = v4d::crypto::RSA(2048, 3);
 			
-			auto signature = rsa.Sign(stream._GetWriteBuffer_());
-			auto signature2 = rsa2.Sign(stream._GetWriteBuffer_());
+			auto signature = rsa.Sign(stream.GetData());
+			auto signature2 = rsa2.Sign(stream.GetData());
 
-			if (rsa.Verify(stream._GetWriteBuffer_(), signature)) {
+			if (rsa.Verify(stream.GetData(), signature)) {
 				result -= 90;
 			}
-			if (rsa2.Verify(stream._GetWriteBuffer_(), signature2)) {
+			if (rsa2.Verify(stream.GetData(), signature2)) {
 				result -= 10;
 			}
-			if (rsa2.Verify(stream._GetWriteBuffer_(), signature)) {
+			if (rsa2.Verify(stream.GetData(), signature)) {
 				result -= 20;
 			}
-			if (rsa.Verify(stream._GetWriteBuffer_(), signature2)) {
+			if (rsa.Verify(stream.GetData(), signature2)) {
 				result -= 30;
 			}
 

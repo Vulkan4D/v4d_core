@@ -12,7 +12,7 @@ namespace v4d::tests {
 		stream << 50;
 		stream << 9.0;
 
-		std::string encodedString = v4d::Base16::Encode(stream._GetWriteBuffer_());
+		std::string encodedString = v4d::Base16::Encode(stream.GetData());
 		v4d::data::ReadOnlyStream decodedStream(v4d::Base16::Decode(encodedString));
 
 		int a = 0;

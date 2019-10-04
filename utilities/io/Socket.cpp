@@ -190,7 +190,6 @@ void Socket::Disconnect() {
 	if (IsValid()) {
 		#ifdef _WINDOWS
 			::closesocket(socket);
-			// ::WSACleanup(); // Only call this at the end of the program...
 		#else
 			::close(socket);
 		#endif
@@ -202,14 +201,9 @@ void Socket::StopListening() {
 	listening = false;
 	if (listeningThread) {
 		if (listeningThread->joinable()) {
-			try {
-				listeningThread->join();
-				delete listeningThread;
-				listeningThread = nullptr;
-			} catch (...) {
-				LOG_ERROR("Failed to join listeningThread...")
-				SLEEP(100ms)
-			}
+			listeningThread->join();
+			delete listeningThread;
+			listeningThread = nullptr;
 		}
 	}
 }
@@ -229,16 +223,10 @@ bool Socket::Connect(const std::string& host, uint16_t port) {
 
 	// Convert IP to socket address
 	#ifdef _WINDOWS
-	// Quick method (for Windows)
 		remoteAddr.sin_addr.s_addr = ::inet_addr(host.c_str());
 	#else
-	// Quick method (for Linux), must include <arpa/inet.h>
 		::inet_pton(protocol, host.c_str(), &remoteAddr.sin_addr);
 	#endif
-	// Complex method, no additional include
-		// remoteHost = gethostbyname(host.c_str());
-		// if (remoteHost == NULL) return false;
-		// memcpy((char *) &remoteAddr.sin_addr.s_addr, (char *) remoteHost->h_addr, remoteHost->h_length);
 
 	if (IsTCP()) {
 		connected = (::connect(socket, (struct sockaddr*)&remoteAddr, sizeof remoteAddr) >= 0);
@@ -280,6 +268,7 @@ void Socket::ResetSocket() {
 				return;
 			}
 			LOG_VERBOSE("WSA status: " << wsaData.szSystemStatus)
+			//TODO call ::WSACleanup(); at the end of the program... Or is it really necessary ? ... Maybe create a global shared_ptr singleton with destructor...
 		}
 	#endif
 	socket = ::socket(protocol, type, 0);

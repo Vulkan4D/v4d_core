@@ -13,7 +13,7 @@ namespace v4d::tests {
 			stream << 65;
 			stream << 15.0;
 
-			result += (int)stream._GetWriteBuffer_().size();
+			result += (int)stream.GetWriteBufferSize();
 
 			v4d::crypto::AES aes(256);
 			auto aesHex = aes.GetHexKey();

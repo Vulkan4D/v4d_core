@@ -23,7 +23,7 @@ std::string v4d::crypto::Crypto::DecryptString(const std::vector<byte>& encrypte
 }
 
 std::vector<byte> v4d::crypto::Crypto::EncryptStream(v4d::data::Stream& stream) {
-	return Encrypt(stream._GetWriteBuffer_());
+	return Encrypt(std::move(stream.GetData()));
 }
 
 v4d::data::ReadOnlyStream v4d::crypto::Crypto::DecryptStream(const std::vector<byte>& encryptedData) {

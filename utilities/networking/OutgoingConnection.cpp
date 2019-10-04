@@ -139,7 +139,7 @@ bool OutgoingConnection::AuthRequest(v4d::data::Stream& authData) {
 			{
 				if (rsa) {
 					auto signature = socket.Read<std::vector, byte>();
-					if (!rsa->Verify(authData._GetWriteBuffer_(), signature)) {
+					if (!rsa->Verify(authData.GetData(), signature)) {
 						Error(ZAP_CODES::SERVER_SIGNATURE_FAILED, "Error while trying to connect to server. " + ZAP_CODES::SERVER_SIGNATURE_FAILED_text);
 						return false;
 					}
