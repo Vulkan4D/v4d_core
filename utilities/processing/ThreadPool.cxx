@@ -43,8 +43,9 @@ namespace v4d::tests {
 			}
 
 			// Task 4
-			threadPool.Enqueue([&timer] {
+			auto future4 = threadPool.Promise([&timer] {
 				SLEEP(400ms)
+				return 1;
 			}, 100);
 			if (timer.GetElapsedMilliseconds() > 10) {
 				LOG_ERROR("v4d::tests::ThreadPool ERROR 1.4 (task not enqueued asynchronously)")
@@ -91,6 +92,11 @@ namespace v4d::tests {
 				LOG_ERROR("v4d::tests::ThreadPool EXCEPTION 2 : " << e.what())
 			} catch (...) {
 				LOG_ERROR("v4d::tests::ThreadPool UNKNOWN EXCEPTION 2")
+			}
+
+			if (future4.get().get() != 1) {
+				LOG_ERROR("v4d::tests::ThreadPool ERROR 1.4 (wrong future return value)")
+				return 1;
 			}
 		}
 

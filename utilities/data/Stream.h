@@ -142,9 +142,13 @@ namespace v4d::data {
 				#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
 					return WriteBytes(reinterpret_cast<const byte*>(data.c_str()), data.size());
 				#else
-					byte bytes[data.size()];
-					memcpy(bytes, data.c_str(), data.size());
-					return WriteBytes(bytes, data.size());
+					if (data.size() > 0) {
+						byte bytes[data.size()];
+						memcpy(bytes, data.c_str(), data.size());
+						return WriteBytes(bytes, data.size());
+					} else {
+						return *this;
+					}
 				#endif
 			} else {
 				// Any other type
@@ -163,6 +167,10 @@ namespace v4d::data {
 				// std::string
 				std::lock_guard lock(readMutex);
 				size_t size(ReadSize());
+				if (size <= 0) {
+					data = "";
+					return *this;
+				}
 				byte bytes[size];
 				#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
 					ReadBytes(bytes, size);

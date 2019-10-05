@@ -7,8 +7,7 @@ namespace v4d {
 	class Timer {
 		typedef std::chrono::duration<double, std::milli> duration;
 		typedef std::chrono::time_point<std::chrono::system_clock, duration> time_point;
-
-	private:
+		mutable std::mutex mutex;
 		time_point timePoint;
 
 	public:
@@ -25,6 +24,7 @@ namespace v4d {
 		 * starts the time point to the current system time
 		 */
 		INLINE void Start() {
+			std::lock_guard lock(mutex);
 			timePoint = std::chrono::high_resolution_clock::now();
 		}
 
@@ -39,6 +39,7 @@ namespace v4d {
 		 * @returns the elapsed milliseconds between the current system time and the time point
 		 */
 		INLINE double GetElapsedMilliseconds() const {
+			std::lock_guard lock(mutex);
 			return GetDurationSince().count();
 		}
 

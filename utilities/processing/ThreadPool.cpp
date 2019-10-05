@@ -2,19 +2,19 @@
 
 using namespace v4d::processing;
 
-ThreadPool::ThreadPool(size_t numThreads) {
-	stopping = false;
+ThreadPool::ThreadPool(size_t numThreads) : stopping(false) {
 	SetNbThreads(numThreads);
 }
 
 void ThreadPool::StartNewThread(index_t index) {
+	std::lock_guard threadsLock(threadsMutex);
 	threads.emplace(index, 
 		[this, index] {
 			while(true) {
 				try {
 					std::function<void()> task;
 					{
-						std::unique_lock<std::mutex> lock(eventMutex);
+						std::unique_lock lock(eventMutex);
 						eventVar.wait(lock, [this,index] {
 							return this->stopping || index >= this->numThreads || !this->tasks.empty();
 						});
@@ -48,8 +48,10 @@ void ThreadPool::StartNewThread(index_t index) {
 }
 
 ThreadPool::~ThreadPool() {
+	std::lock_guard threadsLock(threadsMutex);
+	
 	{
-		std::lock_guard<std::mutex> lock(eventMutex);
+		std::lock_guard lock(eventMutex);
 		stopping = true;
 	}
 
@@ -66,11 +68,14 @@ ThreadPool::~ThreadPool() {
 	} catch (...) {
 		LOG_ERROR("Unknown Error while joining ThreadPool threads")
 	}
+	std::lock_guard lock(eventMutex);
 }
 
 void ThreadPool::SetNbThreads(size_t numThreads) {
+	std::lock_guard threadsLock(threadsMutex);
+
 	{
-		std::lock_guard<std::mutex> lock(eventMutex);
+		std::lock_guard lock(eventMutex);
 		this->numThreads = numThreads;
 		while (threads.size() < numThreads) {
 			StartNewThread(threads.size());
@@ -80,7 +85,7 @@ void ThreadPool::SetNbThreads(size_t numThreads) {
 	eventVar.notify_all();
 
 	for (auto& [index, thread] : threads) {
-		if (index >= numThreads) {
+		if (index >= numThreads && thread.joinable()) {
 			thread.join();
 		}
 	}

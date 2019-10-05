@@ -35,7 +35,7 @@ namespace v4d {
 				const char* q = std::lower_bound(base16Chars, base16Chars + 16, b);
 				if (*q != b) throw std::invalid_argument("not a hex digit");
 
-				ret.push_back(((byte)((p - base16Chars) << 4) | (byte)(q - base16Chars)));
+				ret.push_back((byte) ((byte)((p - base16Chars) << 4) | (byte)(q - base16Chars)));
 			}
 			return ret;
 		}
