@@ -105,7 +105,11 @@ namespace v4d::networking::ZAP {
 				t.Write(stream);
 			} else {
 				// Any other Struct (ZAPDATA)
-				std::apply([stream](auto&&... args) { (__ForEachDataMemberWrite(stream, args),...); }, ReflMemberGroup(t));
+				std::apply([stream](auto&&... args) {
+					stream->LockWrite();
+					(__ForEachDataMemberWrite(stream, args),...);
+					stream->UnlockWrite();
+				}, ReflMemberGroup(t));
 			}
 		}
 
@@ -133,7 +137,11 @@ namespace v4d::networking::ZAP {
 				t.Read(stream);
 			} else {
 				// Any other Struct (ZAPDATA)
-				std::apply([stream](auto&&... args) { (__ForEachDataMemberRead(stream, args),...); }, ReflMemberGroup(t));
+				std::apply([stream](auto&&... args) {
+					stream->LockRead();
+					(__ForEachDataMemberRead(stream, args),...);
+					stream->UnlockRead();
+				}, ReflMemberGroup(t));
 			}
 		}
 
