@@ -2,13 +2,11 @@
 
 using namespace v4d::io;
 
-BinaryFileStream::BinaryFileStream(const std::string& filePath, size_t bufferSize) : Stream(bufferSize), filePath(filePath) {
-	file.open(filePath, OPENMODE);
+BinaryFileStream::BinaryFileStream(const std::string& filePath, size_t bufferSize) : Stream(bufferSize), FilePath(filePath) {
+	AutoCreateFile();
+	file.open(this->filePath, OPENMODE);
 	if (!file.is_open()) {
-		file.open(filePath, OPENMODE | std::fstream::trunc);
-		if (!file.is_open()) {
-			LOG_ERROR("Cannot open file '" << filePath << "'")
-		}
+		LOG_ERROR("Cannot open file '" << filePath << "'")
 	}
 }
 
@@ -50,17 +48,6 @@ void BinaryFileStream::Truncate() {
 	}
 }
 
-void BinaryFileStream::Send() {
-	std::scoped_lock lock(writeMutex, readMutex);
-	if (!file.is_open()) {
-		LOG_ERROR("File '" << filePath << "' not opened")
-	}
-	file.write((char*)_GetWriteBuffer_().data(), (long)_GetWriteBuffer_().size());
-	// Reopen
-	file.close();
-	file.open(filePath, OPENMODE);
-}
-
 void BinaryFileStream::Reopen() {
 	std::scoped_lock lock(writeMutex, readMutex);
 	if (file.is_open()) {
@@ -70,6 +57,24 @@ void BinaryFileStream::Reopen() {
 	if (!file.is_open()) {
 		LOG_ERROR("Cannot open/reopen file '" << filePath << "'")
 	}
+}
+
+bool BinaryFileStream::Delete() {
+	if (file.is_open()) {
+		file.close();
+	}
+	return FilePath::Delete();
+}
+
+void BinaryFileStream::Send() {
+	std::scoped_lock lock(writeMutex, readMutex);
+	if (!file.is_open()) {
+		LOG_ERROR("File '" << filePath << "' not opened")
+	}
+	file.write((char*)_GetWriteBuffer_().data(), (long)_GetWriteBuffer_().size());
+	// Reopen
+	file.close();
+	file.open(filePath, OPENMODE);
 }
 
 size_t BinaryFileStream::Receive(byte* data, size_t n) {

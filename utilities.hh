@@ -13,6 +13,7 @@
 #include "utilities/data/Stream.h"
 #include "utilities/data/DataStream.hpp"
 #include "utilities/data/ReadOnlyStream.hpp"
+#include "utilities/io/FilePath.h"
 #include "utilities/io/BinaryFileStream.h"
 #include "utilities/io/Socket.h"
 #include "utilities/networking/ZAP.hh"

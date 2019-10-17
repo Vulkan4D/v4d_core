@@ -4,8 +4,18 @@ namespace v4d::tests {
 	int BinaryFileStream() {
 		int result = 0;
 
+		if (!v4d::io::FilePath::CreateDirectory("testdir_/someotherdir/stuff")) {
+			LOG_ERROR("Failed to create directory")
+			return 1;
+		}
+
+		if (!v4d::io::FilePath::DeleteDirectory("testdir_", true)) {
+			LOG_ERROR("Failed to delete directory")
+			return 2;
+		}
+
 		{
-			v4d::io::BinaryFileStream fileStream("test_BinaryFileStream.txt");
+			v4d::io::BinaryFileStream fileStream(v4d::io::FilePath("testfiles_/test_BinaryFileStream.txt"));
 
 			{// Test 1 (int, bool, float, double... using stream operators)
 				result = 100;
@@ -58,9 +68,14 @@ namespace v4d::tests {
 					return result;
 				}
 			}
+
+			fileStream.Delete();
 		}
 
-		remove("test_BinaryFileStream.txt");
+		if (!v4d::io::FilePath::DeleteDirectory("testfiles_", true)) {
+			LOG_ERROR("Failed to delete directory after running tests")
+			return 3;
+		}
 
 		return result;
 	}

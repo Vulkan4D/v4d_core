@@ -1,10 +1,7 @@
 #pragma once
 
-#include <fstream>
-
 namespace v4d::io {
-	class V4DLIB BinaryFileStream : public v4d::data::Stream {
-		std::string filePath;
+	class V4DLIB BinaryFileStream : public v4d::data::Stream, public v4d::io::FilePath {
 		std::fstream file;
 
 		const std::ios_base::openmode OPENMODE = std::fstream::in | std::fstream::out | std::fstream::binary;
@@ -17,14 +14,19 @@ namespace v4d::io {
 
 		DELETE_COPY_MOVE_CONSTRUCTORS(BinaryFileStream)
 
-		std::vector<byte> GetData() override;
-
 		long GetSize();
 		void Truncate();
 		void Reopen();
 
+		// Stream Overrides
+		std::vector<byte> GetData() override;
+
+		// FilePath Overrides
+		virtual bool Delete() override;
+
 	protected:
 
+		// Stream Overrides
 		virtual void Send() override;
 		virtual size_t Receive(byte* data, size_t n) override;
 
