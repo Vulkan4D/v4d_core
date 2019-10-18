@@ -14,7 +14,7 @@ namespace v4d::io {
 		std::ofstream file;
 
 		void LogToFile(const std::string& message) {
-			std::call_once(readFileOnce, [&f=file, &filepath=filepath, &message](){
+			std::call_once(readFileOnce, [&f=file, &filepath=filepath](){
 				f.open(filepath);
 			});
 			file << message << std::endl;

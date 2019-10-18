@@ -32,7 +32,7 @@ EXTERNC V4DLIB void V4D_SIGNAL_HANDLER(int num);
 namespace v4d::io {
 	class Logger;
 	class ModulesLoader;
-	class ModuleInstance;
+	struct ModuleInstance;
 }
 
 //////////////////////////////////////////////////////////

@@ -13,7 +13,7 @@ namespace v4d::tests {
 			using namespace std::literals::chrono_literals;
 
 			// Task 1
-			auto future1 = threadPool.Promise([&timer] {
+			auto future1 = threadPool.Promise([] {
 				SLEEP(200ms)
 				return 111;
 			});
@@ -23,7 +23,7 @@ namespace v4d::tests {
 			}
 
 			// Task 2
-			auto future2 = threadPool.Promise([&timer] {
+			auto future2 = threadPool.Promise([] {
 				SLEEP(100ms)
 				return 222;
 			});
@@ -33,7 +33,7 @@ namespace v4d::tests {
 			}
 
 			// Task 3
-			auto future3 = threadPool.Promise([&timer] {
+			auto future3 = threadPool.Promise([] {
 				SLEEP(300ms)
 				return 333;
 			});
@@ -43,7 +43,7 @@ namespace v4d::tests {
 			}
 
 			// Task 4
-			auto future4 = threadPool.Promise([&timer] {
+			auto future4 = threadPool.Promise([] {
 				SLEEP(400ms)
 				return 1;
 			}, 100);
@@ -53,7 +53,7 @@ namespace v4d::tests {
 			}
 
 			// Task 5
-			auto future5 = threadPool.Promise([&future1, &future2, &future3, &timer] {
+			auto future5 = threadPool.Promise([&future1, &future2, &future3] {
 				try {
 					return future1.get() + future2.get() + future3.get();
 				} catch (...) {
