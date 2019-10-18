@@ -74,7 +74,7 @@ namespace v4d::io {
 
 		virtual std::vector<byte> GetData() override;
 
-		INLINE std::string GetLastError() const {
+		std::string GetLastError() const {
 			#ifdef _WINDOWS
 				// https://docs.microsoft.com/en-us/windows/win32/winsock/windows-sockets-error-codes-2
 				return std::to_string(::WSAGetLastError());
@@ -83,53 +83,53 @@ namespace v4d::io {
 			#endif
 		}
 
-		INLINE void SetLogErrors(bool logErrors) {
+		void SetLogErrors(bool logErrors) {
 			this->logErrors = logErrors;
 		}
 
-		INLINE sockaddr_in GetRemoteAddress() const {
+		sockaddr_in GetRemoteAddress() const {
 			return remoteAddr;
 		}
 
-		INLINE sockaddr_in GetIncomingAddress() const {
+		sockaddr_in GetIncomingAddress() const {
 			return incomingAddr;
 		}
 
-		INLINE std::string GetRemoteIP() const {
+		std::string GetRemoteIP() const {
 			return inet_ntoa(remoteAddr.sin_addr);
 		}
 
-		INLINE std::string GetIncomingIP() const {
+		std::string GetIncomingIP() const {
 			return inet_ntoa(incomingAddr.sin_addr);
 		}
 
-		INLINE bool IsValid() const {
+		bool IsValid() const {
 			#ifdef _WINDOWS
 				return socket != INVALID_SOCKET;
 			#else
 				return socket >= 0 && socket != INVALID_SOCKET;
 			#endif
 		}
-		INLINE static bool IsValid(SOCKET s) {
+		static bool IsValid(SOCKET s) {
 			#ifdef _WINDOWS
 				return s != INVALID_SOCKET;
 			#else
 				return s >= 0 && s != INVALID_SOCKET;
 			#endif
 		}
-		INLINE bool IsBound() const {
+		bool IsBound() const {
 			return IsValid() && bound;
 		}
-		INLINE bool IsListening() const {
+		bool IsListening() const {
 			return IsValid() && listening;
 		}
-		INLINE bool IsConnected() const {
+		bool IsConnected() const {
 			return IsValid() && connected;
 		}
-		INLINE bool IsTCP() const {
+		bool IsTCP() const {
 			return type == TCP;
 		}
-		INLINE bool IsUDP() const {
+		bool IsUDP() const {
 			return type == UDP;
 		}
 
@@ -146,7 +146,7 @@ namespace v4d::io {
 
 		void StopListening();
 
-		INLINE int Poll(int timeoutMilliseconds = 0) {
+		int Poll(int timeoutMilliseconds = 0) {
 			pollfd fds[1] = {pollfd{socket, POLLIN, 0}};
 			#ifdef _WINDOWS
 				return ::WSAPoll(fds, 1, timeoutMilliseconds);
@@ -155,7 +155,7 @@ namespace v4d::io {
 			#endif
 		}
 
-		INLINE void SetConnected() {
+		void SetConnected() {
 			connected = true;
 		}
 		

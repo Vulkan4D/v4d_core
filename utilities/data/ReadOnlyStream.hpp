@@ -23,15 +23,15 @@ namespace v4d::data {
 			memcpy(dataBuffer.data(), data, size);
 		}
 
-		INLINE size_t GetDataBufferRemaining() const {
+		size_t GetDataBufferRemaining() const {
 			return dataBuffer.size() - dataBufferCursor;
 		}
 		
-		INLINE bool IsDataBufferEnd() const {
+		bool IsDataBufferEnd() const {
 			return dataBufferCursor == dataBuffer.size();
 		}
 
-		inline virtual std::vector<byte> GetData() override {
+		virtual std::vector<byte> GetData() override {
 			std::lock_guard lock(readMutex);
 			// Copy and return buffer
 			return dataBuffer;

@@ -1,4 +1,9 @@
-#include "v4d.h"
+// Pre-compiled common header
+#include <common/pch.hh>
+
+// V4D Core Header
+#include <v4d.h>
+
 #ifdef _V4D_CORE
 
 	//////////////////////////////////////////////////////////

@@ -1,7 +1,8 @@
-#include <v4d.h>
+// Pre-compiled common header
+#include <common/pch.hh>
 
-#include <openssl/rand.h>
-#include <openssl/aes.h>
+// V4D Core Header
+#include <v4d.h>
 
 #define IV_SIZE AES_BLOCK_SIZE
 

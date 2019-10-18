@@ -11,11 +11,8 @@
 //////////////////////////////////////////////////////
 // Includes (the order is important)
 
-// V4D Core Config File
+// Config
 #include "v4dconfig.hh"
-
-// Pre-compiled common headers
-#include "common/pch.hh"
 
 // This includes all helpers (simple header-only source files)
 #include "helpers.hh"

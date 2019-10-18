@@ -13,7 +13,7 @@ namespace v4d::io {
 		std::once_flag readFileOnce, setVerboseOnce;
 		std::ofstream file;
 
-		inline void LogToFile(const std::string& message) {
+		void LogToFile(const std::string& message) {
 			std::call_once(readFileOnce, [&f=file, &filepath=filepath, &message](){
 				f.open(filepath);
 			});
@@ -35,7 +35,7 @@ namespace v4d::io {
 		
 		static std::shared_ptr<Logger> FileInstance(const std::string& filepath, std::optional<bool> verbose = std::nullopt);
 
-		INLINE void Log(std::ostream& message, const char* style = "0") {
+		void Log(std::ostream& message, const char* style = "0") {
 			std::lock_guard lock(mu);
 			std::string msg = dynamic_cast<std::ostringstream&>(message).str();
 			try {
@@ -57,26 +57,26 @@ namespace v4d::io {
 			} catch(...) {}
 		}
 
-		INLINE std::string GetCurrentThreadIdStr() const {
+		std::string GetCurrentThreadIdStr() const {
 			std::stringstream str("");
 			str << " [thread " << std::this_thread::get_id() << "] ";
 			return str.str();
 		}
 
 		template<typename T>
-		INLINE void Log(T&& message, const char* style = "0") {
+		void Log(T&& message, const char* style = "0") {
 			Log(std::ostringstream().flush() << message, style);
 		}
 		
-		INLINE void LogError(std::ostream& message) {
+		void LogError(std::ostream& message) {
 			Log(message, "1;31");
 		}
 
-		INLINE bool IsVerbose() const {
+		bool IsVerbose() const {
 			return verbose;
 		}
 
-		INLINE void SetVerbose(bool isVerbose = true) {
+		void SetVerbose(bool isVerbose = true) {
 			verbose = isVerbose;
 		}
 

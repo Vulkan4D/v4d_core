@@ -1,6 +1,8 @@
-#include <v4d.h>
+// Pre-compiled common header
+#include <common/pch.hh>
 
-#include <openssl/sha.h>
+// V4D Core Header
+#include <v4d.h>
 
 // SHA1
 std::string v4d::crypto::SHA1(const byte* data, size_t size) {

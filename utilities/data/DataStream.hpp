@@ -23,7 +23,7 @@ namespace v4d::data {
 
 		DELETE_COPY_MOVE_CONSTRUCTORS(DataStream)
 
-		inline virtual std::vector<byte> GetData() override {
+		virtual std::vector<byte> GetData() override {
 			std::scoped_lock lock(dataWaitMutex);
 			// Copy and return buffer
 			return dataBuffer;
@@ -31,11 +31,11 @@ namespace v4d::data {
 
 	protected:
 
-		INLINE size_t GetDataBufferRemaining() const {
+		size_t GetDataBufferRemaining() const {
 			return dataBuffer.size() - dataBufferCursor;
 		}
 		
-		INLINE bool IsDataBufferEnd() const {
+		bool IsDataBufferEnd() const {
 			return dataBufferCursor == dataBuffer.size();
 		}
 

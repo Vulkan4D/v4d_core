@@ -1,13 +1,11 @@
 #pragma once
 
-#include <v4d.h>
-
 namespace v4d {
 	const std::string base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 	class Base64 {
 	public:
 
-		INLINE static std::string Encode(std::vector<byte> data) {
+		static std::string Encode(std::vector<byte> data) {
 			return Encode(data.data(), data.size());
 		}
 

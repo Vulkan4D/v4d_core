@@ -1,6 +1,8 @@
-#include <v4d.h>
+// Pre-compiled common header
+#include <common/pch.hh>
 
-#include <openssl/rand.h>
+// V4D Core Header
+#include <v4d.h>
 
 using namespace v4d::crypto;
 

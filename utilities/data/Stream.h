@@ -38,44 +38,44 @@ namespace v4d::data {
 	public: // Utility methods
 
 		// Lock / Unlock
-		inline void LockWrite() {
+		void LockWrite() {
 			writeMutex.lock();
 		}
-		inline void UnlockWrite() {
+		void UnlockWrite() {
 			writeMutex.unlock();
 		}
-		inline void LockRead() {
+		void LockRead() {
 			readMutex.lock();
 		}
-		inline void UnlockRead() {
+		void UnlockRead() {
 			readMutex.unlock();
 		}
 
 		// Buffer access
-		inline size_t GetReadBufferSize() {
+		size_t GetReadBufferSize() {
 			std::lock_guard lock(readMutex);
 			return readBuffer.size();
 		}
-		inline size_t GetWriteBufferSize() {
+		size_t GetWriteBufferSize() {
 			std::lock_guard lock(readMutex);
 			return writeBuffer.size();
 		}
-		inline void ClearReadBuffer() {
+		void ClearReadBuffer() {
 			std::lock_guard lock(readMutex);
 			readBuffer.resize(0);
 		}
-		inline void ClearWriteBuffer() {
+		void ClearWriteBuffer() {
 			std::lock_guard lock(writeMutex);
 			writeBuffer.resize(0);
 		}
-		inline std::vector<byte>& _GetReadBuffer_() {
+		std::vector<byte>& _GetReadBuffer_() {
 			return readBuffer;
 		}
-		inline std::vector<byte>& _GetWriteBuffer_() {
+		std::vector<byte>& _GetWriteBuffer_() {
 			return writeBuffer;
 		}
 
-		inline virtual std::vector<byte> GetData() {
+		virtual std::vector<byte> GetData() {
 			std::lock_guard lock(writeMutex);
 			// Copy and return buffer
 			return writeBuffer;
@@ -113,7 +113,7 @@ namespace v4d::data {
 			return Flush();
 		}
 
-		inline void ResetReadBuffer() {
+		void ResetReadBuffer() {
 			std::lock_guard lock(readMutex);
 			readBuffer.resize(0);
 			readBufferCursor = 0;
@@ -134,7 +134,7 @@ namespace v4d::data {
 	public: // Read & Write (Overloads & Templates)
 
 		template<typename T>
-		inline Stream& Write(const T& data) {
+		Stream& Write(const T& data) {
 			if constexpr (std::is_same_v<T, std::string>) {
 				// std::string
 				std::lock_guard lock(writeMutex);
@@ -162,7 +162,7 @@ namespace v4d::data {
 			}
 		}
 		template<typename T>
-		inline Stream& Read(T& data) {
+		Stream& Read(T& data) {
 			if constexpr (std::is_same_v<T, std::string>) {
 				// std::string
 				std::lock_guard lock(readMutex);
@@ -199,7 +199,7 @@ namespace v4d::data {
 
 		// // Return-Read
 		// template<typename T>
-		// inline T Read() {
+		// T Read() {
 		// 	T data{};
 		// 	Read<T>(data);
 		// 	return data;
@@ -208,7 +208,7 @@ namespace v4d::data {
 
 		// Return-Read
 		template<typename T>
-		inline T Read() {
+		T Read() {
 			if constexpr (std::is_same_v<T, std::string>) {
 				T data = "";
 				Read(data);
@@ -227,7 +227,7 @@ namespace v4d::data {
 
 
 		// Variable-Size size (1 or 9 bytes)
-		inline void WriteSize(size_t size) {
+		void WriteSize(size_t size) {
 			std::lock_guard lock(writeMutex);
 			if (size < MAXBYTE) {
 				Write<byte>((byte)size);
@@ -236,7 +236,7 @@ namespace v4d::data {
 				Write<size_t>(size);
 			}
 		}
-		inline size_t ReadSize() {
+		size_t ReadSize() {
 			std::lock_guard lock(readMutex);
 			size_t size = Read<byte>();
 			if (size == MAXBYTE) {
@@ -248,14 +248,14 @@ namespace v4d::data {
 
 		// Containers (vector or other containers that have the following methods: .size(), .clear(), .reserve() and .push_back())
 		template<template<typename, typename> class Container, typename T>
-		inline Stream& Write(const Container<T, std::allocator<T>>& data) {
+		Stream& Write(const Container<T, std::allocator<T>>& data) {
 			std::lock_guard lock(writeMutex);
 			WriteSize(data.size());
 			for (const T& item : data) Write<T>(item);
 			return *this;
 		}
 		template<template<typename, typename> class Container, typename T>
-		inline Stream& Read(Container<T, std::allocator<T>>& data) {
+		Stream& Read(Container<T, std::allocator<T>>& data) {
 			std::lock_guard lock(readMutex);
 			size_t size{ReadSize()};
 			data.clear();
@@ -265,7 +265,7 @@ namespace v4d::data {
 		}
 		// Return-Read with container
 		template<template<typename, typename> class Container, typename T>
-		inline Container<T, std::allocator<T>> Read() {
+		Container<T, std::allocator<T>> Read() {
 			Container<T, std::allocator<T>> data{};
 			Read<Container, T>(data);
 			return data;
@@ -274,34 +274,34 @@ namespace v4d::data {
 
 		// Stream Operators overloading (generic)
 		template<typename T>
-		inline Stream& operator<<(const T& data) {
+		Stream& operator<<(const T& data) {
 			return Write((const T&)data);
 		}
 		template<typename T>
-		inline Stream& operator>>(T& data) {
+		Stream& operator>>(T& data) {
 			return Read(data);
 		}
 
 
 		// Stream Operators overloading (containers)
 		template<template<typename, typename> class Container, typename T>
-		inline Stream& operator<<(const Container<T, std::allocator<T>>& data) {
+		Stream& operator<<(const Container<T, std::allocator<T>>& data) {
 			return Write<Container, T>(data);
 		}
 		template<template<typename, typename> class Container, typename T>
-		inline Stream& operator>>(Container<T, std::allocator<T>>& data) {
+		Stream& operator>>(Container<T, std::allocator<T>>& data) {
 			return Read<Container, T>(data);
 		}
 
 
 		// Variadic templates
 		template<typename ...Args>
-		inline Stream& Write(const Args&... args) {
+		Stream& Write(const Args&... args) {
 			std::lock_guard lock(writeMutex);
 			return (..., this->Write<const Args&>(args));
 		}
 		template<typename ...Args>
-		inline Stream& Read(Args&... args) {
+		Stream& Read(Args&... args) {
 			std::lock_guard lock(readMutex);
 			return (..., this->Read<Args>(args));
 		}
@@ -312,7 +312,7 @@ namespace v4d::data {
 
 		// Stream
 		ReadOnlyStream ReadStream();
-		inline void WriteStream(Stream& stream) {
+		void WriteStream(Stream& stream) {
 			std::lock_guard lock(writeMutex);
 			stream.LockWrite();
 			size_t size(stream._GetWriteBuffer_().size());
@@ -323,7 +323,7 @@ namespace v4d::data {
 
 		// Encryption
 		template<typename T>
-		inline Stream& WriteEncrypted(v4d::crypto::Crypto* crypto, const T& data) {
+		Stream& WriteEncrypted(v4d::crypto::Crypto* crypto, const T& data) {
 			if constexpr (std::is_same_v<T, std::string>) {
 				// std::string
 				return Write<std::vector, byte>(crypto->EncryptString(data));
@@ -339,7 +339,7 @@ namespace v4d::data {
 			}
 		}
 		template<typename T>
-		inline Stream& ReadEncrypted(v4d::crypto::Crypto* crypto, T& data) {
+		Stream& ReadEncrypted(v4d::crypto::Crypto* crypto, T& data) {
 			if constexpr (std::is_same_v<T, std::string>) {
 				// std::string
 				data = crypto->DecryptString(Read<std::vector, byte>());
@@ -354,7 +354,7 @@ namespace v4d::data {
 
 		// Return-Read Encrypted
 		template<typename T>
-		inline T ReadEncrypted(v4d::crypto::Crypto* crypto) {
+		T ReadEncrypted(v4d::crypto::Crypto* crypto) {
 			T data{};
 			ReadEncrypted(crypto, data);
 			return data;

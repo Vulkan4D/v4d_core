@@ -23,7 +23,7 @@ namespace v4d {
 		/**
 		 * starts the time point to the current system time
 		 */
-		INLINE void Start() {
+		void Start() {
 			std::lock_guard lock(mutex);
 			timePoint = std::chrono::high_resolution_clock::now();
 		}
@@ -31,14 +31,14 @@ namespace v4d {
 		/**
 		 * resets the time point to the current system time
 		 */
-		INLINE void Reset() {
+		void Reset() {
 			Start();
 		}
 
 		/**
 		 * @returns the elapsed milliseconds between the current system time and the time point
 		 */
-		INLINE double GetElapsedMilliseconds() const {
+		double GetElapsedMilliseconds() const {
 			std::lock_guard lock(mutex);
 			return GetDurationSince().count();
 		}
@@ -46,7 +46,7 @@ namespace v4d {
 		/**
 		 * @returns the elapsed seconds between the current system time and the time point
 		 */
-		INLINE double GetElapsedSeconds() const {
+		double GetElapsedSeconds() const {
 			return GetElapsedMilliseconds() * 0.001;
 		}
 
@@ -54,7 +54,7 @@ namespace v4d {
 		/**
 		 * @returns the duration between the current system time and the time point
 		 */
-		INLINE duration GetDurationSince() const {
+		duration GetDurationSince() const {
 			return std::chrono::high_resolution_clock::now() - timePoint;
 		}
 

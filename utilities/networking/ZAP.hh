@@ -90,7 +90,7 @@ namespace v4d::networking::ZAP {
 			public: static constexpr bool value = std::is_same_v<decltype(test<T>(0)),yes>;
 		};
 		template <typename T>
-		inline void __ForEachDataMemberWrite(v4d::data::Stream* stream, const T& t) {
+		void __ForEachDataMemberWrite(v4d::data::Stream* stream, const T& t) {
 			if constexpr (std::is_arithmetic_v<T>) {
 				// Int, Bool, Byte, Float...
 				*stream << t;
@@ -122,7 +122,7 @@ namespace v4d::networking::ZAP {
 			public: enum {value = (sizeof(test<T>(0)) == sizeof(yes))};
 		};
 		template <typename T>
-		inline void __ForEachDataMemberRead(v4d::data::Stream* stream, T& t) {
+		void __ForEachDataMemberRead(v4d::data::Stream* stream, T& t) {
 			if constexpr (std::is_arithmetic_v<T>) {
 				// Int, Bool, Byte, Float...
 				*stream >> t;

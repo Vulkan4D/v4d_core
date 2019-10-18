@@ -1,6 +1,6 @@
 #pragma once
 
-#include "v4d.h"
+#include <v4d.h>
 
 namespace v4d::processing {
 
@@ -40,7 +40,7 @@ namespace v4d::processing {
 		 * Enqueue a task that will eventually be executed by one of the threads of the pool
 		 * @Param task that returns no value
 		 */
-		inline void Enqueue(std::function<void()> task) {
+		void Enqueue(std::function<void()> task) {
 			{
 				std::lock_guard lock(eventMutex);
 				if (stopping) {
@@ -57,7 +57,7 @@ namespace v4d::processing {
 		 * @Returns: a promise for the returned value by the task 
 		 */
 		template<typename T>
-		inline auto Promise(T task) -> std::future<decltype(task())> {
+		auto Promise(T task) -> std::future<decltype(task())> {
 			auto wrapper = std::make_shared<std::packaged_task<decltype(task())()>>(std::move(task));
 			Enqueue(
 				[wrapper] {
@@ -73,11 +73,11 @@ namespace v4d::processing {
 		 * @Param delay in milliseconds
 		 */
 		template<typename T>
-		inline auto Promise(T task, uint delayMilliseconds) -> std::future<std::future<decltype(task())>> {
+		auto Promise(T task, uint delayMilliseconds) -> std::future<std::future<decltype(task())>> {
 			return Promise<T, uint, std::milli>(std::move(task), std::chrono::milliseconds{delayMilliseconds});
 		}
 		template<typename T, typename rep, typename period>
-		inline auto Promise(T task, const std::chrono::duration<rep, period>& delay) -> std::future<std::future<decltype(task())>> {
+		auto Promise(T task, const std::chrono::duration<rep, period>& delay) -> std::future<std::future<decltype(task())>> {
 			auto f = std::async(std::launch::async, [this, task, delay] {
 				// Delay
 				std::this_thread::sleep_for<rep, period>(delay);

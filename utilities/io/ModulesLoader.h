@@ -61,7 +61,7 @@ namespace v4d::io {
 		std::mutex loadedModulesMutex;
 		std::map<std::string, ModuleInstance*> loadedModules;
 
-		inline std::string GetLibName(const std::string& sysName) const {
+		std::string GetLibName(const std::string& sysName) const {
 			return std::string("V4D_MODULE:") + sysName;
 		}
 
