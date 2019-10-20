@@ -75,6 +75,20 @@
 
 
 //////////////////////////////////////////////////////////
+// Static Instances Map
+#define STATIC_CLASS_INSTANCES(key, className, ...) { \
+	static std::mutex staticMu; \
+	std::lock_guard staticLock(staticMu); \
+	static std::unordered_map<decltype(key), std::shared_ptr<className>> instances {}; \
+	if (instances.find(key) == instances.end()) { \
+		instances.emplace(key, std::make_shared<className>(__VA_ARGS__)); \
+	} \
+	std::shared_ptr<className> instance = instances.at(key); \
+	return instance; \
+}
+
+
+//////////////////////////////////////////////////////////
 // FOREACH macro (maximum of 24 arguments)
 
 #define __FE_1(__FE, X) __FE(X) 

@@ -8,6 +8,7 @@
 #include "helpers/macros.hpp"
 #include "helpers/event.hpp"
 #include "helpers/Timer.hpp"
+#include "helpers/String.hpp"
 #include "helpers/Base16.hpp"
 #include "helpers/Base64.hpp"
 

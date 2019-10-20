@@ -16,6 +16,7 @@
 #include "utilities/data/ReadOnlyStream.hpp"
 #include "utilities/io/FilePath.h"
 #include "utilities/io/BinaryFileStream.h"
+#include "utilities/io/ConfigFile.h"
 #include "utilities/io/Socket.h"
 #include "utilities/networking/ZAP.hh"
 #include "utilities/networking/OutgoingConnection.h"

@@ -8,6 +8,7 @@ using namespace v4d::io;
 
 
 FilePath::FilePath(const std::string& filePath) : filePath(filePath) {}
+FilePath::FilePath(const char* filePath) : filePath(filePath) {}
 
 FilePath::~FilePath() {}
 
@@ -26,7 +27,17 @@ bool FilePath::Delete() {
 	return std::filesystem::remove(filePath);
 }
 
+std::string FilePath::GetExtension() const {
+	return filePath.extension().string();
+}
+
+double FilePath::GetLastWriteTime() const {
+	if (!std::filesystem::exists(filePath.string())) return 0;
+	return ((std::chrono::duration<double, std::milli>)std::filesystem::last_write_time(filePath.string()).time_since_epoch()).count();
+}
+
 bool FilePath::CreateDirectory(const std::string& path) {
+	if (path == "") return true;
 	if (!std::filesystem::exists(path)) {
 		// Does not exist, create it
 		return std::filesystem::create_directories(path);

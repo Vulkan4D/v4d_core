@@ -13,21 +13,14 @@ namespace v4d::io {
 		std::once_flag readFileOnce, setVerboseOnce;
 		std::ofstream file;
 
-		void LogToFile(const std::string& message) {
-			std::call_once(readFileOnce, [&f=file, &filepath=filepath](){
-				f.open(filepath);
-			});
-			file << message << std::endl;
-		}
+		void LogToFile(const std::string& message);
 
 	public:
 
-		Logger() : filepath(""), useLogFile(false), verbose(false) {}
-		Logger(const std::string& filepath, bool verbose = false) : filepath(filepath), useLogFile(filepath != ""), verbose(verbose) {}
+		Logger();
+		Logger(const std::string& filepath, std::optional<bool> verbose = std::nullopt);
 
-		~Logger() {
-			file.close();
-		}
+		~Logger();
 
 		DELETE_COPY_MOVE_CONSTRUCTORS(Logger)
 
@@ -35,48 +28,24 @@ namespace v4d::io {
 		
 		static std::shared_ptr<Logger> FileInstance(const std::string& filepath, std::optional<bool> verbose = std::nullopt);
 
-		void Log(std::ostream& message, const char* style = "0") {
-			std::lock_guard lock(mu);
-			std::string msg = dynamic_cast<std::ostringstream&>(message).str();
-			try {
-				if (useLogFile) {
-					LogToFile(msg);
-				} else {
-					#ifdef _WINDOWS
-						if (strcmp(style, "1"))
-							std::cerr << msg << std::endl;
-						else
-							std::cout << msg << std::endl;
-					#else
-						if (strcmp(style, "1"))
-							std::cerr << "\033[" << style << 'm' << msg << "\033[0m" << std::endl;
-						else
-							std::cout << "\033[" << style << 'm' << msg << "\033[0m" << std::endl;
-					#endif
-				}
-			} catch(...) {}
-		}
+		void Log(std::ostream& message, const char* style = "0");
 
-		std::string GetCurrentThreadIdStr() const {
-			std::stringstream str("");
-			str << " [thread " << std::this_thread::get_id() << "] ";
-			return str.str();
-		}
+		std::string GetCurrentThreadIdStr() const;
 
 		template<typename T>
-		void Log(T&& message, const char* style = "0") {
+		inline void Log(T&& message, const char* style = "0") {
 			Log(std::ostringstream().flush() << message, style);
 		}
 		
-		void LogError(std::ostream& message) {
+		inline void LogError(std::ostream& message) {
 			Log(message, "1;31");
 		}
 
-		bool IsVerbose() const {
+		inline bool IsVerbose() const {
 			return verbose;
 		}
 
-		void SetVerbose(bool isVerbose = true) {
+		inline void SetVerbose(bool isVerbose = true) {
 			verbose = isVerbose;
 		}
 

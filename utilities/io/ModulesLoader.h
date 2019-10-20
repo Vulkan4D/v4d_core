@@ -59,7 +59,7 @@ namespace v4d::io {
 	private:
 		SharedLibraryLoader sharedLibraryLoader;
 		std::mutex loadedModulesMutex;
-		std::map<std::string, ModuleInstance*> loadedModules;
+		std::unordered_map<std::string, ModuleInstance*> loadedModules;
 
 		std::string GetLibName(const std::string& sysName) const {
 			return std::string("V4D_MODULE:") + sysName;

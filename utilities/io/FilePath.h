@@ -10,6 +10,7 @@ namespace v4d::io {
 	public:
 
 		FilePath(const std::string& filePath);
+		FilePath(const char* filePath);
 
 		virtual ~FilePath();
 
@@ -18,6 +19,9 @@ namespace v4d::io {
 		FilePath& AutoCreateFile();
 
 		virtual bool Delete();
+
+		std::string GetExtension() const;
+		double GetLastWriteTime() const;
 
 	public: // Static methods
 
