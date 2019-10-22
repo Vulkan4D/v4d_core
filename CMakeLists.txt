@@ -7,7 +7,6 @@ target_link_libraries(v4d
 	ssl
 	crypto
 	glfw
-	# vulkan
 	# glslang
 	# SPIRV
 )
@@ -46,13 +45,13 @@ endif()
 # OpenSSL
 find_package(OpenSSL 1.1.0 REQUIRED)
 
-# glfw
-find_package(glfw3 3.3 REQUIRED)
-#set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-#set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-#set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-#add_subdirectory(glfw)
-
 # Vulkan
-# find_package(Vulkan 1.1 REQUIRED)
-#add_subdirectory(Vulkan-Hpp/Vulkan-Headers)
+if(COMPILE_VULKAN_HEADERS)
+	target_link_libraries(v4d
+		Vulkan-Headers
+	)
+else()
+	target_link_libraries(v4d
+		vulkan
+	)
+endif()
