@@ -4,6 +4,7 @@
 	#include <ws2tcpip.h>
 	#include <mstcpip.h>
 	#include <windows.h>
+	#include <io.h>
 
 	#define MAXFLOAT std::numeric_limits<float>::max()
 

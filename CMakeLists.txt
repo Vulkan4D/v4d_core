@@ -14,12 +14,12 @@ target_include_directories(v4d
 	PUBLIC
 		"${CMAKE_CURRENT_SOURCE_DIR}"
 	PRIVATE
-		"${CMAKE_CURRENT_SOURCE_DIR}/src/Vulkan-Hpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/src/Vulkan-Hpp/glm"
-		"${CMAKE_CURRENT_SOURCE_DIR}/src/Vulkan-Hpp/glslang"
-		"${CMAKE_CURRENT_SOURCE_DIR}/src/Vulkan-Hpp/glfw/include"
-		"${CMAKE_CURRENT_SOURCE_DIR}/src/Vulkan-Hpp/Vulkan-Headers/include"
-		"${CMAKE_CURRENT_SOURCE_DIR}/src/openssl/include"
+		"${PROJECT_SOURCE_DIR}/src/Vulkan-Hpp"
+		"${PROJECT_SOURCE_DIR}/src/Vulkan-Hpp/glm"
+		"${PROJECT_SOURCE_DIR}/src/Vulkan-Hpp/glslang"
+		"${PROJECT_SOURCE_DIR}/src/Vulkan-Hpp/glfw/include"
+		"${PROJECT_SOURCE_DIR}/src/Vulkan-Hpp/Vulkan-Headers/include"
+		"${PROJECT_SOURCE_DIR}/src/openssl/include"
 )
 target_compile_definitions(v4d
 	PRIVATE -D_V4D_CORE

@@ -17,7 +17,6 @@
 #include <queue>
 #include <cstring>
 #include <stdexcept>
-#include <unistd.h>
 #include <cstdint>
 #include <stdio.h>
 #include <type_traits>
