@@ -85,6 +85,7 @@ V4DLIB std::ostream& operator<<(std::ostream& stream, std::vector<byte> bytes);
 	#define DEBUG_ERROR(msg)
 	#define INVALIDCODE(msg)
 #endif
+#define LOG_DEBUG(msg) DEBUG(msg)
 
 // Info in console
 #define LOG(msg) LOGGER_INSTANCE->Log(std::ostringstream("").flush() __LOG_PREPEND_THREAD_ID__ << msg, LOGGER_INSTANCE->IsVerbose()? "1":"0");

@@ -14,12 +14,12 @@ target_include_directories(v4d
 	PUBLIC
 		"${CMAKE_CURRENT_SOURCE_DIR}"
 	PRIVATE
-		"${PROJECT_SOURCE_DIR}/src/Vulkan-Hpp"
-		"${PROJECT_SOURCE_DIR}/src/Vulkan-Hpp/glm"
-		"${PROJECT_SOURCE_DIR}/src/Vulkan-Hpp/glslang"
-		"${PROJECT_SOURCE_DIR}/src/Vulkan-Hpp/glfw/include"
-		"${PROJECT_SOURCE_DIR}/src/Vulkan-Hpp/Vulkan-Headers/include"
-		"${PROJECT_SOURCE_DIR}/src/openssl/include"
+		# "${PROJECT_SOURCE_DIR}/src/Vulkan-Hpp"
+		# "${PROJECT_SOURCE_DIR}/src/Vulkan-Hpp/glm"
+		# "${PROJECT_SOURCE_DIR}/src/Vulkan-Hpp/glslang"
+		# "${PROJECT_SOURCE_DIR}/src/Vulkan-Hpp/glfw/include"
+		# "${PROJECT_SOURCE_DIR}/src/Vulkan-Hpp/Vulkan-Headers/include"
+		# "${PROJECT_SOURCE_DIR}/src/openssl/include"
 )
 target_compile_definitions(v4d
 	PRIVATE -D_V4D_CORE
@@ -46,12 +46,15 @@ endif()
 find_package(OpenSSL 1.1.0 REQUIRED)
 
 # Vulkan
-if(COMPILE_VULKAN_HEADERS)
-	target_link_libraries(v4d
-		Vulkan-Headers
-	)
-else()
-	target_link_libraries(v4d
-		vulkan
-	)
+if(LINK_VULKAN_HEADERS)
+	if(COMPILE_VULKAN_HEADERS)
+		target_link_libraries(v4d
+			vulkan
+			Vulkan-Headers
+		)
+	else()
+		target_link_libraries(v4d
+			vulkan
+		)
+	endif()
 endif()

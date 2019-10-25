@@ -11,12 +11,12 @@
 #include <openssl/err.h>
 #include <openssl/rand.h>
 
-// Vulkan
-#include <vulkan/vulkan.hpp>
+// // Vulkan
+// #include <vulkan/vulkan.hpp>
 
-// GLFW
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+// // GLFW
+// #define GLFW_INCLUDE_VULKAN
+// #include <GLFW/glfw3.h>
 
 // GLM
 // #define GLM_FORCE_RADIANS
