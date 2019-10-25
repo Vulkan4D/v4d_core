@@ -6,7 +6,8 @@ add_library(v4d SHARED
 target_link_libraries(v4d
 	ssl
 	crypto
-	glfw
+	pthread
+	# glfw
 	# glslang
 	# SPIRV
 )
@@ -14,7 +15,6 @@ target_include_directories(v4d
 	PUBLIC
 		"${CMAKE_CURRENT_SOURCE_DIR}"
 	PRIVATE
-		# "${PROJECT_SOURCE_DIR}/src/Vulkan-Hpp"
 		# "${PROJECT_SOURCE_DIR}/src/Vulkan-Hpp/glm"
 		# "${PROJECT_SOURCE_DIR}/src/Vulkan-Hpp/glslang"
 		# "${PROJECT_SOURCE_DIR}/src/Vulkan-Hpp/glfw/include"
@@ -32,7 +32,7 @@ set_target_properties(v4d
 		RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/release"
 )
 
-# Windows-Only libs
+# Platform-specific libs
 if(WIN32)
 	target_link_libraries(v4d
 		wsock32
@@ -40,21 +40,11 @@ if(WIN32)
 		gcc
 		-static-libstdc++
 	)
+else()
+	target_link_libraries(v4d
+		dl
+	)
 endif()
 
 # OpenSSL
 find_package(OpenSSL 1.1.0 REQUIRED)
-
-# Vulkan
-if(LINK_VULKAN_HEADERS)
-	if(COMPILE_VULKAN_HEADERS)
-		target_link_libraries(v4d
-			vulkan
-			Vulkan-Headers
-		)
-	else()
-		target_link_libraries(v4d
-			vulkan
-		)
-	endif()
-endif()
