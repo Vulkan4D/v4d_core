@@ -14,11 +14,11 @@ target_link_libraries(v4d
 target_include_directories(v4d
 	PUBLIC
 		"${CMAKE_CURRENT_SOURCE_DIR}"
+		"${PROJECT_SOURCE_DIR}/src/v4d/xvk"
 	PRIVATE
-		# "${PROJECT_SOURCE_DIR}/src/Vulkan-Hpp/glm"
-		# "${PROJECT_SOURCE_DIR}/src/Vulkan-Hpp/glslang"
-		# "${PROJECT_SOURCE_DIR}/src/Vulkan-Hpp/glfw/include"
-		# "${PROJECT_SOURCE_DIR}/src/Vulkan-Hpp/Vulkan-Headers/include"
+		"${PROJECT_SOURCE_DIR}/src/v4d/xvk/glfw/include"
+		# "${PROJECT_SOURCE_DIR}/src/v4d/xvk/glm"
+		# "${PROJECT_SOURCE_DIR}/src/v4d/xvk/glslang"
 		# "${PROJECT_SOURCE_DIR}/src/openssl/include"
 )
 target_compile_definitions(v4d
