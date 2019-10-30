@@ -7,9 +7,7 @@ target_link_libraries(v4d
 	ssl
 	crypto
 	pthread
-	# glfw
-	# glslang
-	# SPIRV
+	glfw
 )
 target_include_directories(v4d
 	PUBLIC
@@ -17,8 +15,7 @@ target_include_directories(v4d
 		"${PROJECT_SOURCE_DIR}/src/v4d/xvk"
 	PRIVATE
 		"${PROJECT_SOURCE_DIR}/src/v4d/xvk/glfw/include"
-		# "${PROJECT_SOURCE_DIR}/src/v4d/xvk/glm"
-		# "${PROJECT_SOURCE_DIR}/src/v4d/xvk/glslang"
+		"${PROJECT_SOURCE_DIR}/src/v4d/xvk/glm"
 		# "${PROJECT_SOURCE_DIR}/src/openssl/include"
 )
 target_compile_definitions(v4d
