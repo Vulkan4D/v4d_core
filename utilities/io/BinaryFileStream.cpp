@@ -41,6 +41,26 @@ long BinaryFileStream::GetSize() {
 	return size;
 }
 
+bool BinaryFileStream::IsEOF() const {
+	return file.eof();
+}
+
+long BinaryFileStream::GetReadPos() {
+	return file.tellg();
+}
+
+long BinaryFileStream::GetWritePos() {
+	return file.tellp();
+}
+
+void BinaryFileStream::SetReadPos(long pos) {
+	file.seekg(pos);
+}
+
+void BinaryFileStream::SetWritePos(long pos) {
+	file.seekp(pos);
+}
+
 void BinaryFileStream::Truncate() {
 	std::scoped_lock lock(writeMutex, readMutex);
 	if (file.is_open()) {

@@ -23,6 +23,14 @@ namespace v4d::io {
 
 		// FilePath Overrides
 		virtual bool Delete() override;
+		
+		inline bool IsEOF() const;
+		
+		inline long GetReadPos();
+		inline long GetWritePos();
+
+		inline void SetReadPos(long);
+		inline void SetWritePos(long);
 
 	protected:
 
