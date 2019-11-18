@@ -90,3 +90,10 @@ The core consists of the following structure :
 - `.cxx` C++ source files Reserved for Unit Tests
 - `.hh` C++ header-only files without any associated code
 
+### Critical method names for correct memory management
+- `Create*` must be followed by `Destroy*` before the end of the scope
+- `New*` must be followed by `Delete*` ...
+- `Allocate*` must be followed by `Free*` ...
+- `Begin*` must be followed by `End*` ...
+- `Load*` can optionally be followed by `Unload*` or `Reload*` (it's memory will be freed anyways when out of scope)
+
