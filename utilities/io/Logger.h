@@ -106,14 +106,14 @@ V4DLIB std::ostream& operator<<(std::ostream& stream, std::vector<byte> bytes);
 // Fatal errors that should Log the event and terminate the application
 
 // error message in console and exit(1)
-// #define FATAL_EXIT(msg) {LOGGER_INSTANCE->LogError(ostringstream("FATAL(exit): ").flush() << msg __LOG_APPEND_FILE_AND_LINE__); std::exit(1);}
+// #define FATAL_EXIT(msg) {LOGGER_INSTANCE->LogError(std::ostringstream("FATAL(exit): ").flush() << msg __LOG_APPEND_FILE_AND_LINE__); std::exit(1);}
 
 // error message in console and abort() (causes breakpoint in debug)
-// #define FATAL_ABORT(msg) {LOGGER_INSTANCE->LogError(ostringstream("FATAL(abort): ").flush() << msg __LOG_APPEND_FILE_AND_LINE__); std::abort();}
+// #define FATAL_ABORT(msg) {LOGGER_INSTANCE->LogError(std::ostringstream("FATAL(abort): ").flush() << msg __LOG_APPEND_FILE_AND_LINE__); std::abort();}
 
 // error message in console and raise SIGINT (causes breakpoint in debug)
-#define FATAL(msg) {LOGGER_INSTANCE->LogError(ostringstream("FATAL(interupt): ").flush() __LOG_PREPEND_THREAD_ID__ << msg __LOG_APPEND_FILE_AND_LINE__); raise(SIGINT);}
+#define FATAL(msg) {LOGGER_INSTANCE->LogError(std::ostringstream("FATAL(interupt): ").flush() __LOG_PREPEND_THREAD_ID__ << msg __LOG_APPEND_FILE_AND_LINE__); raise(SIGINT);}
 
 // error message in console and raise SIGKILL (emergency kill the application)
-#define FATAL_KILL(msg) {LOGGER_INSTANCE->LogError(ostringstream("FATAL(kill): ").flush() __LOG_PREPEND_THREAD_ID__ << msg __LOG_APPEND_FILE_AND_LINE__); raise(SIGKILL);}
+#define FATAL_KILL(msg) {LOGGER_INSTANCE->LogError(std::ostringstream("FATAL(kill): ").flush() __LOG_PREPEND_THREAD_ID__ << msg __LOG_APPEND_FILE_AND_LINE__); raise(SIGKILL);}
 
