@@ -10,6 +10,12 @@ namespace v4d::graphics::vulkan {
 
 		VkSwapchainKHR handle;
 
+	private:
+		// Supported configurations
+		VkSurfaceCapabilitiesKHR capabilities;
+		std::vector<VkSurfaceFormatKHR> formats;
+		std::vector<VkPresentModeKHR> presentModes;
+
 	public:
 		std::vector<VkImage> images {};
 		
@@ -35,8 +41,9 @@ namespace v4d::graphics::vulkan {
 			const std::vector<VkSurfaceFormatKHR> preferredFormats, 
 			const std::vector<VkPresentModeKHR> preferredPresentModes
 		);
-
 		~SwapChain();
+
+		VkSwapchainKHR GetHandle() const;
 
 		void SetConfiguration(VkExtent2D preferredExtent, const std::vector<VkSurfaceFormatKHR> preferredFormats, const std::vector<VkPresentModeKHR>& preferredPresentModes);
 
@@ -45,15 +52,11 @@ namespace v4d::graphics::vulkan {
 		void Create(SwapChain* oldSwapChain = nullptr);
 
 		void ResolveCapabilities(VkPhysicalDevice physicalDevice);
-
 		void ResolveFormats(VkPhysicalDevice physicalDevice);
-
 		void ResolvePresentModes(VkPhysicalDevice physicalDevice);
 
 		VkExtent2D GetPreferredExtent(VkExtent2D preferredExtent);
-
 		VkSurfaceFormatKHR GetPreferredSurfaceFormat(const std::vector<VkSurfaceFormatKHR> preferredFormats);
-
 		VkPresentModeKHR GetPreferredPresentMode(const std::vector<VkPresentModeKHR>& preferredPresentModes);
 			/*
 			VK_PRESENT_MODE_IMMEDIATE_KHR: Images submitted by your application are transferred to the screen right away, which may result in tearing.
@@ -61,15 +64,5 @@ namespace v4d::graphics::vulkan {
 			VK_PRESENT_MODE_FIFO_RELAXED_KHR: This mode only differs from the previous one if the application is late and the queue was empty at the last vertical blank. Instead of waiting for the next vertical blank, the image is transferred right away when it finally arrives. This may result in visible tearing.
 			VK_PRESENT_MODE_MAILBOX_KHR: This is another variation of the second mode. Instead of blocking the application when the queue is full, the images that are already queued are simply replaced with the newer ones. This mode can be used to implement triple buffering, which allows you to avoid tearing with significantly less latency issues than standard vertical sync that uses double buffering.
 			*/
-
-		VkSwapchainKHR GetHandle() const;
-
-	private:
-
-		// Supported configurations
-		VkSurfaceCapabilitiesKHR capabilities;
-		std::vector<VkSurfaceFormatKHR> formats;
-		std::vector<VkPresentModeKHR> presentModes;
-
 	};
 }

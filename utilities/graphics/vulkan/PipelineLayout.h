@@ -14,6 +14,9 @@ namespace v4d::graphics::vulkan {
 
 		void AddDescriptorSet(DescriptorSet* descriptorSet);
 		
+		//TODO add push constants
+		//...
+		
 		void Create(Device* device);
 		void Destroy(Device* device);
 		

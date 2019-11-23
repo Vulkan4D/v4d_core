@@ -50,7 +50,6 @@ namespace v4d::graphics::vulkan {
 		Shader(std::string filepath, std::string entryPoint = "main", VkSpecializationInfo* specializationInfo = nullptr);
 		
 		VkShaderModule CreateShaderModule(Device* device, VkPipelineShaderStageCreateFlags flags = 0);
-
 		void DestroyShaderModule(Device* device);
 
 	};

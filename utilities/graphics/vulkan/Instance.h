@@ -13,11 +13,10 @@ namespace v4d::graphics::vulkan {
 		vulkan::Loader* vulkanLoader;
 
 	public:
-		Instance(vulkan::Loader* loader, const char* applicationName, uint applicationVersion);
-
+		Instance(vulkan::Loader* loader, const char* applicationName, uint applicationVersion, bool logging = false);
 		virtual ~Instance();
 
-		inline VkInstance GetHandle() const;
+		VkInstance GetHandle() const;
 
 		PhysicalDevice* SelectSuitablePhysicalDevice(const std::function<void(int&, PhysicalDevice*)>& suitabilityFunc);
 

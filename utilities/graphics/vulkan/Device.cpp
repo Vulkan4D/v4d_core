@@ -2,7 +2,6 @@
 
 using namespace v4d::graphics::vulkan;
 
-
 Device::Device(
 	PhysicalDevice* physicalDevice,
 	VkPhysicalDeviceFeatures& deviceFeatures,

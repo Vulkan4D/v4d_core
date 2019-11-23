@@ -23,8 +23,8 @@ namespace v4d::graphics::vulkan {
 			#endif
 		};
 		
-		void CheckExtensions();
-		void CheckLayers();
+		void CheckExtensions(bool logging = false);
+		void CheckLayers(bool logging = false);
 		void CheckVulkanVersion();
 
 	};

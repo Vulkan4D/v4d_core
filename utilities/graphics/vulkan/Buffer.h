@@ -3,7 +3,7 @@
 
 namespace v4d::graphics::vulkan {
 
-	struct BufferSrcDataPtr {
+	struct V4DLIB BufferSrcDataPtr {
 		void* dataPtr;
 		size_t size;
 		
@@ -33,7 +33,7 @@ namespace v4d::graphics::vulkan {
 		void AddSrcDataPtr(void* srcDataPtr, size_t size);
 		
 		template<class T>
-		inline void AddSrcDataPtr(std::vector<T>* vector) {
+		void AddSrcDataPtr(std::vector<T>* vector) {
 			AddSrcDataPtr(vector->data(), vector->size() * sizeof(T));
 		}
 		

@@ -45,11 +45,12 @@ using namespace v4d::graphics::vulkan;
 	}
 #endif
 
-Instance::Instance(vulkan::Loader* loader, const char* applicationName, uint applicationVersion) : vulkanLoader(loader) {
+Instance::Instance(vulkan::Loader* loader, const char* applicationName, uint applicationVersion, bool logging) : vulkanLoader(loader) {
 	this->loader = loader;
+	if (logging) LOG("Creating Vulkan instance...");
 	
-	loader->CheckLayers();
-	loader->CheckExtensions();
+	loader->CheckLayers(logging);
+	loader->CheckExtensions(logging);
 	loader->CheckVulkanVersion();
 
 	// Prepare appInfo for the Vulkan Instance
@@ -104,7 +105,7 @@ Instance::Instance(vulkan::Loader* loader, const char* applicationName, uint app
 	// Load Physical Devices
 	LoadAvailablePhysicalDevices();
 
-	LOG("VULKAN INSTANCE CREATED!");
+	if (logging) LOG("Vulkan instance created");
 }
 
 Instance::~Instance() {
@@ -118,7 +119,7 @@ Instance::~Instance() {
 }
 
 void Instance::LoadAvailablePhysicalDevices() {
-	LOG("Initializing Physical Devices...");
+	LOG_VERBOSE("Initializing Physical Devices...");
 	
 	// Get Devices List
 	uint physicalDeviceCount = 0;

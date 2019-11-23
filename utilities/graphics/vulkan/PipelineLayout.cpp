@@ -2,7 +2,6 @@
 
 using namespace v4d::graphics::vulkan;
 
-
 std::vector<VkDescriptorSetLayout>* PipelineLayout::GetDescriptorSetLayouts() {
 	return &layouts;
 }
@@ -24,7 +23,7 @@ void PipelineLayout::Create(Device* device) {
 		pipelineLayoutInfo.pSetLayouts = layouts.data();
 	}
 
-	//TODO
+	//TODO push constants
 	pipelineLayoutInfo.pushConstantRangeCount = 0;
 	pipelineLayoutInfo.pPushConstantRanges = nullptr;
 

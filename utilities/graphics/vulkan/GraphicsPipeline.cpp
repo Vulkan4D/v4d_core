@@ -81,66 +81,15 @@ void GraphicsPipeline::Bind(Device* device, VkCommandBuffer commandBuffer, VkPip
 	pipelineLayout->Bind(device, commandBuffer);
 }
 
-void GraphicsPipeline::AddAlphaBlendingAttachment() {
-	VkPipelineColorBlendAttachmentState blendingAttachmentState {};
-	blendingAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	blendingAttachmentState.blendEnable = VK_TRUE;
-	blendingAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-	blendingAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-	blendingAttachmentState.colorBlendOp = VK_BLEND_OP_ADD;
-	blendingAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-	blendingAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-	blendingAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
-	colorBlendAttachments.push_back(blendingAttachmentState);
-}
-
-void GraphicsPipeline::AddColorAddAttachment() {
-	VkPipelineColorBlendAttachmentState blendingAttachmentState {};
-	blendingAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	blendingAttachmentState.blendEnable = VK_TRUE;
-	blendingAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-	blendingAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
-	blendingAttachmentState.colorBlendOp = VK_BLEND_OP_ADD;
-	blendingAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-	blendingAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-	blendingAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
-	colorBlendAttachments.push_back(blendingAttachmentState);
-}
-
-void GraphicsPipeline::AddOpaqueAttachment() {
-	VkPipelineColorBlendAttachmentState blendingAttachmentState {};
-	blendingAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	blendingAttachmentState.blendEnable = VK_FALSE;
-	blendingAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-	blendingAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-	blendingAttachmentState.colorBlendOp = VK_BLEND_OP_ADD;
-	blendingAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-	blendingAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-	blendingAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
-	colorBlendAttachments.push_back(blendingAttachmentState);
-}
-
-// WIP - subject to changes
-void GraphicsPipeline::AddOitAttachments() {
-	VkPipelineColorBlendAttachmentState colorBlending {};
-	colorBlending.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	colorBlending.blendEnable = VK_TRUE;
-	colorBlending.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-	colorBlending.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
-	colorBlending.colorBlendOp = VK_BLEND_OP_ADD;
-	colorBlending.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-	colorBlending.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-	colorBlending.alphaBlendOp = VK_BLEND_OP_ADD;
-	colorBlendAttachments.push_back(colorBlending);
-	
-	VkPipelineColorBlendAttachmentState oitBufferBlending {};
-	oitBufferBlending.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	oitBufferBlending.blendEnable = VK_TRUE;
-	oitBufferBlending.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-	oitBufferBlending.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
-	oitBufferBlending.colorBlendOp = VK_BLEND_OP_ADD;
-	oitBufferBlending.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-	oitBufferBlending.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-	oitBufferBlending.alphaBlendOp = VK_BLEND_OP_ADD;
-	colorBlendAttachments.push_back(oitBufferBlending);
+void GraphicsPipeline::AddColorBlendAttachmentState(VkBool32 blendEnable, VkBlendFactor srcColorBlendFactor, VkBlendFactor dstColorBlendFactor, VkBlendOp colorBlendOp, VkBlendFactor srcAlphaBlendFactor, VkBlendFactor dstAlphaBlendFactor, VkBlendOp alphaBlendOp, VkColorComponentFlags colorWriteMask) {
+	colorBlendAttachments.push_back({
+		blendEnable, // VkBool32
+		srcColorBlendFactor, // VkBlendFactor
+		dstColorBlendFactor, // VkBlendFactor
+		colorBlendOp, // VkBlendOp
+		srcAlphaBlendFactor, // VkBlendFactor
+		dstAlphaBlendFactor, // VkBlendFactor
+		alphaBlendOp, // VkBlendOp
+		colorWriteMask // VkColorComponentFlags
+	});
 }

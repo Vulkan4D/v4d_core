@@ -77,10 +77,16 @@ namespace v4d::graphics::vulkan {
 
 		void Bind(Device* device, VkCommandBuffer commandBuffer, VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS);
 
-		void AddAlphaBlendingAttachment();
-		void AddColorAddAttachment();
-		void AddOpaqueAttachment();
-		void AddOitAttachments();
+		void AddColorBlendAttachmentState(
+			VkBool32 blendEnable = VK_TRUE,
+			VkBlendFactor srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
+			VkBlendFactor dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+			VkBlendOp colorBlendOp = VK_BLEND_OP_ADD,
+			VkBlendFactor srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+			VkBlendFactor dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+			VkBlendOp alphaBlendOp = VK_BLEND_OP_ADD,
+			VkColorComponentFlags colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
+		);
 		
 	};
 }
