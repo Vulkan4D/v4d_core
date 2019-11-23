@@ -1,4 +1,5 @@
 #pragma once
+#include <v4d.h>
 
 namespace v4d {
 	static const char* const base16Chars = "0123456789ABCDEF";

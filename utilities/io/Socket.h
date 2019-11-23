@@ -1,5 +1,4 @@
 #pragma once
-
 #include <v4d.h>
 
 #ifndef SOCKET_BUFFER_SIZE

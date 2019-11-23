@@ -1,4 +1,5 @@
 #pragma once
+#include <v4d.h>
 
 namespace v4d::io {
 	// https://misc.flogisoft.com/bash/tip_colors_and_formatting

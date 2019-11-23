@@ -1,7 +1,3 @@
-// Pre-compiled common header
-#include <common/pch.hh>
-
-// V4D Core Header
 #include <v4d.h>
 
 #define OPENSSL_RSA_ERR(action) \

@@ -1,6 +1,4 @@
-#pragma once
-
-#include "ThreadPool.h"
+#include <v4d.h>
 
 namespace v4d::tests {
 	int ThreadPool() {

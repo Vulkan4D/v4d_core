@@ -1,4 +1,4 @@
-// Common Precompiled Header (Must be included in all .cpp files just before including v4d.h)
+// Common includes (Mostly STL stuff)
 
 #ifdef _V4D_CORE
 	#ifdef _WINDOWS

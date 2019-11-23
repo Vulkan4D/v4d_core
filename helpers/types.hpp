@@ -1,4 +1,5 @@
 #pragma once
+#include <v4d.h>
 
 #ifdef _LINUX // Fore matching Windows counterparts
 typedef std::uint8_t byte;

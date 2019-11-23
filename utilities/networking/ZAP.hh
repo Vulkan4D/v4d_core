@@ -1,4 +1,5 @@
 #pragma once
+#include <v4d.h>
 
 // ZAP Ain't a Protocol
 namespace v4d::networking::ZAP {

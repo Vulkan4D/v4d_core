@@ -1,4 +1,5 @@
 #pragma once
+#include <v4d.h>
 
 #ifdef _WINDOWS
 	#define DLL_FILE_HANDLER HINSTANCE

@@ -1,4 +1,5 @@
 #pragma once
+#include <v4d.h>
 
 namespace v4d::io {
 	class V4DLIB BinaryFileStream : public v4d::data::Stream, public v4d::io::FilePath {

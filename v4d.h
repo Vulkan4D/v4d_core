@@ -14,6 +14,9 @@
 // Config
 #include "v4dconfig.hh"
 
+// Common includes (Mostly STL)
+#include "common/includes.hh"
+
 // This includes all helpers (simple header-only source files)
 #include "helpers.hh"
 
