@@ -1,2 +1,110 @@
 #include <v4d.h>
 
+using namespace v4d::graphics::vulkan;
+
+DescriptorBinding::~DescriptorBinding() {
+	if (writeInfo) {
+		switch (pointerType) {
+			case STORAGE_BUFFER:
+				delete (VkDescriptorBufferInfo*)writeInfo;
+			break;
+			case UNIFORM_BUFFER:
+				delete (VkDescriptorBufferInfo*)writeInfo;
+			break;
+			case IMAGE_VIEW:
+			case COMBINED_IMAGE_SAMPLER:
+				delete (VkDescriptorImageInfo*)writeInfo;
+			break;
+			case ACCELERATION_STRUCTURE:
+				delete (VkWriteDescriptorSetAccelerationStructureNV*)writeInfo;
+			break;
+			// default: throw std::runtime_error("pointerType is not implemented in destructor");
+		}
+	}
+}
+
+VkWriteDescriptorSet DescriptorBinding::GetWriteDescriptorSet(VkDescriptorSet descriptorSet) {
+	VkWriteDescriptorSet descriptorWrite {};
+	descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptorWrite.dstBinding = binding;
+	descriptorWrite.dstSet = descriptorSet;
+	
+	descriptorWrite.dstArrayElement = dstArrayElement;
+	descriptorWrite.descriptorCount = descriptorCount;
+	descriptorWrite.descriptorType = descriptorType;
+	
+	switch (pointerType) {
+		case STORAGE_BUFFER:
+			writeInfo = new VkDescriptorBufferInfo {
+				((Buffer*)data)->buffer,// VkBuffer buffer
+				0,// VkDeviceSize offset
+				((Buffer*)data)->size,// VkDeviceSize range
+			};
+			descriptorWrite.pBufferInfo = (VkDescriptorBufferInfo*)writeInfo;
+		break;
+		case UNIFORM_BUFFER:
+			writeInfo = new VkDescriptorBufferInfo {
+				((Buffer*)data)->buffer,// VkBuffer buffer
+				0,// VkDeviceSize offset
+				((Buffer*)data)->size,// VkDeviceSize range
+			};
+			descriptorWrite.pBufferInfo = (VkDescriptorBufferInfo*)writeInfo;
+		break;
+		case IMAGE_VIEW:
+			writeInfo = new VkDescriptorImageInfo {
+				VK_NULL_HANDLE,// VkSampler sampler
+				*(VkImageView*)data,// VkImageView imageView
+				VK_IMAGE_LAYOUT_GENERAL,// VkImageLayout imageLayout
+			};
+			descriptorWrite.pImageInfo = (VkDescriptorImageInfo*)writeInfo;
+		break;
+		case COMBINED_IMAGE_SAMPLER:
+			writeInfo = new VkDescriptorImageInfo {
+				((CombinedImageSampler*)data)->sampler,// VkSampler sampler
+				((CombinedImageSampler*)data)->imageView,// VkImageView imageView
+				VK_IMAGE_LAYOUT_GENERAL,// VkImageLayout imageLayout
+			};
+			descriptorWrite.pImageInfo = (VkDescriptorImageInfo*)writeInfo;
+		break;
+		case ACCELERATION_STRUCTURE:
+			writeInfo = new VkWriteDescriptorSetAccelerationStructureNV {
+				VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV,// VkStructureType sType
+				nullptr,// const void* pNext
+				1,// uint32_t accelerationStructureCount
+				(VkAccelerationStructureNV*)data,// const VkAccelerationStructureNV* pAccelerationStructures
+			};
+			descriptorWrite.pNext = (VkWriteDescriptorSetAccelerationStructureNV*)writeInfo;
+		break;
+		// default: throw std::runtime_error("pointerType is not implemented in GetWriteDescriptorSet()");
+	}
+	return descriptorWrite;
+}
+
+DescriptorSet::DescriptorSet(uint32_t set) : set(set) {}
+
+std::map<uint32_t, DescriptorBinding>& DescriptorSet::GetBindings() {
+	return bindings;
+}
+
+VkDescriptorSetLayout DescriptorSet::GetDescriptorSetLayout() const {
+	return descriptorSetLayout;
+}
+
+void DescriptorSet::CreateDescriptorSetLayout(Device* device) {
+	std::vector<VkDescriptorSetLayoutBinding> layoutBindings {};
+	for (auto& [binding, set] : bindings) {
+		layoutBindings.push_back({binding, set.descriptorType, set.descriptorCount, set.stageFlags, set.pImmutableSamplers});
+	}
+	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutInfo.bindingCount = layoutBindings.size();
+	layoutInfo.pBindings = layoutBindings.data();
+	
+	if (device->CreateDescriptorSetLayout(&layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
+		throw std::runtime_error("Failed to create descriptor set layout");
+}
+
+void DescriptorSet::DestroyDescriptorSetLayout(Device* device) {
+	device->DestroyDescriptorSetLayout(descriptorSetLayout, nullptr);
+	descriptorSetLayout = VK_NULL_HANDLE;
+}

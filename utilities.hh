@@ -23,7 +23,7 @@
 #include "utilities/networking/IncomingClient.h"
 #include "utilities/networking/ListeningServer.h"
 
-// Graphics utilities
+// Vulkan Graphics utilities
 #include "utilities/graphics/vulkan/Loader.h"
 #include "utilities/graphics/vulkan/PhysicalDevice.h"
 #include "utilities/graphics/vulkan/Device.h"
@@ -31,11 +31,14 @@
 #include "utilities/graphics/vulkan/SwapChain.h"
 #include "utilities/graphics/vulkan/Buffer.h"
 #include "utilities/graphics/vulkan/DescriptorSet.h"
+#include "utilities/graphics/vulkan/PipelineLayout.h"
 #include "utilities/graphics/vulkan/Shader.h"
 #include "utilities/graphics/vulkan/ShaderProgram.h"
-#include "utilities/graphics/vulkan/PipelineLayout.h"
-#include "utilities/graphics/vulkan/RenderPass.h"
 #include "utilities/graphics/vulkan/GraphicsPipeline.h"
+#include "utilities/graphics/vulkan/RenderPass.h"
+// RTX-Specific
 #include "utilities/graphics/vulkan/rtx/ShaderBindingTable.h"
+
+// General Graphics utilities
 #include "utilities/graphics/Window.h"
 
