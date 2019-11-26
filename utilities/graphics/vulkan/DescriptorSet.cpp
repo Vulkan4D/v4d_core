@@ -13,6 +13,7 @@ DescriptorBinding::~DescriptorBinding() {
 			break;
 			case IMAGE_VIEW:
 			case COMBINED_IMAGE_SAMPLER:
+			case INPUT_ATTACHMENT:
 				delete (VkDescriptorImageInfo*)writeInfo;
 			break;
 			case ACCELERATION_STRUCTURE:
@@ -63,6 +64,14 @@ VkWriteDescriptorSet DescriptorBinding::GetWriteDescriptorSet(VkDescriptorSet de
 				((CombinedImageSampler*)data)->sampler,// VkSampler sampler
 				((CombinedImageSampler*)data)->imageView,// VkImageView imageView
 				VK_IMAGE_LAYOUT_GENERAL,// VkImageLayout imageLayout
+			};
+			descriptorWrite.pImageInfo = (VkDescriptorImageInfo*)writeInfo;
+		break;
+		case INPUT_ATTACHMENT:
+			writeInfo = new VkDescriptorImageInfo {
+				VK_NULL_HANDLE,// VkSampler sampler
+				*(VkImageView*)data,// VkImageView imageView
+				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,// VkImageLayout imageLayout
 			};
 			descriptorWrite.pImageInfo = (VkDescriptorImageInfo*)writeInfo;
 		break;

@@ -22,11 +22,11 @@ void RenderPass::Create() {
 	}
 }
 
-void RenderPass::AddSubpass(VkSubpassDescription &subpass) {
+void RenderPass::AddSubpass(VkSubpassDescription& subpass) {
 	subpasses.push_back(subpass);
 }
 
-uint32_t RenderPass::AddAttachment(VkAttachmentDescription &attachment) {
+uint32_t RenderPass::AddAttachment(VkAttachmentDescription& attachment) {
 	uint32_t index = attachments.size();
 	attachments.push_back(attachment);
 	return index;
