@@ -39,6 +39,24 @@ int PhysicalDevice::GetQueueFamilyIndexFromFlags(VkDeviceQueueCreateFlags flags,
 	return -1;
 }
 
+std::vector<int> PhysicalDevice::GetQueueFamilyIndicesFromFlags(VkDeviceQueueCreateFlags flags, uint minQueuesCount, VkSurfaceKHR surface) {
+	std::vector<int> indices {};
+	int i = 0;
+	for (const auto& queueFamily : *queueFamilies) {
+		if (queueFamily.queueCount >= minQueuesCount && queueFamily.queueFlags & flags) {
+			if (surface == nullptr) {
+				indices.push_back(i);
+			} else {
+				VkBool32 presentationSupport;
+				vulkanInstance->GetPhysicalDeviceSurfaceSupportKHR(handle, i, surface, &presentationSupport);
+				if (presentationSupport) indices.push_back(i);
+			}
+		}
+		i++;
+	}
+	return indices;
+}
+
 bool PhysicalDevice::QueueFamiliesContainsFlags(VkDeviceQueueCreateFlags flags, uint minQueuesCount, VkSurfaceKHR surface) {
 	for (const auto& queueFamily : *queueFamilies) {
 		if (queueFamily.queueCount >= minQueuesCount && queueFamily.queueFlags & flags) {

@@ -18,6 +18,7 @@ namespace v4d::graphics::vulkan {
 		~PhysicalDevice();
 
 		int GetQueueFamilyIndexFromFlags(VkDeviceQueueCreateFlags flags, uint minQueuesCount = 1, VkSurfaceKHR surface = nullptr);
+		std::vector<int> GetQueueFamilyIndicesFromFlags(VkDeviceQueueCreateFlags flags, uint minQueuesCount = 1, VkSurfaceKHR surface = nullptr);
 		bool QueueFamiliesContainsFlags(VkDeviceQueueCreateFlags flags, uint minQueuesCount = 1, VkSurfaceKHR surface = nullptr);
 
 		bool SupportsExtension(std::string ext);

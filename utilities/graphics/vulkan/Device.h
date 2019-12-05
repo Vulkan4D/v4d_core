@@ -8,7 +8,24 @@ namespace v4d::graphics::vulkan {
 		VkDeviceQueueCreateFlags flags;
 		uint count;
 		std::vector<float> priorities;
-		VkSurfaceKHR surface = VK_NULL_HANDLE;
+		VkSurfaceKHR surface;
+		DeviceQueueInfo(
+			std::string name,
+			VkDeviceQueueCreateFlags flags,
+			uint count = 1,
+			std::vector<float> priorities = {1.0f},
+			VkSurfaceKHR surface = VK_NULL_HANDLE
+		) : 
+			name(name),
+			flags(flags),
+			count(count),
+			priorities(priorities),
+			surface(surface)
+		{}
+		
+		int queueFamilyIndex = -1;
+		int indexOffset = 0;
+		int createInfoIndex = -1;
 	};
 
 	class V4DLIB Device : public xvk::Interface::DeviceInterface {
@@ -16,7 +33,6 @@ namespace v4d::graphics::vulkan {
 		PhysicalDevice* physicalDevice;
 
 		VkDeviceCreateInfo createInfo {};
-		VkDeviceQueueCreateInfo* queueCreateInfo;
 		std::unordered_map<std::string, std::vector<Queue>> queues;
 
 	public:
@@ -25,7 +41,7 @@ namespace v4d::graphics::vulkan {
 			VkPhysicalDeviceFeatures& deviceFeatures,
 			std::vector<const char*>& extensions,
 			std::vector<const char*>& layers,
-			const std::vector<DeviceQueueInfo>& queuesInfo
+			std::vector<DeviceQueueInfo> queuesInfo
 		);
 		~Device();
 
@@ -63,7 +79,8 @@ namespace v4d::graphics::vulkan {
 			VkImage& image, 
 			VkDeviceMemory& imageMemory, 
 			uint32_t arrayLayers = 1, 
-			VkImageCreateFlags flags = 0
+			VkImageCreateFlags flags = 0,
+			std::vector<uint32_t> queues = {}
 		);
 
 	};

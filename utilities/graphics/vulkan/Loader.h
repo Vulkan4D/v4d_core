@@ -38,7 +38,7 @@ namespace v4d::graphics::vulkan {
 	};
 
 	struct V4DLIB Queue {
-		uint32_t index;
+		uint32_t familyIndex;
 		VkQueue handle;
 	};
 

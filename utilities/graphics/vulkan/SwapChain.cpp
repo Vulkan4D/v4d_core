@@ -81,9 +81,10 @@ void SwapChain::SetConfiguration(VkExtent2D preferredExtent, const std::vector<V
 }
 
 void SwapChain::AssignQueues(std::vector<uint32_t> queues) {
-	if (queues.size() < 2) throw std::runtime_error("AssignQueues needs at least two queues");
-	if (queues.size() > 2 || queues[0] != queues[1]) {
+	if (queues.size() > 2 || (queues.size() == 2 && queues[0] != queues[1])) {
 		createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+	} else {
+		createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	}
 	createInfo.queueFamilyIndexCount = queues.size();
 	createInfo.pQueueFamilyIndices = queues.data();
