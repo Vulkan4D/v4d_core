@@ -34,7 +34,6 @@
 #include "utilities/graphics/vulkan/PipelineLayout.h"
 #include "utilities/graphics/vulkan/Shader.h"
 #include "utilities/graphics/vulkan/ShaderProgram.h"
-#include "utilities/graphics/vulkan/GraphicsPipeline.h"
 #include "utilities/graphics/vulkan/RenderPass.h"
 // RTX-Specific
 #include "utilities/graphics/vulkan/rtx/ShaderBindingTable.h"
