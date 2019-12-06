@@ -7,6 +7,8 @@ ShaderProgram::ShaderProgram(PipelineLayout* pipelineLayout, const std::vector<S
 		shaderFiles.push_back(info);
 }
 
+ShaderProgram::~ShaderProgram() {}
+
 void ShaderProgram::AddVertexInputBinding(uint32_t binding, uint32_t stride, VkVertexInputRate inputRate, std::vector<VertexInputAttributeDescription> attrs) {
 	bindings.emplace_back(VkVertexInputBindingDescription{binding, stride, inputRate});
 	for (auto attr : attrs) {

@@ -39,7 +39,8 @@ namespace v4d::graphics::vulkan {
 
 	struct V4DLIB Queue {
 		uint32_t familyIndex;
-		VkQueue handle;
+		VkQueue handle = VK_NULL_HANDLE;
+		VkCommandPool commandPool = VK_NULL_HANDLE;
 	};
 
 }

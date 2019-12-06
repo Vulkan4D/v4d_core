@@ -76,10 +76,10 @@ void GraphicsPipeline::SetShaderProgram(ShaderProgram* shaderProgram) {
 	pipelineLayout = shaderProgram->GetPipelineLayout();
 }
 
-void GraphicsPipeline::Bind(Device* device, VkCommandBuffer commandBuffer, VkPipelineBindPoint bindPoint) {
-	device->CmdBindPipeline(commandBuffer, bindPoint, handle);
-	pipelineLayout->Bind(device, commandBuffer);
-}
+// void GraphicsPipeline::Bind(Device* device, VkCommandBuffer commandBuffer, VkPipelineBindPoint bindPoint) {
+// 	device->CmdBindPipeline(commandBuffer, bindPoint, handle);
+// 	pipelineLayout->Bind(device, commandBuffer);
+// }
 
 void GraphicsPipeline::AddColorBlendAttachmentState(VkBool32 blendEnable, VkBlendFactor srcColorBlendFactor, VkBlendFactor dstColorBlendFactor, VkBlendOp colorBlendOp, VkBlendFactor srcAlphaBlendFactor, VkBlendFactor dstAlphaBlendFactor, VkBlendOp alphaBlendOp, VkColorComponentFlags colorWriteMask) {
 	colorBlendAttachments.push_back({

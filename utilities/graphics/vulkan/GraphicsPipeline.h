@@ -75,7 +75,7 @@ namespace v4d::graphics::vulkan {
 
 		void SetShaderProgram(ShaderProgram* shaderProgram);
 
-		void Bind(Device* device, VkCommandBuffer commandBuffer, VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS);
+		// void Bind(Device* device, VkCommandBuffer commandBuffer, VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS);
 
 		void AddColorBlendAttachmentState(
 			VkBool32 blendEnable = VK_TRUE,
