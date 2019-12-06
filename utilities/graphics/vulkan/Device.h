@@ -82,6 +82,9 @@ namespace v4d::graphics::vulkan {
 			VkImageCreateFlags flags = 0,
 			std::vector<uint32_t> queues = {}
 		);
+		
+		// Helpers
+		size_t GetAlignedUniformSize(size_t size);
 
 	};
 }

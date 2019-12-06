@@ -14,6 +14,7 @@ namespace v4d::graphics::vulkan {
 		// Mandatory fields
 		VkBufferUsageFlags usage;
 		VkDeviceSize size;
+		bool alignedUniformSize;
 		
 		// Additional fields
 		VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -28,7 +29,7 @@ namespace v4d::graphics::vulkan {
 		// Data pointers to get copied into buffer
 		std::vector<BufferSrcDataPtr> srcDataPointers {};
 		
-		Buffer(VkBufferUsageFlags usage, VkDeviceSize size = 0);
+		Buffer(VkBufferUsageFlags usage, VkDeviceSize size = 0, bool alignedUniformSize = false);
 		
 		void AddSrcDataPtr(void* srcDataPtr, size_t size);
 		
@@ -45,7 +46,11 @@ namespace v4d::graphics::vulkan {
 		void MapMemory(Device* device, VkDeviceSize offset = 0, VkDeviceSize size = 0, VkMemoryMapFlags flags = 0);
 		void UnmapMemory(Device* device);
 		
-		static void CopyDataToBuffer(Device* device, void* data, Buffer* buffer, VkDeviceSize offset = 0, VkDeviceSize size = 0, VkMemoryMapFlags flags = 0);
+		void WriteToMappedData(Device* device, void* inputData, size_t copySize = 0);
+		void ReadFromMappedData(Device* device, void* outputData, size_t copySize = 0);
+		
+		// static void CopyDataToBuffer(Device* device, void* data, Buffer* buffer, VkDeviceSize offset = 0, VkDeviceSize size = 0, VkMemoryMapFlags flags = 0);
+		// static void CopyDataToMappedBuffer(Device* device, void* inputData, Buffer* buffer, long mappedOffset = 0, size_t size = 0);
 		
 		static void Copy(Device* device, VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkDeviceSize srcOffset = 0, VkDeviceSize dstOffset = 0);
 		static void Copy(Device* device, VkCommandBuffer commandBuffer, Buffer srcBuffer, Buffer dstBuffer, VkDeviceSize size = 0, VkDeviceSize srcOffset = 0, VkDeviceSize dstOffset = 0);

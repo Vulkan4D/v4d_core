@@ -2,7 +2,7 @@
 
 using namespace v4d::graphics::vulkan;
 
-Buffer::Buffer(VkBufferUsageFlags usage, VkDeviceSize size) : usage(usage), size(size) {}
+Buffer::Buffer(VkBufferUsageFlags usage, VkDeviceSize size, bool alignedUniformSize) : usage(usage), size(size), alignedUniformSize(alignedUniformSize) {}
 
 void Buffer::AddSrcDataPtr(void* srcDataPtr, size_t size) {
 	srcDataPointers.push_back(BufferSrcDataPtr(srcDataPtr, size));
@@ -26,7 +26,7 @@ void Buffer::Allocate(Device* device, VkMemoryPropertyFlags properties, bool cop
 	}
 	VkBufferCreateInfo bufferInfo {};
 	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = size;
+	bufferInfo.size = alignedUniformSize? device->GetAlignedUniformSize(size) : size;
 	bufferInfo.usage = usage;
 	bufferInfo.sharingMode = sharingMode;
 	
@@ -89,11 +89,24 @@ void Buffer::UnmapMemory(Device* device) {
 	data = nullptr;
 }
 
-void Buffer::CopyDataToBuffer(Device* device, void* data, Buffer* buffer, VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags) {
-	buffer->MapMemory(device, offset, size, flags);
-	memcpy(buffer->data, data, size == 0 ? buffer->size : size);
-	buffer->UnmapMemory(device);
+// void Buffer::CopyDataToBuffer(Device* device, void* data, Buffer* buffer, VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags) {
+// 	buffer->MapMemory(device, offset, size, flags);
+// 	memcpy(buffer->data, data, size == 0 ? buffer->size : size);
+// 	buffer->UnmapMemory(device);
+// }
+
+// void Buffer::CopyDataToMappedBuffer(Device* device, void* inputData, Buffer* buffer, long mappedOffset, size_t size) {
+// 	memcpy(buffer->data + mappedOffset, inputData, size == 0 ? (buffer->size - mappedOffset) : size);
+// }
+
+void Buffer::WriteToMappedData(Device* device, void* inputData, size_t copySize) {
+	memcpy(data, inputData, copySize == 0 ? size : copySize);
 }
+
+void Buffer::ReadFromMappedData(Device* device, void* outputData, size_t copySize) {
+	memcpy(outputData, data, copySize == 0 ? size : copySize);
+}
+
 
 void Buffer::Copy(Device* device, VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkDeviceSize srcOffset, VkDeviceSize dstOffset) {
 	VkBufferCopy copyRegion = {};

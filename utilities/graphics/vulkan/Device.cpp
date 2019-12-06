@@ -233,3 +233,11 @@ void Device::CreateImage(uint32_t width,
 
 	BindImageMemory(image, imageMemory, 0);
 }
+
+
+size_t Device::GetAlignedUniformSize(size_t size) {
+	size_t alignedSize = size;
+	const VkDeviceSize& alignment = physicalDevice->GetProperties().limits.minUniformBufferOffsetAlignment;
+	if (alignedSize % alignment) alignedSize += alignment - (alignedSize % alignment);
+	return alignedSize;
+}
