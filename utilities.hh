@@ -35,6 +35,9 @@
 #include "utilities/graphics/vulkan/Shader.h"
 #include "utilities/graphics/vulkan/ShaderProgram.h"
 #include "utilities/graphics/vulkan/RenderPass.h"
+#include "utilities/graphics/vulkan/ShaderPipeline.h"
+#include "utilities/graphics/vulkan/ComputeShaderPipeline.h"
+#include "utilities/graphics/vulkan/RasterShaderPipeline.h"
 // RTX-Specific
 #include "utilities/graphics/vulkan/rtx/ShaderBindingTable.h"
 

@@ -35,4 +35,5 @@ namespace v4d::graphics::vulkan {
 		std::vector<VkVertexInputAttributeDescription>* GetAttributes();
 		
 	};
+	
 }
