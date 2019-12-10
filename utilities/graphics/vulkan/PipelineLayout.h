@@ -20,6 +20,8 @@ namespace v4d::graphics::vulkan {
 		void Create(Device* device);
 		void Destroy(Device* device);
 		
+		void Reset();
+		
 		void Bind(Device* device, VkCommandBuffer commandBuffer, VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS);
 		
 	};

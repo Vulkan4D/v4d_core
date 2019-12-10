@@ -28,6 +28,39 @@ namespace v4d::graphics::vulkan {
 		uint32_t AddAttachment(VkAttachmentDescription &attachment);
 		
 		VkFramebuffer& GetFrameBuffer(int index = 0);
-
+		
+		void CreateFrameBuffers(Device* device, SwapChain*, std::vector<VkImageView>/*copy*/ attachments = {VK_NULL_HANDLE}, uint32_t layers = 1);
+		void CreateFrameBuffers(Device* device, const VkExtent2D&, const std::vector<VkImageView>& attachments, uint32_t layers = 1);
+		void CreateFrameBuffers(Device* device, const std::vector<Image*>&);
+		void CreateFrameBuffers(Device* device, Image&);
+		void DestroyFrameBuffers(Device* device);
+		
+		void Begin(
+			Device*,
+			VkCommandBuffer,
+			VkOffset2D,
+			VkExtent2D,
+			const std::vector<VkClearValue>&,
+			int imageIndex = 0,
+			VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE
+		);
+		void Begin(
+			Device*,
+			VkCommandBuffer,
+			SwapChain*,
+			const std::vector<VkClearValue>&,
+			int imageIndex = 0,
+			VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE
+		);
+		void Begin(
+			Device*,
+			VkCommandBuffer,
+			Image& target,
+			const std::vector<VkClearValue>& = {},
+			int imageIndex = 0,
+			VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE
+		);
+		void End(Device* device, VkCommandBuffer commandBuffer);
+		
 	};
 }

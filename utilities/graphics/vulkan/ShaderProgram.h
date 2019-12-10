@@ -15,7 +15,7 @@ namespace v4d::graphics::vulkan {
 		
 	public:
 
-		ShaderProgram(PipelineLayout* pipelineLayout, const std::vector<ShaderInfo>& infos);
+		ShaderProgram(PipelineLayout& pipelineLayout, const std::vector<ShaderInfo>& infos);
 		virtual ~ShaderProgram();
 		
 		void AddVertexInputBinding(uint32_t binding, uint32_t stride, VkVertexInputRate inputRate, std::vector<VertexInputAttributeDescription> attrs);

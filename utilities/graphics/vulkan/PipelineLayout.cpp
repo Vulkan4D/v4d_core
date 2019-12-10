@@ -48,3 +48,7 @@ void PipelineLayout::Bind(Device* device, VkCommandBuffer commandBuffer, VkPipel
 	if (vkDescriptorSets.size() > 0) 
 		device->CmdBindDescriptorSets(commandBuffer, bindPoint, handle, 0, (uint)vkDescriptorSets.size(), vkDescriptorSets.data(), 0, nullptr);
 }
+
+void PipelineLayout::Reset() {
+	descriptorSets.clear();
+}

@@ -2,7 +2,7 @@
 
 using namespace v4d::graphics::vulkan;
 
-RasterShaderPipeline::RasterShaderPipeline(PipelineLayout* pipelineLayout, const std::vector<ShaderInfo>& shaderInfo)
+RasterShaderPipeline::RasterShaderPipeline(PipelineLayout& pipelineLayout, const std::vector<ShaderInfo>& shaderInfo)
  : ShaderPipeline(pipelineLayout, shaderInfo) {
 	colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -48,6 +48,26 @@ void RasterShaderPipeline::SetData(uint32_t vertexCount) {
 void RasterShaderPipeline::CreatePipeline(Device* device) {
 	CreateShaderStages(device);
 	
+	VkPipelineViewportStateCreateInfo viewportState {};
+	VkViewport viewport {};
+	VkRect2D scissor {};
+	if (pipelineCreateInfo.pViewportState == nullptr) {
+		viewport.x = 0;
+		viewport.y = 0;
+		viewport.width = (float) renderTarget->width;
+		viewport.height = (float) renderTarget->height;
+		viewport.minDepth = 0;
+		viewport.maxDepth = renderTarget->imageInfo.extent.depth;
+		scissor.offset = {0, 0};
+		scissor.extent = {renderTarget->width, renderTarget->height};
+		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+		viewportState.viewportCount = 1;
+		viewportState.scissorCount = 1;
+		viewportState.pViewports = &viewport;
+		viewportState.pScissors = &scissor;
+		pipelineCreateInfo.pViewportState = &viewportState;
+	}
+	
 	// Bindings and Attributes
 	vertexInputInfo.vertexBindingDescriptionCount = GetBindings()->size();
 	vertexInputInfo.pVertexBindingDescriptions = GetBindings()->data();
@@ -92,6 +112,19 @@ void RasterShaderPipeline::DestroyPipeline(Device* device) {
 
 void RasterShaderPipeline::SetRenderPass(VkPipelineViewportStateCreateInfo* viewportState, VkRenderPass renderPass, uint32_t subpass) {
 	pipelineCreateInfo.pViewportState = viewportState;
+	pipelineCreateInfo.renderPass = renderPass;
+	pipelineCreateInfo.subpass = subpass;
+}
+
+void RasterShaderPipeline::SetRenderPass(SwapChain* swapChain, VkRenderPass renderPass, uint32_t subpass) {
+	pipelineCreateInfo.pViewportState = &swapChain->viewportState;
+	pipelineCreateInfo.renderPass = renderPass;
+	pipelineCreateInfo.subpass = subpass;
+}
+
+void RasterShaderPipeline::SetRenderPass(Image* renderTarget, VkRenderPass renderPass, uint32_t subpass) {
+	this->renderTarget = renderTarget;
+	pipelineCreateInfo.pViewportState = nullptr;
 	pipelineCreateInfo.renderPass = renderPass;
 	pipelineCreateInfo.subpass = subpass;
 }

@@ -2,7 +2,7 @@
 
 using namespace v4d::graphics::vulkan;
 
-ShaderProgram::ShaderProgram(PipelineLayout* pipelineLayout, const std::vector<ShaderInfo>& infos) : pipelineLayout(pipelineLayout) {
+ShaderProgram::ShaderProgram(PipelineLayout& pipelineLayout, const std::vector<ShaderInfo>& infos) : pipelineLayout(&pipelineLayout) {
 	for (auto& info : infos)
 		shaderFiles.push_back(info);
 }

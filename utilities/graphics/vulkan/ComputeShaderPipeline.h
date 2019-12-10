@@ -7,7 +7,7 @@ namespace v4d::graphics::vulkan {
 		uint32_t groupCountX = 0, groupCountY = 0, groupCountZ = 0;
 		
 	public:
-		ComputeShaderPipeline(PipelineLayout* pipelineLayout, ShaderInfo shaderInfo);
+		ComputeShaderPipeline(PipelineLayout& pipelineLayout, ShaderInfo shaderInfo);
 		virtual ~ComputeShaderPipeline();
 		
 		virtual void CreatePipeline(Device* device) override;

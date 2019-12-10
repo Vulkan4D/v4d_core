@@ -5,6 +5,7 @@ namespace v4d::graphics::vulkan {
 
 	class V4DLIB RasterShaderPipeline : public ShaderPipeline {
 		VkGraphicsPipelineCreateInfo pipelineCreateInfo {};
+		Image* renderTarget;
 	public:
 		
 		// Data to draw
@@ -64,7 +65,7 @@ namespace v4d::graphics::vulkan {
 		std::vector<VkDynamicState> dynamicStates {}; // Dynamic settings that CAN be changed at runtime but NOT every frame
 
 		
-		RasterShaderPipeline(PipelineLayout* pipelineLayout, const std::vector<ShaderInfo>& shaderInfo);
+		RasterShaderPipeline(PipelineLayout& pipelineLayout, const std::vector<ShaderInfo>& shaderInfo);
 		virtual ~RasterShaderPipeline();
 		
 		void SetData(Buffer* vertexBuffer, Buffer* indexBuffer);
@@ -74,7 +75,9 @@ namespace v4d::graphics::vulkan {
 		virtual void CreatePipeline(Device* device) override;
 		virtual void DestroyPipeline(Device* device) override;
 		
-		void SetRenderPass(VkPipelineViewportStateCreateInfo* viewportState, VkRenderPass renderPass, uint32_t subpass = 0);
+		void SetRenderPass(VkPipelineViewportStateCreateInfo* viewportState, VkRenderPass, uint32_t subpass = 0);
+		void SetRenderPass(SwapChain*, VkRenderPass, uint32_t subpass = 0);
+		void SetRenderPass(Image* renderTarget, VkRenderPass, uint32_t subpass = 0);
 		
 		void AddColorBlendAttachmentState(
 			VkBool32 blendEnable = VK_TRUE,

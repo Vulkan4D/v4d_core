@@ -28,6 +28,7 @@
 #include "utilities/graphics/vulkan/PhysicalDevice.h"
 #include "utilities/graphics/vulkan/Device.h"
 #include "utilities/graphics/vulkan/Instance.h"
+#include "utilities/graphics/vulkan/Image.h"
 #include "utilities/graphics/vulkan/SwapChain.h"
 #include "utilities/graphics/vulkan/Buffer.h"
 #include "utilities/graphics/vulkan/DescriptorSet.h"

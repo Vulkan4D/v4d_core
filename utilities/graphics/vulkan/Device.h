@@ -66,22 +66,22 @@ namespace v4d::graphics::vulkan {
 		using xvk::Interface::DeviceInterface::DestroyDescriptorPool;
 		void DestroyDescriptorPool(VkDescriptorPool &descriptorPool);
 
-		using xvk::Interface::DeviceInterface::CreateImage;
-		void CreateImage(
-			uint32_t width, 
-			uint32_t height, 
-			uint32_t mipLevels, 
-			VkSampleCountFlagBits sampleCount, 
-			VkFormat format, 
-			VkImageTiling tiling, 
-			VkImageUsageFlags usage, 
-			VkMemoryPropertyFlags memoryPropertyFlags, 
-			VkImage& image, 
-			VkDeviceMemory& imageMemory, 
-			uint32_t arrayLayers = 1, 
-			VkImageCreateFlags flags = 0,
-			std::vector<uint32_t> queues = {}
-		);
+		// using xvk::Interface::DeviceInterface::CreateImage;
+		// void CreateImage(
+		// 	uint32_t width, 
+		// 	uint32_t height, 
+		// 	uint32_t mipLevels, 
+		// 	VkSampleCountFlagBits sampleCount, 
+		// 	VkFormat format, 
+		// 	VkImageTiling tiling, 
+		// 	VkImageUsageFlags usage, 
+		// 	VkMemoryPropertyFlags memoryPropertyFlags, 
+		// 	VkImage& image, 
+		// 	VkDeviceMemory& imageMemory, 
+		// 	uint32_t arrayLayers = 1, 
+		// 	VkImageCreateFlags flags = 0,
+		// 	std::vector<uint32_t> queues = {}
+		// );
 		
 		// Helpers
 		size_t GetAlignedUniformSize(size_t size);

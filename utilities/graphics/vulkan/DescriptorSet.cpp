@@ -61,8 +61,8 @@ VkWriteDescriptorSet DescriptorBinding::GetWriteDescriptorSet(VkDescriptorSet de
 		break;
 		case COMBINED_IMAGE_SAMPLER:
 			writeInfo = new VkDescriptorImageInfo {
-				((CombinedImageSampler*)data)->sampler,// VkSampler sampler
-				((CombinedImageSampler*)data)->imageView,// VkImageView imageView
+				((Image*)data)->sampler,// VkSampler sampler
+				((Image*)data)->view,// VkImageView imageView
 				VK_IMAGE_LAYOUT_GENERAL,// VkImageLayout imageLayout
 			};
 			descriptorWrite.pImageInfo = (VkDescriptorImageInfo*)writeInfo;
