@@ -44,4 +44,5 @@
 
 // General Graphics utilities
 #include "utilities/graphics/Window.h"
+#include "utilities/graphics/Renderer.h"
 

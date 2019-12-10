@@ -41,7 +41,7 @@ namespace v4d::graphics::vulkan::rtx {
 		
 		uint32_t GetOrAddShaderFileIndex(ShaderInfo&& shader);
 		
-		ShaderBindingTable(PipelineLayout* pipelineLayout, ShaderInfo rgen);
+		ShaderBindingTable(PipelineLayout& pipelineLayout, ShaderInfo rgen);
 		
 		uint32_t AddMissShader(ShaderInfo rmiss);
 		uint32_t AddHitShader(ShaderInfo rchit, ShaderInfo rahit = "", ShaderInfo rint = "");

@@ -3,7 +3,7 @@
 using namespace v4d::graphics::vulkan;
 using namespace v4d::graphics::vulkan::rtx;
 
-ShaderBindingTable::ShaderBindingTable(PipelineLayout* pipelineLayout, ShaderInfo rgen) : pipelineLayout(pipelineLayout) {
+ShaderBindingTable::ShaderBindingTable(PipelineLayout& pipelineLayout, ShaderInfo rgen) : pipelineLayout(&pipelineLayout) {
 	groups.push_back({
 		VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_NV,
 		nullptr, // pNext
