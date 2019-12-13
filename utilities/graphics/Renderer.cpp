@@ -846,18 +846,22 @@ void Renderer::GenerateMipmaps(VkImage image, VkFormat imageFormat, int32_t widt
 void Renderer::RecreateSwapChains() {
 	std::scoped_lock lock(renderingMutex, lowPriorityRenderingMutex);
 	
-	DeleteGraphicsFromDevice();
+	UnloadGraphicsFromDevice();
 	
 	// Re-Create the SwapChain
 	CreateSwapChain();
 	
-	SendGraphicsToDevice();
+	LoadGraphicsToDevice();
+}
+
+void Renderer::InitRenderer() {
+	Init();
+	InitLayouts();
+	ConfigureShaders();
 }
 
 void Renderer::LoadRenderer() {
 	std::scoped_lock lock(renderingMutex, lowPriorityRenderingMutex);
-	
-	Init();
 	
 	CreateDevices();
 	CreateSyncObjects();
@@ -865,7 +869,7 @@ void Renderer::LoadRenderer() {
 	
 	Info();
 	
-	SendGraphicsToDevice();
+	LoadGraphicsToDevice();
 	
 	LOG_SUCCESS("Vulkan Renderer is Ready !");
 }
@@ -873,7 +877,7 @@ void Renderer::LoadRenderer() {
 void Renderer::UnloadRenderer() {
 	std::scoped_lock lock(renderingMutex, lowPriorityRenderingMutex);
 	
-	DeleteGraphicsFromDevice();
+	UnloadGraphicsFromDevice();
 	
 	DestroySwapChain();
 	DestroySyncObjects();
@@ -885,7 +889,7 @@ void Renderer::ReloadRenderer() {
 	
 	LOG_WARN("Reloading renderer...")
 	
-	DeleteGraphicsFromDevice();
+	UnloadGraphicsFromDevice();
 	
 	DestroySwapChain();
 	DestroySyncObjects();
@@ -897,12 +901,12 @@ void Renderer::ReloadRenderer() {
 	
 	Info();
 	
-	SendGraphicsToDevice();
+	LoadGraphicsToDevice();
 	
 	LOG_SUCCESS("Vulkan Renderer is Ready !")
 }
 
-void Renderer::SendGraphicsToDevice() {
+void Renderer::LoadGraphicsToDevice() {
 	CreateCommandPools();
 	CreateResources();
 	AllocateBuffers();
@@ -911,7 +915,7 @@ void Renderer::SendGraphicsToDevice() {
 	CreateCommandBuffers(); // objects are rendered here
 }
 
-void Renderer::DeleteGraphicsFromDevice() {
+void Renderer::UnloadGraphicsFromDevice() {
 	// Wait for renderingDevice to be idle before destroying everything
 	renderingDevice->DeviceWaitIdle(); // We can also wait for operations in a specific command queue to be finished with vkQueueWaitIdle. These functions can be used as a very rudimentary way to perform synchronization. 
 
@@ -1189,9 +1193,9 @@ void Renderer::RenderLowPriority() {
 	
 	// Dynamic graphics
 	renderingDevice->QueueWaitIdle(lowPriorityGraphicsQueue.handle);
-	auto graphicsCmd = BeginSingleTimeCommands(lowPriorityComputeQueue);
+	auto graphicsCmd = BeginSingleTimeCommands(lowPriorityGraphicsQueue);
 	RunDynamicLowPriorityGraphics(graphicsCmd);
-	EndSingleTimeCommands(lowPriorityComputeQueue, graphicsCmd);
+	EndSingleTimeCommands(lowPriorityGraphicsQueue, graphicsCmd);
 	
 }
 

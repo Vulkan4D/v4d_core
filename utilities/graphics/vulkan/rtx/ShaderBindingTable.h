@@ -46,8 +46,7 @@ namespace v4d::graphics::vulkan::rtx {
 		uint32_t AddMissShader(ShaderInfo rmiss);
 		uint32_t AddHitShader(ShaderInfo rchit, ShaderInfo rahit = "", ShaderInfo rint = "");
 		
-		void LoadShaders();
-		void UnloadShaders();
+		void ReadShaders();
 		
 		void CreateShaderStages(Device* device);
 		void DestroyShaderStages(Device* device);

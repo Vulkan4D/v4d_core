@@ -20,15 +20,16 @@ void ShaderProgram::AddVertexInputBinding(uint32_t stride, VkVertexInputRate inp
 	AddVertexInputBinding(bindings.size(), stride, inputRate, attrs);
 }
 
-void ShaderProgram::LoadShaders() {
+void ShaderProgram::ReadShaders() {
 	shaders.clear();
 	for (auto& shader : shaderFiles) {
 		shaders.emplace_back(shader.filepath, shader.entryPoint, shader.specializationInfo);
 	}
 }
 
-void ShaderProgram::UnloadShaders() {
-	shaders.clear();
+void ShaderProgram::Reset() {
+	bindings.clear();
+	attributes.clear();
 }
 
 void ShaderProgram::CreateShaderStages(Device* device) {

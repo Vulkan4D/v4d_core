@@ -72,6 +72,8 @@ namespace v4d::graphics {
 		virtual void ScorePhysicalDeviceSelection(int& score, PhysicalDevice* physicalDevice) = 0;
 		virtual void Init() = 0;
 		virtual void Info() = 0;
+		virtual void InitLayouts() = 0;
+		virtual void ConfigureShaders() = 0;
 		
 		// Resources
 		virtual void CreateResources() = 0;
@@ -82,6 +84,7 @@ namespace v4d::graphics {
 		// Scene
 		virtual void LoadScene() = 0;
 		virtual void UnloadScene() = 0;
+		virtual void ReadShaders() = 0;
 		
 		// Pipelines
 		virtual void CreatePipelines() = 0;
@@ -147,12 +150,14 @@ namespace v4d::graphics {
 		virtual void RecreateSwapChains();
 		
 	public: // Init/Load/Reset Methods
+		virtual void InitRenderer();
 		virtual void LoadRenderer();
 		virtual void UnloadRenderer();
 		virtual void ReloadRenderer();
 		
-		virtual void SendGraphicsToDevice();
-		virtual void DeleteGraphicsFromDevice();
+	protected:
+		virtual void LoadGraphicsToDevice();
+		virtual void UnloadGraphicsFromDevice();
 		
 	public: // Constructor & Destructor
 		Renderer(Loader* loader, const char* applicationName, uint applicationVersion, Window* window);
@@ -175,6 +180,9 @@ private: // Init
 	void ScorePhysicalDeviceSelection(int& score, PhysicalDevice* physicalDevice) override {}
 	void Init() override {}
 	void Info() override {}
+	void CreateLayouts() override {}
+	void DestroyLayouts() override {}
+	void ConfigureShaders() override {}
 
 private: // Resources
 	void CreateResources() override {}

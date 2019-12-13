@@ -89,15 +89,11 @@ uint32_t ShaderBindingTable::AddHitShader(ShaderInfo rchit, ShaderInfo rahit, Sh
 	return nextHitShaderOffset++;
 }
 
-void ShaderBindingTable::LoadShaders() {
+void ShaderBindingTable::ReadShaders() {
 	shaderObjects.clear();
 	for (auto&[i, shader] : shaderFiles) {
 		shaderObjects.emplace_back(shader.filepath, shader.entryPoint, shader.specializationInfo);
 	}
-}
-
-void ShaderBindingTable::UnloadShaders() {
-	shaderObjects.clear();
 }
 
 void ShaderBindingTable::CreateShaderStages(Device* device) {

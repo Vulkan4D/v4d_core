@@ -21,8 +21,8 @@ namespace v4d::graphics::vulkan {
 		void AddVertexInputBinding(uint32_t binding, uint32_t stride, VkVertexInputRate inputRate, std::vector<VertexInputAttributeDescription> attrs);
 		void AddVertexInputBinding(uint32_t stride, VkVertexInputRate inputRate, std::vector<VertexInputAttributeDescription> attrs);
 
-		void LoadShaders();
-		void UnloadShaders();
+		void ReadShaders();
+		void Reset();
 		
 		void CreateShaderStages(Device* device);
 		void DestroyShaderStages(Device* device);

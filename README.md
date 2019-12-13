@@ -87,13 +87,16 @@ The core consists of the following structure :
 - `.cpp` C++ Source Files compiled via g++, must have a matching .h (except main file)
 - `.hpp` C++ Header-only source files (no matching .cpp)
 - `.h` C++ Header files included from a matching .cpp source file
-- `.cxx` C++ source files Reserved for Unit Tests
-- `.hh` C++ header-only files without any associated code
+- `.cxx` C++ source files Reserved for Unit Tests *(Subject to change)*
+- `.hh` C++ header-only files without any associated code (config files, enum, ...)
 
 ### Critical method names for correct memory management
-- `Create*` must be followed by `Destroy*` before the end of the scope
-- `New*` must be followed by `Delete*` ...
-- `Allocate*` must be followed by `Free*` ...
-- `Begin*` must be followed by `End*` ...
-- `Load*` can optionally be followed by `Unload*` or `Reload*` (it's memory will be freed anyways when out of scope)
+- `Create*` must be followed by `Destroy*`
+- `New*` must be followed by `Delete*`
+- `Allocate*` must be followed by `Free*`
+- `Begin*` must be followed by `End*`
+- `Start*` must be followed by `Stop*` or `Restart*`
+- `Load*` must be followed by `Unload*` or `Reload*` (`Load` should not be called more than once, It is preferable to call `Reload` over `Unload`+`Load`)
+- `Init*` must only be called once per instance, and no need to free any memory
+- `Configure*`, `Generate*`, `Make*`, `Build*`, `Read*`, `Write*` may be called any number of times, and no need to free any memory
 
