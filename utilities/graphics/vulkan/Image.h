@@ -10,8 +10,7 @@ namespace v4d::graphics::vulkan {
 		VkImageUsageFlags usage;
 		uint32_t mipLevels;
 		uint32_t arrayLayers;
-		bool hasView;
-		bool hasSampler;
+		std::vector<VkFormat> preferredFormats;
 		
 		// After Create()
 		uint32_t width = 0;
@@ -26,8 +25,7 @@ namespace v4d::graphics::vulkan {
 			VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
 			uint32_t mipLevels = 1,
 			uint32_t arrayLayers = 1,
-			bool hasView = true,
-			bool hasSampler = false
+			const std::vector<VkFormat>& preferredFormats = {VK_FORMAT_R32G32B32A32_SFLOAT}
 		);
 		
 		virtual ~Image();
@@ -94,7 +92,7 @@ namespace v4d::graphics::vulkan {
 		
 		void SetAccessQueues(const std::vector<uint32_t>& queues);
 		
-		virtual void Create(Device* device, uint32_t width, uint32_t height, const std::vector<VkFormat>& formats, int additionalFormatFeatures = 0);
+		virtual void Create(Device* device, uint32_t width, uint32_t height, const std::vector<VkFormat>& tryFormats = {}, int additionalFormatFeatures = 0);
 		virtual void Destroy(Device* device);
 		
 	};
@@ -102,7 +100,8 @@ namespace v4d::graphics::vulkan {
 	class V4DLIB DepthStencilImage : public Image {
 	public:
 		DepthStencilImage(
-			VkImageUsageFlags usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+			VkImageUsageFlags usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+			const std::vector<VkFormat>& formats = {VK_FORMAT_D32_SFLOAT_S8_UINT}
 		);
 		virtual ~DepthStencilImage();
 	};
@@ -110,7 +109,8 @@ namespace v4d::graphics::vulkan {
 	class V4DLIB CubeMapImage : public Image {
 	public:
 		CubeMapImage(
-			VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
+			VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			const std::vector<VkFormat>& formats = {VK_FORMAT_R32G32B32A32_SFLOAT}
 		);
 		virtual ~CubeMapImage();
 	};

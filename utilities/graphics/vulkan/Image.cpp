@@ -2,20 +2,17 @@
 
 using namespace v4d::graphics::vulkan;
 
-Image::Image(VkImageUsageFlags usage, uint32_t mipLevels, uint32_t arrayLayers, bool hasView, bool hasSampler)
+Image::Image(VkImageUsageFlags usage, uint32_t mipLevels, uint32_t arrayLayers, const std::vector<VkFormat>& preferredFormats)
 : 	usage(usage),
 	mipLevels(mipLevels),
 	arrayLayers(arrayLayers),
-	hasView(hasView),
-	hasSampler(hasSampler)
+	preferredFormats(preferredFormats)
 {
 	imageInfo.mipLevels = mipLevels;
 	imageInfo.arrayLayers = arrayLayers;
 	imageInfo.usage = usage;
-	if (hasView) {
-		viewInfo.subresourceRange.levelCount = mipLevels;
-		viewInfo.subresourceRange.layerCount = arrayLayers;
-	}
+	viewInfo.subresourceRange.levelCount = mipLevels;
+	viewInfo.subresourceRange.layerCount = arrayLayers;
 }
 
 Image::~Image() {}
@@ -30,7 +27,7 @@ void Image::SetAccessQueues(const std::vector<uint32_t>& queues) {
 	}
 }
 
-void Image::Create(Device* device, uint32_t width, uint32_t height, const std::vector<VkFormat>& formats, int additionalFormatFeatures) {
+void Image::Create(Device* device, uint32_t width, uint32_t height, const std::vector<VkFormat>& tryFormats, int additionalFormatFeatures) {
 	this->width = width;
 	this->height = height;
 	imageInfo.extent.width = width;
@@ -44,8 +41,8 @@ void Image::Create(Device* device, uint32_t width, uint32_t height, const std::v
 	if (usage & VK_IMAGE_USAGE_STORAGE_BIT) formatFeatures |= VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT;
 	if (usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) formatFeatures |= VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
 	if (usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) formatFeatures |= VK_FORMAT_FEATURE_TRANSFER_SRC_BIT;
-	
-	format = device->GetPhysicalDevice()->FindSupportedFormat(formats, imageInfo.tiling, (VkFormatFeatureFlagBits)formatFeatures);
+		
+	format = device->GetPhysicalDevice()->FindSupportedFormat(tryFormats.size() > 0 ? tryFormats : preferredFormats, imageInfo.tiling, (VkFormatFeatureFlagBits)formatFeatures);
 	imageInfo.format = format;
 	viewInfo.format = format;
 	
@@ -66,12 +63,11 @@ void Image::Create(Device* device, uint32_t width, uint32_t height, const std::v
 
 	device->BindImageMemory(image, memory, 0);
 	
-	if (hasView) {
-		viewInfo.image = image;
-		if (device->CreateImageView(&viewInfo, nullptr, &view) != VK_SUCCESS)
-			throw std::runtime_error("Failed to create image view");
-	}
-	if (hasSampler) {
+	viewInfo.image = image;
+	if (device->CreateImageView(&viewInfo, nullptr, &view) != VK_SUCCESS)
+		throw std::runtime_error("Failed to create image view");
+		
+	if (usage & VK_IMAGE_USAGE_SAMPLED_BIT) {
 		if (device->CreateSampler(&samplerInfo, nullptr, &sampler) != VK_SUCCESS)
 			throw std::runtime_error("Failed to create sampler");
 	}
@@ -96,25 +92,23 @@ void Image::Destroy(Device* device) {
 	}
 }
 		
-DepthStencilImage::DepthStencilImage(VkImageUsageFlags usage)
+DepthStencilImage::DepthStencilImage(VkImageUsageFlags usage, const std::vector<VkFormat>& formats)
 : Image(
 	usage,
 	1,
 	1,
-	true,
-	false
+	formats
 ) {
 	viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 }
 DepthStencilImage::~DepthStencilImage() {}
 
-CubeMapImage::CubeMapImage(VkImageUsageFlags usage)
+CubeMapImage::CubeMapImage(VkImageUsageFlags usage, const std::vector<VkFormat>& formats)
 : Image(
 	usage,
 	1,
 	6,
-	true,
-	true
+	formats
 ) {
 	imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 	viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
