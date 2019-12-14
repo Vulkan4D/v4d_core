@@ -1006,22 +1006,22 @@ void Renderer::Render() {
 		if (renderingDevice->EndCommandBuffer(computeDynamicCommandBuffers[imageIndex]) != VK_SUCCESS) {
 			throw std::runtime_error("Failed to record command buffer");
 		}
-		// static commands
+		// dynamic commands
 		computeSubmitInfo[0].waitSemaphoreCount = 0;
 		computeSubmitInfo[0].pWaitSemaphores = nullptr;
 		computeSubmitInfo[0].pWaitDstStageMask = nullptr;
 		computeSubmitInfo[0].commandBufferCount = 1;
-		computeSubmitInfo[0].pCommandBuffers = &computeCommandBuffers[imageIndex];
+		computeSubmitInfo[0].pCommandBuffers = &computeDynamicCommandBuffers[imageIndex];
 		computeSubmitInfo[0].signalSemaphoreCount = 1;
-		computeSubmitInfo[0].pSignalSemaphores = &computeFinishedSemaphores[currentFrameInFlight];
-		// dynamic commands
+		computeSubmitInfo[0].pSignalSemaphores = &dynamicComputeFinishedSemaphores[currentFrameInFlight];
+		// static commands
 		computeSubmitInfo[1].waitSemaphoreCount = 0;
 		computeSubmitInfo[1].pWaitSemaphores = nullptr;
 		computeSubmitInfo[1].pWaitDstStageMask = nullptr;
 		computeSubmitInfo[1].commandBufferCount = 1;
-		computeSubmitInfo[1].pCommandBuffers = &computeDynamicCommandBuffers[imageIndex];
+		computeSubmitInfo[1].pCommandBuffers = &computeCommandBuffers[imageIndex];
 		computeSubmitInfo[1].signalSemaphoreCount = 1;
-		computeSubmitInfo[1].pSignalSemaphores = &dynamicComputeFinishedSemaphores[currentFrameInFlight];
+		computeSubmitInfo[1].pSignalSemaphores = &computeFinishedSemaphores[currentFrameInFlight];
 	}
 	
 	// Submit Compute
@@ -1049,22 +1049,22 @@ void Renderer::Render() {
 		if (renderingDevice->EndCommandBuffer(graphicsDynamicCommandBuffers[imageIndex]) != VK_SUCCESS) {
 			throw std::runtime_error("Failed to record command buffer");
 		}
-		// static commands
-		graphicsSubmitInfo[0].waitSemaphoreCount = graphicsWaitSemaphores.size();
-		graphicsSubmitInfo[0].pWaitSemaphores = graphicsWaitSemaphores.data();
-		graphicsSubmitInfo[0].pWaitDstStageMask = graphicsWaitStages;
-		graphicsSubmitInfo[0].commandBufferCount = 1;
-		graphicsSubmitInfo[0].pCommandBuffers = &graphicsCommandBuffers[imageIndex];
-		graphicsSubmitInfo[0].signalSemaphoreCount = 1;
-		graphicsSubmitInfo[0].pSignalSemaphores = &renderFinishedSemaphores[currentFrameInFlight];
 		// dynamic commands
-		graphicsSubmitInfo[1].waitSemaphoreCount = 0;
-		graphicsSubmitInfo[1].pWaitSemaphores = nullptr;
-		graphicsSubmitInfo[1].pWaitDstStageMask = nullptr;
+		graphicsSubmitInfo[0].waitSemaphoreCount = 0;
+		graphicsSubmitInfo[0].pWaitSemaphores = nullptr;
+		graphicsSubmitInfo[0].pWaitDstStageMask = nullptr;
+		graphicsSubmitInfo[0].commandBufferCount = 1;
+		graphicsSubmitInfo[0].pCommandBuffers = &graphicsDynamicCommandBuffers[imageIndex];
+		graphicsSubmitInfo[0].signalSemaphoreCount = 1;
+		graphicsSubmitInfo[0].pSignalSemaphores = &dynamicRenderFinishedSemaphores[currentFrameInFlight];
+		// static commands
+		graphicsSubmitInfo[1].waitSemaphoreCount = graphicsWaitSemaphores.size();
+		graphicsSubmitInfo[1].pWaitSemaphores = graphicsWaitSemaphores.data();
+		graphicsSubmitInfo[1].pWaitDstStageMask = graphicsWaitStages;
 		graphicsSubmitInfo[1].commandBufferCount = 1;
-		graphicsSubmitInfo[1].pCommandBuffers = &graphicsDynamicCommandBuffers[imageIndex];
+		graphicsSubmitInfo[1].pCommandBuffers = &graphicsCommandBuffers[imageIndex];
 		graphicsSubmitInfo[1].signalSemaphoreCount = 1;
-		graphicsSubmitInfo[1].pSignalSemaphores = &dynamicRenderFinishedSemaphores[currentFrameInFlight];
+		graphicsSubmitInfo[1].pSignalSemaphores = &renderFinishedSemaphores[currentFrameInFlight];
 	}
 	
 	// Submit Graphics
@@ -1123,6 +1123,10 @@ void Renderer::RenderLowPriority() {
 
 	LowPriorityFrameUpdate();
 	
+	// Dynamic compute
+	auto computeCmd = BeginSingleTimeCommands(lowPriorityComputeQueue);
+	RunDynamicLowPriorityCompute(computeCmd);
+	EndSingleTimeCommands(lowPriorityComputeQueue, computeCmd);
 	{// Static Compute
 		VkSubmitInfo submitInfo = {};
 		// first 3 params specify which semaphores to wait on before execution begins and in which stage(s) of the pipeline to wait.
@@ -1153,13 +1157,12 @@ void Renderer::RenderLowPriority() {
 			throw std::runtime_error("RenderLowPriority() Failed to submit draw command buffer");
 		}
 	}
-	
-	// Dynamic compute
-	auto computeCmd = BeginSingleTimeCommands(lowPriorityComputeQueue);
-	RunDynamicLowPriorityCompute(computeCmd);
-	EndSingleTimeCommands(lowPriorityComputeQueue, computeCmd);
 	renderingDevice->QueueWaitIdle(lowPriorityComputeQueue.handle);
 	
+	// Dynamic graphics
+	auto graphicsCmd = BeginSingleTimeCommands(lowPriorityGraphicsQueue);
+	RunDynamicLowPriorityGraphics(graphicsCmd);
+	EndSingleTimeCommands(lowPriorityGraphicsQueue, graphicsCmd);
 	{// Static Graphics
 		VkSubmitInfo submitInfo = {};
 		// first 3 params specify which semaphores to wait on before execution begins and in which stage(s) of the pipeline to wait.
@@ -1190,13 +1193,7 @@ void Renderer::RenderLowPriority() {
 			throw std::runtime_error("RenderLowPriority() Failed to submit draw command buffer");
 		}
 	}
-	
-	// Dynamic graphics
 	renderingDevice->QueueWaitIdle(lowPriorityGraphicsQueue.handle);
-	auto graphicsCmd = BeginSingleTimeCommands(lowPriorityGraphicsQueue);
-	RunDynamicLowPriorityGraphics(graphicsCmd);
-	EndSingleTimeCommands(lowPriorityGraphicsQueue, graphicsCmd);
-	
 }
 
 #pragma endregion

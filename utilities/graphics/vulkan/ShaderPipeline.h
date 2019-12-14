@@ -8,10 +8,12 @@ namespace v4d::graphics::vulkan {
 		using ShaderProgram::ShaderProgram;
 		virtual ~ShaderPipeline();
 		
-		virtual void Execute(Device* device, VkCommandBuffer cmdBuffer);
+		virtual void Execute(Device* device, VkCommandBuffer cmdBuffer, void* pushConstant = nullptr, int pushConstantIndex = 0);
 		
 		virtual void CreatePipeline(Device*) = 0;
 		virtual void DestroyPipeline(Device*) = 0;
+		
+		void PushConstant(Device* device, VkCommandBuffer cmdBuffer, void* pushConstant = nullptr, int pushConstantIndex = 0);
 		
 	protected:
 		VkPipeline pipeline = VK_NULL_HANDLE;

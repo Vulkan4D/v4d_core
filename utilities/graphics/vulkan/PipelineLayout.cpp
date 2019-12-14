@@ -10,6 +10,10 @@ void PipelineLayout::AddDescriptorSet(DescriptorSet* descriptorSet) {
 	descriptorSets.push_back(descriptorSet);
 }
 
+void PipelineLayout::AddPushConstant(const VkPushConstantRange& pushConstant) {
+	pushConstants.push_back(pushConstant);
+}
+
 void PipelineLayout::Create(Device* device) {
 	for (auto* set : descriptorSets) {
 		layouts.push_back(set->GetDescriptorSetLayout());
@@ -18,14 +22,18 @@ void PipelineLayout::Create(Device* device) {
 	// Pipeline Layout
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo {};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	
+	// Descriptor sets
 	if (layouts.size() > 0) {
 		pipelineLayoutInfo.setLayoutCount = layouts.size();
 		pipelineLayoutInfo.pSetLayouts = layouts.data();
 	}
 
-	//TODO push constants
-	pipelineLayoutInfo.pushConstantRangeCount = 0;
-	pipelineLayoutInfo.pPushConstantRanges = nullptr;
+	// Push constants
+	if (pushConstants.size() > 0) {
+		pipelineLayoutInfo.pushConstantRangeCount = pushConstants.size();
+		pipelineLayoutInfo.pPushConstantRanges = pushConstants.data();
+	}
 
 	if (device->CreatePipelineLayout(&pipelineLayoutInfo, nullptr, &handle) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create pipeline layout");
@@ -51,4 +59,5 @@ void PipelineLayout::Bind(Device* device, VkCommandBuffer commandBuffer, VkPipel
 
 void PipelineLayout::Reset() {
 	descriptorSets.clear();
+	pushConstants.clear();
 }

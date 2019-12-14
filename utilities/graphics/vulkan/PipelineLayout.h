@@ -8,14 +8,19 @@ namespace v4d::graphics::vulkan {
 		std::vector<DescriptorSet*> descriptorSets {};
 		std::vector<VkDescriptorSetLayout> layouts {};
 		std::vector<VkDescriptorSet> vkDescriptorSets {};
+		std::vector<VkPushConstantRange> pushConstants {};
 		VkPipelineLayout handle = VK_NULL_HANDLE;
 
 		std::vector<VkDescriptorSetLayout>* GetDescriptorSetLayouts();
 
 		void AddDescriptorSet(DescriptorSet* descriptorSet);
 		
-		//TODO add push constants
-		//...
+		void AddPushConstant(const VkPushConstantRange&);
+		
+		template<class T>
+		void AddPushConstant(VkShaderStageFlags flags) {
+			AddPushConstant({flags, 0, sizeof(T)});
+		}
 		
 		void Create(Device* device);
 		void Destroy(Device* device);
