@@ -32,6 +32,7 @@ namespace v4d::graphics::vulkan {
 		void CreateFrameBuffers(Device* device, SwapChain*, std::vector<VkImageView>/*copy*/ attachments = {VK_NULL_HANDLE}, uint32_t layers = 1);
 		void CreateFrameBuffers(Device* device, const VkExtent2D&, const std::vector<VkImageView>& attachments, uint32_t layers = 1);
 		void CreateFrameBuffers(Device* device, const std::vector<Image*>&);
+		void CreateFrameBuffers(Device* device, Image*, int imageCount = 1);
 		void CreateFrameBuffers(Device* device, Image&);
 		void DestroyFrameBuffers(Device* device);
 		

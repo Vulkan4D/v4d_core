@@ -79,11 +79,18 @@ void RenderPass::CreateFrameBuffers(Device* device, const VkExtent2D& extent, co
 void RenderPass::CreateFrameBuffers(Device* device, const std::vector<Image*>& images) {
 	std::vector<VkImageView> attachments {};
 	for (auto* image : images) attachments.push_back(image->view);
-	CreateFrameBuffers(device, {images[0]->width, images[0]->height}, attachments, images[0]->arrayLayers);
+	CreateFrameBuffers(device, VkExtent2D{images[0]->width, images[0]->height}, attachments, images[0]->arrayLayers);
 }
 
 void RenderPass::CreateFrameBuffers(Device* device, Image& image) {
-	CreateFrameBuffers(device, {image.width, image.height}, {image.view}, image.arrayLayers);
+	CreateFrameBuffers(device, VkExtent2D{image.width, image.height}, {image.view}, image.arrayLayers);
+}
+
+void RenderPass::CreateFrameBuffers(Device* device, Image* imageArray, int imageCount) {
+	std::vector<VkImageView> attachments {};
+	for (int i = 0; i < imageCount; ++i)
+		attachments.push_back(imageArray[i].view);
+	CreateFrameBuffers(device, VkExtent2D{imageArray[0].width, imageArray[0].height}, attachments, imageArray[0].arrayLayers);
 }
 
 void RenderPass::DestroyFrameBuffers(Device* device) {
