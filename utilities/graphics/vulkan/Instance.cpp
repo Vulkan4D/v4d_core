@@ -32,6 +32,7 @@ using namespace v4d::graphics::vulkan;
 				break;
 				case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: // Message about behavior that is not necessarily an error, but very likely a bug in your application
 					LOG_WARN("VULKAN_WARNING" << type << ": " << pCallbackData->pMessage);
+					// std::abort();
 				break;
 				default:
 				case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: // Message about behavior that is invalid and may cause crashes
