@@ -13,9 +13,9 @@ target_include_directories(v4d
 	PUBLIC
 		"${CMAKE_CURRENT_SOURCE_DIR}"
 		"${PROJECT_SOURCE_DIR}/src/v4d/xvk"
+		"${PROJECT_SOURCE_DIR}/src/v4d/xvk/glm"
 	PRIVATE
 		"${PROJECT_SOURCE_DIR}/src/v4d/xvk/glfw/include"
-		"${PROJECT_SOURCE_DIR}/src/v4d/xvk/glm"
 		# "${PROJECT_SOURCE_DIR}/src/openssl/include"
 )
 target_compile_definitions(v4d

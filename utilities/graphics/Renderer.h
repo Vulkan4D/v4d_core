@@ -4,7 +4,7 @@
 namespace v4d::graphics {
 	using namespace v4d::graphics::vulkan;
 
-	class Renderer : public Instance {
+	class V4DLIB Renderer : public Instance {
 	protected: // class members
 
 		// Main Render Surface
