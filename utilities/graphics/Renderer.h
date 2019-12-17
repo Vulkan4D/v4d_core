@@ -16,34 +16,49 @@ namespace v4d::graphics {
 		
 		// Queues
 		Queue graphicsQueue, lowPriorityGraphicsQueue, 
-			computeQueue,  lowPriorityComputeQueue, 
+			#ifdef V4D_RENDERER_MAIN_COMPUTE_COMMANDS_ENABLED
+				computeQueue,  
+			#endif
+			lowPriorityComputeQueue, 
 			presentQueue,
 			transferQueue;
 
 		// Command buffers
-		std::vector<VkCommandBuffer> graphicsCommandBuffers, computeCommandBuffers, graphicsDynamicCommandBuffers, computeDynamicCommandBuffers;
-		VkCommandBuffer lowPriorityGraphicsCommandBuffer, lowPriorityComputeCommandBuffer;
+		std::vector<VkCommandBuffer> graphicsCommandBuffers, graphicsDynamicCommandBuffers;
+		#ifdef V4D_RENDERER_MAIN_COMPUTE_COMMANDS_ENABLED
+			std::vector<VkCommandBuffer> computeCommandBuffers, computeDynamicCommandBuffers;
+		#endif
+		#if V4D_RENDERER_LOW_PRIORITY_RECORDED_COMMANDS_ENABLED
+			VkCommandBuffer lowPriorityGraphicsCommandBuffer, lowPriorityComputeCommandBuffer;
+		#endif
 
 		// Swap Chains
 		SwapChain* swapChain = nullptr;
 
 		// Synchronizations
 		std::vector<VkSemaphore> imageAvailableSemaphores;
-		std::vector<VkSemaphore> renderFinishedSemaphores, dynamicRenderFinishedSemaphores;
-		std::vector<VkSemaphore> computeFinishedSemaphores, dynamicComputeFinishedSemaphores;
-		std::vector<VkFence> graphicsFences, computeFences;
+		std::vector<VkSemaphore> renderFinishedSemaphores;
+		std::vector<VkSemaphore> dynamicRenderFinishedSemaphores;
+		#ifdef V4D_RENDERER_MAIN_COMPUTE_COMMANDS_ENABLED
+			std::vector<VkSemaphore> computeFinishedSemaphores;
+			std::vector<VkSemaphore> dynamicComputeFinishedSemaphores;
+		#endif
+		std::vector<VkFence> graphicsFences;
+		std::vector<VkFence> computeFences;
 		size_t currentFrameInFlight = 0;
 		const int MAX_FRAMES_IN_FLIGHT = 2;
 		
 		// States
 		std::recursive_mutex renderingMutex, lowPriorityRenderingMutex;
+		bool mustReload = false;
+		std::thread::id renderThreadId = std::this_thread::get_id();
 		
 		// Descriptor sets
 		VkDescriptorPool descriptorPool;
 		std::vector<DescriptorSet*> descriptorSets {};
 		std::vector<VkDescriptorSet> vkDescriptorSets {};
 
-		// Preferences
+	public: // Preferences
 		std::vector<VkPresentModeKHR> preferredPresentModes {
 			// VK_PRESENT_MODE_MAILBOX_KHR,	// TripleBuffering (No Tearing, low latency)
 			// VK_PRESENT_MODE_FIFO_KHR,	// VSync ON (No Tearing, more latency)
@@ -95,14 +110,19 @@ namespace v4d::graphics {
 		virtual void LowPriorityFrameUpdate() = 0;
 		
 		// Commands
-		virtual void RecordComputeCommandBuffer(VkCommandBuffer, int imageIndex) = 0;
 		virtual void RecordGraphicsCommandBuffer(VkCommandBuffer, int imageIndex) = 0;
-		virtual void RecordLowPriorityComputeCommandBuffer(VkCommandBuffer) = 0;
-		virtual void RecordLowPriorityGraphicsCommandBuffer(VkCommandBuffer) = 0;
-		virtual void RunDynamicCompute(VkCommandBuffer) = 0;
 		virtual void RunDynamicGraphics(VkCommandBuffer) = 0;
 		virtual void RunDynamicLowPriorityCompute(VkCommandBuffer) = 0;
 		virtual void RunDynamicLowPriorityGraphics(VkCommandBuffer) = 0;
+		
+		#if V4D_RENDERER_LOW_PRIORITY_RECORDED_COMMANDS_ENABLED
+			virtual void RecordLowPriorityComputeCommandBuffer(VkCommandBuffer) {}
+			virtual void RecordLowPriorityGraphicsCommandBuffer(VkCommandBuffer) {}
+		#endif
+		#ifdef V4D_RENDERER_MAIN_COMPUTE_COMMANDS_ENABLED
+			virtual void RecordComputeCommandBuffer(VkCommandBuffer, int imageIndex) {}
+			virtual void RunDynamicCompute(VkCommandBuffer) {}
+		#endif
 
 	protected: // Virtual INIT Methods
 
@@ -195,14 +215,10 @@ private: // Graphics configuration
 	void DestroyPipelines() override {}
 	
 private: // Commands
-	void RecordComputeCommandBuffer(VkCommandBuffer, int imageIndex) override {}
 	void RecordGraphicsCommandBuffer(VkCommandBuffer commandBuffer, int imageIndex) override {}
-	void RecordLowPriorityComputeCommandBuffer(VkCommandBuffer) override {}
-	void RecordLowPriorityGraphicsCommandBuffer(VkCommandBuffer) override {}
-	void RunDynamicCompute(VkCommandBuffer) override {}
-	void RunDynamicGraphics(VkCommandBuffer) override {}
-	void RunDynamicLowPriorityCompute(VkCommandBuffer) override {}
-	void RunDynamicLowPriorityGraphics(VkCommandBuffer) override {}
+	void RunDynamicGraphics(VkCommandBuffer commandBuffer) override {}
+	void RunDynamicLowPriorityCompute(VkCommandBuffer commandBuffer) override {}
+	void RunDynamicLowPriorityGraphics(VkCommandBuffer commandBuffer) override {}
 	
 public: // Scene configuration
 	void LoadScene() override {}
