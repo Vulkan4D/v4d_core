@@ -32,6 +32,7 @@ namespace v4d::graphics::vulkan {
 		Buffer(VkBufferUsageFlags usage, VkDeviceSize size = 0, bool alignedUniformSize = false);
 		
 		void AddSrcDataPtr(void* srcDataPtr, size_t size);
+		void ResetSrcData();
 		
 		template<class T>
 		void AddSrcDataPtr(std::vector<T>* vector) {

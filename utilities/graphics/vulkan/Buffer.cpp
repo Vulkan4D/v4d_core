@@ -8,6 +8,10 @@ void Buffer::AddSrcDataPtr(void* srcDataPtr, size_t size) {
 	srcDataPointers.push_back(BufferSrcDataPtr(srcDataPtr, size));
 }
 
+void Buffer::ResetSrcData() {
+	srcDataPointers.clear();
+}
+
 void Buffer::AllocateFromStaging(Device* device, VkCommandBuffer commandBuffer, Buffer& stagingBuffer, VkDeviceSize size, VkDeviceSize offset) {
 	if (stagingBuffer.buffer == VK_NULL_HANDLE)
 		throw std::runtime_error("Staging buffer is not allocated");
@@ -74,10 +78,12 @@ void Buffer::Allocate(Device* device, VkMemoryPropertyFlags properties, bool cop
 }
 
 void Buffer::Free(Device* device) {
-	device->DestroyBuffer(buffer, nullptr);
-	device->FreeMemory(memory, nullptr);
-	buffer = VK_NULL_HANDLE;
-	data = nullptr;
+	if (buffer != VK_NULL_HANDLE) {
+		device->DestroyBuffer(buffer, nullptr);
+		device->FreeMemory(memory, nullptr);
+		buffer = VK_NULL_HANDLE;
+		data = nullptr;
+	}
 }
 
 void Buffer::MapMemory(Device* device, VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags) {
