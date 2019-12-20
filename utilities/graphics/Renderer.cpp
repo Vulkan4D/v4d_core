@@ -926,6 +926,8 @@ void Renderer::ReloadRenderer() {
 	DestroySyncObjects();
 	DestroyDevices();
 	
+	ReadShaders();
+	
 	CreateDevices();
 	CreateSyncObjects();
 	CreateSwapChain();

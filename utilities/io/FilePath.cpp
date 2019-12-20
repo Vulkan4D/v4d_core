@@ -8,8 +8,12 @@ FilePath::FilePath(const char* filePath) : filePath(filePath) {}
 
 FilePath::~FilePath() {}
 
-FilePath::operator std::string () {
+FilePath::operator std::string () const {
 	return filePath.string();
+}
+
+bool FilePath::operator==(const v4d::io::FilePath &other) const {
+	return (std::string)*this == (std::string)other;
 }
 
 FilePath& FilePath::AutoCreateFile() {
@@ -90,4 +94,3 @@ bool FilePath::DeleteDirectory(const std::string& path, bool recursive) {
 	}
 	return false;
 }
-

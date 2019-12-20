@@ -15,7 +15,9 @@ namespace v4d::io {
 
 		virtual ~FilePath();
 
-		operator std::string ();
+		operator std::string () const;
+		
+		bool operator==(const v4d::io::FilePath &other) const;
 
 		FilePath& AutoCreateFile();
 
@@ -36,5 +38,13 @@ namespace v4d::io {
 
 		static bool DeleteDirectory(const std::string& path, bool recursive = false);
 
+	};
+}
+
+namespace std {
+	template<> struct hash<v4d::io::FilePath> {
+		std::size_t operator()(const v4d::io::FilePath& s) const noexcept {
+			return std::hash<std::string>()((std::string)s);
+		}
 	};
 }
