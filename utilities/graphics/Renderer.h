@@ -51,6 +51,7 @@ namespace v4d::graphics {
 		// States
 		std::recursive_mutex renderingMutex, lowPriorityRenderingMutex;
 		bool mustReload = false;
+		bool graphicsLoadedToDevice = false;
 		std::thread::id renderThreadId = std::this_thread::get_id();
 		
 		// Descriptor sets
@@ -139,7 +140,7 @@ namespace v4d::graphics {
 		virtual void DestroyDescriptorSets();
 		virtual void UpdateDescriptorSets();
 
-		virtual void CreateSwapChain();
+		virtual bool CreateSwapChain();
 		virtual void DestroySwapChain();
 
 		virtual void CreateCommandBuffers();

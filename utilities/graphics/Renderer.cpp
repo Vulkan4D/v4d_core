@@ -285,7 +285,7 @@ void Renderer::UpdateDescriptorSets() {
 	}
 }
 
-void Renderer::CreateSwapChain() {
+bool Renderer::CreateSwapChain() {
 	std::scoped_lock lock(renderingMutex, lowPriorityRenderingMutex);
 	
 	// Put old swapchain in a temporary pointer and delete it after creating new swapchain
@@ -307,12 +307,18 @@ void Renderer::CreateSwapChain() {
 	// Set custom params
 	// swapChain->createInfo.xxxx = xxxxxx...
 	// swapChain->imageViewsCreateInfo.xxxx = xxxxxx...
+	
+	if (swapChain->extent.width == 0 || swapChain->extent.height == 0) {
+		return false;
+	}
 
 	// Create the swapchain handle and corresponding imageviews
 	swapChain->Create(oldSwapChain);
 
 	// Destroy the old swapchain
 	if (oldSwapChain != nullptr) delete oldSwapChain;
+	
+	return true;
 }
 
 void Renderer::DestroySwapChain() {
@@ -872,10 +878,14 @@ void Renderer::GenerateMipmaps(VkImage image, VkFormat imageFormat, int32_t widt
 void Renderer::RecreateSwapChains() {
 	std::scoped_lock lock(renderingMutex, lowPriorityRenderingMutex);
 	
-	UnloadGraphicsFromDevice();
+	if (graphicsLoadedToDevice)
+		UnloadGraphicsFromDevice();
 	
 	// Re-Create the SwapChain
-	CreateSwapChain();
+	if (!CreateSwapChain()) {
+		SLEEP(100ms)
+		return;
+	}
 	
 	LoadGraphicsToDevice();
 }
@@ -890,20 +900,21 @@ void Renderer::LoadRenderer() {
 	std::scoped_lock lock(renderingMutex, lowPriorityRenderingMutex);
 	
 	CreateDevices();
-	CreateSyncObjects();
-	CreateSwapChain();
-	
 	Info();
+	CreateSyncObjects();
+	if (!CreateSwapChain()) {
+		SLEEP(100ms)
+		return;
+	}
 	
 	LoadGraphicsToDevice();
-	
-	LOG_SUCCESS("Vulkan Renderer is Ready !");
 }
 
 void Renderer::UnloadRenderer() {
 	std::scoped_lock lock(renderingMutex, lowPriorityRenderingMutex);
 	
-	UnloadGraphicsFromDevice();
+	if (graphicsLoadedToDevice)
+		UnloadGraphicsFromDevice();
 	
 	DestroySwapChain();
 	DestroySyncObjects();
@@ -918,9 +929,12 @@ void Renderer::ReloadRenderer() {
 	
 	std::scoped_lock lock(renderingMutex, lowPriorityRenderingMutex);
 	
-	LOG_WARN("Reloading renderer...")
+	mustReload = false;
 	
-	UnloadGraphicsFromDevice();
+	LOG("Reloading renderer...")
+	
+	if (graphicsLoadedToDevice)
+		UnloadGraphicsFromDevice();
 	
 	DestroySwapChain();
 	DestroySyncObjects();
@@ -929,14 +943,15 @@ void Renderer::ReloadRenderer() {
 	ReadShaders();
 	
 	CreateDevices();
-	CreateSyncObjects();
-	CreateSwapChain();
-	
 	Info();
+	CreateSyncObjects();
+	
+	if (!CreateSwapChain()) {
+		SLEEP(100ms)
+		return;
+	}
 	
 	LoadGraphicsToDevice();
-	
-	LOG_SUCCESS("Vulkan Renderer is Ready !")
 }
 
 void Renderer::LoadGraphicsToDevice() {
@@ -946,6 +961,9 @@ void Renderer::LoadGraphicsToDevice() {
 	CreateDescriptorSets();
 	CreatePipelines(); // shaders are assigned here
 	CreateCommandBuffers(); // objects are rendered here
+	
+	graphicsLoadedToDevice = true;
+	LOG_SUCCESS("Vulkan Renderer is Ready !")
 }
 
 void Renderer::UnloadGraphicsFromDevice() {
@@ -958,6 +976,8 @@ void Renderer::UnloadGraphicsFromDevice() {
 	FreeBuffers();
 	DestroyResources();
 	DestroyCommandPools();
+	
+	graphicsLoadedToDevice = false;
 }
 
 #pragma endregion
@@ -981,8 +1001,12 @@ void Renderer::Render() {
 	std::lock_guard lock(renderingMutex);
 	renderThreadId = std::this_thread::get_id();
 	
+	if (!graphicsLoadedToDevice) {
+		RecreateSwapChains();
+		return;
+	}
+	
 	if (mustReload) {
-		mustReload = false;
 		ReloadRenderer();
 		return;
 	}
@@ -1000,7 +1024,7 @@ void Renderer::Render() {
 	);
 
 	// Check for errors
-	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || !graphicsLoadedToDevice) {
 		// SwapChain is out of date, for instance if the window was resized, stop here and ReCreate the swapchain.
 		RecreateSwapChains();
 		return;
@@ -1147,7 +1171,7 @@ void Renderer::Render() {
 	result = renderingDevice->QueuePresentKHR(presentQueue.handle, &presentInfo);
 
 	// Check for errors
-	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || !graphicsLoadedToDevice) {
 		// SwapChain is out of date, for instance if the window was resized, stop here and ReCreate the swapchain.
 		RecreateSwapChains();
 		return;
@@ -1162,6 +1186,7 @@ void Renderer::Render() {
 }
 
 void Renderer::RenderLowPriority() {
+	if (!graphicsLoadedToDevice) return;
 	std::lock_guard lock(lowPriorityRenderingMutex);
 
 	LowPriorityFrameUpdate();
