@@ -24,6 +24,26 @@ DescriptorBinding::~DescriptorBinding() {
 	}
 }
 
+bool DescriptorBinding::IsWriteDescriptorSetValid() const {
+	switch (pointerType) {
+		case STORAGE_BUFFER:
+		case UNIFORM_BUFFER:
+			return ((Buffer*)data)->buffer != VK_NULL_HANDLE;
+		break;
+		case IMAGE_VIEW:
+		case INPUT_ATTACHMENT:
+			return *(VkImageView*)data != VK_NULL_HANDLE;
+		break;
+		case COMBINED_IMAGE_SAMPLER:
+			return ((Image*)data)->sampler != VK_NULL_HANDLE && ((Image*)data)->view != VK_NULL_HANDLE;
+		break;
+		case ACCELERATION_STRUCTURE:
+			return *(VkAccelerationStructureNV*)data != VK_NULL_HANDLE;
+		break;
+	}
+	return false;
+}
+
 VkWriteDescriptorSet DescriptorBinding::GetWriteDescriptorSet(VkDescriptorSet descriptorSet) {
 	VkWriteDescriptorSet descriptorWrite {};
 	descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

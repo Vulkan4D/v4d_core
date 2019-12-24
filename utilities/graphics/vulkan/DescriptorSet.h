@@ -67,6 +67,7 @@ namespace v4d::graphics::vulkan {
 		~DescriptorBinding();
 		
 		VkWriteDescriptorSet GetWriteDescriptorSet(VkDescriptorSet descriptorSet);
+		bool IsWriteDescriptorSetValid() const;
 	};
 
 	class V4DLIB DescriptorSet {

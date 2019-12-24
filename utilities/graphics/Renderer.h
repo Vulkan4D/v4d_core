@@ -139,6 +139,7 @@ namespace v4d::graphics {
 		virtual void CreateDescriptorSets();
 		virtual void DestroyDescriptorSets();
 		virtual void UpdateDescriptorSets();
+		virtual void UpdateDescriptorSets(std::vector<DescriptorSet*>&&);
 
 		virtual bool CreateSwapChain();
 		virtual void DestroySwapChain();

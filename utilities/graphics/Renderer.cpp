@@ -278,7 +278,23 @@ void Renderer::UpdateDescriptorSets() {
 		std::vector<VkWriteDescriptorSet> descriptorWrites {};
 		for (auto* set : descriptorSets) {
 			for (auto&[binding, descriptor] : set->GetBindings()) {
-				descriptorWrites.push_back(descriptor.GetWriteDescriptorSet(set->descriptorSet));
+				if (descriptor.IsWriteDescriptorSetValid()) {
+					descriptorWrites.push_back(descriptor.GetWriteDescriptorSet(set->descriptorSet));
+				}
+			}
+		}
+		renderingDevice->UpdateDescriptorSets((uint)descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+	}
+}
+
+void Renderer::UpdateDescriptorSets(std::vector<DescriptorSet*>&& setsToUpdate) {
+	if (setsToUpdate.size() > 0) {
+		std::vector<VkWriteDescriptorSet> descriptorWrites {};
+		for (auto* set : setsToUpdate) {
+			for (auto&[binding, descriptor] : set->GetBindings()) {
+				if (descriptor.IsWriteDescriptorSetValid()) {
+					descriptorWrites.push_back(descriptor.GetWriteDescriptorSet(set->descriptorSet));
+				}
 			}
 		}
 		renderingDevice->UpdateDescriptorSets((uint)descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
@@ -1011,7 +1027,7 @@ void Renderer::Render() {
 		return;
 	}
 	
-	uint64_t timeout = 1000UL * 1000 * 1000 * 2; // 2 seconds
+	uint64_t timeout = 1000UL * 1000 * 1000 * 30; // 30 seconds
 
 	// Get an image from the swapchain
 	uint imageIndex;
