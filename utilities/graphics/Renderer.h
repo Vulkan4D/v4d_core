@@ -138,8 +138,6 @@ namespace v4d::graphics {
 		
 		virtual void CreateDescriptorSets();
 		virtual void DestroyDescriptorSets();
-		virtual void UpdateDescriptorSets();
-		virtual void UpdateDescriptorSets(std::vector<DescriptorSet*>&&);
 
 		virtual bool CreateSwapChain();
 		virtual void DestroySwapChain();
@@ -147,8 +145,12 @@ namespace v4d::graphics {
 		virtual void CreateCommandBuffers();
 		virtual void DestroyCommandBuffers();
 
-	protected: // Helper methods
+	public: // Sync methods
+		virtual void UpdateDescriptorSets();
+		virtual void UpdateDescriptorSets(std::vector<DescriptorSet*>&&);
 
+	public: // Helper methods
+	
 		VkCommandBuffer BeginSingleTimeCommands(Queue queue);
 		void EndSingleTimeCommands(Queue queue, VkCommandBuffer commandBuffer);
 
