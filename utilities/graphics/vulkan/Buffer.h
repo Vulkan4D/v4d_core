@@ -39,6 +39,11 @@ namespace v4d::graphics::vulkan {
 			AddSrcDataPtr(vector->data(), vector->size() * sizeof(T));
 		}
 		
+		template<class T, int S>
+		void AddSrcDataPtr(std::array<T, S>* array) {
+			AddSrcDataPtr(array->data(), S * sizeof(T));
+		}
+		
 		void AllocateFromStaging(Device* device, VkCommandBuffer commandBuffer, Buffer& stagingBuffer, VkDeviceSize size = 0, VkDeviceSize offset = 0);
 
 		void Allocate(Device* device, VkMemoryPropertyFlags properties, bool copySrcData = true);
