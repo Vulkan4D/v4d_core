@@ -157,6 +157,10 @@ namespace v4d::graphics {
 		void AllocateBufferStaged(Queue queue, Buffer& buffer);
 		void AllocateBuffersStaged(Queue queue, std::vector<Buffer>& buffers);
 		void AllocateBuffersStaged(Queue queue, std::vector<Buffer*>& buffers);
+		
+		void AllocateBufferStaged(Buffer& buffer);
+		void AllocateBuffersStaged(std::vector<Buffer>& buffers);
+		void AllocateBuffersStaged(std::vector<Buffer*>& buffers);
 
 		void TransitionImageLayout(Image image, VkImageLayout oldLayout, VkImageLayout newLayout);
 		void TransitionImageLayout(VkCommandBuffer commandBuffer, Image image, VkImageLayout oldLayout, VkImageLayout newLayout);

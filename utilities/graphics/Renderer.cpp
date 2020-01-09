@@ -603,6 +603,16 @@ void Renderer::AllocateBuffersStaged(Queue queue, std::vector<Buffer*>& buffers)
 	}
 }
 
+void Renderer::AllocateBufferStaged(Buffer& buffer) {
+	AllocateBufferStaged(transferQueue, buffer);
+}
+void Renderer::AllocateBuffersStaged(std::vector<Buffer>& buffers) {
+	AllocateBuffersStaged(transferQueue, buffers);
+}
+void Renderer::AllocateBuffersStaged(std::vector<Buffer*>& buffers) {
+	AllocateBuffersStaged(transferQueue, buffers);
+}
+
 void Renderer::TransitionImageLayout(Image image, VkImageLayout oldLayout, VkImageLayout newLayout) {
 	auto commandBuffer = BeginSingleTimeCommands(graphicsQueue);
 	TransitionImageLayout(commandBuffer, image.image, oldLayout, newLayout, image.mipLevels, image.arrayLayers);
