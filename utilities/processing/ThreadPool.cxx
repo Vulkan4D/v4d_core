@@ -6,7 +6,8 @@ namespace v4d::tests {
 
 		int result = 0;
 		{
-			v4d::processing::ThreadPool threadPool(3);
+			v4d::processing::ThreadPool threadPool;
+			threadPool.RunThreads(3);
 
 			using namespace std::literals::chrono_literals;
 
@@ -112,7 +113,8 @@ namespace v4d::tests {
 		// Second batch of tests (changing thread count at runtime)
 		{
 			timer.Reset();
-			v4d::processing::ThreadPool threadPool(1);
+			v4d::processing::ThreadPool threadPool;
+			threadPool.RunThreads(1);
 			{
 				auto t1 = threadPool.Promise([] {
 					SLEEP(100ms)
@@ -138,7 +140,7 @@ namespace v4d::tests {
 			}
 
 			timer.Reset();
-			threadPool.SetNbThreads(3);
+			threadPool.RunThreads(3);
 			{
 				auto t1 = threadPool.Promise([] {
 					SLEEP(100ms)
@@ -169,7 +171,7 @@ namespace v4d::tests {
 			}
 
 			timer.Reset();
-			threadPool.SetNbThreads(2);
+			threadPool.RunThreads(2);
 			{
 				auto t1 = threadPool.Promise([] {
 					SLEEP(100ms)

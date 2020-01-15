@@ -23,7 +23,7 @@
 		/* Instantiate V4D Core */ \
 		v4d_core v4dCore = std::make_shared<v4d::Core>(); \
 		/* Instantiate ModulesLoader */ \
-		v4dCore->modulesLoader = new v4d::io::ModulesLoader(v4dCore); \
+		v4dCore->modulesLoader = new v4d::modules::ModulesLoader(v4dCore); \
 		/* Init V4D Core or Exit on failure to init */ \
 		if (!v4dCore->Init(__VA_ARGS__)) { \
 			return -1; \

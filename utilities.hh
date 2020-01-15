@@ -3,7 +3,8 @@
 // Powerful utilities deeply integrated with V4D (Compiled into v4d.dll)
 
 #include "utilities/io/Logger.h"
-#include "utilities/io/ModulesLoader.h"
+#include "utilities/io/SharedLibraryLoader.h"
+#include "utilities/modules/ModulesLoader.h"
 
 #include "utilities/processing/ThreadPool.h"
 #include "utilities/crypto/Crypto.h"

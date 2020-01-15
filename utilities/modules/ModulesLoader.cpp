@@ -1,23 +1,29 @@
 #include <v4d.h>
 
-using namespace v4d::io;
+using namespace v4d::modules;
 
 ModuleInstance::ModuleInstance(SharedLibraryInstance* libInstance, const std::string& sysName, v4d_core_weak v4dCore) {
 	name = sysName;
 	path = libInstance->path;
 	handle = libInstance->handle;
-	loaded = __LoadModuleFunctions();
+	loaded = __V4D_LoadModuleFunctions();
 	if (loaded) {
-		moduleName = __GetModuleName();
-		moduleDescription = __GetModuleDescription();
-		moduleRevision = __GetModuleRevision();
-		__InitModule(v4dCore.lock().get());
-		if (OnLoad) OnLoad();
+		fullModuleID = __V4D_GetFullModuleID();
+		moduleName = __V4D_GetModuleName();
+		moduleDescription = __V4D_GetModuleDescription();
+		moduleRevision = __V4D_GetModuleRevision();
+		__V4D_InitModule(v4dCore.lock().get());
+		if (V4D_ModuleCreate) V4D_ModuleCreate();
+		submodules = __V4D_GetSubmodules();
+		loadedModules[fullModuleID] = this;
 	}
 }
 
 ModuleInstance::~ModuleInstance() {
-	if (loaded && OnDestroy) OnDestroy();
+	if (loaded) {
+		loadedModules[fullModuleID] = nullptr;
+		if (V4D_ModuleDestroy) V4D_ModuleDestroy();
+	}
 }
 
 ///////////////////////////////////////////////////////////
@@ -38,14 +44,14 @@ ModuleInstance* ModulesLoader::Load(const std::string& sysName) {
 			return nullptr;
 		}
 		
-		LOAD_DLL_FUNC(libInstance, std::string, __GetCoreBuildVersion)
-		if (!__GetCoreBuildVersion) {
-			LOG_ERROR("Error getting symbol pointer for __GetCoreBuildVersion. " << LOAD_DLL_ERR)
+		LOAD_DLL_FUNC(libInstance, std::string, __V4D_GetCoreBuildVersion)
+		if (!__V4D_GetCoreBuildVersion) {
+			LOG_ERROR("Error getting symbol pointer for __V4D_GetCoreBuildVersion. " << LOAD_DLL_ERR)
 			sharedLibraryLoader.Unload(libName);
 			return nullptr;
 		}
 
-		std::string moduleV4dVersion = __GetCoreBuildVersion();
+		std::string moduleV4dVersion = __V4D_GetCoreBuildVersion();
 		if (moduleV4dVersion != V4D_VERSION) {
 			LOG_ERROR("V4D Core Libs version mismatch (App:" << V4D_VERSION << " != Module:" << moduleV4dVersion << ")")
 			sharedLibraryLoader.Unload(libName);
@@ -53,7 +59,7 @@ ModuleInstance* ModulesLoader::Load(const std::string& sysName) {
 		}
 
 		ModuleInstance* moduleInstance = new ModuleInstance(libInstance, sysName, v4dCore);
-		if (!moduleInstance->loaded) {
+		if (!moduleInstance->IsLoaded()) {
 			delete moduleInstance;
 			sharedLibraryLoader.Unload(libName);
 			return nullptr;
@@ -81,3 +87,26 @@ void ModulesLoader::Reload(const std::string& sysName) {
 		Load(sysName);
 	}
 }
+
+
+bool ModuleInstance::IsLoaded() const {
+	return loaded;
+}
+
+std::vector<void*>* ModuleInstance::operator[] (uint64_t submoduleType) {
+	if (submodules) {
+		try {
+			return &submodules->at(submoduleType);
+		} catch (...) {}
+	}
+	return nullptr;
+}
+
+ModuleInstance* ModuleInstance::Get(MODULE_ID_T moduleID) {
+	try {
+		return loadedModules.at(moduleID);
+	} catch (...) {}
+	return nullptr;
+}
+
+std::unordered_map<MODULE_ID_T, ModuleInstance*> ModuleInstance::loadedModules {};

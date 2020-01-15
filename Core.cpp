@@ -104,7 +104,7 @@
 		return this->projectName;
 	}
 
-	v4d::io::ModuleInstance* v4d::Core::LoadModule(const std::string& name) {
+	v4d::modules::ModuleInstance* v4d::Core::LoadModule(const std::string& name) {
 		return modulesLoader->Load(name);
 	}
 

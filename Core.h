@@ -32,8 +32,10 @@ EXTERNC V4DLIB void V4D_SIGNAL_HANDLER(int num);
 // Some utilities prototypes
 namespace v4d::io {
 	class Logger;
+}
+namespace v4d::modules {
 	class ModulesLoader;
-	struct ModuleInstance;
+	class ModuleInstance;
 }
 
 //////////////////////////////////////////////////////////
@@ -48,12 +50,12 @@ namespace v4d {
 		bool Init();
 		bool Init(std::shared_ptr<v4d::io::Logger> coreLogger);
 		static std::shared_ptr<v4d::io::Logger> coreLogger;
-		v4d::io::ModulesLoader* modulesLoader;
+		v4d::modules::ModulesLoader* modulesLoader;
 		void Destroy();
 		~Core();
 		void SetProjectName(std::string);
 		std::string GetProjectName() const;
-		v4d::io::ModuleInstance* LoadModule(const std::string& name);
+		v4d::modules::ModuleInstance* LoadModule(const std::string& name);
 	};
 }
 

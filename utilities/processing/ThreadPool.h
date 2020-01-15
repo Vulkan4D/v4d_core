@@ -2,50 +2,159 @@
 #include <v4d.h>
 
 namespace v4d::processing {
-
-	class V4DLIB ThreadPool {
-		bool stopping;
+	
+	class ThreadPoolBase {
+	protected:
+		bool stopping = false;
 		size_t numThreads = 0;
-		std::queue<std::function<void()>> tasks{};
-		std::mutex eventMutex; // For stopping, numThreads and tasks
-
-		std::unordered_map<index_t, std::thread> threads{};
-		std::recursive_mutex threadsMutex;
-		std::condition_variable eventVar;
-
-		void StartNewThread(index_t);
-
+		std::mutex eventMutex {}; // For stopping, numThreads and tasks
+		std::unordered_map<index_t, std::thread> threads {};
+		std::recursive_mutex threadsMutex {};
+		std::condition_variable eventVar {};
+		
+		virtual void StartNewThread(index_t) = 0;
+		
 	public:
 
 		/**
-		 * ThreadPool sole constructor
-		 * @param number of threads
-		 */
-		ThreadPool(size_t numThreads);
-
-		/**
-		 * ThreadPool destructor
+		 * ThreadPoolBase destructor
 		 * Frees all threads and tasks
 		 */
-		~ThreadPool();
+		virtual ~ThreadPoolBase() {
+			std::lock_guard threadsLock(threadsMutex);
+			
+			{
+				std::lock_guard lock(eventMutex);
+				stopping = true;
+			}
+
+			eventVar.notify_all();
+
+			try {
+				for (auto& [index, thread] : threads) {
+					if (thread.joinable()) {
+						thread.join();
+					}
+				}
+			} catch (std::exception& e) {
+				LOG_ERROR("Error while joining ThreadPool threads: " << e.what())
+			} catch (...) {
+				LOG_ERROR("Unknown Error while joining ThreadPool threads")
+			}
+			std::lock_guard lock(eventMutex);
+		}
 
 		/**
 		 * Set a new number of threads
 		 * @param number of threads
 		 */
-		void SetNbThreads(size_t numThreads);
+		virtual void RunThreads(size_t numThreads) {
+			std::lock_guard threadsLock(threadsMutex);
 
+			{
+				std::lock_guard lock(eventMutex);
+				this->numThreads = numThreads;
+				while (threads.size() < numThreads) {
+					StartNewThread(threads.size());
+				}
+			}
+
+			eventVar.notify_all();
+
+			for (auto& [index, thread] : threads) {
+				if (index >= numThreads && thread.joinable()) {
+					thread.join();
+				}
+			}
+		}
+
+	};
+	
+	template<class QueuedElementType = std::function<void()>, class QueueType = std::queue<QueuedElementType, std::deque<QueuedElementType>>>
+	class ThreadPool : public ThreadPoolBase {
+	protected:
+
+		std::function<void(QueuedElementType& item)> taskRunFunction;
+		QueueType items {};
+		
+		virtual void StartNewThread(index_t index) override {
+			std::lock_guard threadsLock(threadsMutex);
+			threads.emplace(index, 
+				[this, index] {
+					while(true) {
+						try {
+							QueuedElementType item;
+							{
+								std::unique_lock lock(eventMutex);
+								eventVar.wait(lock, [this,index] {
+									return this->stopping || index >= this->numThreads || !this->items.empty();
+								});
+
+								// End thread if threadpool is destroyed
+								if (stopping) {
+									break;
+								}
+								
+								// End thread if we have reduced the number of threads in the pool
+								if (index >= this->numThreads) {
+									break;
+								}
+
+								// get the next item to execute
+								if constexpr (std::is_same_v<QueueType, std::queue<QueuedElementType>>) {
+									// std::queue
+									item = std::move(this->items.front());
+								} else {
+									// std::priority_queue
+									item = std::move(this->items.top());
+								}
+								this->items.pop();
+							}
+
+							taskRunFunction(item);
+							
+						} catch (std::exception& e) {
+							LOG_ERROR("Error in a ThreadPool task: " << e.what())
+							SLEEP(100ms)
+						} catch (...) {
+							LOG_ERROR("Unknown Error in a ThreadPool task")
+							SLEEP(100ms)
+						}
+					}
+				}
+			);
+		}
+
+	public:
+	
+		ThreadPool(
+			std::function<void(QueuedElementType& item)> perItemFunc = [](QueuedElementType& item){
+				if constexpr (std::is_same_v<QueuedElementType, std::function<void()>>) {
+					item();
+				}
+			}
+		) : taskRunFunction(perItemFunc) {}
+		
 		/**
-		 * Enqueue a task that will eventually be executed by one of the threads of the pool
-		 * @Param task that returns no value
+		 * Set the function to run for each item in the queue
+		 * @Param function that returns no value
 		 */
-		void Enqueue(std::function<void()> task) {
+		void SetRunFunction(std::function<void(QueuedElementType& item)>&& func) {
+			std::lock_guard lock(eventMutex);
+			taskRunFunction = std::forward<std::function<void(QueuedElementType& item)>>(func);
+		}
+		
+		/**
+		 * Enqueue a task/item that will eventually be executed by one of the threads of the pool
+		 * @Param task/item that returns no value
+		 */
+		void Enqueue(QueuedElementType item) {
 			{
 				std::lock_guard lock(eventMutex);
 				if (stopping) {
 					return;
 				}
-				tasks.emplace(task);
+				items.emplace(item);
 			}
 			eventVar.notify_all();
 		}
@@ -95,5 +204,21 @@ namespace v4d::processing {
 			return f;
 		}
 
+	};
+	
+	#define THREADPOOL_PRIORITYQUEUE_TYPE std::priority_queue<QueuedElementType, std::vector<QueuedElementType>, std::function<bool(QueuedElementType& a, QueuedElementType& b)>>
+	#define THREADPOOL_PRIORITYQUEUE_TEMPLATE ThreadPool<QueuedElementType, THREADPOOL_PRIORITYQUEUE_TYPE>
+
+	template<class QueuedElementType>
+	class ThreadPoolPriorityQueue : public THREADPOOL_PRIORITYQUEUE_TEMPLATE {
+	public:
+	
+		ThreadPoolPriorityQueue(
+			std::function<void(QueuedElementType& item)> perItemFunc, 
+			std::function<bool(QueuedElementType& a, QueuedElementType& b)> queueParam
+		) : THREADPOOL_PRIORITYQUEUE_TEMPLATE(perItemFunc) {
+			THREADPOOL_PRIORITYQUEUE_TEMPLATE::items = THREADPOOL_PRIORITYQUEUE_TYPE{queueParam};
+		}
+		
 	};
 }
