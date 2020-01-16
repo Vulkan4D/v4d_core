@@ -12,6 +12,9 @@ namespace v4d::graphics::vulkan {
 		Buffer* vertexBuffer = nullptr;
 		Buffer* indexBuffer = nullptr;
 		uint32_t vertexCount = 0;
+		VkDeviceSize vertexOffset = 0;
+		uint32_t indexCount = 0;
+		VkDeviceSize indexOffset = 0;
 		
 		// Graphics Pipeline information
 		VkPipelineRasterizationStateCreateInfo rasterizer {VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
@@ -68,8 +71,10 @@ namespace v4d::graphics::vulkan {
 		RasterShaderPipeline(PipelineLayout& pipelineLayout, const std::vector<ShaderInfo>& shaderInfo);
 		virtual ~RasterShaderPipeline();
 		
-		void SetData(Buffer* vertexBuffer, Buffer* indexBuffer);
+		void SetData(Buffer* vertexBuffer, Buffer* indexBuffer, uint32_t indexCount = 0);
+		void SetData(Buffer* vertexBuffer, VkDeviceSize vertexOffset, Buffer* indexBuffer, VkDeviceSize indexOffset, uint32_t indexCount);
 		void SetData(Buffer* vertexBuffer, uint32_t vertexCount);
+		void SetData(Buffer* vertexBuffer, VkDeviceSize vertexOffset, uint32_t vertexCount);
 		void SetData(uint32_t vertexCount);
 
 		virtual void CreatePipeline(Device* device) override;
@@ -92,7 +97,7 @@ namespace v4d::graphics::vulkan {
 		
 	protected:
 		virtual void Bind(Device* device, VkCommandBuffer cmdBuffer) override;
-		virtual void Render(Device* device, VkCommandBuffer cmdBuffer) override;
+		virtual void Render(Device* device, VkCommandBuffer cmdBuffer, uint32_t instanceCount = 1) override;
 	};
 	
 }

@@ -49,8 +49,10 @@ namespace v4d::processing {
 		 * @param number of threads
 		 */
 		virtual void RunThreads(size_t numThreads) {
+			if (numThreads == this->numThreads) return;
+			
 			std::lock_guard threadsLock(threadsMutex);
-
+			
 			{
 				std::lock_guard lock(eventMutex);
 				this->numThreads = numThreads;

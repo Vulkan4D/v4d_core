@@ -17,7 +17,7 @@ namespace v4d::graphics::vulkan {
 		
 	protected:
 		virtual void Bind(Device* device, VkCommandBuffer cmdBuffer) override;
-		virtual void Render(Device* device, VkCommandBuffer cmdBuffer) override;
+		virtual void Render(Device* device, VkCommandBuffer cmdBuffer, uint32_t _unused_arg_ = 0) override;
 	};
 	
 }

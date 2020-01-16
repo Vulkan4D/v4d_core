@@ -8,6 +8,7 @@ namespace v4d::graphics::vulkan {
 		using ShaderProgram::ShaderProgram;
 		virtual ~ShaderPipeline();
 		
+		virtual void Execute(Device* device, VkCommandBuffer cmdBuffer, uint32_t instanceCount, void* pushConstant = nullptr, int pushConstantIndex = 0);
 		virtual void Execute(Device* device, VkCommandBuffer cmdBuffer, void* pushConstant = nullptr, int pushConstantIndex = 0);
 		
 		virtual void CreatePipeline(Device*) = 0;
@@ -20,7 +21,7 @@ namespace v4d::graphics::vulkan {
 		
 		// pure virtual methods
 		virtual void Bind(Device*, VkCommandBuffer) = 0;
-		virtual void Render(Device*, VkCommandBuffer) = 0;
+		virtual void Render(Device*, VkCommandBuffer, uint32_t instanceCount) = 0;
 	};
 	
 }

@@ -19,20 +19,12 @@ namespace v4d::modules {
 	using namespace v4d::io;
 	
 	typedef uint64_t MODULE_ID_T;
-	
-	const uint64_t SUBMODULE_TYPE_MISC			= 0x00000000LL << 32;
-	const uint64_t SUBMODULE_TYPE_CORE			= 0x00000001LL << 32;
-	const uint64_t SUBMODULE_TYPE_PROCESSING	= 0x00000002LL << 32;
-	const uint64_t SUBMODULE_TYPE_NETWORKING	= 0x00000004LL << 32;
-	const uint64_t SUBMODULE_TYPE_GRAPHICS		= 0x00000008LL << 32;
-	const uint64_t SUBMODULE_TYPE_AUDIO			= 0x00000010LL << 32;
-	const uint64_t SUBMODULE_TYPE_DATA			= 0x00000020LL << 32;
-	const uint64_t SUBMODULE_TYPE_TEST			= 0x00000040LL << 32;
+	typedef uint64_t SUBMODULE_TYPE_T;
+	typedef std::unordered_map<MODULE_ID_T, ModuleInstance*> V4DModules;
+	typedef std::unordered_map<SUBMODULE_TYPE_T, std::vector<void*>> V4DSubmodules;
 	
 	class V4DLIB ModuleInstance {
 	public:
-		typedef std::unordered_map<uint64_t, std::vector<void*>> V4DSubmodules;
-		
 		DLL_FILE_HANDLER handle;
 		
 	protected:
@@ -46,7 +38,7 @@ namespace v4d::modules {
 		
 		V4DSubmodules* submodules = nullptr;
 		
-		static std::unordered_map<MODULE_ID_T, ModuleInstance*> loadedModules;
+		static V4DModules loadedModules;
 		
 	public:
 		// Module Metadata
@@ -88,9 +80,20 @@ namespace v4d::modules {
 		virtual ~ModuleInstance();
 		
 		bool IsLoaded() const;
-		virtual std::vector<void*>* operator[] (MODULE_ID_T submoduleID);
+		virtual std::vector<void*>& GetSubmodules (SUBMODULE_TYPE_T submoduleType);
+		
+		template<class SubmoduleType>
+		int ForEachSubmodule (std::function<void(SubmoduleType*)>&& func) {
+			int n = 0;
+			for (void* submodule : GetSubmodules(SubmoduleType::TYPE())) {
+				func((SubmoduleType*)submodule);
+				++n;
+			}
+			return n;
+		}
 		
 		static ModuleInstance* Get(MODULE_ID_T moduleID);
+		static V4DModules& GetLoadedModules();
 	};
 
 	class V4DLIB ModulesLoader {

@@ -93,13 +93,14 @@ bool ModuleInstance::IsLoaded() const {
 	return loaded;
 }
 
-std::vector<void*>* ModuleInstance::operator[] (uint64_t submoduleType) {
+std::vector<void*>& ModuleInstance::GetSubmodules (SUBMODULE_TYPE_T submoduleType) {
+	static std::vector<void*> emptyResult {}; //TODO find a better/safer way to do this
 	if (submodules) {
 		try {
-			return &submodules->at(submoduleType);
+			return submodules->at(submoduleType);
 		} catch (...) {}
 	}
-	return nullptr;
+	return emptyResult;
 }
 
 ModuleInstance* ModuleInstance::Get(MODULE_ID_T moduleID) {
@@ -107,6 +108,10 @@ ModuleInstance* ModuleInstance::Get(MODULE_ID_T moduleID) {
 		return loadedModules.at(moduleID);
 	} catch (...) {}
 	return nullptr;
+}
+
+V4DModules& ModuleInstance::GetLoadedModules() {
+	return loadedModules;
 }
 
 std::unordered_map<MODULE_ID_T, ModuleInstance*> ModuleInstance::loadedModules {};

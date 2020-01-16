@@ -41,6 +41,6 @@ void ComputeShaderPipeline::Bind(Device* device, VkCommandBuffer cmdBuffer) {
 	device->CmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, GetPipelineLayout()->handle, 0, GetPipelineLayout()->vkDescriptorSets.size(), GetPipelineLayout()->vkDescriptorSets.data(), 0, nullptr);
 }
 
-void ComputeShaderPipeline::Render(Device* device, VkCommandBuffer cmdBuffer) {
+void ComputeShaderPipeline::Render(Device* device, VkCommandBuffer cmdBuffer, uint32_t _unused_arg_) {
 	device->CmdDispatch(cmdBuffer, groupCountX, groupCountY, groupCountZ);
 }
