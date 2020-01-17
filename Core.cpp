@@ -107,5 +107,9 @@
 	v4d::modules::ModuleInstance* v4d::Core::LoadModule(const std::string& name) {
 		return modulesLoader->Load(name);
 	}
+	
+	void v4d::Core::UnloadModule(const std::string& name) {
+		modulesLoader->Unload(name);
+	}
 
 #endif

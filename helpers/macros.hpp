@@ -121,3 +121,23 @@
 #define __FOR_EACH(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,_16,_17,_18,_19,_20,_21,_22,_23,_24,name,...) name 
 #define FOR_EACH(_MACRO,...) __FOR_EACH(__VA_ARGS__,__FE_24,__FE_23,__FE_22,__FE_21,__FE_20,__FE_19,__FE_18,__FE_17,__FE_16,__FE_15,__FE_14,__FE_13,__FE_12,__FE_11,__FE_10,__FE_9,__FE_8,__FE_7,__FE_6,__FE_5,__FE_4,__FE_3,__FE_2,__FE_1)(_MACRO,__VA_ARGS__)
 
+
+//////////////////////////////////////////////////////////
+// CPU Affinity
+
+#ifdef _WINDOWS
+	#define SET_CPU_AFFINITY(n) {\
+		HANDLE process = GetCurrentProcess();\
+		DWORD_PTR processAffinityMask = 1 << n;\
+		if (!SetProcessAffinityMask(process, processAffinityMask)) LOG_ERROR("Error calling SetProcessAffinityMask");\
+	}
+#else
+	#define SET_CPU_AFFINITY(n) {\
+		cpu_set_t cpuset;\
+		CPU_ZERO(&cpuset);\
+		CPU_SET(std::min((int)std::thread::hardware_concurrency()-1, n), &cpuset);\
+		int rc = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);\
+		if (rc != 0) LOG_ERROR("Error calling pthread_setaffinity_np: " << rc)\
+		}
+#endif
+

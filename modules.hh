@@ -4,22 +4,41 @@ namespace v4d::modules {
 	
 	// SubModule categories/types
 	const SUBMODULE_TYPE_T SUBMODULE_TYPE_UNSUPPORTED	= 0x00000000LL << 32;
-	const SUBMODULE_TYPE_T SUBMODULE_TYPE_MISC			= 0x00000001LL << 32;
-	const SUBMODULE_TYPE_T SUBMODULE_TYPE_CORE			= 0x00000002LL << 32;
-	const SUBMODULE_TYPE_T SUBMODULE_TYPE_PROCESSING	= 0x00000004LL << 32;
-	const SUBMODULE_TYPE_T SUBMODULE_TYPE_NETWORKING	= 0x00000008LL << 32;
+	// const SUBMODULE_TYPE_T SUBMODULE_TYPE_MISC			= 0x00000001LL << 32;
+	// const SUBMODULE_TYPE_T SUBMODULE_TYPE_CORE			= 0x00000002LL << 32;
+	// const SUBMODULE_TYPE_T SUBMODULE_TYPE_PROCESSING	= 0x00000004LL << 32;
+	// const SUBMODULE_TYPE_T SUBMODULE_TYPE_NETWORKING	= 0x00000008LL << 32;
 	const SUBMODULE_TYPE_T SUBMODULE_TYPE_GRAPHICS		= 0x00000010LL << 32;
-	const SUBMODULE_TYPE_T SUBMODULE_TYPE_AUDIO			= 0x00000020LL << 32;
-	const SUBMODULE_TYPE_T SUBMODULE_TYPE_DATA			= 0x00000040LL << 32;
+	// const SUBMODULE_TYPE_T SUBMODULE_TYPE_AUDIO			= 0x00000020LL << 32;
+	// const SUBMODULE_TYPE_T SUBMODULE_TYPE_DATA			= 0x00000040LL << 32;
 	const SUBMODULE_TYPE_T SUBMODULE_TYPE_TEST			= 0x00000080LL << 32;
+	const SUBMODULE_TYPE_T SUBMODULE_TYPE_INPUT			= 0x00000100LL << 32;
+	// const SUBMODULE_TYPE_T SUBMODULE_TYPE_WINDOW		= 0x00000200LL << 32;
+	// const SUBMODULE_TYPE_T SUBMODULE_TYPE_PHYSICS		= 0x00000400LL << 32;
+	// const SUBMODULE_TYPE_T SUBMODULE_TYPE_IO			= 0x00000800LL << 32;
+	// const SUBMODULE_TYPE_T SUBMODULE_TYPE_LAUNCHER		= 0x00001000LL << 32;
 
 }
 
 #define V4D_DEFINE_SUBMODULE(submodule) friend ModuleInstance; inline static SUBMODULE_TYPE_T TYPE() {return submodule;}
 
+// Base Submodule Classes
 #include "submodules/Test.hpp"
 #include "submodules/Rendering.hpp"
+#include "submodules/Input.hpp"
 
+namespace v4d::modules {
+	template<class SubmoduleType>
+	std::vector<SubmoduleType*> GetSubmodules() {
+		std::vector<SubmoduleType*> submodules {};
+		for (auto[id, module] : v4d::modules::ModuleInstance::GetLoadedModules()) {
+			for (void* submodule : module->GetSubmodules(SubmoduleType::TYPE())) {
+				submodules.push_back((SubmoduleType*)submodule);
+			}
+		}
+		return submodules;
+	}
+}
 
 #ifdef _V4D_MODULE
 

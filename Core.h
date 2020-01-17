@@ -56,6 +56,7 @@ namespace v4d {
 		void SetProjectName(std::string);
 		std::string GetProjectName() const;
 		v4d::modules::ModuleInstance* LoadModule(const std::string& name);
+		void UnloadModule(const std::string& name);
 	};
 }
 

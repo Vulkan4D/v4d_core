@@ -72,7 +72,7 @@ namespace v4d::modules {
 		virtual void RunDynamicLowPriorityGraphics(VkCommandBuffer) {}
 		
 		// Executed before each frame
-		virtual void FrameUpdate(uint imageIndex) {}
+		virtual void FrameUpdate(uint imageIndex, glm::dmat4& projection, glm::dmat4& view) {}
 		virtual void LowPriorityFrameUpdate() {}
 		
 	};
