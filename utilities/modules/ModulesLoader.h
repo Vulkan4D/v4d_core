@@ -20,8 +20,8 @@ namespace v4d::modules {
 	
 	typedef uint64_t MODULE_ID_T;
 	typedef uint64_t SUBMODULE_TYPE_T;
-	typedef std::unordered_map<MODULE_ID_T, ModuleInstance*> V4DModules;
-	typedef std::unordered_map<SUBMODULE_TYPE_T, std::vector<void*>> V4DSubmodules;
+	typedef std::map<MODULE_ID_T, ModuleInstance*> V4DModules;
+	typedef std::map<SUBMODULE_TYPE_T, std::vector<void*>> V4DSubmodules;
 	
 	class V4DLIB ModuleInstance {
 	public:

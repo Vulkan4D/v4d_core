@@ -44,6 +44,8 @@ namespace v4d::modules {
 		
 	public: // Methods that are typically overridden, in the correct execution order
 	
+		virtual int OrderIndex() const {return 1000;}
+	
 		// Executed when calling InitRenderer() on the main Renderer
 		virtual void Init() {}
 		virtual void InitLayouts(std::vector<DescriptorSet*>&) {}

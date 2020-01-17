@@ -114,4 +114,4 @@ V4DModules& ModuleInstance::GetLoadedModules() {
 	return loadedModules;
 }
 
-std::unordered_map<MODULE_ID_T, ModuleInstance*> ModuleInstance::loadedModules {};
+V4DModules ModuleInstance::loadedModules {};
