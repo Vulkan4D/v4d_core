@@ -513,48 +513,11 @@ void Renderer::DestroyCommandBuffers() {
 #pragma region Helper methods
 
 VkCommandBuffer Renderer::BeginSingleTimeCommands(Queue queue) {
-	VkCommandBufferAllocateInfo allocInfo = {};
-	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandPool = queue.commandPool;
-	allocInfo.commandBufferCount = 1;
-
-	VkCommandBuffer commandBuffer;
-	renderingDevice->AllocateCommandBuffers(&allocInfo, &commandBuffer);
-
-	VkCommandBufferBeginInfo beginInfo = {};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-	renderingDevice->BeginCommandBuffer(commandBuffer, &beginInfo);
-
-	return commandBuffer;
+	return renderingDevice->BeginSingleTimeCommands(queue);
 }
 
 void Renderer::EndSingleTimeCommands(Queue queue, VkCommandBuffer commandBuffer) {
-	renderingDevice->EndCommandBuffer(commandBuffer);
-
-	VkSubmitInfo submitInfo = {};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffer;
-
-	VkFenceCreateInfo fenceInfo {};
-	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	fenceInfo.flags = 0;
-	VkFence fence;
-	if (renderingDevice->CreateFence(&fenceInfo, nullptr, &fence) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create fence");
-
-	if (renderingDevice->QueueSubmit(queue.handle, 1, &submitInfo, fence) != VK_SUCCESS)
-		throw std::runtime_error("Failed to submit queue");
-
-	if (renderingDevice->WaitForFences(1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max() /* nanoseconds */))
-		throw std::runtime_error("Failed to wait for fence to signal");
-
-	renderingDevice->DestroyFence(fence, nullptr);
-	
-	renderingDevice->FreeCommandBuffers(queue.commandPool, 1, &commandBuffer);
+	renderingDevice->EndSingleTimeCommands(queue, commandBuffer);
 }
 
 void Renderer::AllocateBufferStaged(Queue queue, Buffer& buffer) {

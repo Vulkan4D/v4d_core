@@ -86,5 +86,8 @@ namespace v4d::graphics::vulkan {
 		// Helpers
 		size_t GetAlignedUniformSize(size_t size);
 
+		VkCommandBuffer BeginSingleTimeCommands(Queue queue);
+		void EndSingleTimeCommands(Queue queue, VkCommandBuffer commandBuffer);
+		
 	};
 }

@@ -62,4 +62,95 @@ namespace v4d::graphics::vulkan {
 		static void Copy(Device* device, VkCommandBuffer commandBuffer, Buffer srcBuffer, Buffer dstBuffer, VkDeviceSize size = 0, VkDeviceSize srcOffset = 0, VkDeviceSize dstOffset = 0);
 
 	};
+	
+	struct BufferPoolAllocation {
+		int bufferIndex;
+		int allocationIndex;
+		int bufferOffset;
+	};
+	
+	template<VkBufferUsageFlags usage, size_t size, int n = 1>
+	class DeviceLocalBufferPool {
+		struct MultiBuffer {
+			Buffer buffer {VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage, size * n};
+			std::array<bool, n> allocations {false};
+		};
+		std::vector<MultiBuffer> buffers {};
+		Buffer stagingBuffer {VK_BUFFER_USAGE_TRANSFER_SRC_BIT, size};
+		bool stagingBufferAllocated = false;
+		void AllocateStagingBuffer(Device* device) {
+			if (!stagingBufferAllocated) {
+				stagingBufferAllocated = true;
+				stagingBuffer.Allocate(device, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, false);
+				stagingBuffer.MapMemory(device);
+			}
+		}
+		void FreeStagingBuffer(Device* device) {
+			if (stagingBufferAllocated) {
+				stagingBufferAllocated = false;
+				stagingBuffer.UnmapMemory(device);
+				stagingBuffer.Free(device);
+			}
+		}
+	public:
+
+		Buffer* operator[](int bufferIndex) {
+			if (bufferIndex > buffers.size() - 1) return nullptr;
+			return &buffers[bufferIndex].buffer;
+		}
+		
+		BufferPoolAllocation Allocate(Device* device, Queue* queue, void* data) {
+			int bufferIndex = 0;
+			int allocationIndex = 0;
+			for (auto& multiBuffer : buffers) {
+				for (bool& offsetUsed : multiBuffer.allocations) {
+					if (!offsetUsed) {
+						offsetUsed = true;
+						goto CopyData;
+					}
+					++allocationIndex;
+				}
+				++bufferIndex;
+				allocationIndex = 0;
+			}
+			goto AllocateNewBuffer;
+			
+			AllocateNewBuffer: {
+				auto& multiBuffer = buffers.emplace_back();
+				auto cmdBuffer = device->BeginSingleTimeCommands(*queue);
+				AllocateStagingBuffer(device);
+				stagingBuffer.WriteToMappedData(device, data);
+				multiBuffer.buffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, false);
+				Buffer::Copy(device, cmdBuffer, stagingBuffer.buffer, multiBuffer.buffer.buffer, size, 0, allocationIndex * size);
+				device->EndSingleTimeCommands(*queue, cmdBuffer);
+				multiBuffer.allocations[allocationIndex] = true;
+				goto Return;
+			}
+			
+			CopyData: {
+				auto& multiBuffer = buffers[bufferIndex];
+				auto cmdBuffer = device->BeginSingleTimeCommands(*queue);
+				AllocateStagingBuffer(device);
+				stagingBuffer.WriteToMappedData(device, data);
+				Buffer::Copy(device, cmdBuffer, stagingBuffer.buffer, multiBuffer.buffer.buffer, size, 0, allocationIndex * size);
+				device->EndSingleTimeCommands(*queue, cmdBuffer);
+			}
+			
+			Return: return {bufferIndex, allocationIndex, (int)(allocationIndex * size)};
+		}
+		
+		void Free(BufferPoolAllocation allocation) {
+			buffers[allocation.bufferIndex].allocations[allocation.allocationIndex] = false;
+		}
+		
+		void FreePool(Device* device) {
+			FreeStagingBuffer(device);
+			for (auto& bufferAllocation : buffers) {
+				bufferAllocation.buffer.Free(device);
+			}
+			buffers.clear();
+		}
+		
+	};
+
 }

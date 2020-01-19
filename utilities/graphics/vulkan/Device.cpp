@@ -241,3 +241,48 @@ size_t Device::GetAlignedUniformSize(size_t size) {
 	if (alignedSize % alignment) alignedSize += alignment - (alignedSize % alignment);
 	return alignedSize;
 }
+
+VkCommandBuffer Device::BeginSingleTimeCommands(Queue queue) {
+	VkCommandBufferAllocateInfo allocInfo = {};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandPool = queue.commandPool;
+	allocInfo.commandBufferCount = 1;
+
+	VkCommandBuffer commandBuffer;
+	AllocateCommandBuffers(&allocInfo, &commandBuffer);
+
+	VkCommandBufferBeginInfo beginInfo = {};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	BeginCommandBuffer(commandBuffer, &beginInfo);
+
+	return commandBuffer;
+}
+
+void Device::EndSingleTimeCommands(Queue queue, VkCommandBuffer commandBuffer) {
+	EndCommandBuffer(commandBuffer);
+
+	VkSubmitInfo submitInfo = {};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+
+	VkFenceCreateInfo fenceInfo {};
+	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceInfo.flags = 0;
+	VkFence fence;
+	if (CreateFence(&fenceInfo, nullptr, &fence) != VK_SUCCESS)
+		throw std::runtime_error("Failed to create fence");
+
+	if (QueueSubmit(queue.handle, 1, &submitInfo, fence) != VK_SUCCESS)
+		throw std::runtime_error("Failed to submit queue");
+
+	if (WaitForFences(1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max() /* nanoseconds */))
+		throw std::runtime_error("Failed to wait for fence to signal");
+
+	DestroyFence(fence, nullptr);
+	
+	FreeCommandBuffers(queue.commandPool, 1, &commandBuffer);
+}
