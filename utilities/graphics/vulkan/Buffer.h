@@ -18,6 +18,7 @@ namespace v4d::graphics::vulkan {
 		
 		// Additional fields
 		VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 		
 		// Allocated handles
 		VkBuffer buffer = VK_NULL_HANDLE;
@@ -52,6 +53,8 @@ namespace v4d::graphics::vulkan {
 		void MapMemory(Device* device, VkDeviceSize offset = 0, VkDeviceSize size = 0, VkMemoryMapFlags flags = 0);
 		void UnmapMemory(Device* device);
 		
+		void CopySrcData(Device* device);
+		
 		void WriteToMappedData(Device* device, void* inputData, size_t copySize = 0);
 		void ReadFromMappedData(Device* device, void* outputData, size_t copySize = 0);
 		
@@ -59,8 +62,33 @@ namespace v4d::graphics::vulkan {
 		// static void CopyDataToMappedBuffer(Device* device, void* inputData, Buffer* buffer, long mappedOffset = 0, size_t size = 0);
 		
 		static void Copy(Device* device, VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkDeviceSize srcOffset = 0, VkDeviceSize dstOffset = 0);
-		static void Copy(Device* device, VkCommandBuffer commandBuffer, Buffer srcBuffer, Buffer dstBuffer, VkDeviceSize size = 0, VkDeviceSize srcOffset = 0, VkDeviceSize dstOffset = 0);
+		static void Copy(Device* device, VkCommandBuffer commandBuffer, Buffer& srcBuffer, Buffer& dstBuffer, VkDeviceSize size = 0, VkDeviceSize srcOffset = 0, VkDeviceSize dstOffset = 0);
 
+	};
+	
+	struct V4DLIB StagedBuffer {
+		Buffer stagingBuffer;
+		Buffer deviceLocalBuffer;
+		
+		StagedBuffer(VkBufferUsageFlags usage, VkDeviceSize size = 0, bool alignedUniformSize = false);
+		 
+		void AddSrcDataPtr(void* srcDataPtr, size_t size);
+		void ResetSrcData();
+		
+		template<class T>
+		void AddSrcDataPtr(std::vector<T>* vector) {
+			AddSrcDataPtr(vector->data(), vector->size() * sizeof(T));
+		}
+		
+		template<class T, int S>
+		void AddSrcDataPtr(std::array<T, S>* array) {
+			AddSrcDataPtr(array->data(), S * sizeof(T));
+		}
+		
+		void Allocate(Device* device, VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		void Free(Device* device);
+		
+		void Update(Device* device, VkCommandBuffer commandBuffer);
 	};
 	
 	struct BufferPoolAllocation {

@@ -54,5 +54,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/hash.hpp>
 
+// Generic Graphics Objects
+#include "utilities/graphics/generic/Scene.hpp"
+
 // V4D Renderer
 //...

@@ -23,6 +23,7 @@ void Buffer::AllocateFromStaging(Device* device, VkCommandBuffer commandBuffer, 
 }
 
 void Buffer::Allocate(Device* device, VkMemoryPropertyFlags properties, bool copySrcData) {
+	this->properties = properties;
 	if (size == 0) {
 		for (auto& dataPointer : srcDataPointers) {
 			size += dataPointer.size;
@@ -57,24 +58,29 @@ void Buffer::Allocate(Device* device, VkMemoryPropertyFlags properties, bool cop
 	}
 	
 	if (copySrcData && srcDataPointers.size() > 0) {
-		MapMemory(device);
-		long offset = 0;
-		for (auto& dataPointer : srcDataPointers) {
-			memcpy((byte*)data + offset, dataPointer.dataPtr, dataPointer.size);
-			offset += dataPointer.size;
-		}
-		if ((properties & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {
-			VkMappedMemoryRange mappedRange {};
-			mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-			mappedRange.memory = memory;
-			mappedRange.offset = 0;
-			mappedRange.size = size;
-			device->FlushMappedMemoryRanges(1, &mappedRange);
-		}
-		UnmapMemory(device);
+		CopySrcData(device);
 	}
 
 	device->BindBufferMemory(buffer, memory, 0);
+}
+
+void Buffer::CopySrcData(Device* device) {
+	bool autoMapMemory = !data;
+	if (autoMapMemory) MapMemory(device);
+	long offset = 0;
+	for (auto& dataPointer : srcDataPointers) {
+		memcpy((byte*)data + offset, dataPointer.dataPtr, dataPointer.size);
+		offset += dataPointer.size;
+	}
+	if ((properties & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {
+		VkMappedMemoryRange mappedRange {};
+		mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+		mappedRange.memory = memory;
+		mappedRange.offset = 0;
+		mappedRange.size = size;
+		device->FlushMappedMemoryRanges(1, &mappedRange);
+	}
+	if (autoMapMemory) UnmapMemory(device);
 }
 
 void Buffer::Free(Device* device) {
@@ -122,7 +128,7 @@ void Buffer::Copy(Device* device, VkCommandBuffer commandBuffer, VkBuffer srcBuf
 	device->CmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 }
 
-void Buffer::Copy(Device* device, VkCommandBuffer commandBuffer, Buffer srcBuffer, Buffer dstBuffer, VkDeviceSize size, VkDeviceSize srcOffset, VkDeviceSize dstOffset) {
+void Buffer::Copy(Device* device, VkCommandBuffer commandBuffer, Buffer& srcBuffer, Buffer& dstBuffer, VkDeviceSize size, VkDeviceSize srcOffset, VkDeviceSize dstOffset) {
 	VkBufferCopy copyRegion = {};
 	copyRegion.srcOffset = srcOffset;
 	copyRegion.dstOffset = dstOffset;
@@ -131,3 +137,34 @@ void Buffer::Copy(Device* device, VkCommandBuffer commandBuffer, Buffer srcBuffe
 }
 
 BufferSrcDataPtr::BufferSrcDataPtr(void* dataPtr, size_t size) : dataPtr(dataPtr), size(size) {}
+
+
+// struct StagedBuffer
+
+StagedBuffer::StagedBuffer(VkBufferUsageFlags usage, VkDeviceSize size, bool alignedUniformSize)
+: stagingBuffer({usage | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, size, alignedUniformSize}), deviceLocalBuffer({usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT, size, alignedUniformSize}) {}
+
+void StagedBuffer::AddSrcDataPtr(void* srcDataPtr, size_t size) {
+	stagingBuffer.AddSrcDataPtr(srcDataPtr, size);
+}
+
+void StagedBuffer::ResetSrcData() {
+	stagingBuffer.ResetSrcData();
+}
+
+void StagedBuffer::Allocate(Device* device, VkMemoryPropertyFlags properties) {
+	stagingBuffer.Allocate(device, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, false);
+	stagingBuffer.MapMemory(device);
+	deviceLocalBuffer.Allocate(device, properties, false);
+}
+
+void StagedBuffer::Free(Device* device) {
+	stagingBuffer.UnmapMemory(device);
+	stagingBuffer.Free(device);
+	deviceLocalBuffer.Free(device);
+}
+
+void StagedBuffer::Update(Device* device, VkCommandBuffer commandBuffer) {
+	stagingBuffer.CopySrcData(device);
+	Buffer::Copy(device, commandBuffer, stagingBuffer, deviceLocalBuffer);
+}

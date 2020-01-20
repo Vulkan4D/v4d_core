@@ -53,8 +53,8 @@ namespace v4d::modules {
 		
 		// Executed when calling their respective methods on the main Renderer
 		virtual void ReadShaders() {}
-		virtual void LoadScene() {}
-		virtual void UnloadScene() {}
+		virtual void LoadScene(Scene&) {}
+		virtual void UnloadScene(Scene&) {}
 		
 		// Executed when calling LoadRenderer()
 		virtual void ScorePhysicalDeviceSelection(int& score, PhysicalDevice*) {}
@@ -68,13 +68,13 @@ namespace v4d::modules {
 		virtual void DestroyPipelines() {}
 		
 		// Rendering methods potentially executed on each frame
-		virtual void RunDynamicGraphicsTop(VkCommandBuffer) {}
-		virtual void RunDynamicGraphicsBottom(VkCommandBuffer) {}
+		virtual void RunDynamicGraphicsTop(VkCommandBuffer, std::unordered_map<std::string, Image*>&) {}
+		virtual void RunDynamicGraphicsBottom(VkCommandBuffer, std::unordered_map<std::string, Image*>&) {}
 		virtual void RunDynamicLowPriorityCompute(VkCommandBuffer) {}
 		virtual void RunDynamicLowPriorityGraphics(VkCommandBuffer) {}
 		
 		// Executed before each frame
-		virtual void FrameUpdate(uint imageIndex, glm::dmat4& projection, glm::dmat4& view) {}
+		virtual void FrameUpdate(Scene&) {}
 		virtual void LowPriorityFrameUpdate() {}
 		
 	};
