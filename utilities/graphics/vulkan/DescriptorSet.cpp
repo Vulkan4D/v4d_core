@@ -14,6 +14,7 @@ DescriptorBinding::~DescriptorBinding() {
 			case IMAGE_VIEW:
 			case COMBINED_IMAGE_SAMPLER:
 			case INPUT_ATTACHMENT:
+			case INPUT_ATTACHMENT_DEPTH_STENCIL:
 				delete (VkDescriptorImageInfo*)writeInfo;
 			break;
 			case ACCELERATION_STRUCTURE:
@@ -32,6 +33,7 @@ bool DescriptorBinding::IsWriteDescriptorSetValid() const {
 		break;
 		case IMAGE_VIEW:
 		case INPUT_ATTACHMENT:
+		case INPUT_ATTACHMENT_DEPTH_STENCIL:
 			return *(VkImageView*)data != VK_NULL_HANDLE;
 		break;
 		case COMBINED_IMAGE_SAMPLER:
@@ -92,6 +94,14 @@ VkWriteDescriptorSet DescriptorBinding::GetWriteDescriptorSet(VkDescriptorSet de
 				VK_NULL_HANDLE,// VkSampler sampler
 				*(VkImageView*)data,// VkImageView imageView
 				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,// VkImageLayout imageLayout
+			};
+			descriptorWrite.pImageInfo = (VkDescriptorImageInfo*)writeInfo;
+		break;
+		case INPUT_ATTACHMENT_DEPTH_STENCIL:
+			writeInfo = new VkDescriptorImageInfo {
+				VK_NULL_HANDLE,// VkSampler sampler
+				*(VkImageView*)data,// VkImageView imageView
+				VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,// VkImageLayout imageLayout
 			};
 			descriptorWrite.pImageInfo = (VkDescriptorImageInfo*)writeInfo;
 		break;

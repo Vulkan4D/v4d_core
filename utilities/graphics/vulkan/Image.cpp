@@ -91,7 +91,7 @@ void Image::Destroy(Device* device) {
 		memory = VK_NULL_HANDLE;
 	}
 }
-		
+
 DepthStencilImage::DepthStencilImage(VkImageUsageFlags usage, const std::vector<VkFormat>& formats)
 : Image(
 	usage,
@@ -102,6 +102,17 @@ DepthStencilImage::DepthStencilImage(VkImageUsageFlags usage, const std::vector<
 	viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 }
 DepthStencilImage::~DepthStencilImage() {}
+
+DepthImage::DepthImage(VkImageUsageFlags usage, const std::vector<VkFormat>& formats)
+: Image(
+	usage,
+	1,
+	1,
+	formats
+) {
+	viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+}
+DepthImage::~DepthImage() {}
 
 CubeMapImage::CubeMapImage(VkImageUsageFlags usage, const std::vector<VkFormat>& formats)
 : Image(

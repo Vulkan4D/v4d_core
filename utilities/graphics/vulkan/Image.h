@@ -106,6 +106,15 @@ namespace v4d::graphics::vulkan {
 		virtual ~DepthStencilImage();
 	};
 	
+	class V4DLIB DepthImage : public Image {
+	public:
+		DepthImage(
+			VkImageUsageFlags usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+			const std::vector<VkFormat>& formats = {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT}
+		);
+		virtual ~DepthImage();
+	};
+	
 	class V4DLIB CubeMapImage : public Image {
 	public:
 		CubeMapImage(
