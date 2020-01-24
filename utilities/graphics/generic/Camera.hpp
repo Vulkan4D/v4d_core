@@ -9,9 +9,9 @@ namespace v4d::graphics {
 		alignas(32) glm::dvec3 worldPosition {0};
 		alignas(8) double fov = 70;
 		alignas(32) glm::dvec3 lookDirection {0,1,0};
-		alignas(8) double znear = 0.01;
+		alignas(8) double znear = 0.001; // 1 mm
 		alignas(32) glm::dvec3 viewUp = {0,0,1};
-		alignas(8) double zfar = 1.5e17; // 1cm - 1 000 000 UA  (WTF!!! seems to be working great..... 32bit z-buffer is enough???)
+		alignas(8) double zfar = 1.e16; // 1e16 = 1 light-year
 		alignas(128) glm::dmat4 viewMatrix {1};
 		alignas(128) glm::dmat4 projectionMatrix {1};
 		
@@ -20,7 +20,7 @@ namespace v4d::graphics {
 		}
 		
 		void RefreshProjectionMatrix() {
-			projectionMatrix = glm::perspective(glm::radians(fov), (double) width / height, znear, zfar);
+			projectionMatrix = glm::perspective(glm::radians(fov), (double) width / height, zfar, znear); // zfar and znear are swaped on purpose
 			projectionMatrix[1][1] *= -1;
 		}
 		

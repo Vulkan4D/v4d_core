@@ -20,10 +20,10 @@ namespace v4d::graphics::vulkan {
 		VkPipelineRasterizationStateCreateInfo rasterizer {VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
 			nullptr, // const void* pNext
 			0, // VkPipelineRasterizationStateCreateFlags flags
-			VK_FALSE, // VkBool32 depthClampEnable
+			VK_TRUE, // VkBool32 depthClampEnable
 			VK_FALSE, // VkBool32 rasterizerDiscardEnable
 			VK_POLYGON_MODE_FILL, // VkPolygonMode polygonMode
-			VK_CULL_MODE_NONE, // VkCullModeFlags cullMode
+			VK_CULL_MODE_BACK_BIT, // VkCullModeFlags cullMode
 			VK_FRONT_FACE_COUNTER_CLOCKWISE, // VkFrontFace frontFace
 			VK_FALSE, // VkBool32 depthBiasEnable
 			0, // float depthBiasConstantFactor
@@ -52,7 +52,7 @@ namespace v4d::graphics::vulkan {
 			0, // VkPipelineDepthStencilStateCreateFlags flags
 			VK_TRUE, // VkBool32 depthTestEnable
 			VK_TRUE, // VkBool32 depthWriteEnable
-			VK_COMPARE_OP_LESS, // VkCompareOp depthCompareOp
+			VK_COMPARE_OP_GREATER, // VkCompareOp depthCompareOp
 			VK_FALSE, // VkBool32 depthBoundsTestEnable
 			VK_FALSE, // VkBool32 stencilTestEnable
 			{}, // VkStencilOpState front
