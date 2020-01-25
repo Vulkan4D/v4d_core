@@ -95,17 +95,34 @@ namespace v4d::graphics::vulkan {
 		int bufferIndex;
 		int allocationIndex;
 		int bufferOffset;
+		size_t size;
 	};
 	
-	template<VkBufferUsageFlags usage, size_t size, int n = 1>
+	template<VkBufferUsageFlags usage, size_t DataSize, int NbSubAllocPerBuffer, bool Synchronized = false>
 	class DeviceLocalBufferPool {
+	private:
+		
 		struct MultiBuffer {
-			Buffer buffer {VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage, size * n};
-			std::array<bool, n> allocations {false};
+			Buffer buffer {VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage, DataSize * NbSubAllocPerBuffer};
+			std::array<bool, NbSubAllocPerBuffer> allocations {false};
+			int firstFreeAllocation = 0;
+			bool freeOnNextGarbageCollection = false;
+			
+			int GetAllocationCount() const {
+				int count = 0;
+				for (bool alloc : allocations) {
+					if (alloc) count++;
+				}
+				return count;
+			}
 		};
-		std::vector<MultiBuffer> buffers {};
-		Buffer stagingBuffer {VK_BUFFER_USAGE_TRANSFER_SRC_BIT, size};
+		
+		std::vector<MultiBuffer*> buffers {};
+		Buffer stagingBuffer {VK_BUFFER_USAGE_TRANSFER_SRC_BIT, DataSize};
 		bool stagingBufferAllocated = false;
+		int firstFreeBuffer = 0;
+		mutable std::mutex sync;
+		
 		void AllocateStagingBuffer(Device* device) {
 			if (!stagingBufferAllocated) {
 				stagingBufferAllocated = true;
@@ -113,6 +130,7 @@ namespace v4d::graphics::vulkan {
 				stagingBuffer.MapMemory(device);
 			}
 		}
+		
 		void FreeStagingBuffer(Device* device) {
 			if (stagingBufferAllocated) {
 				stagingBufferAllocated = false;
@@ -120,63 +138,149 @@ namespace v4d::graphics::vulkan {
 				stagingBuffer.Free(device);
 			}
 		}
+		
 	public:
-
-		Buffer* operator[](int bufferIndex) {
-			if (bufferIndex > buffers.size() - 1) return nullptr;
-			return &buffers[bufferIndex].buffer;
+	
+		Buffer* GetBuffer(const int bufferIndex) {
+			Buffer* buffer = nullptr;
+			if constexpr (Synchronized) sync.lock();
+			if (bufferIndex < buffers.size() && buffers[bufferIndex]) 
+				buffer = &buffers[bufferIndex]->buffer;
+			if constexpr (Synchronized) sync.unlock();
+			return buffer;
+		}
+		
+		Buffer* GetBuffer(const BufferPoolAllocation& allocation) {
+			return GetBuffer(allocation.bufferIndex);
+		}
+		
+		Buffer* operator[](const int bufferIndex) {
+			return GetBuffer(bufferIndex);
+		}
+		
+		Buffer* operator[](const BufferPoolAllocation& allocation) {
+			return GetBuffer(allocation.bufferIndex);
+		}
+		
+		int Count() const {
+			if constexpr (Synchronized) sync.lock();
+			int count = buffers.size() - std::count(buffers.begin(), buffers.end(), nullptr);
+			if constexpr (Synchronized) sync.unlock();
+			return count;
 		}
 		
 		BufferPoolAllocation Allocate(Device* device, Queue* queue, void* data) {
-			int bufferIndex = 0;
+			if constexpr (Synchronized) sync.lock();
+			
+			int bufferIndex = firstFreeBuffer;
 			int allocationIndex = 0;
-			for (auto& multiBuffer : buffers) {
-				for (bool& offsetUsed : multiBuffer.allocations) {
-					if (!offsetUsed) {
-						offsetUsed = true;
-						goto CopyData;
+			
+			// Find first free buffer and allocation
+			while (bufferIndex < buffers.size()) {
+				auto* multiBuffer = buffers[bufferIndex];
+				if (multiBuffer) {
+					allocationIndex = multiBuffer->firstFreeAllocation;
+					while (allocationIndex < multiBuffer->allocations.size()) {
+						if (!multiBuffer->allocations[allocationIndex]) {
+							goto CopyData;
+						}
+						++allocationIndex;
 					}
-					++allocationIndex;
 				}
 				++bufferIndex;
 				allocationIndex = 0;
 			}
-			goto AllocateNewBuffer;
 			
-			AllocateNewBuffer: {
-				auto& multiBuffer = buffers.emplace_back();
-				auto cmdBuffer = device->BeginSingleTimeCommands(*queue);
-				AllocateStagingBuffer(device);
-				stagingBuffer.WriteToMappedData(device, data);
-				multiBuffer.buffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, false);
-				Buffer::Copy(device, cmdBuffer, stagingBuffer.buffer, multiBuffer.buffer.buffer, size, 0, allocationIndex * size);
-				device->EndSingleTimeCommands(*queue, cmdBuffer);
-				multiBuffer.allocations[allocationIndex] = true;
-				goto Return;
+			// Reuse a deleted buffer if possible
+			bufferIndex = 0;
+			while (bufferIndex < buffers.size()) {
+				if (!buffers[bufferIndex]) {
+					buffers[bufferIndex] = new MultiBuffer;
+					goto Allocate;
+				}
+				++bufferIndex;
 			}
 			
-			CopyData: {
-				auto& multiBuffer = buffers[bufferIndex];
-				auto cmdBuffer = device->BeginSingleTimeCommands(*queue);
+			// Empty buffers or no space left in any existing buffers or no deleted buffers, then Add a new buffer
+			buffers.emplace_back(new MultiBuffer);
+			
+			Allocate:
+				buffers[bufferIndex]->buffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, false);
 				AllocateStagingBuffer(device);
+			
+			CopyData:
+				auto* multiBuffer = buffers[bufferIndex];
 				stagingBuffer.WriteToMappedData(device, data);
-				Buffer::Copy(device, cmdBuffer, stagingBuffer.buffer, multiBuffer.buffer.buffer, size, 0, allocationIndex * size);
+				auto cmdBuffer = device->BeginSingleTimeCommands(*queue);
+					Buffer::Copy(device, cmdBuffer, stagingBuffer.buffer, multiBuffer->buffer.buffer, DataSize, 0, allocationIndex * DataSize);
 				device->EndSingleTimeCommands(*queue, cmdBuffer);
+		
+			// Activate current allocation
+			multiBuffer->allocations[allocationIndex] = true;
+			multiBuffer->freeOnNextGarbageCollection = false;
+			
+			// Cache next free buffer/allocation indices for next allocation calls to be faster
+			multiBuffer->firstFreeAllocation = allocationIndex+1;
+			if (multiBuffer->firstFreeAllocation < NbSubAllocPerBuffer) {
+				firstFreeBuffer = bufferIndex;
+			} else {
+				firstFreeBuffer = bufferIndex+1;
 			}
 			
-			Return: return {bufferIndex, allocationIndex, (int)(allocationIndex * size)};
+			if constexpr (Synchronized) sync.unlock();
+			
+			// Return allocation information
+			return {bufferIndex, allocationIndex, (int)(allocationIndex * DataSize), DataSize};
 		}
 		
-		void Free(BufferPoolAllocation allocation) {
-			buffers[allocation.bufferIndex].allocations[allocation.allocationIndex] = false;
+		void Free(BufferPoolAllocation& allocation) {
+			if constexpr (Synchronized) sync.lock();
+				if (allocation.bufferIndex < buffers.size() && buffers[allocation.bufferIndex]) {
+					buffers[allocation.bufferIndex]->allocations[allocation.allocationIndex] = false;
+					buffers[allocation.bufferIndex]->firstFreeAllocation = std::min(buffers[allocation.bufferIndex]->firstFreeAllocation, allocation.allocationIndex);
+				}
+				firstFreeBuffer = std::min(firstFreeBuffer, allocation.bufferIndex);
+			if constexpr (Synchronized) sync.unlock();
 		}
 		
 		void FreePool(Device* device) {
-			FreeStagingBuffer(device);
-			for (auto& bufferAllocation : buffers) {
-				bufferAllocation.buffer.Free(device);
-			}
-			buffers.clear();
+			if constexpr (Synchronized) sync.lock();
+				FreeStagingBuffer(device);
+				for (auto* multiBuffer : buffers) {
+					if (multiBuffer) {
+						multiBuffer->buffer.Free(device);
+						delete multiBuffer;
+					}
+				}
+				buffers.clear();
+				firstFreeBuffer = 0;
+			if constexpr (Synchronized) sync.unlock();
+		}
+		
+		void CollectGarbage(Device* device) {
+			if constexpr (Synchronized) sync.lock();
+			
+				firstFreeBuffer = 0;
+			
+				for (int bufferIndex = buffers.size()-1; bufferIndex >= 0; ) {
+					auto* multiBuffer = buffers[bufferIndex];
+					if (!multiBuffer) goto Next;
+					
+					if (multiBuffer->freeOnNextGarbageCollection) {
+						multiBuffer->buffer.Free(device);
+						delete multiBuffer;
+						buffers[bufferIndex] = nullptr;
+					} else {
+						for (auto alloc : multiBuffer->allocations) 
+							if (alloc) goto Next;
+						multiBuffer->freeOnNextGarbageCollection = true;
+					}
+					
+					Next:
+						bufferIndex--;
+				}
+				
+			if constexpr (Synchronized) sync.unlock();
 		}
 		
 	};

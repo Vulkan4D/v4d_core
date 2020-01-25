@@ -7,7 +7,7 @@ namespace v4d::processing {
 	protected:
 		bool stopping = false;
 		size_t numThreads = 0;
-		std::mutex eventMutex {}; // For stopping, numThreads and tasks
+		mutable std::mutex eventMutex {}; // For stopping, numThreads and tasks
 		std::unordered_map<index_t, std::thread> threads {};
 		std::recursive_mutex threadsMutex {};
 		std::condition_variable eventVar {};
@@ -136,6 +136,11 @@ namespace v4d::processing {
 				}
 			}
 		) : taskRunFunction(perItemFunc) {}
+		
+		size_t Count() const {
+			std::lock_guard lock(eventMutex);
+			return items.size();
+		}
 		
 		/**
 		 * Set the function to run for each item in the queue
