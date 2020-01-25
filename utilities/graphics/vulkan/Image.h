@@ -1,3 +1,11 @@
+/*
+ * Vulkan Image abstraction
+ * Part of the Vulkan4D open-source game engine under the LGPL license - https://github.com/Vulkan4D
+ * @author Olivier St-Laurent <olivier@xenon3d.com>
+ * 
+ * Included in this file is the Image class and some of it's children classes
+ * These classes contains abstractions for VkImage, VkImageView and VkImageSampler
+ */
 #pragma once
 
 #include <v4d.h>
@@ -6,7 +14,7 @@ namespace v4d::graphics::vulkan {
 	class V4DLIB Image {
 	public:
 		
-		// Constructor params
+		// Constructor args
 		VkImageUsageFlags usage;
 		uint32_t mipLevels;
 		uint32_t arrayLayers;

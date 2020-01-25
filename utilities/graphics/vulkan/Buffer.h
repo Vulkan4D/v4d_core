@@ -1,3 +1,10 @@
+/*
+ * Vulkan Buffer abstraction
+ * Part of the Vulkan4D open-source game engine under the LGPL license - https://github.com/Vulkan4D
+ * @author Olivier St-Laurent <olivier@xenon3d.com>
+ * 
+ * This file contains the Buffer class, the StagedBuffer class and the DeviceLocalBufferPool template
+ */
 #pragma once
 #include <v4d.h>
 
@@ -14,6 +21,7 @@ namespace v4d::graphics::vulkan {
 		// Mandatory fields
 		VkBufferUsageFlags usage;
 		VkDeviceSize size;
+		
 		bool alignedUniformSize;
 		
 		// Additional fields
@@ -24,7 +32,7 @@ namespace v4d::graphics::vulkan {
 		VkBuffer buffer = VK_NULL_HANDLE;
 		VkDeviceMemory memory = VK_NULL_HANDLE;
 		
-		// Mapped data
+		// Mapped data (this is mapped to when calling MapMemory)
 		void* data = nullptr;
 		
 		// Data pointers to get copied into buffer
@@ -33,22 +41,21 @@ namespace v4d::graphics::vulkan {
 		Buffer(VkBufferUsageFlags usage, VkDeviceSize size = 0, bool alignedUniformSize = false);
 		
 		void AddSrcDataPtr(void* srcDataPtr, size_t size);
-		void ResetSrcData();
-		
 		template<class T>
 		void AddSrcDataPtr(std::vector<T>* vector) {
 			AddSrcDataPtr(vector->data(), vector->size() * sizeof(T));
 		}
-		
 		template<class T, int S>
 		void AddSrcDataPtr(std::array<T, S>* array) {
 			AddSrcDataPtr(array->data(), S * sizeof(T));
 		}
 		
-		void AllocateFromStaging(Device* device, VkCommandBuffer commandBuffer, Buffer& stagingBuffer, VkDeviceSize size = 0, VkDeviceSize offset = 0);
-
+		void ResetSrcData();
+		
 		void Allocate(Device* device, VkMemoryPropertyFlags properties, bool copySrcData = true);
 		void Free(Device* device);
+
+		void AllocateFromStaging(Device* device, VkCommandBuffer commandBuffer, Buffer& stagingBuffer, VkDeviceSize size = 0, VkDeviceSize offset = 0);
 
 		void MapMemory(Device* device, VkDeviceSize offset = 0, VkDeviceSize size = 0, VkMemoryMapFlags flags = 0);
 		void UnmapMemory(Device* device);
@@ -61,6 +68,7 @@ namespace v4d::graphics::vulkan {
 		// static void CopyDataToBuffer(Device* device, void* data, Buffer* buffer, VkDeviceSize offset = 0, VkDeviceSize size = 0, VkMemoryMapFlags flags = 0);
 		// static void CopyDataToMappedBuffer(Device* device, void* inputData, Buffer* buffer, long mappedOffset = 0, size_t size = 0);
 		
+		// copy from one buffer to another
 		static void Copy(Device* device, VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkDeviceSize srcOffset = 0, VkDeviceSize dstOffset = 0);
 		static void Copy(Device* device, VkCommandBuffer commandBuffer, Buffer& srcBuffer, Buffer& dstBuffer, VkDeviceSize size = 0, VkDeviceSize srcOffset = 0, VkDeviceSize dstOffset = 0);
 
@@ -90,6 +98,10 @@ namespace v4d::graphics::vulkan {
 		
 		void Update(Device* device, VkCommandBuffer commandBuffer);
 	};
+	
+	
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// DeviceLocalBufferPool template
 	
 	struct BufferPoolAllocation {
 		int bufferIndex;

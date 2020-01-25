@@ -1,3 +1,10 @@
+/*
+ * Vulkan Rasterization Pipeline abstraction
+ * Part of the Vulkan4D open-source game engine under the LGPL license - https://github.com/Vulkan4D
+ * @author Olivier St-Laurent <olivier@xenon3d.com>
+ * 
+ * This class extends from ShaderPipeline with specific functionality for rasterization
+ */
 #pragma once
 #include <v4d.h>
 
@@ -65,12 +72,12 @@ namespace v4d::graphics::vulkan {
 		std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments {};
 		VkPipelineColorBlendStateCreateInfo colorBlending {};
 		VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo {};
-		std::vector<VkDynamicState> dynamicStates {}; // Dynamic settings that CAN be changed at runtime but NOT every frame
-
+		std::vector<VkDynamicState> dynamicStates {}; // Dynamic settings that CAN be changed at runtime but preferably NOT every frame
 		
 		RasterShaderPipeline(PipelineLayout& pipelineLayout, const std::vector<ShaderInfo>& shaderInfo);
 		virtual ~RasterShaderPipeline();
 		
+		// set what data to draw
 		void SetData(Buffer* vertexBuffer, Buffer* indexBuffer, uint32_t indexCount = 0);
 		void SetData(Buffer* vertexBuffer, VkDeviceSize vertexOffset, Buffer* indexBuffer, VkDeviceSize indexOffset, uint32_t indexCount);
 		void SetData(Buffer* vertexBuffer, uint32_t vertexCount);
@@ -80,6 +87,7 @@ namespace v4d::graphics::vulkan {
 		virtual void CreatePipeline(Device* device) override;
 		virtual void DestroyPipeline(Device* device) override;
 		
+		// assign render pass
 		void SetRenderPass(VkPipelineViewportStateCreateInfo* viewportState, VkRenderPass, uint32_t subpass = 0);
 		void SetRenderPass(SwapChain*, VkRenderPass, uint32_t subpass = 0);
 		void SetRenderPass(Image* renderTarget, VkRenderPass, uint32_t subpass = 0);
@@ -96,6 +104,7 @@ namespace v4d::graphics::vulkan {
 		);
 		
 	protected:
+		// these two methods are called automatically by Execute() from the parent class
 		virtual void Bind(Device* device, VkCommandBuffer cmdBuffer) override;
 		virtual void Render(Device* device, VkCommandBuffer cmdBuffer, uint32_t instanceCount = 1) override;
 	};

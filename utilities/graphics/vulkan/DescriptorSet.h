@@ -1,3 +1,10 @@
+/*
+ * Vulkan DescriptorSet abstraction
+ * Part of the Vulkan4D open-source game engine under the LGPL license - https://github.com/Vulkan4D
+ * @author Olivier St-Laurent <olivier@xenon3d.com>
+ * 
+ * This weird class is a work in progress
+ */
 #pragma once
 #include <v4d.h>
 

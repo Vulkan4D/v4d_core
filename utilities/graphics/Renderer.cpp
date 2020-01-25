@@ -332,12 +332,16 @@ bool Renderer::CreateSwapChain() {
 	swapChain->Create(oldSwapChain);
 
 	// Destroy the old swapchain
-	if (oldSwapChain != nullptr) delete oldSwapChain;
+	if (oldSwapChain != nullptr) {
+		oldSwapChain->Destroy();
+		delete oldSwapChain;
+	}
 	
 	return true;
 }
 
 void Renderer::DestroySwapChain() {
+	swapChain->Destroy();
 	delete swapChain;
 	swapChain = nullptr;
 }

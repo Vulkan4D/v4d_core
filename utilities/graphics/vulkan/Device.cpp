@@ -178,63 +178,6 @@ void Device::DestroyDescriptorPool(VkDescriptorPool &descriptorPool) {
 	DestroyDescriptorPool(descriptorPool, nullptr);
 }
 
-// void Device::CreateImage(uint32_t width, 
-// 	uint32_t height, 
-// 	uint32_t mipLevels, 
-// 	VkSampleCountFlagBits sampleCount, 
-// 	VkFormat format, 
-// 	VkImageTiling tiling, 
-// 	VkImageUsageFlags usage, 
-// 	VkMemoryPropertyFlags memoryPropertyFlags, 
-// 	VkImage& image, 
-// 	VkDeviceMemory& imageMemory, 
-// 	uint32_t arrayLayers, 
-// 	VkImageCreateFlags flags,
-// 	std::vector<uint32_t> queues
-// ) {
-// 	VkImageCreateInfo imageInfo = {};
-// 	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-// 	imageInfo.imageType = VK_IMAGE_TYPE_2D;
-// 	imageInfo.extent.width = width;
-// 	imageInfo.extent.height = height;
-// 	imageInfo.extent.depth = 1;
-// 	imageInfo.mipLevels = mipLevels;
-// 	imageInfo.arrayLayers = arrayLayers;
-// 	imageInfo.format = format;
-// 	imageInfo.tiling = tiling;
-// 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-// 	imageInfo.usage = usage;
-// 	imageInfo.samples = sampleCount;
-// 	imageInfo.flags = flags;
-	
-// 	if (queues.size() > 2 || (queues.size() == 2 && queues[0] != queues[1])) {
-// 		imageInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
-// 	} else {
-// 		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-// 	}
-// 	imageInfo.queueFamilyIndexCount = queues.size();
-// 	imageInfo.pQueueFamilyIndices = queues.data();
-
-// 	if (CreateImage(&imageInfo, nullptr, &image) != VK_SUCCESS) {
-// 		throw std::runtime_error("Failed to create depth image");
-// 	}
-
-// 	VkMemoryRequirements memRequirements;
-// 	GetImageMemoryRequirements(image, &memRequirements);
-
-// 	VkMemoryAllocateInfo allocInfo = {};
-// 	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-// 	allocInfo.allocationSize = memRequirements.size;
-// 	allocInfo.memoryTypeIndex = physicalDevice->FindMemoryType(memRequirements.memoryTypeBits, memoryPropertyFlags);
-
-// 	if (AllocateMemory(&allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
-// 		throw std::runtime_error("Failed to allocate image memory");
-// 	}
-
-// 	BindImageMemory(image, imageMemory, 0);
-// }
-
-
 size_t Device::GetAlignedUniformSize(size_t size) {
 	size_t alignedSize = size;
 	const VkDeviceSize& alignment = physicalDevice->GetProperties().limits.minUniformBufferOffsetAlignment;

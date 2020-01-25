@@ -1,3 +1,8 @@
+/*
+ * Vulkan SwapChain abstraction
+ * Part of the Vulkan4D open-source game engine under the LGPL license - https://github.com/Vulkan4D
+ * @author Olivier St-Laurent <olivier@xenon3d.com>
+ */
 #pragma once
 #include <v4d.h>
 
@@ -7,7 +12,6 @@ namespace v4d::graphics::vulkan {
 	private:
 		Device* device;
 		VkSurfaceKHR surface;
-
 		VkSwapchainKHR handle;
 
 	private:
@@ -17,6 +21,7 @@ namespace v4d::graphics::vulkan {
 		std::vector<VkPresentModeKHR> presentModes;
 
 	public:
+		// SwapChain images
 		std::vector<VkImage> images {};
 		
 		// Selected configuration
@@ -46,10 +51,10 @@ namespace v4d::graphics::vulkan {
 		VkSwapchainKHR GetHandle() const;
 
 		void SetConfiguration(VkExtent2D preferredExtent, const std::vector<VkSurfaceFormatKHR> preferredFormats, const std::vector<VkPresentModeKHR>& preferredPresentModes);
-
 		void AssignQueues(std::vector<uint32_t> queues);
 
 		void Create(SwapChain* oldSwapChain = nullptr);
+		void Destroy();
 
 		void ResolveCapabilities(VkPhysicalDevice physicalDevice);
 		void ResolveFormats(VkPhysicalDevice physicalDevice);

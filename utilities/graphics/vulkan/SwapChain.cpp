@@ -27,12 +27,7 @@ SwapChain::SwapChain(
 	SetConfiguration(preferredExtent, preferredFormats, preferredPresentModes);
 }
 
-SwapChain::~SwapChain() {
-	for_each(imageViews.begin(), imageViews.end(), [this](const VkImageView& imageView) {
-		device->DestroyImageView(imageView, nullptr);
-	});
-	device->DestroySwapchainKHR(handle, nullptr);
-}
+SwapChain::~SwapChain() {}
 
 void SwapChain::SetConfiguration(VkExtent2D preferredExtent, const std::vector<VkSurfaceFormatKHR> preferredFormats, const std::vector<VkPresentModeKHR>& preferredPresentModes) {
 	// Get Preferred Extent
@@ -136,6 +131,13 @@ void SwapChain::Create(SwapChain* oldSwapChain) {
 	viewportState.scissorCount = 1;
 	viewportState.pViewports = &viewport;
 	viewportState.pScissors = &scissor;
+}
+
+void SwapChain::Destroy() {
+	for_each(imageViews.begin(), imageViews.end(), [this](const VkImageView& imageView) {
+		device->DestroyImageView(imageView, nullptr);
+	});
+	device->DestroySwapchainKHR(handle, nullptr);
 }
 
 void SwapChain::ResolveCapabilities(VkPhysicalDevice physicalDevice) {

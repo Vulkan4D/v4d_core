@@ -1,3 +1,10 @@
+/*
+ * Vulkan Dynamic Loader
+ * Part of the Vulkan4D open-source game engine under the LGPL license - https://github.com/Vulkan4D
+ * @author Olivier St-Laurent <olivier@xenon3d.com>
+ * 
+ * This class extends from xvk's dynamic loader (xvk is another open-source library related to Vulkan4D)
+ */
 #pragma once
 #include <v4d.h>
 
@@ -12,11 +19,15 @@ namespace v4d::graphics::vulkan {
 	
 	class V4DLIB Loader : public xvk::Loader {
 	public:
+	
+		// Required Instance Extensions
 		std::vector<const char*> requiredInstanceExtensions {
 			#ifdef _DEBUG
 			VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
 			#endif
 		};
+		
+		// Required Instance Layers
 		std::vector<const char*> requiredInstanceLayers {
 			#ifdef _DEBUG
 			"VK_LAYER_LUNARG_standard_validation",
@@ -29,18 +40,4 @@ namespace v4d::graphics::vulkan {
 
 	};
 	
-	//////////////////////////////////////////////////////
-	
-	struct V4DLIB VertexInputAttributeDescription {
-		uint32_t location;
-		uint32_t offset;
-		VkFormat format;
-	};
-
-	struct V4DLIB Queue {
-		uint32_t familyIndex;
-		VkQueue handle = VK_NULL_HANDLE;
-		VkCommandPool commandPool = VK_NULL_HANDLE;
-	};
-
 }

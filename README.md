@@ -30,13 +30,13 @@ They are split into 5 categories (`Audio`, `Graphics`, `IO`, `Networking`, `Proc
 ## File Structure
 The core consists of the following structure :
 - `helpers/*` Contains header-only `.hpp` files with helper methods
-- `utilities/*` Contains subdirectories for utility categories with all their utilities, each consisting of up to three files with the same [Utility] name and different extensions (`.cpp`, `.h`, `.cxx`) and other subdirectories such as `shaders/` or `res/`
+- `utilities/*` Contains subdirectories for utility categories with all their utilities, each consisting of up to three files with the same [Utility] name and different extensions (`.cpp`, `.h`, `.cxx`) and other subdirectories such as `assets/`
 - `v4d.h` Main Header file to be included in anything that is part of V4D
 - `Core.h` Core header file
 - `Core.cpp` Core Source File compiled only in the core library
 - `tests.cxx` Unit Tests
 - `README.md` this documentation
-- `common/*` precompiled headers
+- `common/*` common headers (mostly std stuff)
 - `*.hh` Header files included in v4d.h
 
 
@@ -79,9 +79,8 @@ The core consists of the following structure :
 - method arguments are camelCase with the same name as an underlying class member that is directly set
 - typedefs are all_lowercase
 - file names unrelated to a class are all_lowercase
-- iterators are `i`,`j`,`k` and `x`,`y`,`z`,`w`
-- Unsafe method/member names are surrounded by underscores : \_UnsafeMethod\_()
-- Public method/member names intended for internal use start with two underscores : __SomeMethod()
+- Unsafe/temporary method/member names are surrounded by underscores : \_UnsafeMethod\_()
+- Public method/member names intended only for internal use should start with two underscores : __V4D_SomeMethod()
 
 ### File Extensions
 - `.cpp` C++ Source Files compiled via g++, must have a matching .h (except main file)

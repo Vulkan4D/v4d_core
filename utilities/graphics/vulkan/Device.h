@@ -1,7 +1,20 @@
+/*
+ * Vulkan Logical Device abstraction
+ * Part of the Vulkan4D open-source game engine under the LGPL license - https://github.com/Vulkan4D
+ * @author Olivier St-Laurent <olivier@xenon3d.com>
+ * 
+ * This file also includes helper structs Queue and DeviceQueueInfo
+ */
 #pragma once
 #include <v4d.h>
 
 namespace v4d::graphics::vulkan {
+
+	struct V4DLIB Queue {
+		uint32_t familyIndex;
+		VkQueue handle = VK_NULL_HANDLE;
+		VkCommandPool commandPool = VK_NULL_HANDLE;
+	};
 
 	struct V4DLIB DeviceQueueInfo {
 		std::string name;
@@ -31,7 +44,6 @@ namespace v4d::graphics::vulkan {
 	class V4DLIB Device : public xvk::Interface::DeviceInterface {
 	private:
 		PhysicalDevice* physicalDevice;
-
 		VkDeviceCreateInfo createInfo {};
 		std::unordered_map<std::string, std::vector<Queue>> queues;
 
@@ -53,36 +65,23 @@ namespace v4d::graphics::vulkan {
 		Queue GetQueue(std::string name, uint index = 0) ;
 		Queue GetQueue(uint queueFamilyIndex, uint index = 0);
 
+		// overloads native vulkan command with different arguments
 		using xvk::Interface::DeviceInterface::CreateCommandPool;
 		void CreateCommandPool(uint queueIndex, VkCommandPoolCreateFlags flags, VkCommandPool* commandPool);
 
+		// overloads native vulkan command with different arguments
 		using xvk::Interface::DeviceInterface::DestroyCommandPool;
 		void DestroyCommandPool(VkCommandPool &commandPool);
 
+		// overloads native vulkan command with different arguments
 		using xvk::Interface::DeviceInterface::CreateDescriptorPool;
 		void CreateDescriptorPool(std::vector<VkDescriptorType> types, uint32_t count, VkDescriptorPool& descriptorPool, VkDescriptorPoolCreateFlags flags = 0);
 		void CreateDescriptorPool(std::map<VkDescriptorType, uint>& types, VkDescriptorPool& descriptorPool, VkDescriptorPoolCreateFlags flags = 0);
 
+		// overloads native vulkan command with different arguments
 		using xvk::Interface::DeviceInterface::DestroyDescriptorPool;
 		void DestroyDescriptorPool(VkDescriptorPool &descriptorPool);
 
-		// using xvk::Interface::DeviceInterface::CreateImage;
-		// void CreateImage(
-		// 	uint32_t width, 
-		// 	uint32_t height, 
-		// 	uint32_t mipLevels, 
-		// 	VkSampleCountFlagBits sampleCount, 
-		// 	VkFormat format, 
-		// 	VkImageTiling tiling, 
-		// 	VkImageUsageFlags usage, 
-		// 	VkMemoryPropertyFlags memoryPropertyFlags, 
-		// 	VkImage& image, 
-		// 	VkDeviceMemory& imageMemory, 
-		// 	uint32_t arrayLayers = 1, 
-		// 	VkImageCreateFlags flags = 0,
-		// 	std::vector<uint32_t> queues = {}
-		// );
-		
 		// Helpers
 		size_t GetAlignedUniformSize(size_t size);
 

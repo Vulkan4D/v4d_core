@@ -1,3 +1,10 @@
+/*
+ * Vulkan Shader file abstraction
+ * Part of the Vulkan4D open-source game engine under the LGPL license - https://github.com/Vulkan4D
+ * @author Olivier St-Laurent <olivier@xenon3d.com>
+ * 
+ * This class is an abstraction of individual shader files within a shader program
+ */
 #pragma once
 #include <v4d.h>
 
@@ -34,20 +41,22 @@ namespace v4d::graphics::vulkan {
 	class V4DLIB Shader {
 	private:
 
-		std::string filepath;
-		std::string entryPoint;
+		std::string filepath; // path relative to executable
+		std::string entryPoint; // usually "main"
+		
 		VkSpecializationInfo* specializationInfo;
 		
-		std::vector<char> bytecode;
+		std::vector<char> bytecode; // contains the spv file contents
+		
 		VkShaderModule module = VK_NULL_HANDLE;
 		
 	public:
-		std::string name;
-		std::string type;
+		std::string name; // the shader file name without directory nor extension
+		std::string type; // string key in SHADER_TYPES
 		
 		VkPipelineShaderStageCreateInfo stageInfo;
 
-		Shader(std::string filepath, std::string entryPoint = "main", VkSpecializationInfo* specializationInfo = nullptr);
+		Shader(std::string filepath/*relative to executable*/, std::string entryPoint = "main", VkSpecializationInfo* specializationInfo = nullptr);
 		
 		VkShaderModule CreateShaderModule(Device* device, VkPipelineShaderStageCreateFlags flags = 0);
 		void DestroyShaderModule(Device* device);

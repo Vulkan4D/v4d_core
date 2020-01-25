@@ -1,3 +1,10 @@
+/*
+ * Window abstraction of GLFW for use with the Vulkan API
+ * Part of the Vulkan4D open-source game engine under the LGPL license
+ * @author Olivier St-Laurent <olivier@xenon3d.com>
+ * 
+ * This class is an abstraction of GLFW methods for quick Vulkan integration
+ */
 #pragma once
 #include <v4d.h>
 
