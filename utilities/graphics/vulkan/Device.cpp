@@ -23,7 +23,7 @@ Device::Device(
 		auto queueFamilyIndices = physicalDevice->GetQueueFamilyIndicesFromFlags(queueInfo.flags, queueInfo.count, queueInfo.surface);
 		for (auto queueFamilyIndex : queueFamilyIndices) {
 			// If queueFamilyIndex is not already present in our queuesCreateInfo vector, add it
-			auto existing = std::find_if(queuesCreateInfo.begin(), queuesCreateInfo.end(), [queueFamilyIndex](VkDeviceQueueCreateInfo& n){return n.queueFamilyIndex == queueFamilyIndex;});
+			auto existing = std::find_if(queuesCreateInfo.begin(), queuesCreateInfo.end(), [queueFamilyIndex](VkDeviceQueueCreateInfo& n){return n.queueFamilyIndex == (uint32_t)queueFamilyIndex;});
 			if (existing == queuesCreateInfo.end()) {
 				queueInfo.queueFamilyIndex = queueFamilyIndex;
 				queueInfo.indexOffset = 0;
@@ -45,7 +45,7 @@ Device::Device(
 			for (auto& existingQueuesInfo : queuesInfo) {
 				if (existingQueuesInfo.createInfoIndex == -1) break;
 				auto& existingQueueCreateInfo = queuesCreateInfo[existingQueuesInfo.createInfoIndex];
-				if (existingQueueCreateInfo.queueFamilyIndex == physicalDevice->GetQueueFamilyIndexFromFlags(queueInfo.flags, queueInfo.count + existingQueueCreateInfo.queueCount, queueInfo.surface)) {
+				if (existingQueueCreateInfo.queueFamilyIndex == (uint32_t)physicalDevice->GetQueueFamilyIndexFromFlags(queueInfo.flags, queueInfo.count + existingQueueCreateInfo.queueCount, queueInfo.surface)) {
 					queueInfo.queueFamilyIndex = existingQueueCreateInfo.queueFamilyIndex;
 					queueInfo.indexOffset = existingQueueCreateInfo.queueCount;
 					queueInfo.createInfoIndex = -1;

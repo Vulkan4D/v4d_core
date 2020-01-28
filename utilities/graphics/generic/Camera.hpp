@@ -20,7 +20,9 @@ namespace v4d::graphics {
 		}
 		
 		void RefreshProjectionMatrix() {
-			projectionMatrix = glm::perspective(glm::radians(fov), (double) width / height, zfar, znear); // zfar and znear are swaped on purpose
+			// zfar and znear are swapped on purpose. 
+			// this technique while also reversing the normal depth test operation will make the depth buffer linear again, giving it a better depth precision on the entire range. 
+			projectionMatrix = glm::perspective(glm::radians(fov), (double) width / height, zfar, znear);
 			projectionMatrix[1][1] *= -1;
 		}
 		

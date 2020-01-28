@@ -37,11 +37,14 @@ namespace v4d::graphics::vulkan {
 		uint32_t AddAttachment(VkAttachmentDescription &attachment);
 		
 		// automatically create FrameBufers given specific image attachments
-		void CreateFrameBuffers(Device* device, SwapChain*, std::vector<VkImageView>/*copy*/ attachments = {VK_NULL_HANDLE/* VK_NULL_HANDLE ==> the SwapChain image */}, uint32_t layers = 1);
+		void CreateFrameBuffers(Device* device, const VkExtent2D&, const VkImageView* attachments, uint32_t attachmentCount = 1, uint32_t layers = 1);
 		void CreateFrameBuffers(Device* device, const VkExtent2D&, const std::vector<VkImageView>& attachments, uint32_t layers = 1);
-		void CreateFrameBuffers(Device* device, const std::vector<Image*>&);
-		void CreateFrameBuffers(Device* device, Image*, int imageCount = 1);
+		void CreateFrameBuffers(Device* device, SwapChain*, const VkImageView* attachments, uint32_t attachmentCount = 1, uint32_t layers = 1);
+		void CreateFrameBuffers(Device* device, SwapChain*, std::vector<VkImageView> attachments = {VK_NULL_HANDLE/* VK_NULL_HANDLE ==> the SwapChain image */}, uint32_t layers = 1);
+		void CreateFrameBuffers(Device* device, Image*, uint32_t imageCount = 1);
+		void CreateFrameBuffers(Device* device, Image**, uint32_t imageCount = 1);
 		void CreateFrameBuffers(Device* device, Image&);
+		void CreateFrameBuffers(Device* device, const std::vector<Image*>&);
 		
 		VkFramebuffer& GetFrameBuffer(int index = 0);
 		

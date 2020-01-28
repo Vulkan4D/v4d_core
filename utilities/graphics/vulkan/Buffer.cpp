@@ -101,24 +101,13 @@ void Buffer::UnmapMemory(Device* device) {
 	data = nullptr;
 }
 
-// void Buffer::CopyDataToBuffer(Device* device, void* data, Buffer* buffer, VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags) {
-// 	buffer->MapMemory(device, offset, size, flags);
-// 	memcpy(buffer->data, data, size == 0 ? buffer->size : size);
-// 	buffer->UnmapMemory(device);
-// }
-
-// void Buffer::CopyDataToMappedBuffer(Device* device, void* inputData, Buffer* buffer, long mappedOffset, size_t size) {
-// 	memcpy(buffer->data + mappedOffset, inputData, size == 0 ? (buffer->size - mappedOffset) : size);
-// }
-
-void Buffer::WriteToMappedData(Device* device, void* inputData, size_t copySize) {
+void Buffer::WriteToMappedData(void* inputData, size_t copySize) {
 	memcpy(data, inputData, copySize == 0 ? size : copySize);
 }
 
-void Buffer::ReadFromMappedData(Device* device, void* outputData, size_t copySize) {
+void Buffer::ReadFromMappedData(void* outputData, size_t copySize) {
 	memcpy(outputData, data, copySize == 0 ? size : copySize);
 }
-
 
 void Buffer::Copy(Device* device, VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkDeviceSize srcOffset, VkDeviceSize dstOffset) {
 	VkBufferCopy copyRegion = {};
@@ -146,10 +135,12 @@ StagedBuffer::StagedBuffer(VkBufferUsageFlags usage, VkDeviceSize size, bool ali
 
 void StagedBuffer::AddSrcDataPtr(void* srcDataPtr, size_t size) {
 	stagingBuffer.AddSrcDataPtr(srcDataPtr, size);
+	deviceLocalBuffer.AddSrcDataPtr(srcDataPtr, size);
 }
 
 void StagedBuffer::ResetSrcData() {
 	stagingBuffer.ResetSrcData();
+	deviceLocalBuffer.ResetSrcData();
 }
 
 void StagedBuffer::Allocate(Device* device, VkMemoryPropertyFlags properties) {

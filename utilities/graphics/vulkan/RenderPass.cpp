@@ -31,15 +31,32 @@ uint32_t RenderPass::AddAttachment(VkAttachmentDescription& attachment) {
 }
 
 VkFramebuffer& RenderPass::GetFrameBuffer(int index) {
-	if (frameBuffers.size() < index+1) frameBuffers.resize(index+1);
+	if (frameBuffers.size() < (uint32_t)index+1) frameBuffers.resize(index+1);
 	return frameBuffers[index];
 }
 
-void RenderPass::CreateFrameBuffers(Device* device, SwapChain* swapChain, std::vector<VkImageView> attachments, uint32_t layers) {
+void RenderPass::CreateFrameBuffers(Device* device, const VkExtent2D& extent, const VkImageView* attachments, uint32_t attachmentCount, uint32_t layers) {
+	frameBuffers.resize(1);
+	VkFramebufferCreateInfo framebufferCreateInfo = {};
+	framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+	framebufferCreateInfo.renderPass = handle;
+	framebufferCreateInfo.attachmentCount = attachmentCount;
+	framebufferCreateInfo.pAttachments = attachments;
+	framebufferCreateInfo.width = extent.width;
+	framebufferCreateInfo.height = extent.height;
+	framebufferCreateInfo.layers = layers;
+	if (device->CreateFramebuffer(&framebufferCreateInfo, nullptr, &frameBuffers[0]) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create framebuffer");
+	}
+}
+
+void RenderPass::CreateFrameBuffers(Device* device, SwapChain* swapChain, const VkImageView* attachments, uint32_t attachmentCount, uint32_t layers) {
 	VkImageView* swapChainImageView = nullptr;
-	for (auto& attachment : attachments) {
-		if (attachment == VK_NULL_HANDLE) {
-			swapChainImageView = &attachment;
+	VkImageView tmpArray[attachmentCount];
+	memcpy(tmpArray, attachments, attachmentCount*sizeof(VkImageView));
+	for (uint32_t i = 0; i < attachmentCount; ++i) {
+		if (tmpArray[i] == VK_NULL_HANDLE) {
+			swapChainImageView = &tmpArray[i];
 		}
 	}
 	frameBuffers.resize(swapChain->imageViews.size());
@@ -50,8 +67,8 @@ void RenderPass::CreateFrameBuffers(Device* device, SwapChain* swapChain, std::v
 		VkFramebufferCreateInfo framebufferCreateInfo = {};
 		framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		framebufferCreateInfo.renderPass = handle;
-		framebufferCreateInfo.attachmentCount = attachments.size();
-		framebufferCreateInfo.pAttachments = attachments.data();
+		framebufferCreateInfo.attachmentCount = attachmentCount;
+		framebufferCreateInfo.pAttachments = tmpArray;
 		framebufferCreateInfo.width = swapChain->extent.width;
 		framebufferCreateInfo.height = swapChain->extent.height;
 		framebufferCreateInfo.layers = layers;
@@ -61,36 +78,37 @@ void RenderPass::CreateFrameBuffers(Device* device, SwapChain* swapChain, std::v
 	}
 }
 
+void RenderPass::CreateFrameBuffers(Device* device, SwapChain* swapChain, std::vector<VkImageView> attachments, uint32_t layers) {
+	CreateFrameBuffers(device, swapChain, attachments.data(), attachments.size(), layers);
+}
+
 void RenderPass::CreateFrameBuffers(Device* device, const VkExtent2D& extent, const std::vector<VkImageView>& attachments, uint32_t layers) {
-	frameBuffers.resize(1);
-	VkFramebufferCreateInfo framebufferCreateInfo = {};
-	framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-	framebufferCreateInfo.renderPass = handle;
-	framebufferCreateInfo.attachmentCount = attachments.size();
-	framebufferCreateInfo.pAttachments = attachments.data();
-	framebufferCreateInfo.width = extent.width;
-	framebufferCreateInfo.height = extent.height;
-	framebufferCreateInfo.layers = layers;
-	if (device->CreateFramebuffer(&framebufferCreateInfo, nullptr, &frameBuffers[0]) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to create framebuffer");
+	CreateFrameBuffers(device, VkExtent2D{extent.width, extent.height}, attachments.data(), attachments.size(), layers);
+}
+
+void RenderPass::CreateFrameBuffers(Device* device, Image** imageArray, uint32_t imageCount) {
+	VkImageView attachments[imageCount];
+	for (uint32_t i = 0; i < imageCount; ++i) {
+		attachments[i] = imageArray[i]->view;
 	}
+	CreateFrameBuffers(device, VkExtent2D{imageArray[0]->width, imageArray[0]->height}, attachments, imageCount, imageArray[0]->arrayLayers);
+}
+
+void RenderPass::CreateFrameBuffers(Device* device, Image& image) {
+	CreateFrameBuffers(device, VkExtent2D{image.width, image.height}, &image.view, 1, image.arrayLayers);
+}
+
+void RenderPass::CreateFrameBuffers(Device* device, Image* imageArray, uint32_t imageCount) {
+	std::vector<VkImageView> attachments {};
+	for (uint32_t i = 0; i < imageCount; ++i)
+		attachments.push_back(imageArray[i].view);
+	CreateFrameBuffers(device, VkExtent2D{imageArray[0].width, imageArray[0].height}, attachments, imageArray[0].arrayLayers);
 }
 
 void RenderPass::CreateFrameBuffers(Device* device, const std::vector<Image*>& images) {
 	std::vector<VkImageView> attachments {};
 	for (auto* image : images) attachments.push_back(image->view);
 	CreateFrameBuffers(device, VkExtent2D{images[0]->width, images[0]->height}, attachments, images[0]->arrayLayers);
-}
-
-void RenderPass::CreateFrameBuffers(Device* device, Image& image) {
-	CreateFrameBuffers(device, VkExtent2D{image.width, image.height}, {image.view}, image.arrayLayers);
-}
-
-void RenderPass::CreateFrameBuffers(Device* device, Image* imageArray, int imageCount) {
-	std::vector<VkImageView> attachments {};
-	for (int i = 0; i < imageCount; ++i)
-		attachments.push_back(imageArray[i].view);
-	CreateFrameBuffers(device, VkExtent2D{imageArray[0].width, imageArray[0].height}, attachments, imageArray[0].arrayLayers);
 }
 
 void RenderPass::DestroyFrameBuffers(Device* device) {
@@ -108,7 +126,7 @@ void RenderPass::Begin(Device* device, VkCommandBuffer commandBuffer, VkOffset2D
 	renderPassInfo.renderArea.extent = extent;
 	renderPassInfo.clearValueCount = clearValues.size();
 	renderPassInfo.pClearValues = clearValues.data();
-	device->CmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	device->CmdBeginRenderPass(commandBuffer, &renderPassInfo, contents);
 }
 
 void RenderPass::Begin(Device* device, VkCommandBuffer commandBuffer, SwapChain* swapChain, const std::vector<VkClearValue>& clearValues, int imageIndex, VkSubpassContents contents) {

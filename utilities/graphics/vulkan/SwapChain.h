@@ -56,9 +56,9 @@ namespace v4d::graphics::vulkan {
 		void Create(SwapChain* oldSwapChain = nullptr);
 		void Destroy();
 
-		void ResolveCapabilities(VkPhysicalDevice physicalDevice);
-		void ResolveFormats(VkPhysicalDevice physicalDevice);
-		void ResolvePresentModes(VkPhysicalDevice physicalDevice);
+		void ResolveCapabilities();
+		void ResolveFormats();
+		void ResolvePresentModes();
 
 		VkExtent2D GetPreferredExtent(VkExtent2D preferredExtent);
 		VkSurfaceFormatKHR GetPreferredSurfaceFormat(const std::vector<VkSurfaceFormatKHR> preferredFormats);

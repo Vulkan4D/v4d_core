@@ -9,6 +9,7 @@
 #include <v4d.h>
 
 #define XVK_INTERFACE_RAW_FUNCTIONS_ACCESSIBILITY private
+// #define XVK_USE_QT_VULKAN_LOADER // uncomment if you are using Qt
 #include <xvk.hpp>
 
 #define V4D_ENGINE_NAME "Vulkan4D"
@@ -19,6 +20,7 @@ namespace v4d::graphics::vulkan {
 	
 	class V4DLIB Loader : public xvk::Loader {
 	public:
+		using xvk::Loader::Loader;
 	
 		// Required Instance Extensions
 		std::vector<const char*> requiredInstanceExtensions {
@@ -34,10 +36,11 @@ namespace v4d::graphics::vulkan {
 			#endif
 		};
 		
-		void CheckExtensions(bool logging = false);
-		void CheckLayers(bool logging = false);
-		void CheckVulkanVersion();
-
+		#ifndef XVK_USE_QT_VULKAN_LOADER
+			void CheckExtensions(bool logging = false);
+			void CheckLayers(bool logging = false);
+			void CheckVulkanVersion();
+		#endif
 	};
 	
 }

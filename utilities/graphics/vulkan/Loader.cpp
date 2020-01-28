@@ -2,6 +2,8 @@
 
 using namespace v4d::graphics::vulkan;
 
+#ifndef XVK_USE_QT_VULKAN_LOADER
+
 void Loader::CheckExtensions(bool logging) {
 	if (logging) LOG_VERBOSE("Initializing Vulkan Extensions...");
 	
@@ -60,3 +62,5 @@ void Loader::CheckVulkanVersion() {
 		throw std::runtime_error("Vulkan Version " + std::to_string(vMajor) + "." + std::to_string(vMinor) + "." + std::to_string(vPatch) + " is Not supported");
 	}
 }
+
+#endif

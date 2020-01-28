@@ -62,11 +62,8 @@ namespace v4d::graphics::vulkan {
 		
 		void CopySrcData(Device* device);
 		
-		void WriteToMappedData(Device* device, void* inputData, size_t copySize = 0);
-		void ReadFromMappedData(Device* device, void* outputData, size_t copySize = 0);
-		
-		// static void CopyDataToBuffer(Device* device, void* data, Buffer* buffer, VkDeviceSize offset = 0, VkDeviceSize size = 0, VkMemoryMapFlags flags = 0);
-		// static void CopyDataToMappedBuffer(Device* device, void* inputData, Buffer* buffer, long mappedOffset = 0, size_t size = 0);
+		void WriteToMappedData(void* inputData, size_t copySize = 0);
+		void ReadFromMappedData(void* outputData, size_t copySize = 0);
 		
 		// copy from one buffer to another
 		static void Copy(Device* device, VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkDeviceSize srcOffset = 0, VkDeviceSize dstOffset = 0);
@@ -222,7 +219,7 @@ namespace v4d::graphics::vulkan {
 			
 			CopyData:
 				auto* multiBuffer = buffers[bufferIndex];
-				stagingBuffer.WriteToMappedData(device, data);
+				stagingBuffer.WriteToMappedData(data);
 				auto cmdBuffer = device->BeginSingleTimeCommands(*queue);
 					Buffer::Copy(device, cmdBuffer, stagingBuffer.buffer, multiBuffer->buffer.buffer, DataSize, 0, allocationIndex * DataSize);
 				device->EndSingleTimeCommands(*queue, cmdBuffer);

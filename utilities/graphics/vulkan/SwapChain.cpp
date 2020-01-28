@@ -4,9 +4,9 @@ using namespace v4d::graphics::vulkan;
 
 SwapChain::SwapChain(){}
 SwapChain::SwapChain(Device* device, VkSurfaceKHR surface) : device(device), surface(surface) {
-	ResolveCapabilities(device->GetPhysicalDeviceHandle());
-	ResolveFormats(device->GetPhysicalDeviceHandle());
-	ResolvePresentModes(device->GetPhysicalDeviceHandle());
+	ResolveCapabilities();
+	ResolveFormats();
+	ResolvePresentModes();
 
 	// Check Swap Chain Support
 	if (formats.empty())
@@ -140,11 +140,11 @@ void SwapChain::Destroy() {
 	device->DestroySwapchainKHR(handle, nullptr);
 }
 
-void SwapChain::ResolveCapabilities(VkPhysicalDevice physicalDevice) {
+void SwapChain::ResolveCapabilities() {
 	device->GetPhysicalDevice()->GetPhysicalDeviceSurfaceCapabilitiesKHR(surface, &capabilities);
 }
 
-void SwapChain::ResolveFormats(VkPhysicalDevice physicalDevice) {
+void SwapChain::ResolveFormats() {
 	uint formatCount;
 	device->GetPhysicalDevice()->GetPhysicalDeviceSurfaceFormatsKHR(surface, &formatCount, nullptr);
 	if (formatCount > 0) {
@@ -153,7 +153,7 @@ void SwapChain::ResolveFormats(VkPhysicalDevice physicalDevice) {
 	}
 }
 
-void SwapChain::ResolvePresentModes(VkPhysicalDevice physicalDevice) {
+void SwapChain::ResolvePresentModes() {
 	uint presentModeCount;
 	device->GetPhysicalDevice()->GetPhysicalDeviceSurfacePresentModesKHR(surface, &presentModeCount, nullptr);
 	if (presentModeCount > 0) {
