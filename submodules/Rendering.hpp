@@ -48,7 +48,7 @@ namespace v4d::modules {
 	
 		// Executed when calling InitRenderer() on the main Renderer
 		virtual void Init() {}
-		virtual void InitLayouts(std::vector<DescriptorSet*>&) {}
+		virtual void InitLayouts(std::vector<DescriptorSet*>&, std::unordered_map<std::string, Image*>&) {}
 		virtual void ConfigureShaders(std::unordered_map<std::string, std::vector<RasterShaderPipeline*>>& shaders) {}
 		
 		// Executed when calling their respective methods on the main Renderer
@@ -64,11 +64,12 @@ namespace v4d::modules {
 		virtual void DestroyResources() {}
 		virtual void AllocateBuffers() {}
 		virtual void FreeBuffers() {}
-		virtual void CreatePipelines() {}
+		virtual void CreatePipelines(std::unordered_map<std::string, Image*>&) {}
 		virtual void DestroyPipelines() {}
 		
 		// Rendering methods potentially executed on each frame
 		virtual void RunDynamicGraphicsTop(VkCommandBuffer, std::unordered_map<std::string, Image*>&) {}
+		virtual void RunDynamicGraphicsMiddle(VkCommandBuffer, std::unordered_map<std::string, Image*>&) {}
 		virtual void RunDynamicGraphicsBottom(VkCommandBuffer, std::unordered_map<std::string, Image*>&) {}
 		virtual void RunDynamicLowPriorityCompute(VkCommandBuffer) {}
 		virtual void RunDynamicLowPriorityGraphics(VkCommandBuffer) {}

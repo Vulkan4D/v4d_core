@@ -6,5 +6,5 @@ struct GBuffers {
 	lowp float scatter;
 	lowp float occlusion;
 	highp vec3 emission;
-	highp vec3 position;
+	highp vec4 position;
 };

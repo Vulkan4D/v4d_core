@@ -7,7 +7,7 @@ layout(location = 3) out lowp float gBuffer_metallic;
 layout(location = 4) out lowp float gBuffer_scatter;
 layout(location = 5) out lowp float gBuffer_occlusion;
 layout(location = 6) out highp vec3 gBuffer_emission;
-layout(location = 7) out highp vec3 gBuffer_position;
+layout(location = 7) out highp vec4 gBuffer_position;
 
 void WriteGBuffers(GBuffers gBuffers) {
 	gBuffer_albedo = gBuffers.albedo;

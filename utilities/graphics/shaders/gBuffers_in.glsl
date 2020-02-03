@@ -18,6 +18,6 @@ GBuffers LoadGBuffers() {
 		subpassLoad(gBuffer_scatter).s,
 		subpassLoad(gBuffer_occlusion).s,
 		subpassLoad(gBuffer_emission).rgb,
-		subpassLoad(gBuffer_position).xyz
+		subpassLoad(gBuffer_position).xyzw
 	);
 }
