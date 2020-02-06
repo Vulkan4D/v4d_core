@@ -39,7 +39,3 @@ uint ShaderPipeline::CompactVec4ToUint(float r, float g, float b, float a) {
 float ShaderPipeline::CompactVec3ToFloat(float r, float g, float b) {
 	return r + g * 256.0f + b * 256.0f * 256.0f;
 }
-
-float ShaderPipeline::CompactVec3NormToFloat(float r, float g, float b) {
-	return r * 16777215.0f + g * 16777215.0f * 256.0f + b * 16777215.0f * 256.0f * 256.0f;
-}

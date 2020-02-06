@@ -28,16 +28,7 @@ vec3 UnpackVec3FromFloat(float f) {
 	color.b = floor(f / 256.0 / 256.0);
 	color.g = floor((f - color.b * 256.0 * 256.0) / 256.0);
 	color.r = floor(f - color.b * 256.0 * 256.0 - color.g * 256.0);
-	return color / 255.0;
-}
-
-vec3 UnpackVec3NormFromFloat(float f) {
-	f *= 16777215;
-	vec3 color;
-	color.b = floor(f / 256.0 / 256.0);
-	color.g = floor((f - color.b * 256.0 * 256.0) / 256.0);
-	color.r = floor(f - color.b * 256.0 * 256.0 - color.g * 256.0);
-	return color / 16777215 / 255.0;
+	return color;
 }
 
 vec4 SampleTexture(sampler2D tex, vec2 fragCoord) {

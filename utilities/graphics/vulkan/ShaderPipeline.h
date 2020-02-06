@@ -28,7 +28,6 @@ namespace v4d::graphics::vulkan {
 		static uint CompactIVec4ToUint(uint r, uint g, uint b, uint a);
 		static uint CompactVec4ToUint(float r, float g, float b, float a);
 		static float CompactVec3ToFloat(float r, float g, float b);
-		static float CompactVec3NormToFloat(float r, float g, float b);
 		
 	protected:
 		VkPipeline pipeline = VK_NULL_HANDLE;
