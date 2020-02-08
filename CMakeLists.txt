@@ -1,8 +1,22 @@
 # V4D Core
 file(GLOB_RECURSE V4DCoreSourceFiles **.cpp)
-add_library(v4d SHARED 
-	${V4DCoreSourceFiles}
-)
+if(ENABLE_IMGUI)
+	add_library(v4d SHARED 
+		${V4DCoreSourceFiles}
+		"${PROJECT_SOURCE_DIR}/src/imgui/imgui.cpp"
+		"${PROJECT_SOURCE_DIR}/src/imgui/imgui_widgets.cpp"
+		"${PROJECT_SOURCE_DIR}/src/imgui/imgui_draw.cpp"
+		"${PROJECT_SOURCE_DIR}/src/imgui/examples/imgui_impl_glfw.cpp"
+	)
+	target_compile_definitions(v4d
+		PUBLIC -D_ENABLE_IMGUI
+		PUBLIC -DIMGUI_USER_CONFIG="imgui_v4d_config.hh"
+	)
+else()
+	add_library(v4d SHARED 
+		${V4DCoreSourceFiles}
+	)
+endif()
 target_link_libraries(v4d
 	ssl
 	crypto
@@ -12,10 +26,13 @@ target_link_libraries(v4d
 target_include_directories(v4d
 	PUBLIC
 		"${CMAKE_CURRENT_SOURCE_DIR}"
+		"${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
+		"${PROJECT_SOURCE_DIR}/src"
 		"${PROJECT_SOURCE_DIR}/src/v4d/xvk"
 		"${PROJECT_SOURCE_DIR}/src/v4d/xvk/glm"
-	PRIVATE
 		"${PROJECT_SOURCE_DIR}/src/v4d/xvk/glfw/include"
+		"${PROJECT_SOURCE_DIR}/src/imgui"
+	PRIVATE
 		# "${PROJECT_SOURCE_DIR}/src/openssl/include"
 )
 target_compile_definitions(v4d

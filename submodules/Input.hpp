@@ -27,6 +27,12 @@ namespace v4d::modules {
 			window->AddMouseButtonCallback(this->CallbackName(), [this](int button, int action, int mods){
 				this->MouseButtonCallback(button, action, mods);
 			});
+			window->AddScrollCallback(this->CallbackName(), [this](double x, double y){
+				this->ScrollCallback(x, y);
+			});
+			window->AddCharCallback(this->CallbackName(), [this](unsigned int c){
+				this->CharCallback(c);
+			});
 		}
 		virtual void RemoveCallbacks() {
 			window->RemoveKeyCallback(this->CallbackName());
@@ -36,7 +42,9 @@ namespace v4d::modules {
 		virtual void Init() {}
 		virtual void KeyCallback(int key, int scancode, int action, int mods) {}
 		virtual void MouseButtonCallback(int button, int action, int mods) {}
-		virtual void Update() {}
+		virtual void ScrollCallback(double x, double y) {}
+		virtual void CharCallback(unsigned int c) {}
+		virtual void Update(double deltaTime) {}
 		
 	};
 }

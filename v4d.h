@@ -12,7 +12,10 @@
 // Includes (the order is important)
 
 // Config
-#include "v4dconfig.hh"
+#include "../v4dconfig.hh"
+#ifdef _V4D_PROJECT
+	#include "../../config.hh"
+#endif
 
 // Common includes (Mostly STL)
 #include "common/includes.hh"

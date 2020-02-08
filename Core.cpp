@@ -2,6 +2,10 @@
 
 #ifdef _V4D_CORE
 
+	#if defined(XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE) && defined(XVK_EXPORT)
+		#include <xvkInterface.c>
+	#endif
+	
 	//////////////////////////////////////////////////////////
 	// V4D global events
 

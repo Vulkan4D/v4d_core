@@ -48,6 +48,20 @@ void Window::MouseButtonCallback(GLFWwindow* handle, int button, int action, int
 	}
 }
 
+void Window::ScrollCallback(GLFWwindow* handle, double x, double y) {
+	auto window = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
+	for (auto[name, callback] : window->scrollCallbacks) {
+		callback(x, y);
+	}
+}
+
+void Window::CharCallback(GLFWwindow* handle, unsigned int c) {
+	auto window = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
+	for (auto[name, callback] : window->charCallbacks) {
+		callback(c);
+	}
+}
+
 Window::Window(const std::string& title, int width, int height, GLFWmonitor* monitor, GLFWwindow* share) : index(GetNextIndex()), width(width), height(height) {
 	if (windows.size() == 0) ActivateWindowSystem();
 	windows.emplace(index, this);
@@ -56,6 +70,8 @@ Window::Window(const std::string& title, int width, int height, GLFWmonitor* mon
 	glfwSetFramebufferSizeCallback(handle, ResizeCallback);
 	glfwSetKeyCallback(handle, KeyCallback);
 	glfwSetMouseButtonCallback(handle, MouseButtonCallback);
+	glfwSetScrollCallback(handle, ScrollCallback);
+	glfwSetCharCallback(handle, CharCallback);
 }
 
 Window::~Window() {
@@ -105,6 +121,22 @@ void Window::AddMouseButtonCallback(std::string name, std::function<void(int,int
 
 void Window::RemoveMouseButtonCallback(std::string name) {
 	mouseButtonCallbacks.erase(name);
+}
+
+void Window::AddScrollCallback(std::string name, std::function<void(double,double)>&& callback) {
+	scrollCallbacks[name] = std::forward<std::function<void(double,double)>>(callback);
+}
+
+void Window::RemoveScrollCallback(std::string name) {
+	scrollCallbacks.erase(name);
+}
+
+void Window::AddCharCallback(std::string name, std::function<void(unsigned int)>&& callback) {
+	charCallbacks[name] = std::forward<std::function<void(unsigned int)>>(callback);
+}
+
+void Window::RemoveCharCallback(std::string name) {
+	charCallbacks.erase(name);
 }
 
 bool Window::IsActive() {

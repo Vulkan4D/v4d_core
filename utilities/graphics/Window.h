@@ -25,10 +25,14 @@ namespace v4d::graphics {
 		std::map<std::string, std::function<void(int,int)>> resizeCallbacks {};
 		std::map<std::string, std::function<void(int,int,int,int)>> keyCallbacks {};
 		std::map<std::string, std::function<void(int,int,int)>> mouseButtonCallbacks {};
+		std::map<std::string, std::function<void(double,double)>> scrollCallbacks {};
+		std::map<std::string, std::function<void(unsigned int)>> charCallbacks {};
 
 		static void ResizeCallback(GLFWwindow* handle, int newWidth, int newHeight);
 		static void KeyCallback(GLFWwindow* handle, int key, int scancode, int action, int mods);
 		static void MouseButtonCallback(GLFWwindow* handle, int button, int action, int mods);
+		static void ScrollCallback(GLFWwindow* handle, double x, double y);
+		static void CharCallback(GLFWwindow* handle, unsigned int c);
 
 		static int GetNextIndex();
 
@@ -51,6 +55,12 @@ namespace v4d::graphics {
 
 		void AddMouseButtonCallback(std::string name, std::function<void(int,int,int)>&& callback);
 		void RemoveMouseButtonCallback(std::string name);
+		
+		void AddScrollCallback(std::string name, std::function<void(double,double)>&& callback);
+		void RemoveScrollCallback(std::string name);
+		
+		void AddCharCallback(std::string name, std::function<void(unsigned int)>&& callback);
+		void RemoveCharCallback(std::string name);
 		
 		bool IsActive();
 

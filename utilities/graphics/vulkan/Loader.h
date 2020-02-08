@@ -8,8 +8,12 @@
 #pragma once
 #include <v4d.h>
 
-#define XVK_INTERFACE_RAW_FUNCTIONS_ACCESSIBILITY private
+#ifndef XVK_INTERFACE_RAW_FUNCTIONS_ACCESSIBILITY
+	#define XVK_INTERFACE_RAW_FUNCTIONS_ACCESSIBILITY private
+#endif
+
 // #define XVK_USE_QT_VULKAN_LOADER // uncomment if you are using Qt
+
 #include <xvk.hpp>
 
 #define V4D_ENGINE_NAME "Vulkan4D"

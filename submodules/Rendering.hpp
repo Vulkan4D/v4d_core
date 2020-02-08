@@ -74,6 +74,10 @@ namespace v4d::modules {
 		virtual void RunDynamicLowPriorityCompute(VkCommandBuffer) {}
 		virtual void RunDynamicLowPriorityGraphics(VkCommandBuffer) {}
 		
+		#ifdef _ENABLE_IMGUI
+			virtual void RunImGui() {}
+		#endif
+		
 		// Executed before each frame
 		virtual void FrameUpdate(Scene&) {}
 		virtual void LowPriorityFrameUpdate() {}
