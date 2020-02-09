@@ -15,15 +15,84 @@ namespace v4d::graphics {
 		alignas(128) glm::dmat4 viewMatrix {1};
 		alignas(128) glm::dmat4 projectionMatrix {1};
 		
-		void RefreshViewMatrix() {
-			viewMatrix = glm::lookAt(worldPosition, worldPosition + lookDirection, viewUp);
-		}
+		enum : int {
+			CAMERA_FRUSTUM_NEAR  = 0,
+			CAMERA_FRUSTUM_FAR   = 1,
+			CAMERA_FRUSTUM_LEFT  = 2,
+			CAMERA_FRUSTUM_RIGHT = 3,
+			CAMERA_FRUSTUM_UP    = 4,
+			CAMERA_FRUSTUM_DOWN  = 5,
+		};
+		glm::dvec4 frustumPlanes[6] {};
 		
 		void RefreshProjectionMatrix() {
 			// zfar and znear are swapped on purpose. 
 			// this technique while also reversing the normal depth test operation will make the depth buffer linear again, giving it a better depth precision on the entire range. 
 			projectionMatrix = glm::perspective(glm::radians(fov), (double) width / height, zfar, znear);
-			projectionMatrix[1][1] *= -1;
+			projectionMatrix[1].y *= -1;
+		}
+		
+		void RefreshViewMatrix() {
+			viewMatrix = glm::lookAt(worldPosition, worldPosition + lookDirection, viewUp);
+			RefreshFrustumPlanes();
+		}
+		
+		void RefreshFrustumPlanes() {
+			glm::dmat4 projView = projectionMatrix * viewMatrix;
+			
+			frustumPlanes[CAMERA_FRUSTUM_RIGHT] = {
+				projView[0].w - projView[0].x,
+				projView[1].w - projView[1].x,
+				projView[2].w - projView[2].x,
+				projView[3].w - projView[3].x
+			};
+			frustumPlanes[CAMERA_FRUSTUM_LEFT] = {
+				projView[0].w + projView[0].x,
+				projView[1].w + projView[1].x,
+				projView[2].w + projView[2].x,
+				projView[3].w + projView[3].x
+			};
+			frustumPlanes[CAMERA_FRUSTUM_DOWN] = {
+				projView[0].w + projView[0].y,
+				projView[1].w + projView[1].y,
+				projView[2].w + projView[2].y,
+				projView[3].w + projView[3].y
+			};
+			frustumPlanes[CAMERA_FRUSTUM_UP] = {
+				projView[0].w - projView[0].y,
+				projView[1].w - projView[1].y,
+				projView[2].w - projView[2].y,
+				projView[3].w - projView[3].y
+			};
+			frustumPlanes[CAMERA_FRUSTUM_FAR] = {
+				projView[0].w - projView[0].z,
+				projView[1].w - projView[1].z,
+				projView[2].w - projView[2].z,
+				projView[3].w - projView[3].z
+			};
+			frustumPlanes[CAMERA_FRUSTUM_NEAR] = {
+				projView[0].w + projView[0].z,
+				projView[1].w + projView[1].z,
+				projView[2].w + projView[2].z,
+				projView[3].w + projView[3].z
+			};
+			
+			for (int i = 0; i < 6; ++i) {
+				double flScale = 1.0/glm::length(glm::dvec3(frustumPlanes[i]));
+				frustumPlanes[i].x *= flScale;
+				frustumPlanes[i].y *= flScale;
+				frustumPlanes[i].z *= flScale;
+				frustumPlanes[i].w *= flScale;
+			}
+		}
+		
+		bool IsVisibleInScreen(glm::dvec3 spherePos, double radius) {
+			for (int i = 0; i < 6; ++i) {
+				if (glm::dot(glm::dvec3(frustumPlanes[i]), spherePos) + frustumPlanes[i].w + radius <= 0) {
+					return false;
+				}
+			}
+			return true;
 		}
 		
 		/* // UNUSED FOR NOW...
