@@ -14,6 +14,7 @@ namespace v4d::graphics {
 		alignas(8) double zfar = 1.e16; // 1e16 = 1 light-year
 		alignas(128) glm::dmat4 viewMatrix {1};
 		alignas(128) glm::dmat4 projectionMatrix {1};
+		alignas(128) glm::dmat4 previousProjectionMatrix {1};
 		
 		enum : int {
 			CAMERA_FRUSTUM_NEAR  = 0,
@@ -28,6 +29,7 @@ namespace v4d::graphics {
 		void RefreshProjectionMatrix() {
 			// zfar and znear are swapped on purpose. 
 			// this technique while also reversing the normal depth test operation will make the depth buffer linear again, giving it a better depth precision on the entire range. 
+			previousProjectionMatrix = projectionMatrix;
 			projectionMatrix = glm::perspective(glm::radians(fov), (double) width / height, zfar, znear);
 			projectionMatrix[1].y *= -1;
 		}
