@@ -15,6 +15,9 @@ namespace v4d::graphics {
 		alignas(128) glm::dmat4 viewMatrix {1};
 		alignas(128) glm::dmat4 projectionMatrix {1};
 		alignas(128) glm::dmat4 previousProjectionMatrix {1};
+		alignas(4) int txaa = 0;
+		
+		float txaaKernelSize = 1.0f;
 		
 		enum : int {
 			CAMERA_FRUSTUM_NEAR  = 0,
@@ -32,6 +35,45 @@ namespace v4d::graphics {
 			previousProjectionMatrix = projectionMatrix;
 			projectionMatrix = glm::perspective(glm::radians(fov), (double) width / height, zfar, znear);
 			projectionMatrix[1].y *= -1;
+			
+			// TXAA 
+			if (txaa > 0) {
+				static unsigned long frameCount = 0;
+				static const glm::dvec2 samples16[16] = {
+					glm::dvec2(-8.0, 0.0) / 8.0,
+					glm::dvec2(-6.0, -4.0) / 8.0,
+					glm::dvec2(-3.0, -2.0) / 8.0,
+					glm::dvec2(-2.0, -6.0) / 8.0,
+					glm::dvec2(1.0, -1.0) / 8.0,
+					glm::dvec2(2.0, -5.0) / 8.0,
+					glm::dvec2(6.0, -7.0) / 8.0,
+					glm::dvec2(5.0, -3.0) / 8.0,
+					glm::dvec2(4.0, 1.0) / 8.0,
+					glm::dvec2(7.0, 4.0) / 8.0,
+					glm::dvec2(3.0, 5.0) / 8.0,
+					glm::dvec2(0.0, 7.0) / 8.0,
+					glm::dvec2(-1.0, 3.0) / 8.0,
+					glm::dvec2(-4.0, 6.0) / 8.0,
+					glm::dvec2(-7.0, 8.0) / 8.0,
+					glm::dvec2(-5.0, 2.0) / 8.0
+				};
+				static const glm::dvec2 samples8[8] = {
+					glm::dvec2(-7.0, 1.0) / 8.0,
+					glm::dvec2(-5.0, -5.0) / 8.0,
+					glm::dvec2(-1.0, -3.0) / 8.0,
+					glm::dvec2(3.0, -7.0) / 8.0,
+					glm::dvec2(5.0, -1.0) / 8.0,
+					glm::dvec2(7.0, 7.0) / 8.0,
+					glm::dvec2(1.0, 3.0) / 8.0,
+					glm::dvec2(-3.0, 5.0) / 8.0
+				};
+				glm::dvec2 texelSize = 1.0 / glm::dvec2(width, height);
+				glm::dvec2 subSample = (txaa==16? samples16[frameCount % 16] : samples8[frameCount % 8]) * texelSize * double(txaaKernelSize);
+				projectionMatrix[2].x = subSample.x;
+				projectionMatrix[2].y = subSample.y;
+				frameCount++;
+			}
+			
 		}
 		
 		void RefreshViewMatrix() {

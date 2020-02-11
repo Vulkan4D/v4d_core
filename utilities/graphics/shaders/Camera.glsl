@@ -9,6 +9,8 @@ layout(set = 0, binding = 0) uniform Camera {
 	double zfar;
 	dmat4 viewMatrix;
 	dmat4 projectionMatrix;
+	dmat4 previousProjectionMatrix;
+	int txaa;
 } camera;
 
 double GetTrueDistanceFromDepthBuffer(double depth) {
