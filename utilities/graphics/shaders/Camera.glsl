@@ -1,6 +1,7 @@
 layout(set = 0, binding = 0) uniform Camera {
 	int width;
 	int height;
+	bool txaa;
 	dvec3 worldPosition;
 	double fov;
 	dvec3 lookDirection;
@@ -9,8 +10,10 @@ layout(set = 0, binding = 0) uniform Camera {
 	double zfar;
 	dmat4 viewMatrix;
 	dmat4 projectionMatrix;
-	dmat4 previousProjectionMatrix;
-	int txaa;
+	dmat4 historyViewMatrix;
+	dmat4 historyProjectionMatrix;
+	vec2 txaaOffset;
+	vec2 historyTxaaOffset;
 } camera;
 
 double GetTrueDistanceFromDepthBuffer(double depth) {
