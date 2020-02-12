@@ -16,7 +16,7 @@ namespace v4d::graphics {
 		alignas(128) glm::dmat4 viewMatrix {1};
 		alignas(128) glm::dmat4 projectionMatrix {1};
 		alignas(128) glm::dmat4 historyViewMatrix {1};
-		alignas(128) glm::dmat4 historyProjectionMatrix {1};
+		alignas(64) glm::mat4 reprojectionMatrix {1};
 		alignas(16) glm::vec2 txaaOffset {0};
 		alignas(16) glm::vec2 historyTxaaOffset {0};
 		
@@ -35,7 +35,6 @@ namespace v4d::graphics {
 		void RefreshProjectionMatrix() {
 			// Save Projection and View matrices from previous frame
 			historyViewMatrix = viewMatrix;
-			historyProjectionMatrix = projectionMatrix;
 			
 			// zfar and znear are swapped on purpose. 
 			// this technique while also reversing the normal depth test operation will make the depth buffer linear again, giving it a better depth precision on the entire range. 
@@ -80,6 +79,8 @@ namespace v4d::graphics {
 				historyTxaaOffset = txaaOffset;
 				txaaOffset = subSample / 2.0;
 				frameCount++;
+				
+				reprojectionMatrix = (projectionMatrix * historyViewMatrix) * inverse(projectionMatrix * viewMatrix);
 			}
 			
 		}

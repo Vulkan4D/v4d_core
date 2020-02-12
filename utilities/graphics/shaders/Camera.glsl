@@ -11,7 +11,7 @@ layout(set = 0, binding = 0) uniform Camera {
 	dmat4 viewMatrix;
 	dmat4 projectionMatrix;
 	dmat4 historyViewMatrix;
-	dmat4 historyProjectionMatrix;
+	mat4 reprojectionMatrix;
 	vec2 txaaOffset;
 	vec2 historyTxaaOffset;
 } camera;
