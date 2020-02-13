@@ -33,9 +33,6 @@ namespace v4d::graphics {
 		glm::dvec4 frustumPlanes[6] {};
 		
 		void RefreshProjectionMatrix() {
-			// Save Projection and View matrices from previous frame
-			historyViewMatrix = viewMatrix;
-			
 			// zfar and znear are swapped on purpose. 
 			// this technique while also reversing the normal depth test operation will make the depth buffer linear again, giving it a better depth precision on the entire range. 
 			projectionMatrix = glm::perspective(glm::radians(fov), (double) width / height, zfar, znear);
@@ -44,24 +41,6 @@ namespace v4d::graphics {
 			// TXAA 
 			if (txaa) {
 				static unsigned long frameCount = 0;
-				// static const glm::dvec2 samples16[16] = {
-				// 	glm::dvec2(-8.0, 0.0) / 8.0,
-				// 	glm::dvec2(-6.0, -4.0) / 8.0,
-				// 	glm::dvec2(-3.0, -2.0) / 8.0,
-				// 	glm::dvec2(-2.0, -6.0) / 8.0,
-				// 	glm::dvec2(1.0, -1.0) / 8.0,
-				// 	glm::dvec2(2.0, -5.0) / 8.0,
-				// 	glm::dvec2(6.0, -7.0) / 8.0,
-				// 	glm::dvec2(5.0, -3.0) / 8.0,
-				// 	glm::dvec2(4.0, 1.0) / 8.0,
-				// 	glm::dvec2(7.0, 4.0) / 8.0,
-				// 	glm::dvec2(3.0, 5.0) / 8.0,
-				// 	glm::dvec2(0.0, 7.0) / 8.0,
-				// 	glm::dvec2(-1.0, 3.0) / 8.0,
-				// 	glm::dvec2(-4.0, 6.0) / 8.0,
-				// 	glm::dvec2(-7.0, 8.0) / 8.0,
-				// 	glm::dvec2(-5.0, 2.0) / 8.0
-				// };
 				static const glm::dvec2 samples8[8] = {
 					glm::dvec2(-7.0, 1.0) / 8.0,
 					glm::dvec2(-5.0, -5.0) / 8.0,
@@ -81,6 +60,9 @@ namespace v4d::graphics {
 				frameCount++;
 				
 				reprojectionMatrix = (projectionMatrix * historyViewMatrix) * inverse(projectionMatrix * viewMatrix);
+				
+				// Save Projection and View matrices from previous frame
+				historyViewMatrix = viewMatrix;
 			}
 			
 		}
