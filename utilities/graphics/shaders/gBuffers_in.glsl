@@ -1,23 +1,25 @@
 #include "GBuffers.glsl"
 
 layout(set = 1, input_attachment_index = 1, binding = 0) uniform highp subpassInput gBuffer_albedo;
-layout(set = 1, input_attachment_index = 2, binding = 1) uniform lowp  subpassInput gBuffer_normal;
-layout(set = 1, input_attachment_index = 3, binding = 2) uniform lowp  subpassInput gBuffer_roughness;
-layout(set = 1, input_attachment_index = 4, binding = 3) uniform lowp  subpassInput gBuffer_metallic;
-layout(set = 1, input_attachment_index = 5, binding = 4) uniform lowp  subpassInput gBuffer_scatter;
-layout(set = 1, input_attachment_index = 6, binding = 5) uniform lowp  subpassInput gBuffer_occlusion;
-layout(set = 1, input_attachment_index = 7, binding = 6) uniform highp subpassInput gBuffer_emission;
-layout(set = 1, input_attachment_index = 8, binding = 7) uniform highp subpassInput gBuffer_position;
+layout(set = 1, input_attachment_index = 2, binding = 1) uniform highp  subpassInput gBuffer_normal;
+layout(set = 1, input_attachment_index = 3, binding = 2) uniform highp subpassInput gBuffer_emission;
+layout(set = 1, input_attachment_index = 4, binding = 3) uniform highp subpassInput gBuffer_position;
 
 GBuffers LoadGBuffers() {
+	vec4 norm = subpassLoad(gBuffer_normal);
+	vec4 emission = subpassLoad(gBuffer_emission);
+	vec4 pos = subpassLoad(gBuffer_position);
+	uint roughnessAndMetallic = floatBitsToUint(norm.w);
+	uint scatterAndOcclusion = floatBitsToUint(emission.w);
 	return GBuffers(
-		subpassLoad(gBuffer_albedo).rgba,
-		subpassLoad(gBuffer_normal).xyz,
-		subpassLoad(gBuffer_roughness).s,
-		subpassLoad(gBuffer_metallic).s,
-		subpassLoad(gBuffer_scatter).s,
-		subpassLoad(gBuffer_occlusion).s,
-		subpassLoad(gBuffer_emission).rgb,
-		subpassLoad(gBuffer_position).xyzw
+		subpassLoad(gBuffer_albedo),
+		norm.xyz,
+		emission.rgb,
+		pos.xyz,
+		pos.w,
+		(roughnessAndMetallic & 0xff00) >> 8,
+		(roughnessAndMetallic & 0x00ff),
+		(scatterAndOcclusion & 0xff00) >> 8,
+		(scatterAndOcclusion & 0x00ff)
 	);
 }
