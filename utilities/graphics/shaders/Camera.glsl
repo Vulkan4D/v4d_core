@@ -2,6 +2,7 @@ layout(set = 0, binding = 0) uniform Camera {
 	int width;
 	int height;
 	bool txaa;
+	bool debug;
 	dvec3 worldPosition;
 	double fov;
 	dvec3 lookDirection;
