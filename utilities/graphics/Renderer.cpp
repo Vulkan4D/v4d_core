@@ -138,15 +138,15 @@ void Renderer::DestroyDevices() {
 }
 
 void Renderer::CreateSyncObjects() {
-	imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-	renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-	dynamicRenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+	imageAvailableSemaphores.resize(NB_FRAMES_IN_FLIGHT);
+	staticRenderFinishedSemaphores.resize(NB_FRAMES_IN_FLIGHT);
+	dynamicRenderFinishedSemaphores.resize(NB_FRAMES_IN_FLIGHT);
 	#ifdef V4D_RENDERER_MAIN_COMPUTE_COMMANDS_ENABLED
-		computeFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-		dynamicComputeFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+		computeFinishedSemaphores.resize(NB_FRAMES_IN_FLIGHT);
+		dynamicComputeFinishedSemaphores.resize(NB_FRAMES_IN_FLIGHT);
 	#endif
-	graphicsFences.resize(MAX_FRAMES_IN_FLIGHT);
-	computeFences.resize(MAX_FRAMES_IN_FLIGHT);
+	graphicsFences.resize(NB_FRAMES_IN_FLIGHT);
+	computeFences.resize(NB_FRAMES_IN_FLIGHT);
 
 	VkSemaphoreCreateInfo semaphoreInfo = {};
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -155,11 +155,11 @@ void Renderer::CreateSyncObjects() {
 	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT; // Initialize in the signaled state so that we dont get stuck on the first frame
 
-	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+	for (int i = 0; i < NB_FRAMES_IN_FLIGHT; i++) {
 		if (renderingDevice->CreateSemaphore(&semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS) {
 			throw std::runtime_error("Failed to create semaphore for ImageAvailable");
 		}
-		if (renderingDevice->CreateSemaphore(&semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS) {
+		if (renderingDevice->CreateSemaphore(&semaphoreInfo, nullptr, &staticRenderFinishedSemaphores[i]) != VK_SUCCESS) {
 			throw std::runtime_error("Failed to create semaphore for RenderFinished");
 		}
 		if (renderingDevice->CreateSemaphore(&semaphoreInfo, nullptr, &dynamicRenderFinishedSemaphores[i]) != VK_SUCCESS) {
@@ -183,9 +183,9 @@ void Renderer::CreateSyncObjects() {
 }
 
 void Renderer::DestroySyncObjects() {
-	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+	for (int i = 0; i < NB_FRAMES_IN_FLIGHT; i++) {
 		renderingDevice->DestroySemaphore(imageAvailableSemaphores[i], nullptr);
-		renderingDevice->DestroySemaphore(renderFinishedSemaphores[i], nullptr);
+		renderingDevice->DestroySemaphore(staticRenderFinishedSemaphores[i], nullptr);
 		renderingDevice->DestroySemaphore(dynamicRenderFinishedSemaphores[i], nullptr);
 		#ifdef V4D_RENDERER_MAIN_COMPUTE_COMMANDS_ENABLED
 			renderingDevice->DestroySemaphore(computeFinishedSemaphores[i], nullptr);
@@ -311,6 +311,7 @@ bool Renderer::CreateSwapChain() {
 	swapChain = new SwapChain(
 		renderingDevice,
 		surface,
+		NB_FRAMES_IN_FLIGHT,
 		{ // Preferred Extent (Screen Resolution)
 			0, // width
 			0 // height
@@ -1037,19 +1038,22 @@ void Renderer::Render() {
 		graphicsSubmitInfo[0].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		graphicsSubmitInfo[1].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	
-	std::array<VkSemaphore, 1> graphicsWaitSemaphores {
+	std::array<VkSemaphore, 2> staticGraphicsWaitSemaphores {
 		imageAvailableSemaphores[currentFrameInFlight],
+		dynamicRenderFinishedSemaphores[currentFrameInFlight],
 	};
-	VkPipelineStageFlags graphicsWaitStages[] {
+	VkPipelineStageFlags staticGraphicsWaitStages[] {
+		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
 		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
 	};
 	
-	VkCommandBufferBeginInfo beginInfo = {};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-	
 	#ifdef V4D_RENDERER_MAIN_COMPUTE_COMMANDS_ENABLED
+		VkPipelineStageFlags waitComputeStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 		{// Configure Compute
+			VkCommandBufferBeginInfo beginInfo = {};
+			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+			beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+			
 			renderingDevice->WaitForFences(1, &computeFences[currentFrameInFlight], VK_TRUE, timeout);
 			renderingDevice->ResetFences(1, &computeFences[currentFrameInFlight]);
 			renderingDevice->ResetCommandBuffer(computeDynamicCommandBuffers[imageIndex], 0);
@@ -1069,9 +1073,9 @@ void Renderer::Render() {
 			computeSubmitInfo[0].signalSemaphoreCount = 1;
 			computeSubmitInfo[0].pSignalSemaphores = &dynamicComputeFinishedSemaphores[currentFrameInFlight];
 			// static commands
-			computeSubmitInfo[1].waitSemaphoreCount = 0;
-			computeSubmitInfo[1].pWaitSemaphores = nullptr;
-			computeSubmitInfo[1].pWaitDstStageMask = nullptr;
+			computeSubmitInfo[1].waitSemaphoreCount = 1;
+			computeSubmitInfo[1].pWaitSemaphores = &dynamicComputeFinishedSemaphores[currentFrameInFlight];
+			computeSubmitInfo[1].pWaitDstStageMask = &waitComputeStage;
 			computeSubmitInfo[1].commandBufferCount = 1;
 			computeSubmitInfo[1].pCommandBuffers = &computeCommandBuffers[imageIndex];
 			computeSubmitInfo[1].signalSemaphoreCount = 1;
@@ -1089,9 +1093,17 @@ void Renderer::Render() {
 			LOG_ERROR((int)result)
 			throw std::runtime_error("Render() Failed to submit compute command buffer");
 		}
+		
+		#ifdef _LINUX
+			SLEEP(1ms) // Temporary fix for freezes when compute command buffer runs too quickly
+		#endif
 	#endif
-
+	
 	{// Configure Graphics
+		VkCommandBufferBeginInfo beginInfo = {};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+		
 		renderingDevice->WaitForFences(1, &graphicsFences[currentFrameInFlight], VK_TRUE, timeout);
 		renderingDevice->ResetFences(1, &graphicsFences[currentFrameInFlight]);
 		renderingDevice->ResetCommandBuffer(graphicsDynamicCommandBuffers[imageIndex], 0);
@@ -1103,23 +1115,28 @@ void Renderer::Render() {
 			throw std::runtime_error("Failed to record command buffer");
 		}
 		// dynamic commands
-		graphicsSubmitInfo[0].waitSemaphoreCount = 0;
-		graphicsSubmitInfo[0].pWaitSemaphores = nullptr;
-		graphicsSubmitInfo[0].pWaitDstStageMask = nullptr;
+		#ifdef V4D_RENDERER_MAIN_COMPUTE_COMMANDS_ENABLED
+			graphicsSubmitInfo[0].waitSemaphoreCount = 1;
+			graphicsSubmitInfo[0].pWaitSemaphores = &computeFinishedSemaphores[currentFrameInFlight];
+			graphicsSubmitInfo[0].pWaitDstStageMask = &waitComputeStage;
+		#else
+			graphicsSubmitInfo[0].waitSemaphoreCount = 0;
+			graphicsSubmitInfo[0].pWaitSemaphores = nullptr;
+			graphicsSubmitInfo[0].pWaitDstStageMask = nullptr;
+		#endif
 		graphicsSubmitInfo[0].commandBufferCount = 1;
 		graphicsSubmitInfo[0].pCommandBuffers = &graphicsDynamicCommandBuffers[imageIndex];
 		graphicsSubmitInfo[0].signalSemaphoreCount = 1;
 		graphicsSubmitInfo[0].pSignalSemaphores = &dynamicRenderFinishedSemaphores[currentFrameInFlight];
 		// static commands
-		graphicsSubmitInfo[1].waitSemaphoreCount = graphicsWaitSemaphores.size();
-		graphicsSubmitInfo[1].pWaitSemaphores = graphicsWaitSemaphores.data();
-		graphicsSubmitInfo[1].pWaitDstStageMask = graphicsWaitStages;
+		graphicsSubmitInfo[1].waitSemaphoreCount = staticGraphicsWaitSemaphores.size();
+		graphicsSubmitInfo[1].pWaitSemaphores = staticGraphicsWaitSemaphores.data();
+		graphicsSubmitInfo[1].pWaitDstStageMask = staticGraphicsWaitStages;
 		graphicsSubmitInfo[1].commandBufferCount = 1;
 		graphicsSubmitInfo[1].pCommandBuffers = &graphicsCommandBuffers[imageIndex];
 		graphicsSubmitInfo[1].signalSemaphoreCount = 1;
-		graphicsSubmitInfo[1].pSignalSemaphores = &renderFinishedSemaphores[currentFrameInFlight];
+		graphicsSubmitInfo[1].pSignalSemaphores = &staticRenderFinishedSemaphores[currentFrameInFlight];
 	}
-	
 	// Submit Graphics
 	result = renderingDevice->QueueSubmit(graphicsQueue.handle, graphicsSubmitInfo.size(), graphicsSubmitInfo.data(), graphicsFences[currentFrameInFlight]);
 	if (result != VK_SUCCESS) {
@@ -1137,18 +1154,17 @@ void Renderer::Render() {
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	// Specify which semaphore to wait on before presentation can happen
-	#ifdef V4D_RENDERER_MAIN_COMPUTE_COMMANDS_ENABLED
-		presentInfo.waitSemaphoreCount = 4;
-	#else
-		presentInfo.waitSemaphoreCount = 2;
-	#endif
+	// #ifdef V4D_RENDERER_MAIN_COMPUTE_COMMANDS_ENABLED
+	// 	presentInfo.waitSemaphoreCount = 3;
+	// #else
+		presentInfo.waitSemaphoreCount = 1;
+	// #endif
 	VkSemaphore presentWaitSemaphores[] = {
-		renderFinishedSemaphores[currentFrameInFlight],
-		dynamicRenderFinishedSemaphores[currentFrameInFlight],
-		#ifdef V4D_RENDERER_MAIN_COMPUTE_COMMANDS_ENABLED
-			computeFinishedSemaphores[currentFrameInFlight],
-			dynamicComputeFinishedSemaphores[currentFrameInFlight],
-		#endif
+		staticRenderFinishedSemaphores[currentFrameInFlight],
+		// #ifdef V4D_RENDERER_MAIN_COMPUTE_COMMANDS_ENABLED
+		// 	computeFinishedSemaphores[currentFrameInFlight],
+		// 	dynamicComputeFinishedSemaphores[currentFrameInFlight],
+		// #endif
 	};
 	presentInfo.pWaitSemaphores = presentWaitSemaphores;
 	// Specify the swap chains to present images to and the index for each swap chain. (almost always a single one)
@@ -1175,7 +1191,7 @@ void Renderer::Render() {
 	}
 
 	// Increment currentFrameInFlight
-	currentFrameInFlight = (currentFrameInFlight + 1) % MAX_FRAMES_IN_FLIGHT;
+	currentFrameInFlight = (currentFrameInFlight + 1) % NB_FRAMES_IN_FLIGHT;
 }
 
 void Renderer::RenderLowPriority() {

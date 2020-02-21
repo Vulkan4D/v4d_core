@@ -19,17 +19,18 @@ SwapChain::SwapChain(Device* device, VkSurfaceKHR surface) : device(device), sur
 }
 SwapChain::SwapChain(
 	Device* device, 
-	VkSurfaceKHR surface, 
+	VkSurfaceKHR surface,
+	uint32_t nbFrames, 
 	VkExtent2D preferredExtent, 
 	const std::vector<VkSurfaceFormatKHR> preferredFormats, 
 	const std::vector<VkPresentModeKHR> preferredPresentModes
 ) : SwapChain(device, surface) {
-	SetConfiguration(preferredExtent, preferredFormats, preferredPresentModes);
+	SetConfiguration(nbFrames, preferredExtent, preferredFormats, preferredPresentModes);
 }
 
 SwapChain::~SwapChain() {}
 
-void SwapChain::SetConfiguration(VkExtent2D preferredExtent, const std::vector<VkSurfaceFormatKHR> preferredFormats, const std::vector<VkPresentModeKHR>& preferredPresentModes) {
+void SwapChain::SetConfiguration(uint32_t nbFrames, VkExtent2D preferredExtent, const std::vector<VkSurfaceFormatKHR> preferredFormats, const std::vector<VkPresentModeKHR>& preferredPresentModes) {
 	// Get Preferred Extent
 	extent = GetPreferredExtent(preferredExtent);
 	// Get Preferred Format
@@ -38,11 +39,14 @@ void SwapChain::SetConfiguration(VkExtent2D preferredExtent, const std::vector<V
 	presentMode = GetPreferredPresentMode(preferredPresentModes);
 
 	// Default value for minImageCount
-	if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
-		createInfo.minImageCount = capabilities.minImageCount + 1;
-	} else {
-		createInfo.minImageCount = capabilities.minImageCount;
-	}
+	// if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+	// 	createInfo.minImageCount = capabilities.minImageCount + 1;
+	// } else {
+	// 	createInfo.minImageCount = capabilities.minImageCount;
+	// }
+	// createInfo.minImageCount = std::max(createInfo.minImageCount, Renderer::MAX_FRAMES_IN_FLIGHT);
+	// createInfo.minImageCount = std::min(createInfo.minImageCount, capabilities.maxImageCount);
+	createInfo.minImageCount = nbFrames;
 
 	// Assign part of the SwapChain Info Struct with default params
 	createInfo.imageExtent = extent;

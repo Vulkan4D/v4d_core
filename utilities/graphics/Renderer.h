@@ -37,7 +37,7 @@ namespace v4d::graphics {
 
 		// Synchronizations
 		std::vector<VkSemaphore> imageAvailableSemaphores;
-		std::vector<VkSemaphore> renderFinishedSemaphores;
+		std::vector<VkSemaphore> staticRenderFinishedSemaphores;
 		std::vector<VkSemaphore> dynamicRenderFinishedSemaphores;
 		#ifdef V4D_RENDERER_MAIN_COMPUTE_COMMANDS_ENABLED
 			std::vector<VkSemaphore> computeFinishedSemaphores;
@@ -46,7 +46,7 @@ namespace v4d::graphics {
 		std::vector<VkFence> graphicsFences;
 		std::vector<VkFence> computeFences;
 		size_t currentFrameInFlight = 0;
-		const int MAX_FRAMES_IN_FLIGHT = 2;
+		const int NB_FRAMES_IN_FLIGHT = 2;
 		
 		// States
 		std::recursive_mutex renderingMutex, lowPriorityRenderingMutex;
@@ -60,6 +60,7 @@ namespace v4d::graphics {
 		std::vector<VkDescriptorSet> vkDescriptorSets {};
 
 	public: // Preferences
+		
 		std::vector<VkPresentModeKHR> preferredPresentModes {
 			// VK_PRESENT_MODE_MAILBOX_KHR,	// TripleBuffering (No Tearing, low latency)
 			// VK_PRESENT_MODE_FIFO_KHR,	// VSync ON (No Tearing, more latency)
