@@ -17,9 +17,9 @@ GBuffers LoadGBuffers() {
 		emission.rgb,
 		pos.xyz,
 		pos.w,
-		(roughnessAndMetallic & 0xff00) >> 8,
-		(roughnessAndMetallic & 0x00ff),
-		(scatterAndOcclusion & 0xff00) >> 8,
-		(scatterAndOcclusion & 0x00ff)
+		float((roughnessAndMetallic & 0xff00) >> 8)/255.0,
+		float((roughnessAndMetallic & 0x00ff))/255.0,
+		float((scatterAndOcclusion & 0xff00) >> 8)/255.0,
+		float((scatterAndOcclusion & 0x00ff))/255.0
 	);
 }
