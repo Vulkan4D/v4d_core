@@ -5,6 +5,12 @@ layout(set = 1, input_attachment_index = 2, binding = 1) uniform highp subpassIn
 layout(set = 1, input_attachment_index = 3, binding = 2) uniform highp subpassInput gBuffer_emission;
 layout(set = 1, input_attachment_index = 4, binding = 3) uniform highp subpassInput gBuffer_position;
 
+// #define kPI 3.14159265358979323846 
+// vec3 decodeNormal(in vec2 enc) {
+// 	float ang = enc.x*kPI;
+// 	return vec3(vec2(cos(ang),sin(ang))*sqrt(1.0-enc.y*enc.y), enc.y);
+// }
+
 GBuffers LoadGBuffers() {
 	vec4 albedo = subpassLoad(gBuffer_albedo);
 	vec4 norm = subpassLoad(gBuffer_normal);
