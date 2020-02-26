@@ -3,6 +3,7 @@ layout(set = 0, binding = 0) uniform Camera {
 	int height;
 	bool txaa;
 	bool debug;
+	vec4 luminance;
 	dvec3 worldPosition;
 	double fov;
 	dvec3 lookDirection;

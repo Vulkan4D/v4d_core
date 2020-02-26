@@ -8,6 +8,7 @@ namespace v4d::graphics {
 		alignas(4) int height = 0;
 		alignas(4) bool txaa = true;
 		alignas(4) bool debug = false;
+		alignas(16) glm::vec4 luminance {1}; // Averaged, a = exposure factor
 		alignas(32) glm::dvec3 worldPosition {0};
 		alignas(8) double fov = 70;
 		alignas(32) glm::dvec3 lookDirection {0,1,0};
