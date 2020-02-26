@@ -83,9 +83,9 @@ namespace v4d::graphics::vulkan {
 			VK_FILTER_LINEAR,// VkFilter magFilter
 			VK_FILTER_LINEAR,// VkFilter minFilter
 			VK_SAMPLER_MIPMAP_MODE_LINEAR,// VkSamplerMipmapMode mipmapMode
-			VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,// VkSamplerAddressMode addressModeU
-			VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,// VkSamplerAddressMode addressModeV
-			VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER,// VkSamplerAddressMode addressModeW
+			VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,// VkSamplerAddressMode addressModeU
+			VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,// VkSamplerAddressMode addressModeV
+			VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,// VkSamplerAddressMode addressModeW
 			0.0f,// float mipLodBias
 			VK_TRUE,// VkBool32 anisotropyEnable
 			1.0f,// float maxAnisotropy
