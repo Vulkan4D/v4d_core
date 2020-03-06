@@ -6,9 +6,9 @@ layout(set = 0, binding = 0) uniform Camera {
 	vec4 luminance;
 	dvec3 worldPosition;
 	double fov;
-	dvec3 lookDirection;
+	dvec3 lookDirection; //TODO remove if not needed
 	double znear;
-	dvec3 viewUp;
+	dvec3 viewUp; //TODO remove if not needed
 	double zfar;
 	dmat4 viewMatrix;
 	dmat4 projectionMatrix;
