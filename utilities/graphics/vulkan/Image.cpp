@@ -29,9 +29,9 @@ void Image::SetAccessQueues(const std::vector<uint32_t>& queues) {
 
 void Image::Create(Device* device, uint32_t width, uint32_t height, const std::vector<VkFormat>& tryFormats, int additionalFormatFeatures) {
 	this->width = width;
-	this->height = height;
+	this->height = height==0? width : height;
 	imageInfo.extent.width = width;
-	imageInfo.extent.height = height;
+	imageInfo.extent.height = this->height;
 	int formatFeatures = additionalFormatFeatures;
 	
 	// Map usage to features

@@ -100,7 +100,7 @@ namespace v4d::graphics::vulkan {
 		
 		void SetAccessQueues(const std::vector<uint32_t>& queues);
 		
-		virtual void Create(Device* device, uint32_t width, uint32_t height, const std::vector<VkFormat>& tryFormats = {}, int additionalFormatFeatures = 0);
+		virtual void Create(Device* device, uint32_t width, uint32_t height = 0, const std::vector<VkFormat>& tryFormats = {}, int additionalFormatFeatures = 0);
 		virtual void Destroy(Device* device);
 		
 	};
