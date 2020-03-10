@@ -26,16 +26,34 @@ namespace v4d::graphics::vulkan {
 			data_ptr_type* data, \
 			VkShaderStageFlags stageFlags = stage_flags, \
 			VkDescriptorType type = t, \
-			uint32_t descriptorCount = 1, \
-			uint32_t dstArrayElement = 0, \
 			VkSampler* pImmutableSamplers = nullptr \
 		) { \
 			bindings[binding] = { \
 				binding, \
 				stageFlags, \
 				type, \
-				descriptorCount, \
-				dstArrayElement, \
+				1, \
+				0, \
+				descriptor_type, \
+				pImmutableSamplers, \
+				data, \
+				nullptr \
+			}; \
+		}\
+		void AddBinding_ ## name ## _array ( \
+			uint32_t binding, \
+			data_ptr_type* data, \
+			uint32_t count, \
+			VkShaderStageFlags stageFlags = stage_flags, \
+			VkDescriptorType type = t, \
+			VkSampler* pImmutableSamplers = nullptr \
+		) { \
+			bindings[binding] = { \
+				binding, \
+				stageFlags, \
+				type, \
+				count, \
+				0, \
 				descriptor_type, \
 				pImmutableSamplers, \
 				data, \
