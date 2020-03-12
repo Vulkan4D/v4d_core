@@ -99,3 +99,94 @@ The core consists of the following structure :
 - `Init*` must only be called once per instance, and no need to free any memory
 - `Configure*`, `Generate*`, `Make*`, `Build*`, `Read*`, `Write*` may be called any number of times, and no need to free any memory
 
+
+## Renderer
+
+### Method execution order
+#### Load
+ - main()
+    - Instantiate V4DRenderer
+    - Renderer:: `InitRenderer` ()
+        - V4DRenderer:: `Init` ()
+        - V4DRenderer:: `InitLayouts` ()
+        - V4DRenderer:: `ConfigureShaders` ()
+    - V4DRenderer:: `ReadShaders` ()
+    - V4DRenderer:: `LoadScene` ()
+    - Renderer:: `LoadRenderer` ()
+        - Renderer:: `CreateDevices` ()
+        - V4DRenderer:: `Info` ()
+        - Renderer:: `CreateSyncObjects` ()
+        - Renderer:: `CreateSwapChain` ()
+        - Renderer:: `LoadGraphicsToDevice` ()
+            - Renderer:: `CreateCommandPools` ()
+            - V4DRenderer:: `CreateResources` ()
+            - V4DRenderer:: `AllocateBuffers` ()
+            - Renderer:: `CreateDescriptorSets` ()
+                - Renderer:: `UpdateDescriptorSets` ()
+            - V4DRenderer:: `CreatePipelines` ()
+            - Renderer:: `CreateCommandBuffers` ()
+#### Unload
+ - Renderer:: `UnloadRenderer` ()
+    - Renderer:: `UnloadGraphicsFromDevice` ()
+        - Renderer:: `DestroyCommandBuffers` ()
+        - V4DRenderer:: `DestroyPipelines` ()
+        - Renderer:: `DestroyDescriptorSets` ()
+        - V4DRenderer:: `FreeBuffers` ()
+        - V4DRenderer:: `DestroyResources` ()
+        - Renderer:: `DestroyCommandPools` ()
+    - Renderer:: `DestroySwapChain` ()
+    - Renderer:: `DestroySyncObjects` ()
+    - Renderer:: `DestroyDevices` ()
+#### Reload
+ - Renderer:: `ReloadRenderer` ()
+    - Renderer:: `UnloadGraphicsFromDevice` ()
+        - Renderer:: `DestroyCommandBuffers` ()
+        - V4DRenderer:: `DestroyPipelines` ()
+        - Renderer:: `DestroyDescriptorSets` ()
+        - V4DRenderer:: `FreeBuffers` ()
+        - V4DRenderer:: `DestroyResources` ()
+        - Renderer:: `DestroyCommandPools` ()
+    - Renderer:: `DestroySwapChain` ()
+    - Renderer:: `DestroySyncObjects` ()
+    - Renderer:: `DestroyDevices` ()
+    - V4DRenderer:: `ReadShaders` ()
+    - Renderer:: `CreateDevices` ()
+    - V4DRenderer:: `Info` ()
+    - Renderer:: `CreateSyncObjects` ()
+    - Renderer:: `CreateSwapChain` ()
+    - Renderer:: `LoadGraphicsToDevice` ()
+        - Renderer:: `CreateCommandPools` ()
+        - V4DRenderer:: `CreateResources` ()
+        - V4DRenderer:: `AllocateBuffers` ()
+        - Renderer:: `CreateDescriptorSets` ()
+            - Renderer:: `UpdateDescriptorSets` ()
+        - V4DRenderer:: `CreatePipelines` ()
+        - Renderer:: `CreateCommandBuffers` ()
+#### Screen Resize
+ - Renderer:: `RecreateSwapChains` ()
+    - Renderer:: `UnloadGraphicsFromDevice` ()
+        - Renderer:: `DestroyCommandBuffers` ()
+        - V4DRenderer:: `DestroyPipelines` ()
+        - Renderer:: `DestroyDescriptorSets` ()
+        - V4DRenderer:: `FreeBuffers` ()
+        - V4DRenderer:: `DestroyResources` ()
+        - Renderer:: `DestroyCommandPools` ()
+    - Renderer:: `CreateSwapChain` ()
+    - Renderer:: `LoadGraphicsToDevice` ()
+        - Renderer:: `CreateCommandPools` ()
+        - V4DRenderer:: `CreateResources` ()
+        - V4DRenderer:: `AllocateBuffers` ()
+        - Renderer:: `CreateDescriptorSets` ()
+            - Renderer:: `UpdateDescriptorSets` ()
+        - V4DRenderer:: `CreatePipelines` ()
+        - Renderer:: `CreateCommandBuffers` ()
+#### Frame Update
+ - main()
+    - Renderer:: `Render` ()
+        - [ conditional call of `RecreateSwapChains`() and return ]
+        - [ conditional call of `ReloadRenderer`() and return ]
+        - V4DRenderer:: `FrameUpdate`()
+        - V4DRenderer:: `RunDynamicGraphics`()
+        - *( submit dynamic commands, wait for semaphores, then submit pre-recorded commands )*
+        - *( present )*
+

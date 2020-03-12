@@ -148,7 +148,7 @@ namespace v4d::graphics {
 
 	public: // Sync methods
 		virtual void UpdateDescriptorSets();
-		virtual void UpdateDescriptorSets(std::vector<DescriptorSet*>&&);
+		virtual void UpdateDescriptorSet(DescriptorSet* set, const std::vector<uint32_t>& bindings = {});
 
 	public: // Helper methods
 	
