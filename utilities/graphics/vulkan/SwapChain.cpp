@@ -79,7 +79,7 @@ void SwapChain::SetConfiguration(uint32_t nbFrames, VkExtent2D preferredExtent, 
 	imageViewsCreateInfo.subresourceRange.layerCount = 1;
 }
 
-void SwapChain::AssignQueues(std::vector<uint32_t> queues) {
+void SwapChain::AssignQueues(const std::vector<uint32_t>& queues) {
 	if (queues.size() > 2 || (queues.size() == 2 && queues[0] != queues[1])) {
 		createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 	} else {

@@ -55,7 +55,7 @@ using namespace v4d::graphics::vulkan;
 						LOG_ERROR("VULKAN_ERROR" << type << ": " << pCallbackData->pMessage);
 						#ifndef _WINDOWS
 						// 	raise(SIGKILL);
-							std::abort();
+							// std::abort();
 						#endif
 					break;
 				}

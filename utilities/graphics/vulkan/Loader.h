@@ -34,11 +34,7 @@ namespace v4d::graphics::vulkan {
 		};
 		
 		// Required Instance Layers
-		std::vector<const char*> requiredInstanceLayers {
-			#ifdef _DEBUG
-			"VK_LAYER_LUNARG_standard_validation",
-			#endif
-		};
+		std::vector<const char*> requiredInstanceLayers {};
 		
 		#ifndef XVK_USE_QT_VULKAN_LOADER
 			void CheckExtensions(bool logging = false);
