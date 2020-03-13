@@ -247,13 +247,39 @@ namespace v4d::graphics {
 		return geometry->geometryOffset;
 	}
 
+	int Geometry::GlobalGeometryBuffers::AddLight(LightSource* lightSource) {
+		std::scoped_lock lock(lightBufferMutex);
+
+		lightSource->lightOffset = nbAllocatedLights;
+		for (auto [i, l] : lightAllocations) {
+			if (!l) {
+				lightSource->lightOffset = i;
+				break;
+			}
+		}
+		nbAllocatedLights = std::max(nbAllocatedLights, lightSource->lightOffset + 1);
+		lightAllocations[lightSource->lightOffset] = lightSource;
+		
+		// Check for overflow
+		if (lightBuffer.stagingBuffer.size < nbAllocatedLights * sizeof(LightBuffer_T)) 
+			FATAL("Global Light buffer overflow" )
+		
+		//TODO dynamically allocate more memory instead of crashing
+		
+		//
+		return lightSource->lightOffset;
+	}
+	
 	void Geometry::GlobalGeometryBuffers::RemoveGeometry(Geometry* geometry) {
 		std::scoped_lock lock(geometryBufferMutex, vertexBufferMutex, indexBufferMutex);
-		if (geometry->geometryOffset != -1) {
-			geometryAllocations[geometry->geometryOffset] = nullptr;
-			indexAllocations[geometry->indexOffset].data = nullptr;
-			vertexAllocations[geometry->vertexOffset].data = nullptr;
-		}
+		geometryAllocations[geometry->geometryOffset] = nullptr;
+		indexAllocations[geometry->indexOffset].data = nullptr;
+		vertexAllocations[geometry->vertexOffset].data = nullptr;
+	}
+
+	void Geometry::GlobalGeometryBuffers::RemoveLight(LightSource* lightSource) {
+		std::scoped_lock lock(lightBufferMutex);
+		lightAllocations[lightSource->lightOffset] = nullptr;
 	}
 	
 	void Geometry::GlobalGeometryBuffers::Allocate(Device* device) {
@@ -264,6 +290,7 @@ namespace v4d::graphics {
 		normalBuffer.Allocate(device);
 		uvBuffer.Allocate(device);
 		colorBuffer.Allocate(device);
+		lightBuffer.Allocate(device);
 	}
 	
 	void Geometry::GlobalGeometryBuffers::Free(Device* device) {
@@ -274,6 +301,7 @@ namespace v4d::graphics {
 		normalBuffer.Free(device);
 		uvBuffer.Free(device);
 		colorBuffer.Free(device);
+		lightBuffer.Free(device);
 	}
 	
 	void Geometry::GlobalGeometryBuffers::PushAllGeometries(Device* device, VkCommandBuffer commandBuffer) {
@@ -336,6 +364,50 @@ namespace v4d::graphics {
 		if (geometryBuffersMask & BUFFER_NORM) normalBuffer.Pull(device, commandBuffer, vertexCount, geometry->vertexOffset + vertexOffset);
 		if (geometryBuffersMask & BUFFER_UV) uvBuffer.Pull(device, commandBuffer, vertexCount, geometry->vertexOffset + vertexOffset);
 		if (geometryBuffersMask & BUFFER_COLOR) colorBuffer.Pull(device, commandBuffer, vertexCount, geometry->vertexOffset + vertexOffset);
+	}
+
+	void Geometry::GlobalGeometryBuffers::WriteLightSource(LightSource* lightSource) {
+		if (!globalBuffers.lightBuffer.stagingBuffer.data) {
+			FATAL("global buffers must be allocated before Writing Light Sources")
+		}
+		
+		LightBuffer_T* lightData = &((LightBuffer_T*) (globalBuffers.lightBuffer.stagingBuffer.data)) [lightSource->lightOffset];
+		
+		lightData->position = lightSource->viewSpacePosition;
+		lightData->intensity = lightSource->intensity;
+		lightData->colorAndType = PackColor(glm::vec4(lightSource->color, 0));
+		lightData->colorAndType |= lightSource->type & 0x000000ff;
+		lightData->attributes = lightSource->attributes;
+		lightData->radius = lightSource->radius;
+	}
+	
+	void Geometry::GlobalGeometryBuffers::ReadLightSource(LightSource* lightSource) {
+		if (!globalBuffers.lightBuffer.stagingBuffer.data) {
+			FATAL("global buffers must be allocated before Reading Light Sources")
+		}
+		
+		LightBuffer_T* lightData = &((LightBuffer_T*) (globalBuffers.lightBuffer.stagingBuffer.data)) [lightSource->lightOffset];
+		
+		lightSource->viewSpacePosition = lightData->position;
+		lightSource->intensity = lightData->intensity;
+		lightSource->color = glm::vec3(UnpackColor(lightData->colorAndType));
+		lightSource->type = lightData->colorAndType & 0x000000ff;
+		lightSource->attributes = lightData->attributes;
+		lightSource->radius = lightData->radius;
+	}
+
+	void Geometry::GlobalGeometryBuffers::PushLightSources(Device* device, VkCommandBuffer commandBuffer) {
+		if (!globalBuffers.lightBuffer.stagingBuffer.data) {
+			FATAL("global buffers must be allocated before Pushing Light Sources")
+		}
+		lightBuffer.Push(device, commandBuffer, nbAllocatedLights);
+	}
+	
+	void Geometry::GlobalGeometryBuffers::PullLightSources(Device* device, VkCommandBuffer commandBuffer) {
+		if (!globalBuffers.lightBuffer.stagingBuffer.data) {
+			FATAL("global buffers must be allocated before Pulling Light Sources")
+		}
+		lightBuffer.Pull(device, commandBuffer, nbAllocatedLights);
 	}
 	
 	void Geometry::GlobalGeometryBuffers::DefragmentMemory() {

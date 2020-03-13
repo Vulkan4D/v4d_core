@@ -3,7 +3,35 @@
 #include <v4d.h>
 
 namespace v4d::graphics {
-
+	
+	struct LightSource {
+		glm::dvec3 position {0};
+		glm::f32 intensity = 0;
+		glm::vec3 color {1};
+		glm::u32 type = 0;
+		glm::u32 attributes = 0;
+		glm::f32 radius = 0;
+		
+		uint32_t lightOffset = 0;
+		glm::vec3 viewSpacePosition {0};
+		
+		LightSource (
+			glm::dvec3 position = {0,0,0},
+			glm::f32 intensity = 0,
+			glm::vec3 color = {1,1,1},
+			glm::u32 type = 0,
+			glm::u32 attributes = 0,
+			glm::f32 radius = 0
+		) : 
+			position(position),
+			intensity(intensity),
+			color(color),
+			type(type),
+			attributes(attributes),
+			radius(radius)
+ 		{}
+	};
+	
 	class V4DLIB Geometry {
 		struct GeometryBufferAllocation {
 			uint32_t n;
@@ -18,13 +46,21 @@ namespace v4d::graphics {
 		uint32_t vertexOffset = 0;
 		uint32_t indexOffset = 0;
 
-		typedef glm::uvec4	GeometryBuffer_T;
-		typedef glm::u32	IndexBuffer_T;
-		typedef glm::vec4	PosBuffer_T;
-		typedef glm::u32	MaterialBuffer_T;
-		typedef glm::vec2	NormalBuffer_T;
-		typedef glm::u32	UVBuffer_T;
-		typedef glm::u32	ColorBuffer_T;
+		using GeometryBuffer_T = glm::uvec4;
+		using IndexBuffer_T = 	glm::u32;
+		using PosBuffer_T = 	glm::vec4;
+		using MaterialBuffer_T = glm::u32;
+		using NormalBuffer_T = 	glm::vec2;
+		using UVBuffer_T = 		glm::u32;
+		using ColorBuffer_T = 	glm::u32;
+		struct LightBuffer_T {
+			glm::vec3 position;
+			glm::f32 intensity;
+			glm::u32 colorAndType;
+			glm::u32 attributes;
+			glm::f32 radius;
+			glm::f32 _unused_;
+		};
 
 		#pragma region Pack Helpers
 		
@@ -98,6 +134,7 @@ namespace v4d::graphics {
 		typedef GlobalBuffer<NormalBuffer_T> NormalBuffer;
 		typedef GlobalBuffer<UVBuffer_T> UVBuffer;
 		typedef GlobalBuffer<ColorBuffer_T> ColorBuffer;
+		typedef GlobalBuffer<LightBuffer_T> LightBuffer;
 
 		GeometryBuffer_T* geometryInfo = nullptr;
 		IndexBuffer_T* indices = nullptr;
@@ -113,14 +150,16 @@ namespace v4d::graphics {
 		bool geometryInfoInitialized = false;
 		
 		class V4DLIB GlobalGeometryBuffers {
-			std::mutex geometryBufferMutex, vertexBufferMutex, indexBufferMutex;
+			std::mutex geometryBufferMutex, vertexBufferMutex, indexBufferMutex, lightBufferMutex;
 			std::map<int, Geometry*> geometryAllocations {};
 			std::map<int, GeometryBufferAllocation> indexAllocations {};
 			std::map<int, GeometryBufferAllocation> vertexAllocations {};
+			std::map<int, LightSource*> lightAllocations {};
 			
 			static const int nbInitialGeometries = 1024;
 			static const int nbInitialVertices = 1000000;
 			static const int nbInitialIndices = nbInitialVertices * 2;
+			static const int nbInitialLightSources = 4096;
 			
 		public:
 			
@@ -144,21 +183,23 @@ namespace v4d::graphics {
 			NormalBuffer normalBuffer {nbInitialVertices};
 			UVBuffer uvBuffer {nbInitialVertices};
 			ColorBuffer colorBuffer {nbInitialVertices};
+			LightBuffer lightBuffer {nbInitialLightSources};
 			
 			uint32_t nbAllocatedGeometries = 0;
 			uint32_t nbAllocatedIndices = 0;
 			uint32_t nbAllocatedVertices = 0;
+			uint32_t nbAllocatedLights = 0;
 			
 			int/*geometryOffset*/ AddGeometry(Geometry* geometry);
+			int/*lightOffset*/ AddLight(LightSource* lightSource);
 			
 			void RemoveGeometry(Geometry* geometry);
+			void RemoveLight(LightSource* lightSource);
 			
 			void Allocate(Device* device);
-			
 			void Free(Device* device);
 			
 			void PushAllGeometries(Device* device, VkCommandBuffer commandBuffer);
-			
 			void PullAllGeometries(Device* device, VkCommandBuffer commandBuffer);
 			
 			void PushGeometry(Device* device, VkCommandBuffer commandBuffer, Geometry* geometry, 
@@ -166,15 +207,19 @@ namespace v4d::graphics {
 								uint32_t vertexCount = 0, uint32_t vertexOffset = 0,
 								uint32_t indexCount = 0, uint32_t indexOffset = 0
 			);
-			
 			void PullGeometry(Device* device, VkCommandBuffer commandBuffer, Geometry* geometry, 
 								GeometryBuffersMask geometryBuffersMask = BUFFER_ALL, 
 								uint32_t vertexCount = 0, uint32_t vertexOffset = 0,
 								uint32_t indexCount = 0, uint32_t indexOffset = 0
 			);
 			
+			void WriteLightSource(LightSource* lightSource);
+			void ReadLightSource(LightSource* lightSource);
+			
+			void PushLightSources(Device* device, VkCommandBuffer commandBuffer);
+			void PullLightSources(Device* device, VkCommandBuffer commandBuffer);
+			
 			void DefragmentMemory();
-
 		};
 
 		static GlobalGeometryBuffers globalBuffers;
