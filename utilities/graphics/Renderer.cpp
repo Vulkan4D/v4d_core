@@ -336,7 +336,7 @@ bool Renderer::CreateSwapChain() {
 		preferredPresentModes
 	);
 	// Assign queues
-	swapChain->AssignQueues({presentQueue.familyIndex, graphicsQueue.familyIndex});
+	// swapChain->AssignQueues({presentQueue.familyIndex, graphicsQueue.familyIndex});
 	// Set custom params
 	// swapChain->createInfo.xxxx = xxxxxx...
 	// swapChain->imageViewsCreateInfo.xxxx = xxxxxx...

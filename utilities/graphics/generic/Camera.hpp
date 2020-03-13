@@ -3,7 +3,7 @@
 #include <v4d.h>
 
 namespace v4d::graphics {
-	struct Camera {
+	struct V4DLIB Camera {
 		alignas(4) int width = 0;
 		alignas(4) int height = 0;
 		alignas(4) bool txaa = true;
