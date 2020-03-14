@@ -52,7 +52,7 @@ namespace v4d::graphics {
 		using IndexBuffer_T = 	glm::u32;
 		using PosBuffer_T = 	glm::vec4;
 		using MaterialBuffer_T = glm::u32;
-		using NormalBuffer_T = 	glm::vec2;
+		using NormalBuffer_T = 	glm::vec4; // or pack into vec2 ???
 		using UVBuffer_T = 		glm::u32;
 		using ColorBuffer_T = 	glm::u32;
 		struct LightBuffer_T {
@@ -72,8 +72,12 @@ namespace v4d::graphics {
 		#pragma region Pack Helpers
 		
 		static NormalBuffer_T PackNormal(glm::vec3 normal) {
-			float f = glm::sqrt(8.0f * normal.z + 8.0f);
-			return glm::vec2(normal) / f + 0.5f;
+			// // vec2
+			// float f = glm::sqrt(8.0f * normal.z + 8.0f);
+			// return glm::vec2(normal) / f + 0.5f;
+			
+			// vec4
+			return glm::vec4(normal, 0);
 		}
 
 		static ColorBuffer_T PackColor(glm::vec4 color) {
@@ -97,10 +101,11 @@ namespace v4d::graphics {
 		}
 
 		static glm::vec3 UnpackNormal(NormalBuffer_T norm) {
-			glm::vec2 fenc = norm * 4.0f - 2.0f;
-			float f = glm::dot(fenc, fenc);
-			float g = glm::sqrt(1.0f - f / 4.0f);
-			return glm::vec3(fenc * g, 1.0f - f / 2.0f);
+			// glm::vec2 fenc = norm * 4.0f - 2.0f;
+			// float f = glm::dot(fenc, fenc);
+			// float g = glm::sqrt(1.0f - f / 4.0f);
+			// return glm::vec3(fenc * g, 1.0f - f / 2.0f);
+			return norm;
 		}
 
 		static glm::vec2 UnpackUV(UVBuffer_T uv) {

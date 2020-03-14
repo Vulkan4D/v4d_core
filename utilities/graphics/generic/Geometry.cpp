@@ -10,7 +10,7 @@ namespace v4d::graphics {
 		triangleGeometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
 		triangleGeometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV;
 		triangleGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
-		triangleGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_NV;
+		triangleGeometry.flags = 0;//VK_GEOMETRY_OPAQUE_BIT_NV;
 		
 		triangleGeometry.geometry.triangles.vertexOffset = (VkDeviceSize)(vertexOffset*sizeof(PosBuffer_T));
 		triangleGeometry.geometry.triangles.vertexCount = vertexCount;
