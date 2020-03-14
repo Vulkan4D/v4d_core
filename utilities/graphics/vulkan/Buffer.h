@@ -60,10 +60,10 @@ namespace v4d::graphics::vulkan {
 		void MapMemory(Device* device, VkDeviceSize offset = 0, VkDeviceSize size = 0, VkMemoryMapFlags flags = 0);
 		void UnmapMemory(Device* device);
 		
-		void CopySrcData(Device* device);
+		void CopySrcData(Device* device, size_t maxCopySize = 0);
 		
-		void WriteToMappedData(void* inputData, size_t copySize = 0);
-		void ReadFromMappedData(void* outputData, size_t copySize = 0);
+		void WriteToMappedData(void* inputData, size_t copySize = 0, size_t deviceMemoryOffset = 0);
+		void ReadFromMappedData(void* outputData, size_t copySize = 0, size_t deviceMemoryOffset = 0);
 		
 		// copy from one buffer to another
 		static void Copy(Device* device, VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkDeviceSize srcOffset = 0, VkDeviceSize dstOffset = 0);
@@ -93,7 +93,7 @@ namespace v4d::graphics::vulkan {
 		void Allocate(Device* device, VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 		void Free(Device* device);
 		
-		void Update(Device* device, VkCommandBuffer commandBuffer);
+		void Update(Device* device, VkCommandBuffer commandBuffer, size_t maxCopySize = 0);
 	};
 	
 	

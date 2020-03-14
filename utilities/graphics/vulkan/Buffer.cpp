@@ -64,20 +64,25 @@ void Buffer::Allocate(Device* device, VkMemoryPropertyFlags properties, bool cop
 	device->BindBufferMemory(buffer, memory, 0);
 }
 
-void Buffer::CopySrcData(Device* device) {
+void Buffer::CopySrcData(Device* device, size_t maxCopySize) {
 	bool autoMapMemory = !data;
 	if (autoMapMemory) MapMemory(device);
 	long offset = 0;
+	if (maxCopySize == 0) maxCopySize = size;
+	else maxCopySize = std::min(size, maxCopySize);
 	for (auto& dataPointer : srcDataPointers) {
-		memcpy((byte*)data + offset, dataPointer.dataPtr, dataPointer.size);
-		offset += dataPointer.size;
+		size_t copySize = std::min(dataPointer.size, maxCopySize);
+		memcpy((byte*)data + offset, dataPointer.dataPtr, copySize);
+		maxCopySize -= copySize;
+		offset += copySize;
+		if (maxCopySize <= 0) break;
 	}
 	if ((properties & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {
 		VkMappedMemoryRange mappedRange {};
 		mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
 		mappedRange.memory = memory;
 		mappedRange.offset = 0;
-		mappedRange.size = size;
+		mappedRange.size = std::min(size, maxCopySize);
 		device->FlushMappedMemoryRanges(1, &mappedRange);
 	}
 	if (autoMapMemory) UnmapMemory(device);
@@ -101,12 +106,12 @@ void Buffer::UnmapMemory(Device* device) {
 	data = nullptr;
 }
 
-void Buffer::WriteToMappedData(void* inputData, size_t copySize) {
-	memcpy(data, inputData, copySize == 0 ? size : copySize);
+void Buffer::WriteToMappedData(void* inputData, size_t copySize, size_t deviceMemoryOffset) {
+	memcpy((byte*)data + deviceMemoryOffset, inputData, copySize == 0 ? size : copySize);
 }
 
-void Buffer::ReadFromMappedData(void* outputData, size_t copySize) {
-	memcpy(outputData, data, copySize == 0 ? size : copySize);
+void Buffer::ReadFromMappedData(void* outputData, size_t copySize, size_t deviceMemoryOffset) {
+	memcpy(outputData, (byte*)data + deviceMemoryOffset, copySize == 0 ? size : copySize);
 }
 
 void Buffer::Copy(Device* device, VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkDeviceSize srcOffset, VkDeviceSize dstOffset) {
@@ -155,7 +160,7 @@ void StagedBuffer::Free(Device* device) {
 	deviceLocalBuffer.Free(device);
 }
 
-void StagedBuffer::Update(Device* device, VkCommandBuffer commandBuffer) {
-	stagingBuffer.CopySrcData(device);
-	Buffer::Copy(device, commandBuffer, stagingBuffer, deviceLocalBuffer);
+void StagedBuffer::Update(Device* device, VkCommandBuffer commandBuffer, size_t maxCopySize) {
+	stagingBuffer.CopySrcData(device, maxCopySize);
+	Buffer::Copy(device, commandBuffer, stagingBuffer, deviceLocalBuffer, maxCopySize);
 }

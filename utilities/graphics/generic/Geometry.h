@@ -4,6 +4,8 @@
 
 namespace v4d::graphics {
 	
+	struct ObjectInstance;
+	
 	struct LightSource {
 		glm::dvec3 position {0};
 		glm::f32 intensity = 0;
@@ -54,13 +56,18 @@ namespace v4d::graphics {
 		using UVBuffer_T = 		glm::u32;
 		using ColorBuffer_T = 	glm::u32;
 		struct LightBuffer_T {
-			glm::vec3 position;
-			glm::f32 intensity;
-			glm::u32 colorAndType;
-			glm::u32 attributes;
-			glm::f32 radius;
-			glm::f32 _unused_;
+			alignas(16) glm::vec3 position;
+			alignas(4) glm::f32 intensity;
+			alignas(4) glm::u32 colorAndType;
+			alignas(4) glm::u32 attributes;
+			alignas(4) glm::f32 radius;
+			alignas(4) glm::f32 _unused_;
 		};
+		struct ObjectBuffer_T {
+			alignas(64) glm::mat4 modelViewMatrix;
+			// alignas(64) glm::mat3 normalMatrix; // This does not work... need to do more debugging...
+		};
+	
 
 		#pragma region Pack Helpers
 		
@@ -127,6 +134,7 @@ namespace v4d::graphics {
 			}
 		};
 
+		typedef GlobalBuffer<ObjectBuffer_T> ObjectBuffer;
 		typedef GlobalBuffer<GeometryBuffer_T> GeometryBuffer;
 		typedef GlobalBuffer<IndexBuffer_T, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT> IndexBuffer;
 		typedef GlobalBuffer<PosBuffer_T, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT> PosBuffer;
@@ -150,16 +158,18 @@ namespace v4d::graphics {
 		bool geometryInfoInitialized = false;
 		
 		class V4DLIB GlobalGeometryBuffers {
-			std::mutex geometryBufferMutex, vertexBufferMutex, indexBufferMutex, lightBufferMutex;
+			std::mutex geometryBufferMutex, vertexBufferMutex, indexBufferMutex, objectBufferMutex, lightBufferMutex;
+			std::map<int, ObjectInstance*> objectAllocations {};
 			std::map<int, Geometry*> geometryAllocations {};
 			std::map<int, GeometryBufferAllocation> indexAllocations {};
 			std::map<int, GeometryBufferAllocation> vertexAllocations {};
 			std::map<int, LightSource*> lightAllocations {};
 			
-			static const int nbInitialGeometries = 1024;
+			static const int nbInitialObjects = 1024;
+			static const int nbInitialGeometries = 4096;
 			static const int nbInitialVertices = 1000000;
 			static const int nbInitialIndices = nbInitialVertices * 2;
-			static const int nbInitialLightSources = 4096;
+			static const int nbInitialLights = 4096;
 			
 		public:
 			
@@ -176,6 +186,7 @@ namespace v4d::graphics {
 				BUFFER_VERTEX_DATA = BUFFER_POS | BUFFER_MAT | BUFFER_NORM | BUFFER_UV | BUFFER_COLOR,
 			};
 			
+			ObjectBuffer objectBuffer {nbInitialObjects};
 			GeometryBuffer geometryBuffer {nbInitialGeometries};
 			IndexBuffer indexBuffer {nbInitialIndices};
 			PosBuffer posBuffer {nbInitialVertices};
@@ -183,41 +194,53 @@ namespace v4d::graphics {
 			NormalBuffer normalBuffer {nbInitialVertices};
 			UVBuffer uvBuffer {nbInitialVertices};
 			ColorBuffer colorBuffer {nbInitialVertices};
-			LightBuffer lightBuffer {nbInitialLightSources};
+			LightBuffer lightBuffer {nbInitialLights};
 			
+			uint32_t nbAllocatedObjects = 0;
 			uint32_t nbAllocatedGeometries = 0;
 			uint32_t nbAllocatedIndices = 0;
 			uint32_t nbAllocatedVertices = 0;
 			uint32_t nbAllocatedLights = 0;
 			
-			int/*geometryOffset*/ AddGeometry(Geometry* geometry);
-			int/*lightOffset*/ AddLight(LightSource* lightSource);
+			int/*geometryOffset*/ AddGeometry(Geometry*);
+			int/*objectOffset*/ AddObject(ObjectInstance*);
+			int/*lightOffset*/ AddLight(LightSource*);
 			
-			void RemoveGeometry(Geometry* geometry);
-			void RemoveLight(LightSource* lightSource);
+			void RemoveGeometry(Geometry*);
+			void RemoveObject(ObjectInstance*);
+			void RemoveLight(LightSource*);
 			
-			void Allocate(Device* device);
-			void Free(Device* device);
+			void Allocate(Device*);
+			void Free(Device*);
 			
-			void PushAllGeometries(Device* device, VkCommandBuffer commandBuffer);
-			void PullAllGeometries(Device* device, VkCommandBuffer commandBuffer);
+			void PushEverything(Device*, VkCommandBuffer);
+			void PullEverything(Device*, VkCommandBuffer);
 			
-			void PushGeometry(Device* device, VkCommandBuffer commandBuffer, Geometry* geometry, 
+			void PushAllGeometries(Device*, VkCommandBuffer);
+			void PullAllGeometries(Device*, VkCommandBuffer);
+			
+			void PushGeometry(Device*, VkCommandBuffer, Geometry*, 
 								GeometryBuffersMask geometryBuffersMask = BUFFER_ALL, 
 								uint32_t vertexCount = 0, uint32_t vertexOffset = 0,
 								uint32_t indexCount = 0, uint32_t indexOffset = 0
 			);
-			void PullGeometry(Device* device, VkCommandBuffer commandBuffer, Geometry* geometry, 
+			void PullGeometry(Device*, VkCommandBuffer, Geometry*, 
 								GeometryBuffersMask geometryBuffersMask = BUFFER_ALL, 
 								uint32_t vertexCount = 0, uint32_t vertexOffset = 0,
 								uint32_t indexCount = 0, uint32_t indexOffset = 0
 			);
 			
-			void WriteLightSource(LightSource* lightSource);
-			void ReadLightSource(LightSource* lightSource);
+			void WriteObject(ObjectInstance*);
+			void ReadObject(ObjectInstance*);
 			
-			void PushLightSources(Device* device, VkCommandBuffer commandBuffer);
-			void PullLightSources(Device* device, VkCommandBuffer commandBuffer);
+			void WriteLight(LightSource*);
+			void ReadLight(LightSource*);
+			
+			void PushLights(Device*, VkCommandBuffer);
+			void PullLights(Device*, VkCommandBuffer);
+			
+			void PushObjects(Device*, VkCommandBuffer);
+			void PullObjects(Device*, VkCommandBuffer);
 			
 			void DefragmentMemory();
 		};
