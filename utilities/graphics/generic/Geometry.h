@@ -13,6 +13,7 @@ namespace v4d::graphics {
 		glm::u32 type = 0;
 		glm::u32 attributes = 0;
 		glm::f32 radius = 0;
+		glm::f32 custom1 = 0;
 		
 		uint32_t lightOffset = 0;
 		glm::vec3 viewSpacePosition {0};
@@ -23,14 +24,16 @@ namespace v4d::graphics {
 			glm::vec3 color = {1,1,1},
 			glm::u32 type = 0,
 			glm::u32 attributes = 0,
-			glm::f32 radius = 0
+			glm::f32 radius = 0,
+			glm::f32 custom1 = 0
 		) : 
 			position(position),
 			intensity(intensity),
 			color(color),
 			type(type),
 			attributes(attributes),
-			radius(radius)
+			radius(radius),
+			custom1(custom1)
  		{}
 	};
 	
@@ -43,7 +46,8 @@ namespace v4d::graphics {
 	public:
 		uint32_t vertexCount;
 		uint32_t indexCount;
-		uint32_t materialIndex;
+		uint32_t material;
+		bool isProcedural;
 		
 		uint32_t geometryOffset = 0;
 		uint32_t vertexOffset = 0;
@@ -51,23 +55,35 @@ namespace v4d::graphics {
 
 		using GeometryBuffer_T = glm::uvec4; // 16 bytes
 		using IndexBuffer_T = 	glm::u32; // 4 bytes
-		struct VertexBuffer_T { // 32 bytes
-			glm::vec4 posAndUV;
-			glm::vec4 normalAndColor;
+		struct VertexBuffer_T { // 32 bytes (must be same as ProceduralVertexBuffer_T)
+			glm::vec3 pos;
+			glm::f32 color;
+			glm::vec3 normal;
+			glm::f32 uv;
+		};
+		struct ProceduralVertexBuffer_T { // 32 bytes (must be same as VertexBuffer_T)
+			glm::vec3 aabbMin;
+			glm::vec3 aabbMax;
+			glm::f32 color;
+			glm::f32 custom1;
 		};
 		struct LightBuffer_T { // 32 bytes
-			alignas(16) glm::vec3 position;
-			alignas(4) glm::f32 intensity;
-			alignas(4) glm::u32 colorAndType;
-			alignas(4) glm::u32 attributes;
-			alignas(4) glm::f32 radius;
-			alignas(4) glm::f32 _unused_;
+			glm::vec3 position;
+			glm::f32 intensity;
+			glm::u32 colorAndType;
+			glm::u32 attributes;
+			glm::f32 radius;
+			glm::f32 custom1;
 		};
-		struct ObjectBuffer_T { // 64 bytes
-			alignas(64) glm::mat4 modelViewMatrix;
-			// alignas(64) glm::mat3 normalMatrix; // This does not work... need to do more debugging...
+		
+		struct ObjectBuffer_T { // 128 bytes
+			glm::mat4 modelViewMatrix;
+			glm::mat3 normalMatrix;
+			glm::vec3 custom3;
+			glm::vec4 custom4;
 		};
 	
+		static std::unordered_map<std::string, uint32_t> rayTracingShaderOffsets;
 
 		#pragma region Pack Helpers
 		
@@ -200,29 +216,29 @@ namespace v4d::graphics {
 			std::map<int, GeometryBufferAllocation> vertexAllocations {};
 			std::map<int, LightSource*> lightAllocations {};
 			
-			// // Very high object and vertex count, takes about two seconds just for allocating 432 MB of VRAM
-			// 	static const int nbInitialObjects = 1048576; // 1 million @ 64 bytes each = 64 mb
+			// // Very high object and vertex count, takes about two seconds just for allocating 496 MB of VRAM
+			// 	static const int nbInitialObjects = 1048576; // 1 million @ 128 bytes each = 128 mb
 			// 	static const int nbInitialGeometries = 1048576; // 1 million @ 16 bytes each = 16 mb
 			// 	static const int nbInitialVertices = 8388608; // 8 million @ 32 bytes each = 256 mb
 			// 	static const int nbInitialIndices = nbInitialVertices * 2; // 16 million @ 4 bytes each = 64 mb
 			// 	static const int nbInitialLights = 1048576; // 1 million @ 32 bytes each = 32 mb
 			
-			// // Medium object and vertex count, takes about one second to allocate 147 MB of VRAM
-			// 	static const int nbInitialObjects = 16384; // 16k objects @ 64 bytes each = 1 mb
+			// // Medium object and vertex count, takes about one second to allocate 148 MB of VRAM
+			// 	static const int nbInitialObjects = 16384; // 16k objects @ 128 bytes each = 2 mb
 			// 	static const int nbInitialGeometries = nbInitialObjects * 4; // 64k @ 16 bytes each = 1 mb
 			// 	static const int nbInitialVertices = 4194304; // 4 million @ 32 bytes each = 128 mb
 			// 	static const int nbInitialIndices = nbInitialVertices * 2; // 8 million @ 4 bytes each = 16 mb
 			// 	static const int nbInitialLights = 16384; // 16k lights @ 32 bytes each = 512 kb
 			
 			// // Low object and vertex count, allocates almost instantaneously 38 MB of VRAM
-			// 	static const int nbInitialObjects = 8192; // 8k objects @ 64 bytes each = 512 kb
+			// 	static const int nbInitialObjects = 8192; // 8k objects @ 128 bytes each = 1 mb
 			// 	static const int nbInitialGeometries = nbInitialObjects * 4; // 32k @ 16 bytes each = 512 kb
 			// 	static const int nbInitialVertices = 1048576; // 1 million @ 32 bytes each = 32 mb
 			// 	static const int nbInitialIndices = nbInitialVertices * 2; // 2 million @ 4 bytes each = 4 mb
 			// 	static const int nbInitialLights = 8192; // 8k lights @ 32 bytes each = 256 kb
 			
 			// Very Low object and vertex count, allocates instantaneously 10 MB of VRAM
-				static const int nbInitialObjects = 4096; // 4k objects @ 64 bytes each = 256 kb
+				static const int nbInitialObjects = 4096; // 4k objects @ 128 bytes each = 512 kb
 				static const int nbInitialGeometries = nbInitialObjects * 4; // 16k @ 16 bytes each = 256 kb
 				static const int nbInitialVertices = 262144; // 262k vertices @ 32 bytes each = 8 mb
 				static const int nbInitialIndices = nbInitialVertices * 2; // 524k indices @ 4 bytes each = 1 mb
@@ -294,19 +310,22 @@ namespace v4d::graphics {
 
 		static GlobalGeometryBuffers globalBuffers;
 		
-		VkGeometryNV GetRayTracingGeometry() const;
-		
-		Geometry(uint32_t vertexCount, uint32_t indexCount, uint32_t materialIndex = 0);
+		Geometry(uint32_t vertexCount, uint32_t indexCount, uint32_t material = 0, bool isProcedural = false);
+		// Geometry(glm::vec3 spherePosition, float sphereRadius, uint32_t material = 0);
 		
 		~Geometry();
+		
+		VkGeometryNV GetRayTracingGeometry() const;
 		
 		void MapStagingBuffers();
 		
 		void UnmapStagingBuffers();
 		
-		void SetGeometryInfo(uint32_t objectIndex = 0, uint32_t materialIndex = 0);
+		void SetGeometryInfo(uint32_t objectIndex = 0, uint32_t material = 0);
 		
 		void SetVertex(uint32_t i, const glm::vec3& pos, const glm::vec3& normal, const glm::vec2& uv, const glm::vec4& color);
+		
+		void SetProceduralVertex(uint32_t i, glm::vec3 aabbMin, glm::vec3 aabbMax, const glm::vec4& color, float custom1 = 0);
 		
 		void SetIndex(uint32_t i, IndexBuffer_T vertexIndex);
 		
@@ -317,9 +336,11 @@ namespace v4d::graphics {
 		
 		void SetIndices(const IndexBuffer_T* vertexIndices, uint32_t count = 0, uint32_t startAt = 0);
 		
-		void GetGeometryInfo(uint32_t* objectIndex, uint32_t* materialIndex);
+		void GetGeometryInfo(uint32_t* objectIndex, uint32_t* material);
 		
-		void GetVertex(uint32_t i, glm::vec3* pos, glm::vec3* normal, glm::vec2* uv, glm::vec4* color);
+		void GetVertex(uint32_t i, glm::vec3* pos, glm::vec3* normal = nullptr, glm::vec2* uv = nullptr, glm::vec4* color = nullptr);
+		
+		void GetProceduralVertex(uint32_t i, glm::vec3* aabbMin, glm::vec3* aabbMax, glm::vec4* color = nullptr, float* custom1 = nullptr);
 		
 		void GetIndex(uint32_t i, IndexBuffer_T* vertexIndex);
 		
@@ -338,44 +359,5 @@ namespace v4d::graphics {
 			);
 
 	};
-
-
-
-
-
-
-	// struct ProceduralGeometryData {
-	// 	std::pair<glm::vec3, glm::vec3> boundingBox;
-	// 	ProceduralGeometryData(glm::vec3 min, glm::vec3 max) : boundingBox(min, max) {}
-	// };
-	// 	std::vector<V, std::allocator<V>> aabbData {};
-	// 	Buffer* aabbBuffer = nullptr;
-	// 	VkDeviceSize aabbOffset = 0;
-	// 	VkDeviceSize aabbCount = 0;
-	// 	VkGeometryNV GetRayTracingGeometry() const override {
-	// 		if (aabbBuffer->buffer == VK_NULL_HANDLE)
-	// 			throw std::runtime_error("Buffer for aabb geometry has not been created");
-	// 		VkGeometryNV geometry {};
-	// 		geometry.sType = VK_STRUCTURE_TYPE_GEOMETRY_NV;
-	// 		geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
-	// 		geometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV;
-	// 		geometry.geometryType = VK_GEOMETRY_TYPE_AABBS_NV;
-	// 		geometry.flags = VK_GEOMETRY_OPAQUE_BIT_NV;
-	// 		geometry.geometry.aabbs.numAABBs = (uint)aabbData.size();
-	// 		geometry.geometry.aabbs.stride = sizeof(V);
-	// 		geometry.geometry.aabbs.offset = aabbOffset;
-	// 		geometry.geometry.aabbs.aabbData = aabbBuffer->buffer;
-	// 		return geometry;
-	// 	}
-	// 	ProceduralGeometry(const std::vector<V>& aabbData, Buffer* aabbBuffer, VkDeviceSize aabbOffset = 0)
-	// 	 : aabbData(aabbData) {
-	// 		this->aabbBuffer = aabbBuffer;
-	// 		this->aabbOffset = aabbOffset;
-	// 		this->aabbCount = aabbData.size();
-	// 	}
-	// };
-
-
-
 
 }

@@ -4,32 +4,47 @@ namespace v4d::graphics {
 	
 	Geometry::GlobalGeometryBuffers Geometry::globalBuffers {};
 
+	std::unordered_map<std::string, uint32_t> Geometry::rayTracingShaderOffsets {};
+
 	VkGeometryNV Geometry::GetRayTracingGeometry() const {
-		VkGeometryNV triangleGeometry {};
-		triangleGeometry.sType = VK_STRUCTURE_TYPE_GEOMETRY_NV;
-		triangleGeometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
-		triangleGeometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV;
-		triangleGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
-		triangleGeometry.flags = 0;//VK_GEOMETRY_OPAQUE_BIT_NV;
+		VkGeometryNV geometry {};
+		geometry.sType = VK_STRUCTURE_TYPE_GEOMETRY_NV;
+		geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
+		geometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV;
 		
-		triangleGeometry.geometry.triangles.vertexOffset = (VkDeviceSize)(vertexOffset*sizeof(VertexBuffer_T));
-		triangleGeometry.geometry.triangles.vertexCount = vertexCount;
-		triangleGeometry.geometry.triangles.vertexStride = sizeof(VertexBuffer_T);
-		triangleGeometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-		triangleGeometry.geometry.triangles.indexOffset = (VkDeviceSize)(indexOffset*sizeof(IndexBuffer_T));
-		triangleGeometry.geometry.triangles.indexCount = indexCount;
-		triangleGeometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
-		
-		triangleGeometry.geometry.triangles.vertexData = globalBuffers.vertexBuffer.deviceLocalBuffer.buffer;
-		triangleGeometry.geometry.triangles.indexData = globalBuffers.indexBuffer.deviceLocalBuffer.buffer;
-		
-		triangleGeometry.geometry.triangles.transformData = transformBuffer? transformBuffer->buffer : VK_NULL_HANDLE;
-		triangleGeometry.geometry.triangles.transformOffset = transformOffset;
-		
-		return triangleGeometry;
+		geometry.flags = 0;//VK_GEOMETRY_OPAQUE_BIT_NV;
+			
+		if (isProcedural) {
+			geometry.geometryType = VK_GEOMETRY_TYPE_AABBS_NV;
+			
+			geometry.geometry.aabbs.numAABBs = vertexCount;
+			geometry.geometry.aabbs.stride = sizeof(ProceduralVertexBuffer_T);
+			geometry.geometry.aabbs.offset = (VkDeviceSize)(vertexOffset*sizeof(ProceduralVertexBuffer_T));
+			
+			geometry.geometry.aabbs.aabbData = globalBuffers.vertexBuffer.deviceLocalBuffer.buffer;
+			
+		} else {
+			geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
+			
+			geometry.geometry.triangles.vertexOffset = (VkDeviceSize)(vertexOffset*sizeof(VertexBuffer_T));
+			geometry.geometry.triangles.vertexCount = vertexCount;
+			geometry.geometry.triangles.vertexStride = sizeof(VertexBuffer_T);
+			geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
+			geometry.geometry.triangles.indexOffset = (VkDeviceSize)(indexOffset*sizeof(IndexBuffer_T));
+			geometry.geometry.triangles.indexCount = indexCount;
+			geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
+			
+			geometry.geometry.triangles.vertexData = globalBuffers.vertexBuffer.deviceLocalBuffer.buffer;
+			geometry.geometry.triangles.indexData = globalBuffers.indexBuffer.deviceLocalBuffer.buffer;
+			
+			geometry.geometry.triangles.transformData = transformBuffer? transformBuffer->buffer : VK_NULL_HANDLE;
+			geometry.geometry.triangles.transformOffset = transformOffset;
+		}
+		return geometry;
 	}
 	
-	Geometry::Geometry(uint32_t vertexCount, uint32_t indexCount, uint32_t materialIndex) : vertexCount(vertexCount), indexCount(indexCount), materialIndex(materialIndex) {
+	Geometry::Geometry(uint32_t vertexCount, uint32_t indexCount, uint32_t material, bool isProcedural)
+	 : vertexCount(vertexCount), indexCount(indexCount), material(material), isProcedural(isProcedural) {
 		globalBuffers.AddGeometry(this);
 	}
 	
@@ -56,14 +71,14 @@ namespace v4d::graphics {
 		geometryInfoInitialized = false;
 	}
 	
-	void Geometry::SetGeometryInfo(uint32_t objectIndex, uint32_t materialIndex) {
+	void Geometry::SetGeometryInfo(uint32_t objectIndex, uint32_t material) {
 		if (!geometries) MapStagingBuffers();
 		
 		GeometryBuffer_T data {
 			indexOffset,
 			vertexOffset,
 			objectIndex,
-			materialIndex
+			material
 		};
 		
 		memcpy(geometries, &data, sizeof(GeometryBuffer_T));
@@ -75,10 +90,24 @@ namespace v4d::graphics {
 		if (!vertices) MapStagingBuffers();
 		
 		VertexBuffer_T vert {
-			{pos, PackUVasFloat(uv)},
-			{normal, PackColorAsFloat(color)}
+			pos, 
+			PackColorAsFloat(color),
+			normal, 
+			PackUVasFloat(uv)
 		};
 		memcpy(&vertices[i], &vert, sizeof(VertexBuffer_T));
+	}
+	
+	void Geometry::SetProceduralVertex(uint32_t i, glm::vec3 aabbMin, glm::vec3 aabbMax, const glm::vec4& color, float custom1) {
+		if (!vertices) MapStagingBuffers();
+		
+		ProceduralVertexBuffer_T vert {
+			aabbMin, 
+			aabbMax, 
+			PackColorAsFloat(color),
+			custom1
+		};
+		memcpy(&vertices[i], &vert, sizeof(ProceduralVertexBuffer_T));
 	}
 	
 	void Geometry::SetIndex(uint32_t i, IndexBuffer_T vertexIndex) {
@@ -107,7 +136,7 @@ namespace v4d::graphics {
 		memcpy(&indices[startAt], vertexIndices, sizeof(IndexBuffer_T)*count);
 	}
 	
-	void Geometry::GetGeometryInfo(uint32_t* objectIndex, uint32_t* materialIndex) {
+	void Geometry::GetGeometryInfo(uint32_t* objectIndex, uint32_t* material) {
 		if (!geometries) MapStagingBuffers();
 		
 		GeometryBuffer_T data;
@@ -115,7 +144,7 @@ namespace v4d::graphics {
 		indexOffset = data.x;
 		vertexOffset = data.y;
 		*objectIndex = data.z;
-		*materialIndex = data.w;
+		*material = data.w;
 	}
 	
 	void Geometry::GetVertex(uint32_t i, glm::vec3* pos, glm::vec3* normal, glm::vec2* uv, glm::vec4* color) {
@@ -123,10 +152,21 @@ namespace v4d::graphics {
 		
 		VertexBuffer_T vert;
 		memcpy(&vert, &vertices[i], sizeof(VertexBuffer_T));
-		*pos = vert.posAndUV;
-		*uv = UnpackUVfromFloat(vert.posAndUV.w);
-		*normal = vert.normalAndColor;
-		*color = UnpackColorFromFloat(vert.normalAndColor.w);
+		*pos = vert.pos;
+		if (uv) *uv = UnpackUVfromFloat(vert.uv);
+		if (normal) *normal = vert.normal;
+		if (color) *color = UnpackColorFromFloat(vert.color);
+	}
+	
+	void Geometry::GetProceduralVertex(uint32_t i, glm::vec3* aabbMin, glm::vec3* aabbMax, glm::vec4* color, float* custom1) {
+		if (!vertices) MapStagingBuffers();
+		
+		ProceduralVertexBuffer_T vert;
+		memcpy(&vert, &vertices[i], sizeof(ProceduralVertexBuffer_T));
+		*aabbMin = vert.aabbMin;
+		*aabbMax = vert.aabbMax;
+		if (color) *color = UnpackColorFromFloat(vert.color);
+		if (custom1) *custom1 = vert.custom1;
 	}
 	
 	void Geometry::GetIndex(uint32_t i, IndexBuffer_T* vertexIndex) {
@@ -180,19 +220,21 @@ namespace v4d::graphics {
 		geometryAllocations[geometry->geometryOffset] = geometry;
 		
 		// Index
-		geometry->indexOffset = nbAllocatedIndices;
-		for (auto [i, alloc] : indexAllocations) {
-			if (!alloc.data) {
-				if (alloc.n >= geometry->indexCount) {
-					geometry->indexOffset = i;
-					if (alloc.n > geometry->indexCount) {
-						indexAllocations[geometry->indexOffset+geometry->indexCount] = {alloc.n - geometry->indexCount, nullptr};
+		if (geometry->indexCount > 0) {
+			geometry->indexOffset = nbAllocatedIndices;
+			for (auto [i, alloc] : indexAllocations) {
+				if (!alloc.data) {
+					if (alloc.n >= geometry->indexCount) {
+						geometry->indexOffset = i;
+						if (alloc.n > geometry->indexCount) {
+							indexAllocations[geometry->indexOffset+geometry->indexCount] = {alloc.n - geometry->indexCount, nullptr};
+						}
 					}
 				}
 			}
+			nbAllocatedIndices = std::max(nbAllocatedIndices, geometry->indexOffset + geometry->indexCount);
+			indexAllocations[geometry->indexOffset] = {geometry->indexCount, geometry};
 		}
-		nbAllocatedIndices = std::max(nbAllocatedIndices, geometry->indexOffset + geometry->indexCount);
-		indexAllocations[geometry->indexOffset] = {geometry->indexCount, geometry};
 		
 		// Vertex
 		geometry->vertexOffset = nbAllocatedVertices;
@@ -368,7 +410,9 @@ namespace v4d::graphics {
 		ObjectBuffer_T* objData = &((ObjectBuffer_T*) (globalBuffers.objectBuffer.stagingBuffer.data)) [obj->objectOffset];
 		
 		objData->modelViewMatrix = obj->modelViewMatrix;
-		// objData->normalMatrix = obj->normalMatrix; // This does not work... need to do more debugging...
+		objData->normalMatrix = obj->normalMatrix;
+		objData->custom4 = obj->custom4;
+		objData->custom4 = obj->custom4;
 	}
 	
 	void Geometry::GlobalGeometryBuffers::ReadObject(ObjectInstance* obj) {
@@ -379,7 +423,10 @@ namespace v4d::graphics {
 		ObjectBuffer_T* objData = &((ObjectBuffer_T*) (globalBuffers.objectBuffer.stagingBuffer.data)) [obj->objectOffset];
 		
 		obj->modelViewMatrix = objData->modelViewMatrix;
-		// obj->normalMatrix = objData->normalMatrix; // This does not work... need to do more debugging...
+		obj->normalMatrix = objData->normalMatrix;
+		obj->normalMatrix = objData->normalMatrix;
+		obj->custom3 = objData->custom3;
+		obj->custom4 = objData->custom4;
 	}
 	
 	void Geometry::GlobalGeometryBuffers::WriteLight(LightSource* lightSource) {
@@ -395,6 +442,7 @@ namespace v4d::graphics {
 		lightData->colorAndType |= lightSource->type & 0x000000ff;
 		lightData->attributes = lightSource->attributes;
 		lightData->radius = lightSource->radius;
+		lightData->custom1 = lightSource->custom1;
 	}
 	
 	void Geometry::GlobalGeometryBuffers::ReadLight(LightSource* lightSource) {
@@ -410,6 +458,7 @@ namespace v4d::graphics {
 		lightSource->type = lightData->colorAndType & 0x000000ff;
 		lightSource->attributes = lightData->attributes;
 		lightSource->radius = lightData->radius;
+		lightSource->custom1 = lightData->custom1;
 	}
 
 	void Geometry::GlobalGeometryBuffers::PushLights(Device* device, VkCommandBuffer commandBuffer) {
