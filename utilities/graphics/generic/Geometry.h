@@ -50,10 +50,10 @@ namespace v4d::graphics {
 
 		using GeometryBuffer_T = glm::uvec4;
 		using IndexBuffer_T = 	glm::u32;
-		using PosBuffer_T = 	glm::vec4;
-		using MaterialBuffer_T = glm::u32;
+		struct PosBuffer_T {
+			glm::vec4 posAndUV;
+		};
 		using NormalBuffer_T = 	glm::vec4; // or pack into vec2 ???
-		using UVBuffer_T = 		glm::u32;
 		using ColorBuffer_T = 	glm::u32;
 		struct LightBuffer_T {
 			alignas(16) glm::vec3 position;
@@ -91,13 +91,13 @@ namespace v4d::graphics {
 			return (pack.r << 24) | (pack.g << 16) | (pack.b << 8) | pack.a;
 		}
 
-		static UVBuffer_T PackUV(glm::vec2 uv) {
+		static glm::f32 PackUV(glm::vec2 uv) {
 			uv *= 65535.0f;
 			glm::uvec2 pack {
 				glm::clamp(glm::u32(uv.s), (glm::u32)0, (glm::u32)65535),
 				glm::clamp(glm::u32(uv.t), (glm::u32)0, (glm::u32)65535),
 			};
-			return (pack.s << 16) | pack.t;
+			return glm::uintBitsToFloat((pack.s << 16) | pack.t);
 		}
 
 		static glm::vec3 UnpackNormal(NormalBuffer_T norm) {
@@ -108,10 +108,11 @@ namespace v4d::graphics {
 			return norm;
 		}
 
-		static glm::vec2 UnpackUV(UVBuffer_T uv) {
+		static glm::vec2 UnpackUV(glm::f32 uv) {
+			uint packed = glm::floatBitsToUint(uv);
 			return glm::vec2(
-				(uv & 0xffff0000) >> 16,
-				(uv & 0x0000ffff) >> 0
+				(packed & 0xffff0000) >> 16,
+				(packed & 0x0000ffff) >> 0
 			) / 65535.0f;
 		}
 
@@ -143,18 +144,14 @@ namespace v4d::graphics {
 		typedef GlobalBuffer<GeometryBuffer_T> GeometryBuffer;
 		typedef GlobalBuffer<IndexBuffer_T, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT> IndexBuffer;
 		typedef GlobalBuffer<PosBuffer_T, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT> PosBuffer;
-		typedef GlobalBuffer<MaterialBuffer_T> MaterialBuffer;
 		typedef GlobalBuffer<NormalBuffer_T> NormalBuffer;
-		typedef GlobalBuffer<UVBuffer_T> UVBuffer;
 		typedef GlobalBuffer<ColorBuffer_T> ColorBuffer;
 		typedef GlobalBuffer<LightBuffer_T> LightBuffer;
 
 		GeometryBuffer_T* geometryInfo = nullptr;
 		IndexBuffer_T* indices = nullptr;
 		PosBuffer_T* vertexPositions = nullptr;
-		MaterialBuffer_T* vertexMaterials = nullptr;
 		NormalBuffer_T* vertexNormals = nullptr;
-		UVBuffer_T* vertexUVs = nullptr;
 		ColorBuffer_T* vertexColors = nullptr;
 		
 		Buffer* transformBuffer = nullptr;
@@ -195,9 +192,7 @@ namespace v4d::graphics {
 			GeometryBuffer geometryBuffer {nbInitialGeometries};
 			IndexBuffer indexBuffer {nbInitialIndices};
 			PosBuffer posBuffer {nbInitialVertices};
-			MaterialBuffer materialBuffer {nbInitialVertices};
 			NormalBuffer normalBuffer {nbInitialVertices};
-			UVBuffer uvBuffer {nbInitialVertices};
 			ColorBuffer colorBuffer {nbInitialVertices};
 			LightBuffer lightBuffer {nbInitialLights};
 			
@@ -264,7 +259,7 @@ namespace v4d::graphics {
 		
 		void SetGeometryInfo(uint32_t objectIndex = 0, uint32_t otherIndex = 0);
 		
-		void SetVertex(uint32_t i, const glm::vec4& pos, MaterialBuffer_T material, const glm::vec3& normal, const glm::vec2& uv, const glm::vec4& color);
+		void SetVertex(uint32_t i, const glm::vec3& pos, const glm::vec3& normal, const glm::vec2& uv, const glm::vec4& color);
 		
 		void SetIndex(uint32_t i, IndexBuffer_T vertexIndex);
 		
@@ -277,7 +272,7 @@ namespace v4d::graphics {
 		
 		void GetGeometryInfo(uint32_t* objectIndex, uint32_t* otherIndex);
 		
-		void GetVertex(uint32_t i, glm::vec4* pos, glm::u32* material, glm::vec3* normal, glm::vec2* uv, glm::vec4* color);
+		void GetVertex(uint32_t i, glm::vec3* pos, glm::vec3* normal, glm::vec2* uv, glm::vec4* color);
 		
 		void GetIndex(uint32_t i, IndexBuffer_T* vertexIndex);
 		
