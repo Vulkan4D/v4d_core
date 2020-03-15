@@ -33,13 +33,17 @@ namespace v4d::graphics {
 		
 		void GenerateGeometries() {
 			if (generateGeometriesFunc) generateGeometriesFunc(this);
+			WriteGeometriesInformation();
+		}
+		
+		void WriteGeometriesInformation() {
 			for (auto* geom : geometries) {
-				if (!geom->geometryInfoInitialized) geom->SetGeometryInfo(objectOffset);
+				if (!geom->geometryInfoInitialized) geom->SetGeometryInfo(objectOffset, geom->materialIndex);
 			}
 		}
 		
-		Geometry* AddGeometry(uint32_t vertexCount, uint32_t indexCount) {
-			return geometries.emplace_back(new Geometry(vertexCount, indexCount));
+		Geometry* AddGeometry(uint32_t vertexCount, uint32_t indexCount, uint32_t materialIndex = 0) {
+			return geometries.emplace_back(new Geometry(vertexCount, indexCount, materialIndex));
 		}
 		
 		LightSource* AddLightSource(

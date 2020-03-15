@@ -12,15 +12,15 @@ namespace v4d::graphics {
 		triangleGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
 		triangleGeometry.flags = 0;//VK_GEOMETRY_OPAQUE_BIT_NV;
 		
-		triangleGeometry.geometry.triangles.vertexOffset = (VkDeviceSize)(vertexOffset*sizeof(PosBuffer_T));
+		triangleGeometry.geometry.triangles.vertexOffset = (VkDeviceSize)(vertexOffset*sizeof(VertexBuffer_T));
 		triangleGeometry.geometry.triangles.vertexCount = vertexCount;
-		triangleGeometry.geometry.triangles.vertexStride = sizeof(PosBuffer_T);
+		triangleGeometry.geometry.triangles.vertexStride = sizeof(VertexBuffer_T);
 		triangleGeometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
 		triangleGeometry.geometry.triangles.indexOffset = (VkDeviceSize)(indexOffset*sizeof(IndexBuffer_T));
 		triangleGeometry.geometry.triangles.indexCount = indexCount;
 		triangleGeometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
 		
-		triangleGeometry.geometry.triangles.vertexData = globalBuffers.posBuffer.deviceLocalBuffer.buffer;
+		triangleGeometry.geometry.triangles.vertexData = globalBuffers.vertexBuffer.deviceLocalBuffer.buffer;
 		triangleGeometry.geometry.triangles.indexData = globalBuffers.indexBuffer.deviceLocalBuffer.buffer;
 		
 		triangleGeometry.geometry.triangles.transformData = transformBuffer? transformBuffer->buffer : VK_NULL_HANDLE;
@@ -29,7 +29,7 @@ namespace v4d::graphics {
 		return triangleGeometry;
 	}
 	
-	Geometry::Geometry(uint32_t vertexCount, uint32_t indexCount) : vertexCount(vertexCount), indexCount(indexCount) {
+	Geometry::Geometry(uint32_t vertexCount, uint32_t indexCount, uint32_t materialIndex) : vertexCount(vertexCount), indexCount(indexCount), materialIndex(materialIndex) {
 		globalBuffers.AddGeometry(this);
 	}
 	
@@ -41,51 +41,44 @@ namespace v4d::graphics {
 		if (!globalBuffers.geometryBuffer.stagingBuffer.data) {
 			FATAL("global buffers must be allocated before mapping staging buffers")
 		}
-		geometryInfo =		&((GeometryBuffer_T*)	(globalBuffers.geometryBuffer.stagingBuffer.data))	[geometryOffset];
+		geometries =		&((GeometryBuffer_T*)	(globalBuffers.geometryBuffer.stagingBuffer.data))	[geometryOffset];
 		indices =			&((IndexBuffer_T*)		(globalBuffers.indexBuffer.stagingBuffer.data))		[indexOffset];
-		vertexPositions =	&((PosBuffer_T*)		(globalBuffers.posBuffer.stagingBuffer.data))		[vertexOffset];
-		vertexNormals =		&((NormalBuffer_T*)		(globalBuffers.normalBuffer.stagingBuffer.data))	[vertexOffset];
-		vertexColors =		&((ColorBuffer_T*)		(globalBuffers.colorBuffer.stagingBuffer.data))		[vertexOffset];
+		vertices =			&((VertexBuffer_T*)		(globalBuffers.vertexBuffer.stagingBuffer.data))	[vertexOffset];
 		
 		// LOG("Global Geometry Staging Buffers mapped")
 	}
 	
 	void Geometry::UnmapStagingBuffers() {
-		geometryInfo = nullptr;
+		geometries = nullptr;
 		indices = nullptr;
-		vertexPositions = nullptr;
-		vertexNormals = nullptr;
-		vertexColors = nullptr;
+		vertices = nullptr;
 		
 		geometryInfoInitialized = false;
 	}
 	
-	void Geometry::SetGeometryInfo(uint32_t objectIndex, uint32_t otherIndex) {
-		if (!geometryInfo) MapStagingBuffers();
+	void Geometry::SetGeometryInfo(uint32_t objectIndex, uint32_t materialIndex) {
+		if (!geometries) MapStagingBuffers();
 		
 		GeometryBuffer_T data {
 			indexOffset,
 			vertexOffset,
 			objectIndex,
-			otherIndex
+			materialIndex
 		};
 		
-		memcpy(geometryInfo, &data, sizeof(GeometryBuffer_T));
+		memcpy(geometries, &data, sizeof(GeometryBuffer_T));
 		
 		geometryInfoInitialized = true;
 	}
 	
 	void Geometry::SetVertex(uint32_t i, const glm::vec3& pos, const glm::vec3& normal, const glm::vec2& uv, const glm::vec4& color) {
-		if (!vertexPositions) MapStagingBuffers();
+		if (!vertices) MapStagingBuffers();
 		
-		NormalBuffer_T packedNormal = PackNormal(normal);
-		ColorBuffer_T packedColor = PackColor(color);
-		PosBuffer_T vert {
-			{pos, PackUV(uv)},
+		VertexBuffer_T vert {
+			{pos, PackUVasFloat(uv)},
+			{normal, PackColorAsFloat(color)}
 		};
-		memcpy(&vertexPositions[i], &vert, sizeof(PosBuffer_T));
-		memcpy(&vertexNormals[i], &packedNormal, sizeof(NormalBuffer_T));
-		memcpy(&vertexColors[i], &packedColor, sizeof(ColorBuffer_T));
+		memcpy(&vertices[i], &vert, sizeof(VertexBuffer_T));
 	}
 	
 	void Geometry::SetIndex(uint32_t i, IndexBuffer_T vertexIndex) {
@@ -114,30 +107,26 @@ namespace v4d::graphics {
 		memcpy(&indices[startAt], vertexIndices, sizeof(IndexBuffer_T)*count);
 	}
 	
-	void Geometry::GetGeometryInfo(uint32_t* objectIndex, uint32_t* otherIndex) {
-		if (!geometryInfo) MapStagingBuffers();
+	void Geometry::GetGeometryInfo(uint32_t* objectIndex, uint32_t* materialIndex) {
+		if (!geometries) MapStagingBuffers();
 		
 		GeometryBuffer_T data;
-		memcpy(&data, &geometryInfo, sizeof(GeometryBuffer_T));
+		memcpy(&data, &geometries, sizeof(GeometryBuffer_T));
 		indexOffset = data.x;
 		vertexOffset = data.y;
 		*objectIndex = data.z;
-		*otherIndex = data.w;
+		*materialIndex = data.w;
 	}
 	
 	void Geometry::GetVertex(uint32_t i, glm::vec3* pos, glm::vec3* normal, glm::vec2* uv, glm::vec4* color) {
-		if (!vertexPositions) MapStagingBuffers();
+		if (!vertices) MapStagingBuffers();
 		
-		PosBuffer_T vert;
-		NormalBuffer_T packedNormal;
-		ColorBuffer_T packedColor;
-		memcpy(&vert, &vertexPositions[i], sizeof(PosBuffer_T));
-		memcpy(&packedNormal, &vertexNormals[i], sizeof(NormalBuffer_T));
-		memcpy(&packedColor, &vertexColors[i], sizeof(ColorBuffer_T));
+		VertexBuffer_T vert;
+		memcpy(&vert, &vertices[i], sizeof(VertexBuffer_T));
 		*pos = vert.posAndUV;
-		*uv = UnpackUV(vert.posAndUV.w);
-		*normal = UnpackNormal(packedNormal);
-		*color = UnpackColor(packedColor);
+		*uv = UnpackUVfromFloat(vert.posAndUV.w);
+		*normal = vert.normalAndColor;
+		*color = UnpackColorFromFloat(vert.normalAndColor.w);
 	}
 	
 	void Geometry::GetIndex(uint32_t i, IndexBuffer_T* vertexIndex) {
@@ -225,12 +214,8 @@ namespace v4d::graphics {
 			FATAL("Global Geometry buffer overflow" )
 		if (indexBuffer.stagingBuffer.size < nbAllocatedIndices * sizeof(IndexBuffer_T)) 
 			FATAL("Global Index buffer overflow" )
-		if (posBuffer.stagingBuffer.size < nbAllocatedVertices * sizeof(PosBuffer_T)) 
+		if (vertexBuffer.stagingBuffer.size < nbAllocatedVertices * sizeof(VertexBuffer_T)) 
 			FATAL("Global Pos buffer overflow" )
-		if (normalBuffer.stagingBuffer.size < nbAllocatedVertices * sizeof(NormalBuffer_T)) 
-			FATAL("Global Normal buffer overflow" )
-		if (colorBuffer.stagingBuffer.size < nbAllocatedVertices * sizeof(ColorBuffer_T)) 
-			FATAL("Global Color buffer overflow" )
 		
 		//TODO dynamically allocate more memory instead of crashing
 		
@@ -305,9 +290,7 @@ namespace v4d::graphics {
 		objectBuffer.Allocate(device);
 		geometryBuffer.Allocate(device);
 		indexBuffer.Allocate(device);
-		posBuffer.Allocate(device);
-		normalBuffer.Allocate(device);
-		colorBuffer.Allocate(device);
+		vertexBuffer.Allocate(device);
 		lightBuffer.Allocate(device);
 	}
 	
@@ -315,9 +298,7 @@ namespace v4d::graphics {
 		objectBuffer.Free(device);
 		geometryBuffer.Free(device);
 		indexBuffer.Free(device);
-		posBuffer.Free(device);
-		normalBuffer.Free(device);
-		colorBuffer.Free(device);
+		vertexBuffer.Free(device);
 		lightBuffer.Free(device);
 	}
 	
@@ -337,18 +318,14 @@ namespace v4d::graphics {
 		if (nbAllocatedGeometries == 0) return;
 		geometryBuffer.Push(device, commandBuffer, nbAllocatedGeometries);
 		indexBuffer.Push(device, commandBuffer, nbAllocatedIndices);
-		posBuffer.Push(device, commandBuffer, nbAllocatedVertices);
-		normalBuffer.Push(device, commandBuffer, nbAllocatedVertices);
-		colorBuffer.Push(device, commandBuffer, nbAllocatedVertices);
+		vertexBuffer.Push(device, commandBuffer, nbAllocatedVertices);
 	}
 	
 	void Geometry::GlobalGeometryBuffers::PullAllGeometries(Device* device, VkCommandBuffer commandBuffer) {
 		if (nbAllocatedGeometries == 0) return;
 		geometryBuffer.Pull(device, commandBuffer, nbAllocatedGeometries);
 		indexBuffer.Pull(device, commandBuffer, nbAllocatedIndices);
-		posBuffer.Pull(device, commandBuffer, nbAllocatedVertices);
-		normalBuffer.Pull(device, commandBuffer, nbAllocatedVertices);
-		colorBuffer.Pull(device, commandBuffer, nbAllocatedVertices);
+		vertexBuffer.Pull(device, commandBuffer, nbAllocatedVertices);
 	}
 	
 	void Geometry::GlobalGeometryBuffers::PushGeometry(Device* device, VkCommandBuffer commandBuffer, Geometry* geometry, 
@@ -364,9 +341,7 @@ namespace v4d::graphics {
 		
 		if (geometryBuffersMask & BUFFER_GEOMETRY_INFO) geometryBuffer.Push(device, commandBuffer, 1, geometry->geometryOffset);
 		if (geometryBuffersMask & BUFFER_INDEX) indexBuffer.Push(device, commandBuffer, indexCount, geometry->indexOffset + indexOffset);
-		if (geometryBuffersMask & BUFFER_POS) posBuffer.Push(device, commandBuffer, vertexCount, geometry->vertexOffset + vertexOffset);
-		if (geometryBuffersMask & BUFFER_NORM) normalBuffer.Push(device, commandBuffer, vertexCount, geometry->vertexOffset + vertexOffset);
-		if (geometryBuffersMask & BUFFER_COLOR) colorBuffer.Push(device, commandBuffer, vertexCount, geometry->vertexOffset + vertexOffset);
+		if (geometryBuffersMask & BUFFER_VERTEX) vertexBuffer.Push(device, commandBuffer, vertexCount, geometry->vertexOffset + vertexOffset);
 	}
 	
 	void Geometry::GlobalGeometryBuffers::PullGeometry(Device* device, VkCommandBuffer commandBuffer, Geometry* geometry, 
@@ -382,9 +357,7 @@ namespace v4d::graphics {
 		
 		if (geometryBuffersMask & BUFFER_GEOMETRY_INFO) geometryBuffer.Pull(device, commandBuffer, 1, geometry->geometryOffset);
 		if (geometryBuffersMask & BUFFER_INDEX) indexBuffer.Pull(device, commandBuffer, indexCount, geometry->indexOffset + indexOffset);
-		if (geometryBuffersMask & BUFFER_POS) posBuffer.Pull(device, commandBuffer, vertexCount, geometry->vertexOffset + vertexOffset);
-		if (geometryBuffersMask & BUFFER_NORM) normalBuffer.Pull(device, commandBuffer, vertexCount, geometry->vertexOffset + vertexOffset);
-		if (geometryBuffersMask & BUFFER_COLOR) colorBuffer.Pull(device, commandBuffer, vertexCount, geometry->vertexOffset + vertexOffset);
+		if (geometryBuffersMask & BUFFER_VERTEX) vertexBuffer.Pull(device, commandBuffer, vertexCount, geometry->vertexOffset + vertexOffset);
 	}
 
 	void Geometry::GlobalGeometryBuffers::WriteObject(ObjectInstance* obj) {
@@ -418,7 +391,7 @@ namespace v4d::graphics {
 		
 		lightData->position = lightSource->viewSpacePosition;
 		lightData->intensity = lightSource->intensity;
-		lightData->colorAndType = PackColor(glm::vec4(lightSource->color, 0));
+		lightData->colorAndType = PackColorAsUint(glm::vec4(lightSource->color, 0));
 		lightData->colorAndType |= lightSource->type & 0x000000ff;
 		lightData->attributes = lightSource->attributes;
 		lightData->radius = lightSource->radius;
@@ -433,7 +406,7 @@ namespace v4d::graphics {
 		
 		lightSource->viewSpacePosition = lightData->position;
 		lightSource->intensity = lightData->intensity;
-		lightSource->color = glm::vec3(UnpackColor(lightData->colorAndType));
+		lightSource->color = glm::vec3(UnpackColorFromUint(lightData->colorAndType));
 		lightSource->type = lightData->colorAndType & 0x000000ff;
 		lightSource->attributes = lightData->attributes;
 		lightSource->radius = lightData->radius;
