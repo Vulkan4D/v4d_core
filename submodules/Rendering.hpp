@@ -3,6 +3,7 @@
 namespace v4d::modules {
 	using namespace v4d::graphics;
 	using namespace v4d::graphics::vulkan;
+	using namespace v4d::graphics::vulkan::rtx;
 	
 	class Rendering {
 	public: 
@@ -49,7 +50,7 @@ namespace v4d::modules {
 		// Executed when calling InitRenderer() on the main Renderer
 		virtual void Init() {}
 		virtual void InitLayouts(std::vector<DescriptorSet*>&, std::unordered_map<std::string, Image*>&) {}
-		virtual void ConfigureShaders(std::unordered_map<std::string, std::vector<RasterShaderPipeline*>>& shaders) {}
+		virtual void ConfigureShaders(std::unordered_map<std::string, std::vector<RasterShaderPipeline*>>& shaders, ShaderBindingTable*) {}
 		
 		// Executed when calling their respective methods on the main Renderer
 		virtual void ReadShaders() {}
