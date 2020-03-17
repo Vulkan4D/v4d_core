@@ -34,7 +34,7 @@ bool DescriptorBinding::IsWriteDescriptorSetValid() const {
 		case IMAGE_VIEW:
 		case INPUT_ATTACHMENT:
 		case INPUT_ATTACHMENT_DEPTH_STENCIL:
-			return *(VkImageView*)data != VK_NULL_HANDLE;
+			return ((Image*)data)->view != VK_NULL_HANDLE;
 		break;
 		case COMBINED_IMAGE_SAMPLER:
 			return ((Image*)data)->sampler != VK_NULL_HANDLE && ((Image*)data)->view != VK_NULL_HANDLE;
@@ -79,7 +79,7 @@ VkWriteDescriptorSet DescriptorBinding::GetWriteDescriptorSet(VkDescriptorSet de
 			writeInfo = new VkDescriptorImageInfo[descriptorCount];
 			((VkDescriptorImageInfo*)writeInfo)[0] = {
 				VK_NULL_HANDLE,// VkSampler sampler
-				((VkImageView*)data)[0],// VkImageView imageView
+				((Image*)data)[0].view,// VkImageView imageView
 				VK_IMAGE_LAYOUT_GENERAL,// VkImageLayout imageLayout
 			};
 			descriptorWrite.pImageInfo = (VkDescriptorImageInfo*)writeInfo;
@@ -97,7 +97,7 @@ VkWriteDescriptorSet DescriptorBinding::GetWriteDescriptorSet(VkDescriptorSet de
 			writeInfo = new VkDescriptorImageInfo[descriptorCount];
 			((VkDescriptorImageInfo*)writeInfo)[0] = {
 				VK_NULL_HANDLE,// VkSampler sampler
-				((VkImageView*)data)[0],// VkImageView imageView
+				((Image*)data)[0].view,// VkImageView imageView
 				VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,// VkImageLayout imageLayout
 			};
 			descriptorWrite.pImageInfo = (VkDescriptorImageInfo*)writeInfo;
@@ -106,7 +106,7 @@ VkWriteDescriptorSet DescriptorBinding::GetWriteDescriptorSet(VkDescriptorSet de
 			writeInfo = new VkDescriptorImageInfo[descriptorCount];
 			((VkDescriptorImageInfo*)writeInfo)[0] = {
 				VK_NULL_HANDLE,// VkSampler sampler
-				((VkImageView*)data)[0],// VkImageView imageView
+				((Image*)data)[0].view,// VkImageView imageView
 				VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL,// VkImageLayout imageLayout
 			};
 			descriptorWrite.pImageInfo = (VkDescriptorImageInfo*)writeInfo;
