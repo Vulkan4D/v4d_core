@@ -251,7 +251,7 @@ namespace v4d::graphics {
 			transform = worldSpaceTransform;
 		}
 		
-		void SetObjectCustomData(const glm::vec3& custom3, const glm::vec4& custom4) {
+		void SetObjectCustomData(const glm::vec3& custom3, const glm::vec4& custom4 = {0,0,0,0}) {
 			this->custom3 = custom3;
 			this->custom4 = custom4;
 		}
