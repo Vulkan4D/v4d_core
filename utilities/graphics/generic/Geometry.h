@@ -85,6 +85,8 @@ namespace v4d::graphics {
 		uint32_t geometryOffset = 0;
 		uint32_t vertexOffset = 0;
 		uint32_t indexOffset = 0;
+		
+		bool active = true;
 
 		struct GeometryBuffer_T { // 16 bytes
 			glm::u32 indexOffset;

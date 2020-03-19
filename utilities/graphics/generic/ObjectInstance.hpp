@@ -37,6 +37,8 @@ namespace v4d::graphics {
 		glm::mat3 normalMatrix {1};
 		glm::mat3x4 rayTracingModelViewMatrix {1};
 		bool geometriesDirty = true;
+		bool active = true;
+		bool generated = false;
 		
 	public:
 		#pragma region Constructor/Destructor
@@ -56,7 +58,8 @@ namespace v4d::graphics {
 		#pragma region Write to device
 		
 		void GenerateGeometries() {
-			if (generateFunc) generateFunc(this);
+			if (generateFunc && !generated) generateFunc(this);
+			generated = true;
 			WriteGeometriesInformation();
 		}
 		
@@ -68,7 +71,7 @@ namespace v4d::graphics {
 		
 		void PushGeometries(Device* device, VkCommandBuffer cmdBuffer) {
 			if (geometriesDirty) {
-				if (geometries.size() == 0) GenerateGeometries();
+				GenerateGeometries();
 				for (auto* geom : geometries) {
 					geom->Push(device, cmdBuffer);
 				}
@@ -264,6 +267,31 @@ namespace v4d::graphics {
 		void SetProceduralVertex(uint32_t geomIndex, uint32_t vertIndex, glm::vec3 aabbMin, glm::vec3 aabbMax, const glm::vec4& color, float custom1 = 0) {
 			geometries[geomIndex]->SetProceduralVertex(vertIndex, aabbMin, aabbMax, color, custom1);
 			SetGeometriesDirty();
+		}
+		
+		#pragma endregion
+		
+		#pragma region Active/Inactive
+		
+		bool HasActiveGeometries() const {
+			for (auto* g : geometries) {
+				if (g->active) return true;
+			}
+			return false;
+		}
+		
+		bool IsActive() const {
+			return active;
+		}
+		
+		void Enable() {
+			if (!active) geometriesDirty = true;
+			active = true;
+		}
+		
+		void Disable() {
+			if (active) geometriesDirty = true;
+			active = false;
 		}
 		
 		#pragma endregion
