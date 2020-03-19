@@ -56,7 +56,7 @@ namespace v4d::graphics {
 		if (!globalBuffers.geometryBuffer.stagingBuffer.data) {
 			FATAL("global buffers must be allocated before mapping staging buffers")
 		}
-		geometries =		&((GeometryBuffer_T*)	(globalBuffers.geometryBuffer.stagingBuffer.data))	[geometryOffset];
+		geometryInfo =		&((GeometryBuffer_T*)	(globalBuffers.geometryBuffer.stagingBuffer.data))	[geometryOffset];
 		indices =			&((IndexBuffer_T*)		(globalBuffers.indexBuffer.stagingBuffer.data))		[indexOffset];
 		vertices =			&((VertexBuffer_T*)		(globalBuffers.vertexBuffer.stagingBuffer.data))	[vertexOffset];
 		
@@ -64,7 +64,7 @@ namespace v4d::graphics {
 	}
 	
 	void Geometry::UnmapStagingBuffers() {
-		geometries = nullptr;
+		geometryInfo = nullptr;
 		indices = nullptr;
 		vertices = nullptr;
 		
@@ -72,16 +72,12 @@ namespace v4d::graphics {
 	}
 	
 	void Geometry::SetGeometryInfo(uint32_t objectIndex, uint32_t material) {
-		if (!geometries) MapStagingBuffers();
+		if (!geometryInfo) MapStagingBuffers();
 		
-		GeometryBuffer_T data {
-			indexOffset,
-			vertexOffset,
-			objectIndex,
-			material
-		};
-		
-		memcpy(geometries, &data, sizeof(GeometryBuffer_T));
+		geometryInfo->indexOffset = indexOffset;
+		geometryInfo->vertexOffset = vertexOffset;
+		geometryInfo->objectIndex = objectIndex;
+		geometryInfo->material = material;
 		
 		geometryInfoInitialized = true;
 	}
@@ -89,31 +85,26 @@ namespace v4d::graphics {
 	void Geometry::SetVertex(uint32_t i, const glm::vec3& pos, const glm::vec3& normal, const glm::vec2& uv, const glm::vec4& color) {
 		if (!vertices) MapStagingBuffers();
 		
-		VertexBuffer_T vert {
-			pos, 
-			PackColorAsFloat(color),
-			normal, 
-			PackUVasFloat(uv)
-		};
-		memcpy(&vertices[i], &vert, sizeof(VertexBuffer_T));
+		vertices[i].pos = pos;
+		vertices[i].SetColor(color);
+		vertices[i].normal = normal;
+		vertices[i].SetUV(uv);
 	}
 	
 	void Geometry::SetProceduralVertex(uint32_t i, glm::vec3 aabbMin, glm::vec3 aabbMax, const glm::vec4& color, float custom1) {
 		if (!vertices) MapStagingBuffers();
 		
-		ProceduralVertexBuffer_T vert {
-			aabbMin, 
-			aabbMax, 
-			PackColorAsFloat(color),
-			custom1
-		};
-		memcpy(&vertices[i], &vert, sizeof(ProceduralVertexBuffer_T));
+		auto* vert = GetProceduralVertexPtr(i);
+		vert->aabbMin = aabbMin;
+		vert->aabbMax = aabbMax;
+		vert->SetColor(color);
+		vert->custom1 = custom1;
 	}
 	
 	void Geometry::SetIndex(uint32_t i, IndexBuffer_T vertexIndex) {
 		if (!indices) MapStagingBuffers();
 		
-		memcpy(&indices[i], &vertexIndex, sizeof(IndexBuffer_T));
+		indices[i] = vertexIndex;
 	}
 	
 	void Geometry::SetIndices(const std::vector<IndexBuffer_T>& vertexIndices, uint32_t count, uint32_t startAt) {
@@ -137,42 +128,54 @@ namespace v4d::graphics {
 	}
 	
 	void Geometry::GetGeometryInfo(uint32_t* objectIndex, uint32_t* material) {
-		if (!geometries) MapStagingBuffers();
+		if (!geometryInfo) MapStagingBuffers();
 		
-		GeometryBuffer_T data;
-		memcpy(&data, &geometries, sizeof(GeometryBuffer_T));
-		indexOffset = data.x;
-		vertexOffset = data.y;
-		*objectIndex = data.z;
-		*material = data.w;
+		indexOffset = geometryInfo->indexOffset;
+		vertexOffset = geometryInfo->vertexOffset;
+		if (objectIndex) *objectIndex = geometryInfo->objectIndex;
+		if (material) *material = geometryInfo->material;
 	}
 	
 	void Geometry::GetVertex(uint32_t i, glm::vec3* pos, glm::vec3* normal, glm::vec2* uv, glm::vec4* color) {
 		if (!vertices) MapStagingBuffers();
 		
-		VertexBuffer_T vert;
-		memcpy(&vert, &vertices[i], sizeof(VertexBuffer_T));
-		*pos = vert.pos;
-		if (uv) *uv = UnpackUVfromFloat(vert.uv);
-		if (normal) *normal = vert.normal;
-		if (color) *color = UnpackColorFromFloat(vert.color);
+		if (pos) *pos = vertices[i].pos;
+		if (normal) *normal = vertices[i].normal;
+		if (uv) *uv = vertices[i].GetUV();
+		if (color) *color = vertices[i].GetColor();
+	}
+
+	Geometry::VertexBuffer_T* Geometry::GetVertexPtr(uint32_t i) {
+		if (!vertices) MapStagingBuffers();
+		return &vertices[i];
 	}
 	
 	void Geometry::GetProceduralVertex(uint32_t i, glm::vec3* aabbMin, glm::vec3* aabbMax, glm::vec4* color, float* custom1) {
 		if (!vertices) MapStagingBuffers();
 		
-		ProceduralVertexBuffer_T vert;
-		memcpy(&vert, &vertices[i], sizeof(ProceduralVertexBuffer_T));
-		*aabbMin = vert.aabbMin;
-		*aabbMax = vert.aabbMax;
-		if (color) *color = UnpackColorFromFloat(vert.color);
-		if (custom1) *custom1 = vert.custom1;
+		auto* vert = GetProceduralVertexPtr(i);
+		
+		if (aabbMin) *aabbMin = vert->aabbMin;
+		if (aabbMax) *aabbMax = vert->aabbMax;
+		if (color) *color = vert->GetColor();
+		if (custom1) *custom1 = vert->custom1;
+	}
+	
+	Geometry::ProceduralVertexBuffer_T* Geometry::GetProceduralVertexPtr(uint32_t i) {
+		if (!vertices) MapStagingBuffers();
+		return &((ProceduralVertexBuffer_T*)vertices)[i];
 	}
 	
 	void Geometry::GetIndex(uint32_t i, IndexBuffer_T* vertexIndex) {
 		if (!indices) MapStagingBuffers();
 		
-		memcpy(vertexIndex, &indices[i], sizeof(IndexBuffer_T));
+		if (vertexIndex) *vertexIndex = indices[i];
+	}
+
+	Geometry::IndexBuffer_T Geometry::GetIndex(uint32_t i) {
+		if (!indices) MapStagingBuffers();
+		
+		return indices[i];
 	}
 	
 	void Geometry::GetIndices(std::vector<IndexBuffer_T>* vertexIndices, uint32_t count, uint32_t startAt) {
@@ -438,8 +441,7 @@ namespace v4d::graphics {
 		
 		lightData->position = lightSource->viewSpacePosition;
 		lightData->intensity = lightSource->intensity;
-		lightData->colorAndType = PackColorAsUint(glm::vec4(lightSource->color, 0));
-		lightData->colorAndType |= lightSource->type & 0x000000ff;
+		lightData->SetColorAndType(lightSource->color, lightSource->type);
 		lightData->attributes = lightSource->attributes;
 		lightData->radius = lightSource->radius;
 		lightData->custom1 = lightSource->custom1;
@@ -454,8 +456,7 @@ namespace v4d::graphics {
 		
 		lightSource->viewSpacePosition = lightData->position;
 		lightSource->intensity = lightData->intensity;
-		lightSource->color = glm::vec3(UnpackColorFromUint(lightData->colorAndType));
-		lightSource->type = lightData->colorAndType & 0x000000ff;
+		lightData->GetColorAndType(&lightSource->color, &lightSource->type);
 		lightSource->attributes = lightData->attributes;
 		lightSource->radius = lightData->radius;
 		lightSource->custom1 = lightData->custom1;
@@ -495,5 +496,105 @@ namespace v4d::graphics {
 	}
 	
 	#pragma endregion
+	
+	
+	#pragma region Pack Helpers
+	
+	/////////////////
+	// NOT WORKING
+			// static NormalBuffer_T PackNormal(glm::vec3 normal) {
+			// 	// // vec2
+			// 	// float f = glm::sqrt(8.0f * normal.z + 8.0f);
+			// 	// return glm::vec2(normal) / f + 0.5f;
+				
+			// 	// vec4
+			// 	return glm::vec4(normal, 0);
+			// }
+
+			// static glm::vec3 UnpackNormal(NormalBuffer_T norm) {
+			// 	// glm::vec2 fenc = norm * 4.0f - 2.0f;
+			// 	// float f = glm::dot(fenc, fenc);
+			// 	// float g = glm::sqrt(1.0f - f / 4.0f);
+			// 	// return glm::vec3(fenc * g, 1.0f - f / 2.0f);
+			// 	return norm;
+			// }
+	/////////////////
+
+	glm::f32 PackColorAsFloat(glm::vec4 color) {
+		color *= 255.0f;
+		glm::uvec4 pack {
+			glm::clamp(glm::u32(color.r), (glm::u32)0, (glm::u32)255),
+			glm::clamp(glm::u32(color.g), (glm::u32)0, (glm::u32)255),
+			glm::clamp(glm::u32(color.b), (glm::u32)0, (glm::u32)255),
+			glm::clamp(glm::u32(color.a), (glm::u32)0, (glm::u32)255),
+		};
+		return glm::uintBitsToFloat((pack.r << 24) | (pack.g << 16) | (pack.b << 8) | pack.a);
+	}
+
+	glm::u32 PackColorAsUint(glm::vec4 color) {
+		color *= 255.0f;
+		glm::uvec4 pack {
+			glm::clamp(glm::u32(color.r), (glm::u32)0, (glm::u32)255),
+			glm::clamp(glm::u32(color.g), (glm::u32)0, (glm::u32)255),
+			glm::clamp(glm::u32(color.b), (glm::u32)0, (glm::u32)255),
+			glm::clamp(glm::u32(color.a), (glm::u32)0, (glm::u32)255),
+		};
+		return (pack.r << 24) | (pack.g << 16) | (pack.b << 8) | pack.a;
+	}
+
+	glm::vec4 UnpackColorFromFloat(glm::f32 color) {
+		glm::u32 packed = glm::floatBitsToUint(color);
+		return glm::vec4(
+			(packed & 0xff000000) >> 24,
+			(packed & 0x00ff0000) >> 16,
+			(packed & 0x0000ff00) >> 8,
+			(packed & 0x000000ff) >> 0
+		) / 255.0f;
+	}
+	
+	glm::vec4 UnpackColorFromUint(glm::u32 color) {
+		return glm::vec4(
+			(color & 0xff000000) >> 24,
+			(color & 0x00ff0000) >> 16,
+			(color & 0x0000ff00) >> 8,
+			(color & 0x000000ff) >> 0
+		) / 255.0f;
+	}
+	
+	glm::f32 PackUVasFloat(glm::vec2 uv) {
+		uv *= 65535.0f;
+		glm::uvec2 pack {
+			glm::clamp(glm::u32(uv.s), (glm::u32)0, (glm::u32)65535),
+			glm::clamp(glm::u32(uv.t), (glm::u32)0, (glm::u32)65535),
+		};
+		return glm::uintBitsToFloat((pack.s << 16) | pack.t);
+	}
+
+	glm::u32 PackUVasUint(glm::vec2 uv) {
+		uv *= 65535.0f;
+		glm::uvec2 pack {
+			glm::clamp(glm::u32(uv.s), (glm::u32)0, (glm::u32)65535),
+			glm::clamp(glm::u32(uv.t), (glm::u32)0, (glm::u32)65535),
+		};
+		return (pack.s << 16) | pack.t;
+	}
+
+	glm::vec2 UnpackUVfromFloat(glm::f32 uv) {
+		glm::u32 packed = glm::floatBitsToUint(uv);
+		return glm::vec2(
+			(packed & 0xffff0000) >> 16,
+			(packed & 0x0000ffff) >> 0
+		) / 65535.0f;
+	}
+
+	glm::vec2 UnpackUVfromUint(glm::u32 uv) {
+		return glm::vec2(
+			(uv & 0xffff0000) >> 16,
+			(uv & 0x0000ffff) >> 0
+		) / 65535.0f;
+	}
+
+	#pragma endregion
+
 
 }
