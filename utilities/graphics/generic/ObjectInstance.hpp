@@ -191,6 +191,7 @@ namespace v4d::graphics {
 				delete geom;
 			}
 			geometries.clear();
+			generated = false;
 		}
 		
 		void RemoveLightSources() {
@@ -243,6 +244,8 @@ namespace v4d::graphics {
 			return rayTracingModelViewMatrix;
 		}
 		
+		int CountGeometries() const {return geometries.size();}
+		
 		std::vector<Geometry*>& GetGeometries() {return geometries;}
 		std::vector<LightSource*>& GetLightSources() {return lightSources;}
 		
@@ -292,6 +295,15 @@ namespace v4d::graphics {
 		void Disable() {
 			if (active) geometriesDirty = true;
 			active = false;
+		}
+		
+		bool IsGenerated() const {
+			return generated;
+		}
+		
+		void SetGenerated() {
+			if (!generated) geometriesDirty = true;
+			generated = true;
 		}
 		
 		#pragma endregion

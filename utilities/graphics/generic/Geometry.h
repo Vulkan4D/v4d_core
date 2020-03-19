@@ -182,33 +182,33 @@ namespace v4d::graphics {
 			std::map<int, GeometryBufferAllocation> vertexAllocations {};
 			std::map<int, LightSource*> lightAllocations {};
 			
-			// // Very high object and vertex count, takes about two seconds just for allocating 496 MB of VRAM
+			// // High object and vertex count, takes about two seconds to allocate 528 MB of VRAM
 			// 	static const int nbInitialObjects = 1048576; // 1 million @ 128 bytes each = 128 mb
 			// 	static const int nbInitialGeometries = 1048576; // 1 million @ 16 bytes each = 16 mb
 			// 	static const int nbInitialVertices = 8388608; // 8 million @ 32 bytes each = 256 mb
-			// 	static const int nbInitialIndices = nbInitialVertices * 2; // 16 million @ 4 bytes each = 64 mb
+			// 	static const int nbInitialIndices = nbInitialVertices * 3; // 24 million @ 4 bytes each = 96 mb
 			// 	static const int nbInitialLights = 1048576; // 1 million @ 32 bytes each = 32 mb
 			
-			// // Medium object and vertex count, takes about one second to allocate 148 MB of VRAM
-			// 	static const int nbInitialObjects = 16384; // 16k objects @ 128 bytes each = 2 mb
-			// 	static const int nbInitialGeometries = nbInitialObjects * 4; // 64k @ 16 bytes each = 1 mb
-			// 	static const int nbInitialVertices = 4194304; // 4 million @ 32 bytes each = 128 mb
-			// 	static const int nbInitialIndices = nbInitialVertices * 2; // 8 million @ 4 bytes each = 16 mb
-			// 	static const int nbInitialLights = 16384; // 16k lights @ 32 bytes each = 512 kb
+			// Medium object and vertex count, takes about one second to allocate 228 MB of VRAM
+				static const int nbInitialObjects = 16384; // 16k objects @ 128 bytes each = 2 mb
+				static const int nbInitialGeometries = nbInitialObjects * 4; // 64k @ 16 bytes each = 1 mb
+				static const int nbInitialVertices = 4194304; // 4 million @ 32 bytes each = 128 mb
+				static const int nbInitialIndices = nbInitialVertices * 6; // 24 million @ 4 bytes each = 96 mb
+				static const int nbInitialLights = 16384; // 16k lights @ 32 bytes each = 512 kb
 			
-			// // Low object and vertex count, allocates almost instantaneously 38 MB of VRAM
+			// // Low object and vertex count, allocates almost instantaneously 46 MB of VRAM
 			// 	static const int nbInitialObjects = 8192; // 8k objects @ 128 bytes each = 1 mb
 			// 	static const int nbInitialGeometries = nbInitialObjects * 4; // 32k @ 16 bytes each = 512 kb
 			// 	static const int nbInitialVertices = 1048576; // 1 million @ 32 bytes each = 32 mb
-			// 	static const int nbInitialIndices = nbInitialVertices * 2; // 2 million @ 4 bytes each = 4 mb
+			// 	static const int nbInitialIndices = nbInitialVertices * 3; // 3 million @ 4 bytes each = 12 mb
 			// 	static const int nbInitialLights = 8192; // 8k lights @ 32 bytes each = 256 kb
 			
-			// Very Low object and vertex count, allocates instantaneously 10 MB of VRAM
-				static const int nbInitialObjects = 4096; // 4k objects @ 128 bytes each = 512 kb
-				static const int nbInitialGeometries = nbInitialObjects * 4; // 16k @ 16 bytes each = 256 kb
-				static const int nbInitialVertices = 262144; // 262k vertices @ 32 bytes each = 8 mb
-				static const int nbInitialIndices = nbInitialVertices * 2; // 524k indices @ 4 bytes each = 1 mb
-				static const int nbInitialLights = 4096; // 4k lights @ 32 bytes each = 128 kb
+			// // Very Low object and vertex count, allocates instantaneously 12 MB of VRAM
+			// 	static const int nbInitialObjects = 4096; // 4k objects @ 128 bytes each = 512 kb
+			// 	static const int nbInitialGeometries = nbInitialObjects * 4; // 16k @ 16 bytes each = 256 kb
+			// 	static const int nbInitialVertices = 262144; // 262k vertices @ 32 bytes each = 8 mb
+			// 	static const int nbInitialIndices = nbInitialVertices * 3; // 786k indices @ 4 bytes each = 3 mb
+			// 	static const int nbInitialLights = 4096; // 4k lights @ 32 bytes each = 128 kb
 			
 		public:
 			

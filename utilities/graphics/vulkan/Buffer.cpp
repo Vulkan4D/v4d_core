@@ -91,8 +91,9 @@ void Buffer::CopySrcData(Device* device, size_t maxCopySize) {
 void Buffer::Free(Device* device) {
 	if (buffer != VK_NULL_HANDLE) {
 		device->DestroyBuffer(buffer, nullptr);
-		device->FreeMemory(memory, nullptr);
+		if (memory != VK_NULL_HANDLE) device->FreeMemory(memory, nullptr);
 		buffer = VK_NULL_HANDLE;
+		memory = VK_NULL_HANDLE;
 		data = nullptr;
 	}
 }
@@ -102,7 +103,7 @@ void Buffer::MapMemory(Device* device, VkDeviceSize offset, VkDeviceSize size, V
 }
 
 void Buffer::UnmapMemory(Device* device) {
-	device->UnmapMemory(memory);
+	if (data) device->UnmapMemory(memory);
 	data = nullptr;
 }
 
