@@ -14,11 +14,12 @@
 
 // #define XVK_USE_QT_VULKAN_LOADER // uncomment if you are using Qt
 
+#define VK_ENABLE_BETA_EXTENSIONS // for VK_KHR_ray_tracing
 #include <xvk.hpp>
 
 #define V4D_ENGINE_NAME "Vulkan4D"
 #define V4D_ENGINE_VERSION VK_MAKE_VERSION(1, 0, 0)
-#define VULKAN_API_VERSION VK_API_VERSION_1_1
+#define VULKAN_API_VERSION VK_API_VERSION_1_2
 
 namespace v4d::graphics::vulkan {
 	
