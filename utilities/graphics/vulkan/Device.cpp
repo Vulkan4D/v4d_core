@@ -222,8 +222,10 @@ void Device::EndSingleTimeCommands(Queue queue, VkCommandBuffer commandBuffer) {
 	if (QueueSubmit(queue.handle, 1, &submitInfo, fence) != VK_SUCCESS)
 		throw std::runtime_error("Failed to submit queue");
 
-	if (WaitForFences(1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max() /* nanoseconds */))
+	if (VkResult res = WaitForFences(1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max() /* nanoseconds */); res != VK_SUCCESS) {
+		LOG_ERROR(res)
 		throw std::runtime_error("Failed to wait for fence to signal");
+	}
 
 	DestroyFence(fence, nullptr);
 	

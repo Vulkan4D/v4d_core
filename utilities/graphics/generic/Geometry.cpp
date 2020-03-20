@@ -253,6 +253,7 @@ namespace v4d::graphics {
 		}
 		nbAllocatedVertices = std::max(nbAllocatedVertices, geometry->vertexOffset + geometry->vertexCount);
 		vertexAllocations[geometry->vertexOffset] = {geometry->vertexCount, geometry};
+		LOG("Allocated new geometry with vertex offset " << geometry->vertexOffset)
 		
 		// Check for overflow
 		if (geometryBuffer.stagingBuffer.size < nbAllocatedGeometries * sizeof(GeometryBuffer_T)) 
@@ -260,7 +261,7 @@ namespace v4d::graphics {
 		if (indexBuffer.stagingBuffer.size < nbAllocatedIndices * sizeof(IndexBuffer_T)) 
 			FATAL("Global Index buffer overflow" )
 		if (vertexBuffer.stagingBuffer.size < nbAllocatedVertices * sizeof(VertexBuffer_T)) 
-			FATAL("Global Pos buffer overflow" )
+			FATAL("Global Vertex buffer overflow" )
 		
 		//TODO dynamically allocate more memory instead of crashing
 		

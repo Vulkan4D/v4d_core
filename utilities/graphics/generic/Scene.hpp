@@ -6,10 +6,9 @@
 
 namespace v4d::graphics {
 	struct V4DLIB Scene {
-		mutable std::mutex sceneMutex;
+		mutable std::recursive_mutex sceneMutex;
 		
 		Camera camera {};
-		// std::map<std::string, LightSource*> lightSources {};
 		std::vector<ObjectInstance*> objectInstances {};
 		
 		ObjectInstance* AddObjectInstance(std::string type = "standard") {
@@ -19,12 +18,32 @@ namespace v4d::graphics {
 		
 		void RemoveObjectInstance(ObjectInstance* obj) {
 			std::lock_guard lock(sceneMutex);
-			auto objInScene = std::find(objectInstances.begin(), objectInstances.end(), obj);
-			if (objInScene != objectInstances.end()) {
-				*objInScene = nullptr;
+			if (!obj) return;
+			if (obj->GetRayTracingInstanceIndex() != -1) { //TODO maybe replace this with usage count in the future
+				obj->Disable();
+				obj->MarkForDeletion();
+			} else {
+				int lastIndex = objectInstances.size() - 1;
+				auto objInScene = std::find(objectInstances.begin(), objectInstances.end(), obj);
+				if (objInScene != objectInstances.end()) {
+					delete obj;
+					if (*objInScene != objectInstances[lastIndex]) {
+						*objInScene = objectInstances[lastIndex];
+					}
+					objectInstances.pop_back();
+				} else {
+					LOG_WARN("Scene Object to be removed was not present in objectInstances. Object NOT deleted.")
+				}
 			}
-			delete obj;
-			std::remove_if(objectInstances.begin(), objectInstances.end(), [](auto* o){return !o;});
+		}
+		
+		void CollectGarbage() {
+			std::lock_guard lock(sceneMutex);
+			for (auto* obj : objectInstances) if (obj) {
+				if (obj->IsMarkedForDeletion() && obj->GetRayTracingInstanceIndex() == -1) {
+					RemoveObjectInstance(obj);
+				}
+			}
 		}
 		
 		int GetObjectCount() const {

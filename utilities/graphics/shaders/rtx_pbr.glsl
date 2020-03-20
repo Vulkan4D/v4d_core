@@ -31,10 +31,10 @@ vec3 fresnelSchlick(float HdotV, vec3 baseReflectivity) {
 vec3 ApplyPBRShading(vec3 hitPoint, vec3 albedo, vec3 normal, float roughness, float metallic) {
 	vec3 color = vec3(0);
 	
-	// Black backfaces
-	if (dot(normal, gl_WorldRayDirectionNV) > 0) {
-		return color;
-	}
+	// // Black backfaces
+	// if (dot(normal, gl_WorldRayDirectionNV) > 0) {
+	// 	return vec3(1,0,1);
+	// }
 	
 	// PBR lighting
 	vec3 N = normal;

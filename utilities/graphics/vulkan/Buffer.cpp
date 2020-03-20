@@ -96,6 +96,9 @@ void Buffer::Free(Device* device) {
 		memory = VK_NULL_HANDLE;
 		data = nullptr;
 	}
+	if (srcDataPointers.size() > 0) {
+		size = 0;
+	}
 }
 
 void Buffer::MapMemory(Device* device, VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags) {

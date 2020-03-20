@@ -39,6 +39,7 @@ namespace v4d::graphics {
 		bool geometriesDirty = true;
 		bool active = true;
 		bool generated = false;
+		bool markedForDeletion = false;
 		
 	public:
 		#pragma region Constructor/Destructor
@@ -284,7 +285,7 @@ namespace v4d::graphics {
 		}
 		
 		bool IsActive() const {
-			return active;
+			return !markedForDeletion && active;
 		}
 		
 		void Enable() {
@@ -304,6 +305,14 @@ namespace v4d::graphics {
 		void SetGenerated() {
 			if (!generated) geometriesDirty = true;
 			generated = true;
+		}
+		
+		bool IsMarkedForDeletion() const {
+			return markedForDeletion;
+		}
+		
+		void MarkForDeletion() {
+			markedForDeletion = true;
 		}
 		
 		#pragma endregion
