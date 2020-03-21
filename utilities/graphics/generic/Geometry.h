@@ -288,8 +288,6 @@ namespace v4d::graphics {
 		
 		~Geometry();
 		
-		VkGeometryNV GetRayTracingGeometry() const;
-		
 		void MapStagingBuffers();
 		
 		void UnmapStagingBuffers();

@@ -1,4 +1,3 @@
-#extension GL_NV_ray_tracing : require
 #extension GL_EXT_ray_tracing : require
 
 #extension GL_EXT_nonuniform_qualifier : enable
@@ -19,7 +18,7 @@ layout(set = 0, binding = 3) readonly buffer ActiveLights {
 };
 
 // Descriptor Set 1
-layout(set = 1, binding = 0) uniform accelerationStructureNV topLevelAS;
+layout(set = 1, binding = 0) uniform accelerationStructureEXT topLevelAS;
 layout(set = 1, binding = 1, rgba16f) uniform image2D litImage;
 layout(set = 1, binding = 2, r32f) uniform image2D depthImage;
 layout(set = 1, binding = 3) readonly buffer GeometryBuffer {uvec4 geometries[];};

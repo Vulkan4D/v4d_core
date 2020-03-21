@@ -71,7 +71,7 @@ namespace v4d::graphics::vulkan {
 
 		// overloads native vulkan command with different arguments
 		using xvk::Interface::DeviceInterface::DestroyCommandPool;
-		void DestroyCommandPool(VkCommandPool &commandPool);
+		void DestroyCommandPool(VkCommandPool&);
 
 		// overloads native vulkan command with different arguments
 		using xvk::Interface::DeviceInterface::CreateDescriptorPool;
@@ -80,7 +80,13 @@ namespace v4d::graphics::vulkan {
 
 		// overloads native vulkan command with different arguments
 		using xvk::Interface::DeviceInterface::DestroyDescriptorPool;
-		void DestroyDescriptorPool(VkDescriptorPool &descriptorPool);
+		void DestroyDescriptorPool(VkDescriptorPool&);
+
+		// overloads native vulkan command with different arguments
+		using xvk::Interface::DeviceInterface::GetBufferDeviceAddress;
+		VkDeviceAddress GetBufferDeviceAddress(VkBuffer&);
+		VkDeviceOrHostAddressKHR GetBufferDeviceOrHostAddress(VkBuffer&);
+		VkDeviceOrHostAddressConstKHR GetBufferDeviceOrHostAddressConst(VkBuffer&);
 
 		// Helpers
 		size_t GetAlignedUniformSize(size_t size);

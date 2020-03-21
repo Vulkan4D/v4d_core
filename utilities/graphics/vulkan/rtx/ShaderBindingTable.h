@@ -8,7 +8,7 @@ namespace v4d::graphics::vulkan::rtx {
 	private:
 		
 		std::map<uint32_t, ShaderInfo> shaderFiles;
-		std::vector<VkRayTracingShaderGroupCreateInfoNV> groups;
+		std::vector<VkRayTracingShaderGroupCreateInfoKHR> groups;
 		std::vector<Shader> shaderObjects;
 		std::vector<VkPipelineShaderStageCreateInfo> stages;
 		
@@ -25,19 +25,19 @@ namespace v4d::graphics::vulkan::rtx {
 
 		VkPipeline GetPipeline() const;
 		PipelineLayout* GetPipelineLayout() const;
-		std::vector<VkRayTracingShaderGroupCreateInfoNV> GetGroups() const;
+		std::vector<VkRayTracingShaderGroupCreateInfoKHR> GetGroups() const;
 		std::vector<VkPipelineShaderStageCreateInfo> GetStages() const;
 		
 		uint32_t GetHitGroupOffset() const;
 		uint32_t GetMissGroupOffset() const;
 
 		// Rules: 
-			// If type is VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV then generalShader must be a valid index into pStages referring to a shader of VK_SHADER_STAGE_RAYGEN_BIT_NV, VK_SHADER_STAGE_MISS_BIT_NV, or VK_SHADER_STAGE_CALLABLE_BIT_NV
-			// If type is VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_NV then closestHitShader, anyHitShader, and intersectionShader must be VK_SHADER_UNUSED_NV
-			// If type is VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_NV then intersectionShader must be a valid index into pStages referring to a shader of VK_SHADER_STAGE_INTERSECTION_BIT_NV
-			// If type is VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_NV then intersectionShader must be VK_SHADER_UNUSED_NV
-			// closestHitShader must be either VK_SHADER_UNUSED_NV or a valid index into pStages referring to a shader of VK_SHADER_STAGE_CLOSEST_HIT_BIT_NV
-			// anyHitShader must be either VK_SHADER_UNUSED_NV or a valid index into pStages referring to a shader of VK_SHADER_STAGE_ANY_HIT_BIT_NV
+			// If type is VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR then generalShader must be a valid index into pStages referring to a shader of VK_SHADER_STAGE_RAYGEN_BIT_KHR, VK_SHADER_STAGE_MISS_BIT_KHR, or VK_SHADER_STAGE_CALLABLE_BIT_KHR
+			// If type is VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR then closestHitShader, anyHitShader, and intersectionShader must be VK_SHADER_UNUSED_KHR
+			// If type is VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR then intersectionShader must be a valid index into pStages referring to a shader of VK_SHADER_STAGE_INTERSECTION_BIT_KHR
+			// If type is VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR then intersectionShader must be VK_SHADER_UNUSED_KHR
+			// closestHitShader must be either VK_SHADER_UNUSED_KHR or a valid index into pStages referring to a shader of VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR
+			// anyHitShader must be either VK_SHADER_UNUSED_KHR or a valid index into pStages referring to a shader of VK_SHADER_STAGE_ANY_HIT_BIT_KHR
 		
 		uint32_t GetOrAddShaderFileIndex(ShaderInfo&& shader);
 		

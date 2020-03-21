@@ -178,6 +178,31 @@ void Device::DestroyDescriptorPool(VkDescriptorPool &descriptorPool) {
 	DestroyDescriptorPool(descriptorPool, nullptr);
 }
 
+VkDeviceAddress Device::GetBufferDeviceAddress(VkBuffer& buffer) {
+	VkBufferDeviceAddressInfo bufferAddrInfo {};
+	bufferAddrInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_CREATE_INFO_EXT;
+	bufferAddrInfo.buffer = buffer;
+	return GetBufferDeviceAddress(&bufferAddrInfo);
+}
+
+VkDeviceOrHostAddressKHR Device::GetBufferDeviceOrHostAddress(VkBuffer& buffer) {
+	VkBufferDeviceAddressInfo bufferAddrInfo {};
+	bufferAddrInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_CREATE_INFO_EXT;
+	bufferAddrInfo.buffer = buffer;
+	VkDeviceOrHostAddressKHR vertexBufferAddr {};
+	vertexBufferAddr.deviceAddress = GetBufferDeviceAddress(&bufferAddrInfo);
+	return vertexBufferAddr;
+}
+
+VkDeviceOrHostAddressConstKHR Device::GetBufferDeviceOrHostAddressConst(VkBuffer& buffer) {
+	VkBufferDeviceAddressInfo bufferAddrInfo {};
+	bufferAddrInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_CREATE_INFO_EXT;
+	bufferAddrInfo.buffer = buffer;
+	VkDeviceOrHostAddressConstKHR vertexBufferAddr {};
+	vertexBufferAddr.deviceAddress = GetBufferDeviceAddress(&bufferAddrInfo);
+	return vertexBufferAddr;
+}
+
 size_t Device::GetAlignedUniformSize(size_t size) {
 	size_t alignedSize = size;
 	const VkDeviceSize& alignment = physicalDevice->GetProperties().limits.minUniformBufferOffsetAlignment;

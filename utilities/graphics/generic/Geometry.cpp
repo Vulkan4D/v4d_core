@@ -6,43 +6,6 @@ namespace v4d::graphics {
 
 	std::unordered_map<std::string, uint32_t> Geometry::rayTracingShaderOffsets {};
 
-	VkGeometryNV Geometry::GetRayTracingGeometry() const {
-		VkGeometryNV geometry {};
-		geometry.sType = VK_STRUCTURE_TYPE_GEOMETRY_NV;
-		geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_GEOMETRY_TRIANGLES_NV;
-		geometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_GEOMETRY_AABB_NV;
-		
-		geometry.flags = 0;//VK_GEOMETRY_OPAQUE_BIT_NV;
-			
-		if (isProcedural) {
-			geometry.geometryType = VK_GEOMETRY_TYPE_AABBS_NV;
-			
-			geometry.geometry.aabbs.numAABBs = vertexCount;
-			geometry.geometry.aabbs.stride = sizeof(ProceduralVertexBuffer_T);
-			geometry.geometry.aabbs.offset = (VkDeviceSize)(vertexOffset*sizeof(ProceduralVertexBuffer_T));
-			
-			geometry.geometry.aabbs.aabbData = globalBuffers.vertexBuffer.deviceLocalBuffer.buffer;
-			
-		} else {
-			geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_NV;
-			
-			geometry.geometry.triangles.vertexOffset = (VkDeviceSize)(vertexOffset*sizeof(VertexBuffer_T));
-			geometry.geometry.triangles.vertexCount = vertexCount;
-			geometry.geometry.triangles.vertexStride = sizeof(VertexBuffer_T);
-			geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-			geometry.geometry.triangles.indexOffset = (VkDeviceSize)(indexOffset*sizeof(IndexBuffer_T));
-			geometry.geometry.triangles.indexCount = indexCount;
-			geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
-			
-			geometry.geometry.triangles.vertexData = globalBuffers.vertexBuffer.deviceLocalBuffer.buffer;
-			geometry.geometry.triangles.indexData = globalBuffers.indexBuffer.deviceLocalBuffer.buffer;
-			
-			geometry.geometry.triangles.transformData = transformBuffer? transformBuffer->buffer : VK_NULL_HANDLE;
-			geometry.geometry.triangles.transformOffset = transformOffset;
-		}
-		return geometry;
-	}
-	
 	Geometry::Geometry(uint32_t vertexCount, uint32_t indexCount, uint32_t material, bool isProcedural)
 	 : vertexCount(vertexCount), indexCount(indexCount), material(material), isProcedural(isProcedural) {
 		globalBuffers.AddGeometry(this);

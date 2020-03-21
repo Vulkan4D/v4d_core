@@ -18,7 +18,7 @@ DescriptorBinding::~DescriptorBinding() {
 				delete[] (VkDescriptorImageInfo*)writeInfo;
 			break;
 			case ACCELERATION_STRUCTURE:
-				delete (VkWriteDescriptorSetAccelerationStructureNV*)writeInfo;
+				delete (VkWriteDescriptorSetAccelerationStructureKHR*)writeInfo;
 			break;
 			// default: throw std::runtime_error("pointerType is not implemented in destructor");
 		}
@@ -40,7 +40,7 @@ bool DescriptorBinding::IsWriteDescriptorSetValid() const {
 			return ((Image*)data)->sampler != VK_NULL_HANDLE && ((Image*)data)->view != VK_NULL_HANDLE;
 		break;
 		case ACCELERATION_STRUCTURE:
-			return *(VkAccelerationStructureNV*)data != VK_NULL_HANDLE;
+			return *(VkAccelerationStructureKHR*)data != VK_NULL_HANDLE;
 		break;
 	}
 	return false;
@@ -112,13 +112,13 @@ VkWriteDescriptorSet DescriptorBinding::GetWriteDescriptorSet(VkDescriptorSet de
 			descriptorWrite.pImageInfo = (VkDescriptorImageInfo*)writeInfo;
 		break;
 		case ACCELERATION_STRUCTURE:
-			writeInfo = new VkWriteDescriptorSetAccelerationStructureNV {
-				VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_NV,// VkStructureType sType
+			writeInfo = new VkWriteDescriptorSetAccelerationStructureKHR {
+				VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR,// VkStructureType sType
 				nullptr,// const void* pNext
 				descriptorCount,// uint32_t accelerationStructureCount
-				(VkAccelerationStructureNV*)data,// const VkAccelerationStructureNV* pAccelerationStructures
+				(VkAccelerationStructureKHR*)data,// const VkAccelerationStructureKHR* pAccelerationStructures
 			};
-			descriptorWrite.pNext = (VkWriteDescriptorSetAccelerationStructureNV*)writeInfo;
+			descriptorWrite.pNext = (VkWriteDescriptorSetAccelerationStructureKHR*)writeInfo;
 		break;
 		// default: throw std::runtime_error("pointerType is not implemented in GetWriteDescriptorSet()");
 	}

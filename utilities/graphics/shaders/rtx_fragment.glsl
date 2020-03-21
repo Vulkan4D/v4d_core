@@ -19,10 +19,10 @@ struct Fragment {
 Fragment GetHitFragment(bool interpolateVertexData) {
 	Fragment f;
 	
-	f.indexOffset = geometries[gl_InstanceCustomIndexNV].x;
-	f.vertexOffset = geometries[gl_InstanceCustomIndexNV].y;
-	f.objectIndex = geometries[gl_InstanceCustomIndexNV].z;
-	f.material = geometries[gl_InstanceCustomIndexNV].w;
+	f.indexOffset = geometries[gl_InstanceCustomIndexEXT].x;
+	f.vertexOffset = geometries[gl_InstanceCustomIndexEXT].y;
+	f.objectIndex = geometries[gl_InstanceCustomIndexEXT].z;
+	f.material = geometries[gl_InstanceCustomIndexEXT].w;
 	
 	f.objectInstance = GetObjectInstance(f.objectIndex);
 	
@@ -31,7 +31,7 @@ Fragment GetHitFragment(bool interpolateVertexData) {
 	f.v2 = GetVertex(indices[f.indexOffset + (3 * gl_PrimitiveID) + 2] + f.vertexOffset);
 	
 	f.barycentricCoords = vec3(1.0f - hitAttribs.x - hitAttribs.y, hitAttribs.x, hitAttribs.y);
-	f.hitPoint = gl_WorldRayOriginNV + gl_WorldRayDirectionNV * gl_HitTNV;
+	f.hitPoint = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
 	
 	if (interpolateVertexData) {
 		f.pos = (f.v0.pos * f.barycentricCoords.x + f.v1.pos * f.barycentricCoords.y + f.v2.pos * f.barycentricCoords.z);
