@@ -74,7 +74,7 @@ namespace v4d::graphics {
 			if (geometriesDirty) {
 				GenerateGeometries();
 				for (auto* geom : geometries) if (geom->isDirty) {
-					geom->Push(device, cmdBuffer);
+					if (geom->active) geom->Push(device, cmdBuffer);
 					geom->isDirty = false;
 				}
 			}
