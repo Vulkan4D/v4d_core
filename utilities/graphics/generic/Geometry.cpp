@@ -16,9 +16,12 @@ namespace v4d::graphics {
 	}
 	
 	void Geometry::MapStagingBuffers() {
+		
+		//TODO only allocate and map staging buffers if it is needed, and remove the fatal error
 		if (!globalBuffers.geometryBuffer.stagingBuffer.data) {
 			FATAL("global buffers must be allocated before mapping staging buffers")
 		}
+		
 		geometryInfo =		&((GeometryBuffer_T*)	(globalBuffers.geometryBuffer.stagingBuffer.data))	[geometryOffset];
 		indices =			&((IndexBuffer_T*)		(globalBuffers.indexBuffer.stagingBuffer.data))		[indexOffset];
 		vertices =			&((VertexBuffer_T*)		(globalBuffers.vertexBuffer.stagingBuffer.data))	[vertexOffset];
@@ -52,6 +55,8 @@ namespace v4d::graphics {
 		vertices[i].SetColor(color);
 		vertices[i].normal = normal;
 		vertices[i].SetUV(uv);
+		
+		isDirty = true;
 	}
 	
 	void Geometry::SetProceduralVertex(uint32_t i, glm::vec3 aabbMin, glm::vec3 aabbMax, const glm::vec4& color, float custom1) {
@@ -62,6 +67,8 @@ namespace v4d::graphics {
 		vert->aabbMax = aabbMax;
 		vert->SetColor(color);
 		vert->custom1 = custom1;
+		
+		isDirty = true;
 	}
 	
 	void Geometry::SetIndex(uint32_t i, IndexBuffer_T vertexIndex) {
@@ -216,7 +223,7 @@ namespace v4d::graphics {
 		}
 		nbAllocatedVertices = std::max(nbAllocatedVertices, geometry->vertexOffset + geometry->vertexCount);
 		vertexAllocations[geometry->vertexOffset] = {geometry->vertexCount, geometry};
-		LOG("Allocated new geometry with vertex offset " << geometry->vertexOffset)
+		LOG_VERBOSE("Allocated new geometry with vertex offset " << geometry->vertexOffset)
 		
 		// Check for overflow
 		if (geometryBuffer.stagingBuffer.size < nbAllocatedGeometries * sizeof(GeometryBuffer_T)) 
@@ -295,12 +302,12 @@ namespace v4d::graphics {
 		lightAllocations[lightSource->lightOffset] = nullptr;
 	}
 	
-	void Geometry::GlobalGeometryBuffers::Allocate(Device* device) {
-		objectBuffer.Allocate(device);
-		geometryBuffer.Allocate(device);
-		indexBuffer.Allocate(device);
-		vertexBuffer.Allocate(device);
-		lightBuffer.Allocate(device);
+	void Geometry::GlobalGeometryBuffers::Allocate(Device* device, const std::vector<uint32_t>& queueFamilies) {
+		objectBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, queueFamilies);
+		geometryBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, queueFamilies);
+		indexBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, queueFamilies);
+		vertexBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, queueFamilies);
+		lightBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, queueFamilies);
 	}
 	
 	void Geometry::GlobalGeometryBuffers::Free(Device* device) {

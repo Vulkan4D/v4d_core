@@ -52,7 +52,7 @@ namespace v4d::graphics::vulkan {
 		
 		void ResetSrcData();
 		
-		void Allocate(Device* device, VkMemoryPropertyFlags properties, bool copySrcData = true);
+		void Allocate(Device* device, VkMemoryPropertyFlags properties, bool copySrcData = true, const std::vector<uint32_t>& queueFamilies = {});
 		void Free(Device* device);
 
 		void AllocateFromStaging(Device* device, VkCommandBuffer commandBuffer, Buffer& stagingBuffer, VkDeviceSize size = 0, VkDeviceSize offset = 0);
@@ -90,7 +90,7 @@ namespace v4d::graphics::vulkan {
 			AddSrcDataPtr(array->data(), S * sizeof(T));
 		}
 		
-		void Allocate(Device* device, VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		void Allocate(Device* device, VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, const std::vector<uint32_t>& queueFamilies = {});
 		void Free(Device* device);
 		
 		void Update(Device* device, VkCommandBuffer commandBuffer, size_t maxCopySize = 0);

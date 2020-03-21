@@ -22,8 +22,11 @@ void Buffer::AllocateFromStaging(Device* device, VkCommandBuffer commandBuffer, 
 	Copy(device, commandBuffer, stagingBuffer.buffer, buffer, size, offset);
 }
 
-void Buffer::Allocate(Device* device, VkMemoryPropertyFlags properties, bool copySrcData) {
+void Buffer::Allocate(Device* device, VkMemoryPropertyFlags properties, bool copySrcData, const std::vector<uint32_t>& queueFamilies) {
 	this->properties = properties;
+	if (queueFamilies.size() > 0) {
+		sharingMode = VK_SHARING_MODE_CONCURRENT;
+	}
 	if (size == 0) {
 		for (auto& dataPointer : srcDataPointers) {
 			size += dataPointer.size;
@@ -34,6 +37,8 @@ void Buffer::Allocate(Device* device, VkMemoryPropertyFlags properties, bool cop
 	bufferInfo.size = alignedUniformSize? device->GetAlignedUniformSize(size) : size;
 	bufferInfo.usage = usage;
 	bufferInfo.sharingMode = sharingMode;
+	bufferInfo.queueFamilyIndexCount = queueFamilies.size();
+	bufferInfo.pQueueFamilyIndices = queueFamilies.data();
 	
 	if (device->CreateBuffer(&bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create buffer");
@@ -152,10 +157,10 @@ void StagedBuffer::ResetSrcData() {
 	deviceLocalBuffer.ResetSrcData();
 }
 
-void StagedBuffer::Allocate(Device* device, VkMemoryPropertyFlags properties) {
-	stagingBuffer.Allocate(device, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, false);
+void StagedBuffer::Allocate(Device* device, VkMemoryPropertyFlags properties, const std::vector<uint32_t>& queueFamilies) {
+	stagingBuffer.Allocate(device, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, false, queueFamilies);
 	stagingBuffer.MapMemory(device);
-	deviceLocalBuffer.Allocate(device, properties, false);
+	deviceLocalBuffer.Allocate(device, properties, false, queueFamilies);
 }
 
 void StagedBuffer::Free(Device* device) {

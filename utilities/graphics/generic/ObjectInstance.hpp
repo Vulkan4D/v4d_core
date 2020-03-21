@@ -73,8 +73,9 @@ namespace v4d::graphics {
 		void PushGeometries(Device* device, VkCommandBuffer cmdBuffer) {
 			if (geometriesDirty) {
 				GenerateGeometries();
-				for (auto* geom : geometries) {
+				for (auto* geom : geometries) if (geom->isDirty) {
 					geom->Push(device, cmdBuffer);
+					geom->isDirty = false;
 				}
 			}
 			geometriesDirty = false;
@@ -221,6 +222,23 @@ namespace v4d::graphics {
 		int GetFirstGeometryOffset() const {
 			if (!geometries.size()) return 0;
 			return geometries[0]->geometryOffset;
+		}
+		
+		int GetFirstGeometryVertexOffset() const {
+			if (!geometries.size()) return 0;
+			return geometries[0]->vertexOffset;
+		}
+		
+		int GetFirstGeometryIndexOffset() const {
+			if (!geometries.size()) return 0;
+			return geometries[0]->indexOffset;
+		}
+		
+		void GetGeometriesTotals(int* totalVertices, int* totalIndices) const {
+			for (auto* geom : geometries) {
+				*totalVertices += geom->vertexCount;
+				*totalIndices += geom->indexCount;
+			}
 		}
 		
 		std::string& GetObjectType() {return objectType;}

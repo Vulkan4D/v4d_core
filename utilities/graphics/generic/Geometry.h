@@ -87,6 +87,7 @@ namespace v4d::graphics {
 		uint32_t indexOffset = 0;
 		
 		bool active = true;
+		bool isDirty = false;
 
 		struct GeometryBuffer_T { // 16 bytes
 			glm::u32 indexOffset;
@@ -246,7 +247,7 @@ namespace v4d::graphics {
 			void RemoveObject(ObjectInstance*);
 			void RemoveLight(LightSource*);
 			
-			void Allocate(Device*);
+			void Allocate(Device*, const std::vector<uint32_t>& queueFamilies = {});
 			void Free(Device*);
 			
 			void PushEverything(Device*, VkCommandBuffer);

@@ -35,6 +35,47 @@ vec4 SampleTexture(sampler2D tex, vec2 fragCoord) {
 	return texture(tex, fragCoord.st / vec2(textureSize(tex, 0)));
 }
 
+// vec3 UnpackNormal(in vec2 norm) {
+// 	vec2 fenc = norm * 4.0 - 2.0;
+// 	float f = dot(fenc, fenc);
+// 	float g = sqrt(1.0 - f / 4.0);
+// 	return vec3(fenc * g, 1.0 - f / 2.0);
+// }
+
+vec2 UnpackUVfromFloat(in float uv) {
+	uint packed = floatBitsToUint(uv);
+	return vec2(
+		(packed & 0xffff0000) >> 16,
+		(packed & 0x0000ffff) >> 0
+	) / 65535.0;
+}
+
+vec2 UnpackUVfromUint(in uint uv) {
+	return vec2(
+		(uv & 0xffff0000) >> 16,
+		(uv & 0x0000ffff) >> 0
+	) / 65535.0;
+}
+
+vec4 UnpackColorFromFloat(in float color) {
+	uint packed = floatBitsToUint(color);
+	return vec4(
+		(packed & 0xff000000) >> 24,
+		(packed & 0x00ff0000) >> 16,
+		(packed & 0x0000ff00) >> 8,
+		(packed & 0x000000ff) >> 0
+	) / 255.0;
+}
+
+vec4 UnpackColorFromUint(in uint color) {
+	return vec4(
+		(color & 0xff000000) >> 24,
+		(color & 0x00ff0000) >> 16,
+		(color & 0x0000ff00) >> 8,
+		(color & 0x000000ff) >> 0
+	) / 255.0;
+}
+
 
 // float linearstep(float a, float b, float x) {
 // 	if (b == a) return (x >= a ? 1 : 0);
