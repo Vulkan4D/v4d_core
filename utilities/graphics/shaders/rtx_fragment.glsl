@@ -12,6 +12,7 @@ struct Fragment {
 	// Interpolated values
 	vec3 pos;
 	vec3 normal;
+	vec3 viewSpaceNormal;
 	vec2 uv;
 	vec4 color;
 };
@@ -37,7 +38,7 @@ Fragment GetHitFragment(bool interpolateVertexData) {
 		f.pos = (f.v0.pos * f.barycentricCoords.x + f.v1.pos * f.barycentricCoords.y + f.v2.pos * f.barycentricCoords.z);
 		f.normal = normalize(f.v0.normal * f.barycentricCoords.x + f.v1.normal * f.barycentricCoords.y + f.v2.normal * f.barycentricCoords.z);
 		// f.normal = normalize(transpose(inverse(mat3(f.objectInstance.modelViewMatrix))) * f.normal);
-		f.normal = normalize(f.objectInstance.normalMatrix * f.normal);
+		f.viewSpaceNormal = normalize(f.objectInstance.normalMatrix * f.normal);
 		f.uv = (f.v0.uv * f.barycentricCoords.x + f.v1.uv * f.barycentricCoords.y + f.v2.uv * f.barycentricCoords.z);
 		f.color = (f.v0.color * f.barycentricCoords.x + f.v1.color * f.barycentricCoords.y + f.v2.color * f.barycentricCoords.z);
 	}
