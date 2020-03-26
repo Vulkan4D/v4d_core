@@ -7,7 +7,8 @@ Device::Device(
 	VkPhysicalDeviceFeatures& deviceFeatures,
 	std::vector<const char*>& extensions,
 	std::vector<const char*>& layers,
-	std::vector<DeviceQueueInfo> queuesInfo
+	std::vector<DeviceQueueInfo> queuesInfo,
+	void* pNext
 ) : physicalDevice(physicalDevice) {
 	instance = physicalDevice->GetVulkanInstance();
 
@@ -63,6 +64,7 @@ Device::Device(
 	}
 	
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	createInfo.pNext = pNext;
 	createInfo.queueCreateInfoCount = queuesCreateInfo.size();
 	createInfo.pQueueCreateInfos = queuesCreateInfo.data();
 	createInfo.pEnabledFeatures = &deviceFeatures;
@@ -180,27 +182,27 @@ void Device::DestroyDescriptorPool(VkDescriptorPool &descriptorPool) {
 
 VkDeviceAddress Device::GetBufferDeviceAddress(VkBuffer& buffer) {
 	VkBufferDeviceAddressInfo bufferAddrInfo {};
-	bufferAddrInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_CREATE_INFO_EXT;
+	bufferAddrInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
 	bufferAddrInfo.buffer = buffer;
 	return GetBufferDeviceAddress(&bufferAddrInfo);
 }
 
 VkDeviceOrHostAddressKHR Device::GetBufferDeviceOrHostAddress(VkBuffer& buffer) {
 	VkBufferDeviceAddressInfo bufferAddrInfo {};
-	bufferAddrInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_CREATE_INFO_EXT;
+	bufferAddrInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
 	bufferAddrInfo.buffer = buffer;
-	VkDeviceOrHostAddressKHR vertexBufferAddr {};
-	vertexBufferAddr.deviceAddress = GetBufferDeviceAddress(&bufferAddrInfo);
-	return vertexBufferAddr;
+	VkDeviceOrHostAddressKHR bufferAddr {};
+	bufferAddr.deviceAddress = GetBufferDeviceAddress(&bufferAddrInfo);
+	return bufferAddr;
 }
 
 VkDeviceOrHostAddressConstKHR Device::GetBufferDeviceOrHostAddressConst(VkBuffer& buffer) {
 	VkBufferDeviceAddressInfo bufferAddrInfo {};
-	bufferAddrInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_CREATE_INFO_EXT;
+	bufferAddrInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
 	bufferAddrInfo.buffer = buffer;
-	VkDeviceOrHostAddressConstKHR vertexBufferAddr {};
-	vertexBufferAddr.deviceAddress = GetBufferDeviceAddress(&bufferAddrInfo);
-	return vertexBufferAddr;
+	VkDeviceOrHostAddressConstKHR bufferAddr {};
+	bufferAddr.deviceAddress = GetBufferDeviceAddress(&bufferAddrInfo);
+	return bufferAddr;
 }
 
 size_t Device::GetAlignedUniformSize(size_t size) {

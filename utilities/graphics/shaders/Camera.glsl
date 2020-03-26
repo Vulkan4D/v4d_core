@@ -3,6 +3,7 @@ layout(set = 0, binding = 0) uniform Camera {
 	int height;
 	bool txaa;
 	bool debug;
+	
 	vec4 luminance;
 	dvec3 worldPosition;
 	double fov;
@@ -15,7 +16,11 @@ layout(set = 0, binding = 0) uniform Camera {
 	dmat4 historyViewMatrix;
 	mat4 reprojectionMatrix;
 	vec2 txaaOffset;
-	vec2 historyTxaaOffset;
+	bool hdr;
+	bool gammaCorrection;
+	
+	// vec2 historyTxaaOffset;
+	
 } camera;
 
 double GetTrueDistanceFromDepthBuffer(double depth) {

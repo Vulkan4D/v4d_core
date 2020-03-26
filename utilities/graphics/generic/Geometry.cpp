@@ -11,7 +11,20 @@ namespace v4d::graphics {
 		globalBuffers.AddGeometry(this);
 	}
 	
+	Geometry::Geometry(std::shared_ptr<Geometry> duplicateFrom)
+	 : vertexCount(0), indexCount(0), material(duplicateFrom->material), isProcedural(duplicateFrom->isProcedural), duplicateFrom(duplicateFrom) {
+		globalBuffers.AddGeometry(this);
+		vertexCount = duplicateFrom->vertexCount;
+		indexCount = duplicateFrom->indexCount;
+		vertexOffset = duplicateFrom->vertexOffset;
+		indexOffset = duplicateFrom->indexOffset;
+	}
+	
 	Geometry::~Geometry() {
+		if (duplicateFrom) {
+			vertexCount = 0;
+			indexCount = 0;
+		}
 		globalBuffers.RemoveGeometry(this);
 	}
 	
@@ -23,8 +36,14 @@ namespace v4d::graphics {
 		}
 		
 		geometryInfo =		&((GeometryBuffer_T*)	(globalBuffers.geometryBuffer.stagingBuffer.data))	[geometryOffset];
-		indices =			&((IndexBuffer_T*)		(globalBuffers.indexBuffer.stagingBuffer.data))		[indexOffset];
-		vertices =			&((VertexBuffer_T*)		(globalBuffers.vertexBuffer.stagingBuffer.data))	[vertexOffset];
+		
+		#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
+			indices =	&((IndexBuffer_T*)	(globalBuffers.indexBuffer.stagingBuffer.data))		[indexOffset];
+			vertices =	&((VertexBuffer_T*)	(globalBuffers.vertexBuffer.stagingBuffer.data))	[vertexOffset];
+		#else
+			indices =	&((IndexBuffer_T*)	(globalBuffers.indexBuffer.data))	[indexOffset];
+			vertices =	&((VertexBuffer_T*)	(globalBuffers.vertexBuffer.data))	[vertexOffset];
+		#endif
 		
 		// LOG("Global Geometry Staging Buffers mapped")
 	}
@@ -210,28 +229,36 @@ namespace v4d::graphics {
 		}
 		
 		// Vertex
-		geometry->vertexOffset = nbAllocatedVertices;
-		for (auto [i, alloc] : vertexAllocations) {
-			if (!alloc.data) {
-				if (alloc.n >= geometry->vertexCount) {
-					geometry->vertexOffset = i;
-					if (alloc.n > geometry->vertexCount) {
-						vertexAllocations[geometry->vertexOffset+geometry->vertexCount] = {alloc.n - geometry->vertexCount, nullptr};
+		if (geometry->vertexCount > 0) {
+			geometry->vertexOffset = nbAllocatedVertices;
+			for (auto [i, alloc] : vertexAllocations) {
+				if (!alloc.data) {
+					if (alloc.n >= geometry->vertexCount) {
+						geometry->vertexOffset = i;
+						if (alloc.n > geometry->vertexCount) {
+							vertexAllocations[geometry->vertexOffset+geometry->vertexCount] = {alloc.n - geometry->vertexCount, nullptr};
+						}
 					}
 				}
 			}
+			nbAllocatedVertices = std::max(nbAllocatedVertices, geometry->vertexOffset + geometry->vertexCount);
+			vertexAllocations[geometry->vertexOffset] = {geometry->vertexCount, geometry};
 		}
-		nbAllocatedVertices = std::max(nbAllocatedVertices, geometry->vertexOffset + geometry->vertexCount);
-		vertexAllocations[geometry->vertexOffset] = {geometry->vertexCount, geometry};
-		LOG_VERBOSE("Allocated new geometry with vertex offset " << geometry->vertexOffset)
 		
 		// Check for overflow
 		if (geometryBuffer.stagingBuffer.size < nbAllocatedGeometries * sizeof(GeometryBuffer_T)) 
 			FATAL("Global Geometry buffer overflow" )
-		if (indexBuffer.stagingBuffer.size < nbAllocatedIndices * sizeof(IndexBuffer_T)) 
-			FATAL("Global Index buffer overflow" )
-		if (vertexBuffer.stagingBuffer.size < nbAllocatedVertices * sizeof(VertexBuffer_T)) 
-			FATAL("Global Vertex buffer overflow" )
+		#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
+			if (indexBuffer.stagingBuffer.size < nbAllocatedIndices * sizeof(IndexBuffer_T)) 
+				FATAL("Global Index buffer overflow" )
+			if (vertexBuffer.stagingBuffer.size < nbAllocatedVertices * sizeof(VertexBuffer_T)) 
+				FATAL("Global Vertex buffer overflow" )
+		#else
+			if (indexBuffer.size < nbAllocatedIndices * sizeof(IndexBuffer_T)) 
+				FATAL("Global Index buffer overflow" )
+			if (vertexBuffer.size < nbAllocatedVertices * sizeof(VertexBuffer_T)) 
+				FATAL("Global Vertex buffer overflow" )
+		#endif
 		
 		//TODO dynamically allocate more memory instead of crashing
 		
@@ -288,8 +315,8 @@ namespace v4d::graphics {
 	void Geometry::GlobalGeometryBuffers::RemoveGeometry(Geometry* geometry) {
 		std::scoped_lock lock(geometryBufferMutex, vertexBufferMutex, indexBufferMutex);
 		geometryAllocations[geometry->geometryOffset] = nullptr;
-		indexAllocations[geometry->indexOffset].data = nullptr;
-		vertexAllocations[geometry->vertexOffset].data = nullptr;
+		if (geometry->indexCount > 0) indexAllocations[geometry->indexOffset].data = nullptr;
+		if (geometry->vertexCount > 0) vertexAllocations[geometry->vertexOffset].data = nullptr;
 	}
 
 	void Geometry::GlobalGeometryBuffers::RemoveObject(ObjectInstance* obj) {
@@ -305,14 +332,25 @@ namespace v4d::graphics {
 	void Geometry::GlobalGeometryBuffers::Allocate(Device* device, const std::vector<uint32_t>& queueFamilies) {
 		objectBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, queueFamilies);
 		geometryBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, queueFamilies);
-		indexBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, queueFamilies);
-		vertexBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, queueFamilies);
+		#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
+			indexBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, queueFamilies);
+			vertexBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, queueFamilies);
+		#else
+			indexBuffer.Allocate(device, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, false, queueFamilies);
+			indexBuffer.MapMemory(device);
+			vertexBuffer.Allocate(device, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, false, queueFamilies);
+			vertexBuffer.MapMemory(device);
+		#endif
 		lightBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, queueFamilies);
 	}
 	
 	void Geometry::GlobalGeometryBuffers::Free(Device* device) {
 		objectBuffer.Free(device);
 		geometryBuffer.Free(device);
+		#ifndef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
+			indexBuffer.UnmapMemory(device);
+			vertexBuffer.UnmapMemory(device);
+		#endif
 		indexBuffer.Free(device);
 		vertexBuffer.Free(device);
 		lightBuffer.Free(device);
@@ -333,15 +371,19 @@ namespace v4d::graphics {
 	void Geometry::GlobalGeometryBuffers::PushAllGeometries(Device* device, VkCommandBuffer commandBuffer) {
 		if (nbAllocatedGeometries == 0) return;
 		geometryBuffer.Push(device, commandBuffer, nbAllocatedGeometries);
-		indexBuffer.Push(device, commandBuffer, nbAllocatedIndices);
-		vertexBuffer.Push(device, commandBuffer, nbAllocatedVertices);
+		#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
+			indexBuffer.Push(device, commandBuffer, nbAllocatedIndices);
+			vertexBuffer.Push(device, commandBuffer, nbAllocatedVertices);
+		#endif
 	}
 	
 	void Geometry::GlobalGeometryBuffers::PullAllGeometries(Device* device, VkCommandBuffer commandBuffer) {
 		if (nbAllocatedGeometries == 0) return;
 		geometryBuffer.Pull(device, commandBuffer, nbAllocatedGeometries);
-		indexBuffer.Pull(device, commandBuffer, nbAllocatedIndices);
-		vertexBuffer.Pull(device, commandBuffer, nbAllocatedVertices);
+		#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
+			indexBuffer.Pull(device, commandBuffer, nbAllocatedIndices);
+			vertexBuffer.Pull(device, commandBuffer, nbAllocatedVertices);
+		#endif
 	}
 	
 	void Geometry::GlobalGeometryBuffers::PushGeometry(Device* device, VkCommandBuffer commandBuffer, Geometry* geometry, 
@@ -356,8 +398,10 @@ namespace v4d::graphics {
 		else indexCount = std::min(indexCount, geometry->indexCount);
 		
 		if (geometryBuffersMask & BUFFER_GEOMETRY_INFO) geometryBuffer.Push(device, commandBuffer, 1, geometry->geometryOffset);
-		if (geometryBuffersMask & BUFFER_INDEX) indexBuffer.Push(device, commandBuffer, indexCount, geometry->indexOffset + indexOffset);
-		if (geometryBuffersMask & BUFFER_VERTEX) vertexBuffer.Push(device, commandBuffer, vertexCount, geometry->vertexOffset + vertexOffset);
+		#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
+			if (geometryBuffersMask & BUFFER_INDEX) indexBuffer.Push(device, commandBuffer, indexCount, geometry->indexOffset + indexOffset);
+			if (geometryBuffersMask & BUFFER_VERTEX) vertexBuffer.Push(device, commandBuffer, vertexCount, geometry->vertexOffset + vertexOffset);
+		#endif
 	}
 	
 	void Geometry::GlobalGeometryBuffers::PullGeometry(Device* device, VkCommandBuffer commandBuffer, Geometry* geometry, 
@@ -372,8 +416,10 @@ namespace v4d::graphics {
 		else indexCount = std::min(indexCount, geometry->indexCount);
 		
 		if (geometryBuffersMask & BUFFER_GEOMETRY_INFO) geometryBuffer.Pull(device, commandBuffer, 1, geometry->geometryOffset);
-		if (geometryBuffersMask & BUFFER_INDEX) indexBuffer.Pull(device, commandBuffer, indexCount, geometry->indexOffset + indexOffset);
-		if (geometryBuffersMask & BUFFER_VERTEX) vertexBuffer.Pull(device, commandBuffer, vertexCount, geometry->vertexOffset + vertexOffset);
+		#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
+			if (geometryBuffersMask & BUFFER_INDEX) indexBuffer.Pull(device, commandBuffer, indexCount, geometry->indexOffset + indexOffset);
+			if (geometryBuffersMask & BUFFER_VERTEX) vertexBuffer.Pull(device, commandBuffer, vertexCount, geometry->vertexOffset + vertexOffset);
+		#endif
 	}
 
 	void Geometry::GlobalGeometryBuffers::WriteObject(ObjectInstance* obj) {

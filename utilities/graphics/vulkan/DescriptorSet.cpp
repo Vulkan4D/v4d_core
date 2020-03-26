@@ -125,7 +125,7 @@ VkWriteDescriptorSet DescriptorBinding::GetWriteDescriptorSet(VkDescriptorSet de
 	return descriptorWrite;
 }
 
-DescriptorSet::DescriptorSet(uint32_t set) : set(set) {}
+DescriptorSet::DescriptorSet() {}
 
 std::map<uint32_t, DescriptorBinding>& DescriptorSet::GetBindings() {
 	return bindings;

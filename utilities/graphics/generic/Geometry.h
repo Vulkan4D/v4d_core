@@ -82,12 +82,28 @@ namespace v4d::graphics {
 		uint32_t material;
 		bool isProcedural;
 		
+		enum : uint32_t {
+			RAY_TRACING_TYPE_SOLID = 0x01,
+			RAY_TRACING_TYPE_LIQUID = 0x02,
+			RAY_TRACING_TYPE_CLOUD = 0x04,
+			RAY_TRACING_TYPE_PARTICLE = 0x08,
+			RAY_TRACING_TYPE_TRANSPARENT = 0x10,
+			RAY_TRACING_TYPE_CUTOUT = 0x20,
+			RAY_TRACING_TYPE_CELESTIAL = 0x40,
+			RAY_TRACING_TYPE_EMITTER = 0x80,
+		};
+		uint32_t rayTracingMask = RAY_TRACING_TYPE_SOLID;
+		VkGeometryInstanceFlagsKHR flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+		
 		uint32_t geometryOffset = 0;
 		uint32_t vertexOffset = 0;
 		uint32_t indexOffset = 0;
 		
 		bool active = true;
 		bool isDirty = false;
+		
+		std::shared_ptr<v4d::graphics::vulkan::rtx::AccelerationStructure> blas = nullptr;
+		std::shared_ptr<Geometry> duplicateFrom = nullptr;
 
 		struct GeometryBuffer_T { // 16 bytes
 			glm::u32 indexOffset;
@@ -147,9 +163,9 @@ namespace v4d::graphics {
 	
 		static std::unordered_map<std::string, uint32_t> rayTracingShaderOffsets;
 
-		template<class T, VkBufferUsageFlags usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT>
+		template<class T, VkBufferUsageFlags U>
 		struct GlobalBuffer : public StagedBuffer {
-			GlobalBuffer(uint32_t initialBlocks) : StagedBuffer(usage, sizeof(T) * initialBlocks, false) {}
+			GlobalBuffer(uint32_t initialBlocks) : StagedBuffer(U, sizeof(T) * initialBlocks, false) {}
 			
 			void Push(Device* device, VkCommandBuffer commandBuffer, int count, int offset = 0) {
 				Buffer::Copy(device, commandBuffer, stagingBuffer, deviceLocalBuffer, sizeof(T) * count, sizeof(T) * offset, sizeof(T) * offset);
@@ -160,11 +176,21 @@ namespace v4d::graphics {
 			}
 		};
 
-		typedef GlobalBuffer<ObjectBuffer_T> ObjectBuffer;
-		typedef GlobalBuffer<GeometryBuffer_T> GeometryBuffer;
-		typedef GlobalBuffer<IndexBuffer_T, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT> IndexBuffer;
-		typedef GlobalBuffer<VertexBuffer_T, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT> VertexBuffer;
-		typedef GlobalBuffer<LightBuffer_T> LightBuffer;
+		template<class T, VkBufferUsageFlags U>
+		struct GlobalHostBuffer : public Buffer {
+			GlobalHostBuffer(uint32_t initialBlocks) : Buffer(U, sizeof(T) * initialBlocks, false) {}
+		};
+
+		typedef GlobalBuffer<ObjectBuffer_T, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT> ObjectBuffer;
+		typedef GlobalBuffer<GeometryBuffer_T, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT> GeometryBuffer;
+		#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
+			typedef GlobalBuffer<IndexBuffer_T, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT> IndexBuffer;
+			typedef GlobalBuffer<VertexBuffer_T, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT> VertexBuffer;
+		#else
+			typedef GlobalHostBuffer<IndexBuffer_T, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT> IndexBuffer;
+			typedef GlobalHostBuffer<VertexBuffer_T, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT> VertexBuffer;
+		#endif
+		typedef GlobalBuffer<LightBuffer_T, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT> LightBuffer;
 
 		GeometryBuffer_T* geometryInfo = nullptr;
 		IndexBuffer_T* indices = nullptr;
@@ -183,35 +209,42 @@ namespace v4d::graphics {
 			std::map<int, GeometryBufferAllocation> vertexAllocations {};
 			std::map<int, LightSource*> lightAllocations {};
 			
-			// Very High object and vertex count, takes about 5-10 seconds to allocate 3248 MB of VRAM
-				static const int nbInitialObjects = 1048576; // 1 million @ 128 bytes each = 128 mb
-				static const int nbInitialGeometries = 1048576; // 1 million @ 16 bytes each = 16 mb
-				static const int nbInitialVertices = 67108864; // 67 million @ 32 bytes each = 2048 mb
-				static const int nbInitialIndices = nbInitialVertices * 4; // 270 million @ 4 bytes each = 1024 mb
-				static const int nbInitialLights = 1048576; // 1 million @ 32 bytes each = 32 mb
+			// // Ultra High object and vertex count, takes about 5-10 seconds to allocate 3248 MB of memory
+			// 	static const int nbInitialObjects = 1048576; // 1 million @ 128 bytes each = 128 mb
+			// 	static const int nbInitialGeometries = 1048576; // 1 million @ 16 bytes each = 16 mb
+			// 	static const int nbInitialVertices = 67108864; // 67 million @ 32 bytes each = 2048 mb
+			// 	static const int nbInitialIndices = nbInitialVertices * 4; // 270 million @ 4 bytes each = 1024 mb
+			// 	static const int nbInitialLights = 1048576; // 1 million @ 32 bytes each = 32 mb
 			
-			// // High object and vertex count, takes about 1 second to allocate 460 MB of VRAM
+			// Very High vertex count, takes about 5-10 seconds to allocate 1548 MB of memory
+				static const int nbInitialObjects = 65536; // 65k objects @ 128 bytes each = 8 mb
+				static const int nbInitialGeometries = 131072; // 131k geometries @ 16 bytes each = 2 mb
+				static const int nbInitialVertices = 33554432; // 33 million @ 32 bytes each = 1024 mb
+				static const int nbInitialIndices = nbInitialVertices * 4; // 134 million @ 4 bytes each = 512 mb
+				static const int nbInitialLights = 65536; // 65k lights @ 32 bytes each = 2 mb
+			
+			// // High object and vertex count, takes about 1 second to allocate 460 MB of memory
 			// 	static const int nbInitialObjects = 65536; // 65k objects @ 128 bytes each = 8 mb
 			// 	static const int nbInitialGeometries = 131072; // 131k geometries @ 16 bytes each = 2 mb
 			// 	static const int nbInitialVertices = 8388608; // 8 million @ 32 bytes each = 256 mb
 			// 	static const int nbInitialIndices = nbInitialVertices * 6; // 48 million @ 4 bytes each = 192 mb
 			// 	static const int nbInitialLights = 65536; // 65k lights @ 32 bytes each = 2 mb
 			
-			// // Medium object and vertex count, takes less than one second to allocate 228 MB of VRAM
+			// // Medium object and vertex count, takes less than one second to allocate 228 MB of memory
 			// 	static const int nbInitialObjects = 16384; // 16k objects @ 128 bytes each = 2 mb
 			// 	static const int nbInitialGeometries = nbInitialObjects * 4; // 64k @ 16 bytes each = 1 mb
 			// 	static const int nbInitialVertices = 4194304; // 4 million @ 32 bytes each = 128 mb
 			// 	static const int nbInitialIndices = nbInitialVertices * 6; // 24 million @ 4 bytes each = 96 mb
 			// 	static const int nbInitialLights = 16384; // 16k lights @ 32 bytes each = 512 kb
 			
-			// // Low object and vertex count, allocates almost instantaneously 46 MB of VRAM
+			// // Low object and vertex count, allocates almost instantaneously 46 MB of memory
 			// 	static const int nbInitialObjects = 8192; // 8k objects @ 128 bytes each = 1 mb
 			// 	static const int nbInitialGeometries = nbInitialObjects * 4; // 32k @ 16 bytes each = 512 kb
 			// 	static const int nbInitialVertices = 1048576; // 1 million @ 32 bytes each = 32 mb
 			// 	static const int nbInitialIndices = nbInitialVertices * 3; // 3 million @ 4 bytes each = 12 mb
 			// 	static const int nbInitialLights = 8192; // 8k lights @ 32 bytes each = 256 kb
 			
-			// // Very Low object and vertex count, allocates instantaneously 12 MB of VRAM
+			// // Very Low object and vertex count, allocates instantaneously 12 MB of memory
 			// 	static const int nbInitialObjects = 4096; // 4k objects @ 128 bytes each = 512 kb
 			// 	static const int nbInitialGeometries = nbInitialObjects * 4; // 16k @ 16 bytes each = 256 kb
 			// 	static const int nbInitialVertices = 262144; // 262k vertices @ 32 bytes each = 8 mb
@@ -285,7 +318,7 @@ namespace v4d::graphics {
 		static GlobalGeometryBuffers globalBuffers;
 		
 		Geometry(uint32_t vertexCount, uint32_t indexCount, uint32_t material = 0, bool isProcedural = false);
-		// Geometry(glm::vec3 spherePosition, float sphereRadius, uint32_t material = 0);
+		Geometry(std::shared_ptr<Geometry> duplicateFrom);
 		
 		~Geometry();
 		

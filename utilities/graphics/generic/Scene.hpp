@@ -11,15 +11,15 @@ namespace v4d::graphics {
 		Camera camera {};
 		std::vector<ObjectInstance*> objectInstances {};
 		
-		ObjectInstance* AddObjectInstance(std::string type = "standard") {
+		ObjectInstance* AddObjectInstance() {
 			std::lock_guard lock(sceneMutex);
-			return objectInstances.emplace_back(new ObjectInstance(type));
+			return objectInstances.emplace_back(new ObjectInstance());
 		}
 		
 		void RemoveObjectInstance(ObjectInstance* obj) {
 			std::lock_guard lock(sceneMutex);
 			if (!obj) return;
-			if (obj->GetRayTracingInstanceIndex() != -1) { //TODO maybe replace this with usage count in the future
+			if (obj->GetRayTracingInstanceIndex() != -1) { //TODO maybe replace this with usage count in the future, or smart pointer...
 				obj->Disable();
 				obj->MarkForDeletion();
 			} else {

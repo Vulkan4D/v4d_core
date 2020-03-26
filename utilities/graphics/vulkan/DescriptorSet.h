@@ -99,7 +99,6 @@ namespace v4d::graphics::vulkan {
 
 	class V4DLIB DescriptorSet {
 	public:
-		uint32_t set;
 		VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
 		VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
 	private:
@@ -107,7 +106,7 @@ namespace v4d::graphics::vulkan {
 		
 	public:
 		
-		DescriptorSet(uint32_t set);
+		DescriptorSet();
 		
 		std::map<uint32_t, DescriptorBinding>& GetBindings();
 		VkDescriptorSetLayout GetDescriptorSetLayout() const;

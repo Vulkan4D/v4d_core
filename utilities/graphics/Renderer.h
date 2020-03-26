@@ -56,7 +56,7 @@ namespace v4d::graphics {
 		
 		// Descriptor sets
 		VkDescriptorPool descriptorPool;
-		std::vector<DescriptorSet*> descriptorSets {};
+		std::map<std::string, DescriptorSet*> descriptorSets {};
 		std::vector<VkDescriptorSet> vkDescriptorSets {};
 
 	public: // Preferences
@@ -79,6 +79,7 @@ namespace v4d::graphics {
 		
 	public: 
 		VkPhysicalDeviceFeatures deviceFeatures {}; // This object will be modified to keep only the enabled values.
+		VkPhysicalDeviceVulkan12Features vulkan12DeviceFeatures {};
 		
 		void RequiredDeviceExtension(const char* ext);
 		void OptionalDeviceExtension(const char* ext);
@@ -92,16 +93,16 @@ namespace v4d::graphics {
 		virtual void InitLayouts() = 0;
 		virtual void ConfigureShaders() = 0;
 		
+		// Scene
+		virtual void ReadShaders() = 0;
+		virtual void LoadScene() = 0;
+		virtual void UnloadScene() = 0;
+		
 		// Resources
 		virtual void CreateResources() = 0;
 		virtual void DestroyResources() = 0;
 		virtual void AllocateBuffers() = 0;
 		virtual void FreeBuffers() = 0;
-		
-		// Scene
-		virtual void LoadScene() = 0;
-		virtual void UnloadScene() = 0;
-		virtual void ReadShaders() = 0;
 		
 		// Pipelines
 		virtual void CreatePipelines() = 0;
@@ -110,10 +111,11 @@ namespace v4d::graphics {
 		// Update
 		virtual void FrameUpdate(uint imageIndex) = 0;
 		virtual void LowPriorityFrameUpdate() = 0;
+		virtual void BeforeGraphics() {};
 		
 		// Commands
-		virtual void RecordGraphicsCommandBuffer(VkCommandBuffer, int imageIndex) = 0;
 		virtual void RunDynamicGraphics(VkCommandBuffer) = 0;
+		virtual void RecordGraphicsCommandBuffer(VkCommandBuffer, int imageIndex) = 0;
 		virtual void RunDynamicLowPriorityCompute(VkCommandBuffer) = 0;
 		virtual void RunDynamicLowPriorityGraphics(VkCommandBuffer) = 0;
 		
@@ -198,6 +200,13 @@ namespace v4d::graphics {
 	};
 }
 
+DEFINE_EVENT(v4d::graphics::renderer, PipelinesCreate, Renderer*)
+DEFINE_EVENT(v4d::graphics::renderer, PipelinesDestroy, Renderer*)
+DEFINE_EVENT(v4d::graphics::renderer, Load, Renderer*)
+DEFINE_EVENT(v4d::graphics::renderer, Unload, Renderer*)
+DEFINE_EVENT(v4d::graphics::renderer, Reload, Renderer*)
+DEFINE_EVENT(v4d::graphics::renderer, Resize, Renderer*)
+
 
 /* 
 #include <v4d.h>
@@ -209,10 +218,14 @@ private: // Init
 	void ScorePhysicalDeviceSelection(int& score, PhysicalDevice* physicalDevice) override {}
 	void Init() override {}
 	void Info() override {}
-	void CreateLayouts() override {}
-	void DestroyLayouts() override {}
+	void InitLayouts() override {}
 	void ConfigureShaders() override {}
 
+public: // Scene configuration
+	void ReadShaders() override {}
+	void LoadScene() override {}
+	void UnloadScene() override {}
+	
 private: // Resources
 	void CreateResources() override {}
 	void DestroyResources() override {}
@@ -223,19 +236,15 @@ private: // Graphics configuration
 	void CreatePipelines() override {}
 	void DestroyPipelines() override {}
 	
-private: // Commands
-	void RecordGraphicsCommandBuffer(VkCommandBuffer commandBuffer, int imageIndex) override {}
-	void RunDynamicGraphics(VkCommandBuffer commandBuffer) override {}
-	void RunDynamicLowPriorityCompute(VkCommandBuffer commandBuffer) override {}
-	void RunDynamicLowPriorityGraphics(VkCommandBuffer commandBuffer) override {}
-	
-public: // Scene configuration
-	void LoadScene() override {}
-	void UnloadScene() override {}
-	
 public: // Update
 	void FrameUpdate(uint imageIndex) override {}
 	void LowPriorityFrameUpdate() override {}
-};
-
+	void BeforeGraphics() override {}
+	
+private: // Commands
+	void RunDynamicGraphics(VkCommandBuffer commandBuffer) override {}
+	void RecordGraphicsCommandBuffer(VkCommandBuffer commandBuffer, int imageIndex) override {}
+	void RunDynamicLowPriorityCompute(VkCommandBuffer commandBuffer) override {}
+	void RunDynamicLowPriorityGraphics(VkCommandBuffer commandBuffer) override {}
+	
 */

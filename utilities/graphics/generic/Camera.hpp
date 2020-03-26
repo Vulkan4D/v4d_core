@@ -8,6 +8,7 @@ namespace v4d::graphics {
 		alignas(4) int height = 0;
 		alignas(4) bool txaa = true;
 		alignas(4) bool debug = false;
+		
 		alignas(16) glm::vec4 luminance {1}; // Averaged, a = exposure factor
 		alignas(32) glm::dvec3 worldPosition {0};
 		alignas(8) double fov = 70;
@@ -20,9 +21,13 @@ namespace v4d::graphics {
 		alignas(128) glm::dmat4 historyViewMatrix {1};
 		alignas(64) glm::mat4 reprojectionMatrix {1};
 		alignas(16) glm::vec2 txaaOffset {0};
-		alignas(16) glm::vec2 historyTxaaOffset {0};
+		alignas(4) bool hdr = true;
+		alignas(4) bool gammaCorrection = true;
 		
-		float txaaKernelSize = 1.0f;
+		
+		// alignas(16) glm::vec2 historyTxaaOffset {0};
+		
+		static constexpr float txaaKernelSize = 1.0f;
 		
 		enum : int {
 			CAMERA_FRUSTUM_NEAR  = 0,
@@ -57,7 +62,7 @@ namespace v4d::graphics {
 				glm::dvec2 subSample = samples8[frameCount % 8] * texelSize * double(txaaKernelSize);
 				projectionMatrix[2].x = subSample.x;
 				projectionMatrix[2].y = subSample.y;
-				historyTxaaOffset = txaaOffset;
+				// historyTxaaOffset = txaaOffset;
 				txaaOffset = subSample / 2.0;
 				frameCount++;
 				

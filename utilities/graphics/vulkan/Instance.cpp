@@ -54,8 +54,10 @@ using namespace v4d::graphics::vulkan;
 					case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: // Message about behavior that is invalid and may cause crashes
 						LOG_ERROR("VULKAN_ERROR" << type << ": " << pCallbackData->pMessage);
 						#ifndef _WINDOWS
-						// 	raise(SIGKILL);
-							// std::abort();
+							#ifdef VULKAN_VALIDATION_ABORT_ON_ERROR
+							// 	raise(SIGKILL);
+								std::abort();
+							#endif
 						#endif
 					break;
 				}

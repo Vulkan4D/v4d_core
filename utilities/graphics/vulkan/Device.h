@@ -53,7 +53,8 @@ namespace v4d::graphics::vulkan {
 			VkPhysicalDeviceFeatures& deviceFeatures,
 			std::vector<const char*>& extensions,
 			std::vector<const char*>& layers,
-			std::vector<DeviceQueueInfo> queuesInfo
+			std::vector<DeviceQueueInfo> queuesInfo,
+			void* pNext = nullptr
 		);
 		~Device();
 

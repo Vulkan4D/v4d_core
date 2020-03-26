@@ -121,13 +121,18 @@ VkPipeline ShaderBindingTable::CreateRayTracingPipeline(Device* device) {
 	CreateShaderStages(device);
 	
 	VkRayTracingPipelineCreateInfoKHR rayTracingPipelineInfo {};
-	rayTracingPipelineInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-	rayTracingPipelineInfo.stageCount = (uint)stages.size();
-	rayTracingPipelineInfo.pStages = stages.data();
-	rayTracingPipelineInfo.groupCount = (uint)groups.size();
-	rayTracingPipelineInfo.pGroups = groups.data();
-	rayTracingPipelineInfo.maxRecursionDepth = 2;
-	rayTracingPipelineInfo.layout = pipelineLayout->handle;
+		rayTracingPipelineInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+		rayTracingPipelineInfo.stageCount = (uint)stages.size();
+		rayTracingPipelineInfo.pStages = stages.data();
+		rayTracingPipelineInfo.groupCount = (uint)groups.size();
+		rayTracingPipelineInfo.pGroups = groups.data();
+		rayTracingPipelineInfo.maxRecursionDepth = 2;
+		rayTracingPipelineInfo.layout = pipelineLayout->handle;
+		rayTracingPipelineInfo.libraries.sType = VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR;
+		
+		// const VkRayTracingPipelineInterfaceCreateInfoKHR*    pLibraryInterface;
+		// VkPipeline                                           basePipelineHandle;
+		// int32_t                                              basePipelineIndex;
 	
 	if (device->CreateRayTracingPipelinesKHR(VK_NULL_HANDLE, 1, &rayTracingPipelineInfo, nullptr, &pipeline) != VK_SUCCESS) //TODO support multiple ray tracing pipelines
 		throw std::runtime_error("Failed to create ray tracing pipelines");

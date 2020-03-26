@@ -40,7 +40,7 @@
 #include "utilities/graphics/vulkan/ShaderPipeline.h"
 #include "utilities/graphics/vulkan/ComputeShaderPipeline.h"
 #include "utilities/graphics/vulkan/RasterShaderPipeline.h"
-// RTX-Specific
+// Ray Tracing
 #include "utilities/graphics/vulkan/rtx/ShaderBindingTable.h"
 
 // General Graphics utilities
@@ -53,6 +53,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/hash.hpp>
+
+// Ray Tracing
+#include "utilities/graphics/vulkan/rtx/AccelerationStructure.h"
 
 // Generic Graphics Objects
 #include "utilities/graphics/generic/Scene.hpp"

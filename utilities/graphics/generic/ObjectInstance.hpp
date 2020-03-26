@@ -4,38 +4,34 @@
 #include "Geometry.h"
 
 namespace v4d::graphics {
+	
+	struct GeometryInstance {
+		std::shared_ptr<Geometry> geometry;
+		int rayTracingInstanceIndex;
+		glm::mat4 transform;
+		std::string type;
+		
+		GeometryInstance(std::shared_ptr<Geometry> geometry, int rayTracingInstanceIndex = -1, glm::mat4 transform = glm::mat4 {1}, std::string type = "standard")
+		: geometry(geometry), rayTracingInstanceIndex(rayTracingInstanceIndex), transform(transform), type(type) {};
+	};
 
 	class V4DLIB ObjectInstance {
-		std::string objectType;
 		
 	private:
 		glm::dmat4 transform {1};
-		std::vector<Geometry*> geometries {};
+		std::vector<GeometryInstance> geometries {};
 		std::vector<LightSource*> lightSources {};
 		glm::vec3 custom3 {0};
 		glm::vec4 custom4 {0};
 		void (*generateFunc)(ObjectInstance*) = nullptr;
-		enum : uint32_t {
-			RAY_TRACING_TYPE_SOLID = 0x01,
-			RAY_TRACING_TYPE_LIQUID = 0x02,
-			RAY_TRACING_TYPE_CLOUD = 0x04,
-			RAY_TRACING_TYPE_PARTICLE = 0x08,
-			RAY_TRACING_TYPE_TRANSPARENT = 0x10,
-			RAY_TRACING_TYPE_CUTOUT = 0x20,
-			RAY_TRACING_TYPE_CELESTIAL = 0x40,
-			RAY_TRACING_TYPE_EMITTER = 0x80,
-		};
-		uint32_t rayTracingMask = RAY_TRACING_TYPE_SOLID;
 		
 	private: // Cached data
 	friend Geometry;
 		std::optional<bool> isProcedural;
 		uint32_t objectOffset = 0;
-		int rayTracingBlasIndex = -1;
 		int rayTracingInstanceIndex = -1;
 		glm::mat4 modelViewMatrix {1};
 		glm::mat3 normalMatrix {1};
-		glm::mat3x4 rayTracingModelViewMatrix {1};
 		bool geometriesDirty = true;
 		bool active = true;
 		bool generated = false;
@@ -44,7 +40,7 @@ namespace v4d::graphics {
 	public:
 		#pragma region Constructor/Destructor
 		
-		ObjectInstance(std::string type = "standard") : objectType(type) {
+		ObjectInstance() {
 			Geometry::globalBuffers.AddObject(this);
 		}
 		
@@ -65,17 +61,25 @@ namespace v4d::graphics {
 		}
 		
 		void WriteGeometriesInformation() {
-			for (auto* geom : geometries) {
-				if (!geom->geometryInfoInitialized) geom->SetGeometryInfo(objectOffset, geom->material);
+			for (auto& geom : geometries) {
+				if (!geom.geometry->geometryInfoInitialized) geom.geometry->SetGeometryInfo(objectOffset, geom.geometry->material);
 			}
 		}
 		
 		void PushGeometries(Device* device, VkCommandBuffer cmdBuffer) {
 			if (geometriesDirty) {
 				GenerateGeometries();
-				for (auto* geom : geometries) if (geom->isDirty) {
-					if (geom->active) geom->Push(device, cmdBuffer);
-					geom->isDirty = false;
+				for (auto& geom : geometries) if (geom.geometry->isDirty) {
+					if (geom.geometry->duplicateFrom) {
+						if (geom.geometry->duplicateFrom->isDirty) {
+							geom.geometry->duplicateFrom->Push(device, cmdBuffer);
+							geom.geometry->duplicateFrom->isDirty = false;
+						}
+						geom.geometry->Push(device, cmdBuffer, Geometry::GlobalGeometryBuffers::BUFFER_GEOMETRY_INFO);
+					} else {
+						geom.geometry->Push(device, cmdBuffer);
+					}
+					geom.geometry->isDirty = false;
 				}
 			}
 			geometriesDirty = false;
@@ -84,7 +88,6 @@ namespace v4d::graphics {
 		void WriteMatrices(const glm::dmat4& viewMatrix) {
 			modelViewMatrix = glm::mat4(viewMatrix * transform);
 			normalMatrix = glm::transpose(glm::inverse(glm::mat3(modelViewMatrix)));
-			rayTracingModelViewMatrix = glm::transpose(modelViewMatrix);
 			
 			Geometry::globalBuffers.WriteObject(this);
 		
@@ -119,22 +122,32 @@ namespace v4d::graphics {
 		
 		#pragma region Generate
 		
-		Geometry* AddGeometry(uint32_t vertexCount, uint32_t indexCount, uint32_t material = 0) {
+		std::shared_ptr<Geometry> AddGeometry(uint32_t vertexCount, uint32_t indexCount, uint32_t material = 0, glm::dmat4 transform = glm::dmat4{1}) {
+			return AddGeometry("standard", vertexCount, indexCount, material, transform);
+		}
+		std::shared_ptr<Geometry> AddGeometry(const std::string& type, uint32_t vertexCount, uint32_t indexCount, uint32_t material = 0, glm::dmat4 transform = glm::dmat4{1}) {
 			if (!isProcedural.has_value()) isProcedural = false;
 			if (isProcedural.value()) {
-				LOG_ERROR("An sphere/procedural object cannot contain other triangle geometries")
+				LOG_ERROR("A sphere/procedural object cannot contain triangle geometries")
 				return nullptr;
 			}
-			return geometries.emplace_back(new Geometry(vertexCount, indexCount, material));
+			return geometries.emplace_back(std::make_shared<Geometry>(vertexCount, indexCount, material), -1, transform, type).geometry;
 		}
 		
-		Geometry* AddProceduralGeometry(uint32_t count, uint32_t material = 0) {
+		std::shared_ptr<Geometry> AddProceduralGeometry(const std::string& type, uint32_t count, uint32_t material = 0, glm::dmat4 transform = glm::dmat4{1}) {
 			if (!isProcedural.has_value()) isProcedural = true;
 			if (!isProcedural.value()) {
 				LOG_ERROR("A procedural object cannot contain triangle geometries")
 				return nullptr;
 			}
-			return geometries.emplace_back(new Geometry(count, 0, material, true));
+			return geometries.emplace_back(std::make_shared<Geometry>(count, 0, material, true), -1, transform, type).geometry;
+		}
+		
+		std::shared_ptr<Geometry> AddGeometry(std::shared_ptr<Geometry> templaceGeometry, glm::dmat4 transform = glm::dmat4{1}) {
+			return AddGeometry("standard", templaceGeometry, transform);
+		}
+		std::shared_ptr<Geometry> AddGeometry(const std::string& type, std::shared_ptr<Geometry> templaceGeometry, glm::dmat4 transform = glm::dmat4{1}) {
+			return geometries.emplace_back(std::make_shared<Geometry>(templaceGeometry), -1, transform, type).geometry;
 		}
 		
 		LightSource* AddLightSource(
@@ -157,19 +170,20 @@ namespace v4d::graphics {
 			return lightSource;
 		}
 		
-		void SetSphereGeometry(float radius, glm::vec4 color = {0,0,0,0}, uint32_t material = 0, float custom1 = 0) {
+		void SetSphereGeometry(const std::string& type, float radius, glm::vec4 color = {0,0,0,0}, uint32_t material = 0, float custom1 = 0) {
 			if (!isProcedural.has_value()) isProcedural = true;
 			if (!isProcedural.value()) {
 				LOG_ERROR("A sphere cannot contain triangle geometries")
 				return;
 			}
 			if (geometries.size() == 0) {
-				geometries.emplace_back(new Geometry(1, 0, material, true));
+				geometries.emplace_back(std::make_shared<Geometry>(1, 0, material, true), -1, glm::dmat4{1}, type);
 			}
-			geometries[0]->SetProceduralVertex(0, glm::vec3(-radius), glm::vec3(+radius), color, custom1);
+			geometries[0].geometry->SetProceduralVertex(0, glm::vec3(-radius), glm::vec3(+radius), color, custom1);
 		}
 		
 		void SetSphereLightSource(
+			const std::string& type, 
 			float radius,
 			glm::f32 lightIntensity,
 			glm::vec3 lightColor = {1,1,1},
@@ -178,10 +192,10 @@ namespace v4d::graphics {
 			float custom1 = 0,
 			glm::vec4 geomColor = {0,0,0,0}
 		) {
-			rayTracingMask = RAY_TRACING_TYPE_EMITTER;
 			lightSources.clear();
 			auto* lightSource = AddLightSource({0,0,0}, lightIntensity, lightColor, lightType, lightAttributes, radius);
-			if (radius > 0) SetSphereGeometry(radius, geomColor, lightSource->lightOffset, custom1);
+			if (radius > 0) SetSphereGeometry(type, radius, geomColor, lightSource->lightOffset, custom1);
+			geometries[0].geometry->rayTracingMask = Geometry::RAY_TRACING_TYPE_EMITTER;
 		}
 		
 		#pragma endregion
@@ -189,9 +203,6 @@ namespace v4d::graphics {
 		#pragma region Clear
 		
 		void RemoveGeometries() {
-			for (auto* geom : geometries) {
-				delete geom;
-			}
 			geometries.clear();
 			generated = false;
 		}
@@ -206,7 +217,6 @@ namespace v4d::graphics {
 		
 		void ClearGeometries() {
 			geometriesDirty = true;
-			rayTracingBlasIndex = -1;
 			rayTracingInstanceIndex = -1;
 			RemoveGeometries();
 		}
@@ -221,37 +231,29 @@ namespace v4d::graphics {
 		
 		int GetFirstGeometryOffset() const {
 			if (!geometries.size()) return 0;
-			return geometries[0]->geometryOffset;
+			return geometries[0].geometry->geometryOffset;
 		}
 		
 		int GetFirstGeometryVertexOffset() const {
 			if (!geometries.size()) return 0;
-			return geometries[0]->vertexOffset;
+			return geometries[0].geometry->vertexOffset;
 		}
 		
 		int GetFirstGeometryIndexOffset() const {
 			if (!geometries.size()) return 0;
-			return geometries[0]->indexOffset;
+			return geometries[0].geometry->indexOffset;
 		}
 		
 		void GetGeometriesTotals(int* totalVertices, int* totalIndices) const {
-			for (auto* geom : geometries) {
-				*totalVertices += geom->vertexCount;
-				*totalIndices += geom->indexCount;
+			for (auto& geom : geometries) {
+				*totalVertices += geom.geometry->vertexCount;
+				*totalIndices += geom.geometry->indexCount;
 			}
 		}
-		
-		std::string& GetObjectType() {return objectType;}
 		
 		bool IsProcedural() const {return isProcedural.has_value() && isProcedural.value();}
 		
 		uint32_t GetObjectOffset() const {return objectOffset;}
-		
-		void SetRayTracingMask(uint32_t i) {rayTracingMask = i;}
-		uint32_t GetRayTracingMask() const {return rayTracingMask;}
-		
-		void SetRayTracingBlasIndex(int i) {rayTracingBlasIndex = i;}
-		int GetRayTracingBlasIndex() const {return rayTracingBlasIndex;}
 		
 		void SetRayTracingInstanceIndex(int i) {rayTracingInstanceIndex = i;}
 		int GetRayTracingInstanceIndex() const {return rayTracingInstanceIndex;}
@@ -259,13 +261,13 @@ namespace v4d::graphics {
 		void SetGeometriesDirty() {geometriesDirty = true;}
 		bool IsGeometriesDirty() const {return geometriesDirty;}
 		
-		glm::mat3x4& GetRayTracingModelViewMatrix() {
-			return rayTracingModelViewMatrix;
+		glm::mat4& GetModelViewMatrix() {
+			return modelViewMatrix;
 		}
 		
 		int CountGeometries() const {return geometries.size();}
 		
-		std::vector<Geometry*>& GetGeometries() {return geometries;}
+		std::vector<GeometryInstance>& GetGeometries() {return geometries;}
 		std::vector<LightSource*>& GetLightSources() {return lightSources;}
 		
 		#pragma endregion
@@ -282,12 +284,12 @@ namespace v4d::graphics {
 		}
 		
 		void SetVertex(uint32_t geomIndex, uint32_t vertIndex, const glm::vec3& pos, const glm::vec3& normal, const glm::vec2& uv, const glm::vec4& color) {
-			geometries[geomIndex]->SetVertex(vertIndex, pos, normal, uv, color);
+			geometries[geomIndex].geometry->SetVertex(vertIndex, pos, normal, uv, color);
 			SetGeometriesDirty();
 		}
 		
 		void SetProceduralVertex(uint32_t geomIndex, uint32_t vertIndex, glm::vec3 aabbMin, glm::vec3 aabbMax, const glm::vec4& color, float custom1 = 0) {
-			geometries[geomIndex]->SetProceduralVertex(vertIndex, aabbMin, aabbMax, color, custom1);
+			geometries[geomIndex].geometry->SetProceduralVertex(vertIndex, aabbMin, aabbMax, color, custom1);
 			SetGeometriesDirty();
 		}
 		
@@ -296,8 +298,8 @@ namespace v4d::graphics {
 		#pragma region Active/Inactive
 		
 		bool HasActiveGeometries() const {
-			for (auto* g : geometries) {
-				if (g->active) return true;
+			for (auto& g : geometries) {
+				if (g.geometry->active) return true;
 			}
 			return false;
 		}

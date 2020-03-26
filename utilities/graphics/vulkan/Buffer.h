@@ -38,7 +38,7 @@ namespace v4d::graphics::vulkan {
 		// Data pointers to get copied into buffer
 		std::vector<BufferSrcDataPtr> srcDataPointers {};
 		
-		Buffer(VkBufferUsageFlags usage, VkDeviceSize size = 0, bool alignedUniformSize = false);
+		Buffer(VkBufferUsageFlags usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VkDeviceSize size = 0, bool alignedUniformSize = false);
 		
 		void AddSrcDataPtr(void* srcDataPtr, size_t size);
 		template<class T>
