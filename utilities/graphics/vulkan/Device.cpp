@@ -257,4 +257,6 @@ void Device::EndSingleTimeCommands(Queue queue, VkCommandBuffer commandBuffer) {
 	DestroyFence(fence, nullptr);
 	
 	FreeCommandBuffers(queue.commandPool, 1, &commandBuffer);
+	
+	QueueWaitIdle(queue.handle);
 }

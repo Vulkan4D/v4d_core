@@ -1,7 +1,7 @@
 // PBR rendering
 
 // settings
-const bool shadowsEnabled = true;
+const bool shadowsEnabled = false;
 const float radianceThreshold = 1e-10;
 
 const float PI = 3.1415926543;

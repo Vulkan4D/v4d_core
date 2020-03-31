@@ -98,6 +98,14 @@ namespace v4d::graphics::vulkan::rtx {
 			buildOffsetInfo.firstVertex = 0;
 			buildOffsetInfo.transformOffset = 0;
 	}
+	void AccelerationStructure::SetInstanceBuffer(Device* device, void* instanceArray, uint32_t instanceCount, uint32_t instanceOffset) {
+		this->device = device;
+		VkDeviceOrHostAddressConstKHR addr {};
+		addr.hostAddress = instanceArray;
+		geometry->geometry.instances.data = addr;
+		buildOffsetInfo.primitiveCount = instanceCount;
+		buildOffsetInfo.primitiveOffset = instanceOffset;
+	}
 	void AccelerationStructure::SetInstanceBuffer(Device* device, VkBuffer instanceBuffer, uint32_t instanceCount, uint32_t instanceOffset) {
 		this->device = device;
 		geometry->geometry.instances.data = device->GetBufferDeviceOrHostAddressConst(instanceBuffer);
@@ -108,8 +116,13 @@ namespace v4d::graphics::vulkan::rtx {
 		buildOffsetInfo.primitiveCount = count;
 	}
 	
+	void AccelerationStructure::SetScratchBuffer(Device* device, VkBuffer buffer) {
+		buildGeometryInfo.scratchData = device->GetBufferDeviceOrHostAddress(buffer);
+		buildGeometryInfo.scratchData.deviceAddress += scratchBufferOffset;
+	}
+	
 	AccelerationStructure::~AccelerationStructure() {
-		delete geometry;
+		if (geometry) delete geometry;
 		if (device) {
 			Destroy(device);
 			Free(device);
@@ -193,13 +206,19 @@ namespace v4d::graphics::vulkan::rtx {
 			devAddrInfo.accelerationStructure = accelerationStructure;
 		handle = device->GetAccelerationStructureDeviceAddressKHR(&devAddrInfo);
 		
-		// Scratch buffer
-		if (!scratchBufferAllocated) {
-			scratchBuffer.size = GetMemoryRequirementsForScratchBuffer(device);
-			scratchBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-			scratchBufferAllocated = true;
-			buildGeometryInfo.scratchData = device->GetBufferDeviceOrHostAddress(scratchBuffer.buffer);
-		}
+		// // Scratch buffer
+		// if (!scratchBufferAllocated) {
+		// 	scratchBuffer.size = GetMemoryRequirementsForScratchBuffer(device);
+		// 	if (scratchBuffer.size > 0) {
+		// 		scratchBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		// 		scratchBufferAllocated = true;
+		// 		buildGeometryInfo.scratchData = device->GetBufferDeviceOrHostAddress(scratchBuffer.buffer);
+		// 	} else {
+		// 		VkDeviceOrHostAddressKHR emptyScratchAddr {};
+		// 		emptyScratchAddr.hostAddress = 0;
+		// 		buildGeometryInfo.scratchData = emptyScratchAddr;
+		// 	}
+		// }
 	}
 	
 	void AccelerationStructure::Free(Device* device) {
@@ -207,10 +226,10 @@ namespace v4d::graphics::vulkan::rtx {
 			device->FreeMemory(memory, nullptr);
 			memory = VK_NULL_HANDLE;
 		}
-		if (scratchBufferAllocated) {
-			scratchBuffer.Free(device);
-			scratchBufferAllocated = false;
-		}
+		// if (scratchBufferAllocated) {
+		// 	scratchBuffer.Free(device);
+		// 	scratchBufferAllocated = false;
+		// }
 		handle = 0;
 	}
 }

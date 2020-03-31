@@ -1229,9 +1229,9 @@ void Renderer::Render() {
 	result = renderingDevice->QueueSubmit(graphicsQueue.handle, graphicsSubmitInfo.size(), graphicsSubmitInfo.data(), graphicsFences[currentFrameInFlight]);
 	if (result != VK_SUCCESS) {
 		if (result == VK_ERROR_DEVICE_LOST) {
-			LOG_WARN("Render() Failed to submit graphics command buffer : VK_ERROR_DEVICE_LOST. Reloading renderer...")
-			SLEEP(500ms)
-			ReloadRenderer();
+			LOG_ERROR("Render() Failed to submit graphics command buffer : VK_ERROR_DEVICE_LOST")
+			// SLEEP(500ms)
+			// ReloadRenderer();
 			return;
 		}
 		LOG_ERROR((int)result)

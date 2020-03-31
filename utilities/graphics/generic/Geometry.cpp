@@ -180,19 +180,31 @@ namespace v4d::graphics {
 	}
 	
 	void Geometry::Push(Device* device, VkCommandBuffer commandBuffer, 
-			GlobalGeometryBuffers::GeometryBuffersMask geometryBuffersMask, 
-			uint32_t vertexCount, uint32_t vertexOffset,
-			uint32_t indexCount, uint32_t indexOffset
+			GlobalGeometryBuffers::GeometryBuffersMask geometryBuffersMask
+			#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
+				, uint32_t vertexCount, uint32_t vertexOffset
+				, uint32_t indexCount, uint32_t indexOffset
+			#endif
 		) {
-		globalBuffers.PushGeometry(device, commandBuffer, this, geometryBuffersMask, vertexCount, vertexOffset, indexCount, indexOffset);
+		globalBuffers.PushGeometry(device, commandBuffer, this, geometryBuffersMask
+			#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
+				, vertexCount, vertexOffset, indexCount, indexOffset
+			#endif
+		);
 	}
 
 	void Geometry::Pull(Device* device, VkCommandBuffer commandBuffer, 
-			GlobalGeometryBuffers::GeometryBuffersMask geometryBuffersMask, 
-			uint32_t vertexCount, uint32_t vertexOffset,
-			uint32_t indexCount, uint32_t indexOffset
+			GlobalGeometryBuffers::GeometryBuffersMask geometryBuffersMask
+			#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
+				, uint32_t vertexCount, uint32_t vertexOffset
+				, uint32_t indexCount, uint32_t indexOffset
+			#endif
 		) {
-		globalBuffers.PullGeometry(device, commandBuffer, this, geometryBuffersMask, vertexCount, vertexOffset, indexCount, indexOffset);
+		globalBuffers.PullGeometry(device, commandBuffer, this, geometryBuffersMask
+			#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
+				, vertexCount, vertexOffset, indexCount, indexOffset
+			#endif
+		);
 	}
 	
 	#pragma region GlobalGeometryBuffers
@@ -387,38 +399,46 @@ namespace v4d::graphics {
 	}
 	
 	void Geometry::GlobalGeometryBuffers::PushGeometry(Device* device, VkCommandBuffer commandBuffer, Geometry* geometry, 
-						GeometryBuffersMask geometryBuffersMask, 
-						uint32_t vertexCount, uint32_t vertexOffset,
-						uint32_t indexCount, uint32_t indexOffset
+						GeometryBuffersMask geometryBuffersMask
+						#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
+							, uint32_t vertexCount, uint32_t vertexOffset
+							, uint32_t indexCount, uint32_t indexOffset
+						#endif
 	) {
-		if (vertexCount == 0) vertexCount = geometry->vertexCount;
-		else vertexCount = std::min(vertexCount, geometry->vertexCount);
-		
-		if (indexCount == 0) indexCount = geometry->indexCount;
-		else indexCount = std::min(indexCount, geometry->indexCount);
-		
 		if (geometryBuffersMask & BUFFER_GEOMETRY_INFO) geometryBuffer.Push(device, commandBuffer, 1, geometry->geometryOffset);
 		#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
-			if (geometryBuffersMask & BUFFER_INDEX) indexBuffer.Push(device, commandBuffer, indexCount, geometry->indexOffset + indexOffset);
-			if (geometryBuffersMask & BUFFER_VERTEX) vertexBuffer.Push(device, commandBuffer, vertexCount, geometry->vertexOffset + vertexOffset);
+			if (geometryBuffersMask & BUFFER_INDEX) {
+				if (indexCount == 0) indexCount = geometry->indexCount;
+				else indexCount = std::min(indexCount, geometry->indexCount);
+				indexBuffer.Push(device, commandBuffer, indexCount, geometry->indexOffset + indexOffset);
+			}
+			if (geometryBuffersMask & BUFFER_VERTEX) {
+				if (vertexCount == 0) vertexCount = geometry->vertexCount;
+				else vertexCount = std::min(vertexCount, geometry->vertexCount);
+				vertexBuffer.Push(device, commandBuffer, vertexCount, geometry->vertexOffset + vertexOffset);
+			}
 		#endif
 	}
 	
 	void Geometry::GlobalGeometryBuffers::PullGeometry(Device* device, VkCommandBuffer commandBuffer, Geometry* geometry, 
-						GeometryBuffersMask geometryBuffersMask, 
-						uint32_t vertexCount, uint32_t vertexOffset,
-						uint32_t indexCount, uint32_t indexOffset
+						GeometryBuffersMask geometryBuffersMask
+						#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
+							, uint32_t vertexCount, uint32_t vertexOffset
+							, uint32_t indexCount, uint32_t indexOffset
+						#endif
 	) {
-		if (vertexCount == 0) vertexCount = geometry->vertexCount;
-		else vertexCount = std::min(vertexCount, geometry->vertexCount);
-		
-		if (indexCount == 0) indexCount = geometry->indexCount;
-		else indexCount = std::min(indexCount, geometry->indexCount);
-		
 		if (geometryBuffersMask & BUFFER_GEOMETRY_INFO) geometryBuffer.Pull(device, commandBuffer, 1, geometry->geometryOffset);
 		#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
-			if (geometryBuffersMask & BUFFER_INDEX) indexBuffer.Pull(device, commandBuffer, indexCount, geometry->indexOffset + indexOffset);
-			if (geometryBuffersMask & BUFFER_VERTEX) vertexBuffer.Pull(device, commandBuffer, vertexCount, geometry->vertexOffset + vertexOffset);
+			if (geometryBuffersMask & BUFFER_INDEX) {
+				if (indexCount == 0) indexCount = geometry->indexCount;
+				else indexCount = std::min(indexCount, geometry->indexCount);
+				indexBuffer.Pull(device, commandBuffer, indexCount, geometry->indexOffset + indexOffset);
+			}
+			if (geometryBuffersMask & BUFFER_VERTEX) {
+				if (vertexCount == 0) vertexCount = geometry->vertexCount;
+				else vertexCount = std::min(vertexCount, geometry->vertexCount);
+				vertexBuffer.Pull(device, commandBuffer, vertexCount, geometry->vertexOffset + vertexOffset);
+			}
 		#endif
 	}
 

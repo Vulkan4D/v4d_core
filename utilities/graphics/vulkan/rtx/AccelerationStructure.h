@@ -12,7 +12,7 @@ namespace v4d::graphics {
 
 namespace v4d::graphics::vulkan::rtx {
 	
-	struct RayTracingBLASInstance { // VkAccelerationStructureInstanceKHR
+	struct V4DLIB RayTracingBLASInstance { // VkAccelerationStructureInstanceKHR
 		glm::mat3x4 transform;
 		uint32_t customInstanceId : 24;
 		uint32_t mask : 8;
@@ -21,7 +21,7 @@ namespace v4d::graphics::vulkan::rtx {
 		uint64_t accelerationStructureHandle;
 	};
 
-	struct AccelerationStructure {
+	struct V4DLIB AccelerationStructure {
 		// Fixed Properties
 		bool isTopLevel = false;
 		bool allowUpdate = false;
@@ -45,15 +45,18 @@ namespace v4d::graphics::vulkan::rtx {
 		Device* device = nullptr;
 		
 		// Scratch Buffer
-		Buffer scratchBuffer {VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT};
-		bool scratchBufferAllocated = false;
+		// Buffer scratchBuffer {VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT};
+		// bool scratchBufferAllocated = false;
+		uint64_t scratchBufferOffset = 0;
 		
 		VkDeviceSize GetMemoryRequirementsForScratchBuffer(Device* device) const;
 		
 		void AssignBottomLevel(Device* device, std::shared_ptr<Geometry> geom);
 		
 		void AssignTopLevel();
+		void SetScratchBuffer(Device* device, VkBuffer buffer);
 		void SetInstanceBuffer(Device* device, VkBuffer instanceBuffer, uint32_t instanceCount = 0, uint32_t instanceOffset = 0);
+		void SetInstanceBuffer(Device* device, void* instanceArray, uint32_t instanceCount = 0, uint32_t instanceOffset = 0);
 		void SetInstanceCount(uint32_t count);
 		
 		~AccelerationStructure();

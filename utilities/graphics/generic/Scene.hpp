@@ -11,6 +11,14 @@ namespace v4d::graphics {
 		Camera camera {};
 		std::vector<ObjectInstance*> objectInstances {};
 		
+		~Scene() {
+			std::lock_guard lock(sceneMutex);
+			for (auto* obj : objectInstances) if (obj) {
+				delete obj;
+			}
+			objectInstances.clear();
+		}
+		
 		ObjectInstance* AddObjectInstance() {
 			std::lock_guard lock(sceneMutex);
 			return objectInstances.emplace_back(new ObjectInstance());
@@ -43,6 +51,13 @@ namespace v4d::graphics {
 				if (obj->IsMarkedForDeletion() && obj->GetRayTracingInstanceIndex() == -1) {
 					RemoveObjectInstance(obj);
 				}
+			}
+		}
+		
+		void ClenupObjectInstancesGeometries() {
+			std::lock_guard lock(sceneMutex);
+			for (auto* obj : objectInstances) if (obj) {
+				obj->ClearGeometries();
 			}
 		}
 		

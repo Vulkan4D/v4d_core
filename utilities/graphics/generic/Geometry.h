@@ -290,14 +290,18 @@ namespace v4d::graphics {
 			void PullAllGeometries(Device*, VkCommandBuffer);
 			
 			void PushGeometry(Device*, VkCommandBuffer, Geometry*, 
-								GeometryBuffersMask geometryBuffersMask = BUFFER_ALL, 
-								uint32_t vertexCount = 0, uint32_t vertexOffset = 0,
-								uint32_t indexCount = 0, uint32_t indexOffset = 0
+								GeometryBuffersMask geometryBuffersMask = BUFFER_ALL
+								#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
+									, uint32_t vertexCount = 0, uint32_t vertexOffset = 0
+									, uint32_t indexCount = 0, uint32_t indexOffset = 0
+								#endif
 			);
 			void PullGeometry(Device*, VkCommandBuffer, Geometry*, 
-								GeometryBuffersMask geometryBuffersMask = BUFFER_ALL, 
-								uint32_t vertexCount = 0, uint32_t vertexOffset = 0,
-								uint32_t indexCount = 0, uint32_t indexOffset = 0
+								GeometryBuffersMask geometryBuffersMask = BUFFER_ALL
+								#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
+									, uint32_t vertexCount = 0, uint32_t vertexOffset = 0
+									, uint32_t indexCount = 0, uint32_t indexOffset = 0
+								#endif
 			);
 			
 			void WriteObject(ObjectInstance*);
@@ -358,15 +362,19 @@ namespace v4d::graphics {
 		void GetIndices(std::vector<IndexBuffer_T>* vertexIndices, uint32_t count = 0, uint32_t startAt = 0);
 		
 		void Push(Device* device, VkCommandBuffer commandBuffer, 
-				GlobalGeometryBuffers::GeometryBuffersMask geometryBuffersMask = GlobalGeometryBuffers::BUFFER_ALL, 
-				uint32_t vertexCount = 0, uint32_t vertexOffset = 0,
-				uint32_t indexCount = 0, uint32_t indexOffset = 0
+				GlobalGeometryBuffers::GeometryBuffersMask geometryBuffersMask = GlobalGeometryBuffers::BUFFER_ALL
+				#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
+					, uint32_t vertexCount = 0, uint32_t vertexOffset = 0
+					, uint32_t indexCount = 0, uint32_t indexOffset = 0
+				#endif
 			);
 
 		void Pull(Device* device, VkCommandBuffer commandBuffer, 
-				GlobalGeometryBuffers::GeometryBuffersMask geometryBuffersMask = GlobalGeometryBuffers::BUFFER_ALL, 
-				uint32_t vertexCount = 0, uint32_t vertexOffset = 0,
-				uint32_t indexCount = 0, uint32_t indexOffset = 0
+				GlobalGeometryBuffers::GeometryBuffersMask geometryBuffersMask = GlobalGeometryBuffers::BUFFER_ALL
+				#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
+					, uint32_t vertexCount = 0, uint32_t vertexOffset = 0
+					, uint32_t indexCount = 0, uint32_t indexOffset = 0
+				#endif
 			);
 
 	};
