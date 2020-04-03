@@ -179,6 +179,19 @@ namespace v4d::graphics {
 		}
 	}
 	
+
+	void Geometry::AutoPush(Device* device, VkCommandBuffer commandBuffer) {
+		if (isDirty) {
+			if (duplicateFrom) {
+				duplicateFrom->AutoPush(device, commandBuffer);
+				Push(device, commandBuffer, GlobalGeometryBuffers::BUFFER_GEOMETRY_INFO);
+			} else {
+				Push(device, commandBuffer);
+			}
+			isDirty = false;
+		}
+	}
+	
 	void Geometry::Push(Device* device, VkCommandBuffer commandBuffer, 
 			GlobalGeometryBuffers::GeometryBuffersMask geometryBuffersMask
 			#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS

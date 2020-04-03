@@ -554,6 +554,10 @@ void Renderer::EndSingleTimeCommands(Queue queue, VkCommandBuffer commandBuffer)
 	renderingDevice->EndSingleTimeCommands(queue, commandBuffer);
 }
 
+void Renderer::RunSingleTimeCommands(Queue queue, std::function<void(VkCommandBuffer)>&& func) {
+	renderingDevice->RunSingleTimeCommands(queue, std::forward<std::function<void(VkCommandBuffer)>>(func));
+}
+
 void Renderer::AllocateBufferStaged(Queue queue, Buffer& buffer) {
 	auto cmdBuffer = BeginSingleTimeCommands(queue);
 	Buffer stagingBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
@@ -1090,7 +1094,7 @@ void Renderer::Render() {
 		return;
 	}
 	
-	uint64_t timeout = 1000UL * 1000 * 1000 * 30; // 30 seconds
+	uint64_t timeout = 1000UL * 1000 * 1000 * 10; // 10 seconds
 
 	// Get an image from the swapchain
 	uint imageIndex;

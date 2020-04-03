@@ -1,6 +1,8 @@
 #include <v4d.h>
 
 namespace v4d::graphics::vulkan::rtx {
+	
+	bool AccelerationStructure::useGlobalScratchBuffer = false;
 
 	VkDeviceSize AccelerationStructure::GetMemoryRequirementsForScratchBuffer(Device* device) const {
 		VkMemoryRequirements2 memoryRequirementsBuild {};
@@ -11,14 +13,21 @@ namespace v4d::graphics::vulkan::rtx {
 			memoryRequirementsInfo.buildType = VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR;
 			memoryRequirementsInfo.accelerationStructure = accelerationStructure;
 		device->GetAccelerationStructureMemoryRequirementsKHR(&memoryRequirementsInfo, &memoryRequirementsBuild);
+		VkDeviceSize size, alignment;
 		if (allowUpdate) {
 			VkMemoryRequirements2 memoryRequirementsUpdate {};
 			memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_KHR;
 			device->GetAccelerationStructureMemoryRequirementsKHR(&memoryRequirementsInfo, &memoryRequirementsUpdate);
-			return std::max(memoryRequirementsBuild.memoryRequirements.size, memoryRequirementsUpdate.memoryRequirements.size);
+			size = std::max(memoryRequirementsBuild.memoryRequirements.size, memoryRequirementsUpdate.memoryRequirements.size);
+			alignment = memoryRequirementsUpdate.memoryRequirements.alignment;
 		} else {
-			return memoryRequirementsBuild.memoryRequirements.size;
+			size = memoryRequirementsBuild.memoryRequirements.size;
+			alignment = memoryRequirementsBuild.memoryRequirements.alignment;
 		}
+		if ((size % alignment) > 0) {
+			size += alignment - (size % alignment);
+		}
+		return size;
 	}
 	
 	void AccelerationStructure::AssignBottomLevel(Device* device, std::shared_ptr<Geometry> geom) {
@@ -116,9 +125,9 @@ namespace v4d::graphics::vulkan::rtx {
 		buildOffsetInfo.primitiveCount = count;
 	}
 	
-	void AccelerationStructure::SetScratchBuffer(Device* device, VkBuffer buffer) {
+	void AccelerationStructure::SetGlobalScratchBuffer(Device* device, VkBuffer buffer) {
 		buildGeometryInfo.scratchData = device->GetBufferDeviceOrHostAddress(buffer);
-		buildGeometryInfo.scratchData.deviceAddress += scratchBufferOffset;
+		buildGeometryInfo.scratchData.deviceAddress += globalScratchBufferOffset;
 	}
 	
 	AccelerationStructure::~AccelerationStructure() {
@@ -163,8 +172,10 @@ namespace v4d::graphics::vulkan::rtx {
 	}
 	
 	void AccelerationStructure::Destroy(Device* device) {
-		if (accelerationStructure) device->DestroyAccelerationStructureKHR(accelerationStructure, nullptr);
-		accelerationStructure = VK_NULL_HANDLE;
+		if (accelerationStructure) {
+			device->DestroyAccelerationStructureKHR(accelerationStructure, nullptr);
+			accelerationStructure = VK_NULL_HANDLE;
+		}
 		built = false;
 	}
 	
@@ -206,19 +217,13 @@ namespace v4d::graphics::vulkan::rtx {
 			devAddrInfo.accelerationStructure = accelerationStructure;
 		handle = device->GetAccelerationStructureDeviceAddressKHR(&devAddrInfo);
 		
-		// // Scratch buffer
-		// if (!scratchBufferAllocated) {
-		// 	scratchBuffer.size = GetMemoryRequirementsForScratchBuffer(device);
-		// 	if (scratchBuffer.size > 0) {
-		// 		scratchBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-		// 		scratchBufferAllocated = true;
-		// 		buildGeometryInfo.scratchData = device->GetBufferDeviceOrHostAddress(scratchBuffer.buffer);
-		// 	} else {
-		// 		VkDeviceOrHostAddressKHR emptyScratchAddr {};
-		// 		emptyScratchAddr.hostAddress = 0;
-		// 		buildGeometryInfo.scratchData = emptyScratchAddr;
-		// 	}
-		// }
+		// Scratch buffer
+		if (!useGlobalScratchBuffer && !scratchBufferAllocated) {
+			scratchBuffer.size = GetMemoryRequirementsForScratchBuffer(device);
+			scratchBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, false);
+			scratchBufferAllocated = true;
+			buildGeometryInfo.scratchData = device->GetBufferDeviceOrHostAddress(scratchBuffer.buffer);
+		}
 	}
 	
 	void AccelerationStructure::Free(Device* device) {
@@ -226,10 +231,10 @@ namespace v4d::graphics::vulkan::rtx {
 			device->FreeMemory(memory, nullptr);
 			memory = VK_NULL_HANDLE;
 		}
-		// if (scratchBufferAllocated) {
-		// 	scratchBuffer.Free(device);
-		// 	scratchBufferAllocated = false;
-		// }
+		if (!useGlobalScratchBuffer && scratchBufferAllocated) {
+			scratchBuffer.Free(device);
+			scratchBufferAllocated = false;
+		}
 		handle = 0;
 	}
 }

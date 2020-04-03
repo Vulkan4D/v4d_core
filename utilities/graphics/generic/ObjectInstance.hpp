@@ -29,13 +29,13 @@ namespace v4d::graphics {
 	friend Geometry;
 		std::optional<bool> isProcedural;
 		uint32_t objectOffset = 0;
-		int rayTracingInstanceIndex = -1;
 		glm::mat4 modelViewMatrix {1};
 		glm::mat3 normalMatrix {1};
 		bool geometriesDirty = true;
 		bool active = true;
 		bool generated = false;
 		bool markedForDeletion = false;
+		mutable std::mutex mu;
 		
 	public:
 		#pragma region Constructor/Destructor
@@ -67,19 +67,10 @@ namespace v4d::graphics {
 		}
 		
 		void PushGeometries(Device* device, VkCommandBuffer cmdBuffer) {
+			GenerateGeometries();
 			if (geometriesDirty) {
-				GenerateGeometries();
-				for (auto& geom : geometries) if (geom.geometry->isDirty) {
-					if (geom.geometry->duplicateFrom) {
-						if (geom.geometry->duplicateFrom->isDirty) {
-							geom.geometry->duplicateFrom->Push(device, cmdBuffer);
-							geom.geometry->duplicateFrom->isDirty = false;
-						}
-						geom.geometry->Push(device, cmdBuffer, Geometry::GlobalGeometryBuffers::BUFFER_GEOMETRY_INFO);
-					} else {
-						geom.geometry->Push(device, cmdBuffer);
-					}
-					geom.geometry->isDirty = false;
+				for (auto& geom : geometries) {
+					geom.geometry->AutoPush(device, cmdBuffer);
 				}
 			}
 			geometriesDirty = false;
@@ -217,7 +208,6 @@ namespace v4d::graphics {
 		
 		void ClearGeometries() {
 			geometriesDirty = true;
-			rayTracingInstanceIndex = -1;
 			RemoveGeometries();
 		}
 		
@@ -255,10 +245,14 @@ namespace v4d::graphics {
 		
 		uint32_t GetObjectOffset() const {return objectOffset;}
 		
-		void SetRayTracingInstanceIndex(int i) {rayTracingInstanceIndex = i;}
-		int GetRayTracingInstanceIndex() const {return rayTracingInstanceIndex;}
+		bool AnyGeometryHasInstanceIndex() const {
+			for (auto& g : geometries) {
+				if (g.rayTracingInstanceIndex != -1) return true;
+			}
+			return false;
+		}
 		
-		void SetGeometriesDirty() {geometriesDirty = true;}
+		void SetGeometriesDirty(bool dirty = true) {geometriesDirty = dirty;}
 		bool IsGeometriesDirty() const {return geometriesDirty;}
 		
 		glm::mat4& GetModelViewMatrix() {
@@ -293,6 +287,14 @@ namespace v4d::graphics {
 			SetGeometriesDirty();
 		}
 		
+		void Lock() const {
+			mu.lock();
+		}
+		
+		void Unlock() const {
+			mu.unlock();
+		}
+		
 		#pragma endregion
 		
 		#pragma region Active/Inactive
@@ -309,12 +311,10 @@ namespace v4d::graphics {
 		}
 		
 		void Enable() {
-			if (!active) geometriesDirty = true;
 			active = true;
 		}
 		
 		void Disable() {
-			if (active) geometriesDirty = true;
 			active = false;
 		}
 		
@@ -323,7 +323,6 @@ namespace v4d::graphics {
 		}
 		
 		void SetGenerated() {
-			if (!generated) geometriesDirty = true;
 			generated = true;
 		}
 		

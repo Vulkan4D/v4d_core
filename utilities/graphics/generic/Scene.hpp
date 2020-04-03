@@ -27,7 +27,7 @@ namespace v4d::graphics {
 		void RemoveObjectInstance(ObjectInstance* obj) {
 			std::lock_guard lock(sceneMutex);
 			if (!obj) return;
-			if (obj->GetRayTracingInstanceIndex() != -1) { //TODO maybe replace this with usage count in the future, or smart pointer...
+			if (obj->AnyGeometryHasInstanceIndex()) { //TODO maybe replace this with usage count in the future, or smart pointer...
 				obj->Disable();
 				obj->MarkForDeletion();
 			} else {
@@ -48,7 +48,7 @@ namespace v4d::graphics {
 		void CollectGarbage() {
 			std::lock_guard lock(sceneMutex);
 			for (auto* obj : objectInstances) if (obj) {
-				if (obj->IsMarkedForDeletion() && obj->GetRayTracingInstanceIndex() == -1) {
+				if (obj->IsMarkedForDeletion() && !obj->AnyGeometryHasInstanceIndex()) {
 					RemoveObjectInstance(obj);
 				}
 			}

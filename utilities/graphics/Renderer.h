@@ -154,16 +154,17 @@ namespace v4d::graphics {
 
 	public: // Helper methods
 	
-		VkCommandBuffer BeginSingleTimeCommands(Queue queue);
-		void EndSingleTimeCommands(Queue queue, VkCommandBuffer commandBuffer);
+		VkCommandBuffer BeginSingleTimeCommands(Queue);
+		void EndSingleTimeCommands(Queue, VkCommandBuffer);
+		void RunSingleTimeCommands(Queue, std::function<void(VkCommandBuffer)>&&);
 
-		void AllocateBufferStaged(Queue queue, Buffer& buffer);
-		void AllocateBuffersStaged(Queue queue, std::vector<Buffer>& buffers);
-		void AllocateBuffersStaged(Queue queue, std::vector<Buffer*>& buffers);
+		void AllocateBufferStaged(Queue, Buffer&);
+		void AllocateBuffersStaged(Queue, std::vector<Buffer>&);
+		void AllocateBuffersStaged(Queue, std::vector<Buffer*>&);
 		
-		void AllocateBufferStaged(Buffer& buffer);
-		void AllocateBuffersStaged(std::vector<Buffer>& buffers);
-		void AllocateBuffersStaged(std::vector<Buffer*>& buffers);
+		void AllocateBufferStaged(Buffer&);
+		void AllocateBuffersStaged(std::vector<Buffer>&);
+		void AllocateBuffersStaged(std::vector<Buffer*>&);
 
 		void TransitionImageLayout(Image image, VkImageLayout oldLayout, VkImageLayout newLayout);
 		void TransitionImageLayout(VkCommandBuffer commandBuffer, Image image, VkImageLayout oldLayout, VkImageLayout newLayout);

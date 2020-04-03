@@ -361,6 +361,8 @@ namespace v4d::graphics {
 		
 		void GetIndices(std::vector<IndexBuffer_T>* vertexIndices, uint32_t count = 0, uint32_t startAt = 0);
 		
+		void AutoPush(Device* device, VkCommandBuffer commandBuffer);
+		
 		void Push(Device* device, VkCommandBuffer commandBuffer, 
 				GlobalGeometryBuffers::GeometryBuffersMask geometryBuffersMask = GlobalGeometryBuffers::BUFFER_ALL
 				#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS

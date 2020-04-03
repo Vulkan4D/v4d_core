@@ -248,8 +248,13 @@ void Device::EndSingleTimeCommands(Queue queue, VkCommandBuffer commandBuffer) {
 
 	if (QueueSubmit(queue.handle, 1, &submitInfo, fence) != VK_SUCCESS)
 		throw std::runtime_error("Failed to submit queue");
-
-	if (VkResult res = WaitForFences(1, &fence, VK_TRUE, std::numeric_limits<uint64_t>::max() /* nanoseconds */); res != VK_SUCCESS) {
+	
+	// #ifdef _LINUX
+	// 	uint64_t timeout = 1000UL * 1000 * 1000 * 10; /* 10 seconds in nanoseconds */
+	// #else
+		uint64_t timeout = std::numeric_limits<uint64_t>::max();
+	// #endif
+	if (VkResult res = WaitForFences(1, &fence, VK_TRUE, timeout); res != VK_SUCCESS) {
 		LOG_ERROR(res)
 		throw std::runtime_error("Failed to wait for fence to signal");
 	}
@@ -259,4 +264,11 @@ void Device::EndSingleTimeCommands(Queue queue, VkCommandBuffer commandBuffer) {
 	FreeCommandBuffers(queue.commandPool, 1, &commandBuffer);
 	
 	QueueWaitIdle(queue.handle);
+}
+
+
+void Device::RunSingleTimeCommands(Queue queue, std::function<void(VkCommandBuffer)>&& func) {
+	auto cmdBuffer = BeginSingleTimeCommands(queue);
+	func(cmdBuffer);
+	EndSingleTimeCommands(queue, cmdBuffer);
 }

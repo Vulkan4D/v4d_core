@@ -44,17 +44,20 @@ namespace v4d::graphics::vulkan::rtx {
 		
 		Device* device = nullptr;
 		
-		// Scratch Buffer
-		// Buffer scratchBuffer {VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT};
-		// bool scratchBufferAllocated = false;
-		uint64_t scratchBufferOffset = 0;
+		// Individual Scratch Buffer
+		Buffer scratchBuffer {VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT};
+		bool scratchBufferAllocated = false;
+		
+		// Global scratch buffer
+		static bool useGlobalScratchBuffer;
+		uint64_t globalScratchBufferOffset = 0;
 		
 		VkDeviceSize GetMemoryRequirementsForScratchBuffer(Device* device) const;
 		
 		void AssignBottomLevel(Device* device, std::shared_ptr<Geometry> geom);
 		
 		void AssignTopLevel();
-		void SetScratchBuffer(Device* device, VkBuffer buffer);
+		void SetGlobalScratchBuffer(Device* device, VkBuffer buffer);
 		void SetInstanceBuffer(Device* device, VkBuffer instanceBuffer, uint32_t instanceCount = 0, uint32_t instanceOffset = 0);
 		void SetInstanceBuffer(Device* device, void* instanceArray, uint32_t instanceCount = 0, uint32_t instanceOffset = 0);
 		void SetInstanceCount(uint32_t count);
