@@ -127,15 +127,14 @@
 
 #ifdef _WINDOWS
 	#define SET_CPU_AFFINITY(n) {\
-		HANDLE process = GetCurrentProcess();\
-		DWORD_PTR processAffinityMask = 1 << n;\
-		if (!SetProcessAffinityMask(process, processAffinityMask)) LOG_ERROR("Error calling SetProcessAffinityMask");\
+		DWORD_PTR processAffinityMask = 1 << (n % std::thread::hardware_concurrency());\
+		if (!SetThreadAffinityMask(GetCurrentThread(), processAffinityMask)) LOG_ERROR("Error calling SetThreadAffinityMask");\
 	}
 #else
 	#define SET_CPU_AFFINITY(n) {\
 		cpu_set_t cpuset;\
 		CPU_ZERO(&cpuset);\
-		CPU_SET(std::min((int)std::thread::hardware_concurrency()-1, n), &cpuset);\
+		CPU_SET(n % std::thread::hardware_concurrency(), &cpuset);\
 		int rc = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);\
 		if (rc != 0) LOG_ERROR("Error calling pthread_setaffinity_np: " << rc)\
 		}

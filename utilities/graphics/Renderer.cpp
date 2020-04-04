@@ -93,7 +93,7 @@ void Renderer::CreateDevices() {
 				"graphics",
 				VK_QUEUE_GRAPHICS_BIT,
 				2, // Count
-				{1.0f, 0.1f}, // Priorities (one per queue count)
+				{1.0f, 1.0f}, // Priorities (one per queue count)
 				surface // Putting a surface here forces the need for a presentation feature on that specific queue family
 			},
 			{
@@ -101,10 +101,10 @@ void Renderer::CreateDevices() {
 				VK_QUEUE_COMPUTE_BIT,
 				#ifdef V4D_RENDERER_MAIN_COMPUTE_COMMANDS_ENABLED
 					2, // Count
-					{1.0f, 0.1f},
+					{1.0f, 1.0f},
 				#else
 					1, // Count
-					{0.1f},
+					{1.0f},
 				#endif
 			},
 			{
@@ -1020,11 +1020,11 @@ void Renderer::LoadGraphicsToDevice() {
 	
 	CreateCommandPools();
 	
-	LOG_VERBOSE(" [Renderer] -> CreateResources()")
-	CreateResources();
-	
 	LOG_VERBOSE(" [Renderer] -> AllocateBuffers()")
 	AllocateBuffers();
+	
+	LOG_VERBOSE(" [Renderer] -> CreateResources()")
+	CreateResources();
 	
 	CreateDescriptorSets();
 	
@@ -1052,11 +1052,11 @@ void Renderer::UnloadGraphicsFromDevice() {
 	
 	DestroyDescriptorSets();
 	
-	LOG_VERBOSE(" [Renderer] -> FreeBuffers()")
-	FreeBuffers();
-	
 	LOG_VERBOSE(" [Renderer] -> DestroyResources()")
 	DestroyResources();
+	
+	LOG_VERBOSE(" [Renderer] -> FreeBuffers()")
+	FreeBuffers();
 	
 	DestroyCommandPools();
 	

@@ -263,7 +263,7 @@ void Device::EndSingleTimeCommands(Queue queue, VkCommandBuffer commandBuffer) {
 	
 	FreeCommandBuffers(queue.commandPool, 1, &commandBuffer);
 	
-	QueueWaitIdle(queue.handle);
+	// QueueWaitIdle(queue.handle);
 }
 
 
