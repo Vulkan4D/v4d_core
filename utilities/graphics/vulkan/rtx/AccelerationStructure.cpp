@@ -169,11 +169,14 @@ namespace v4d::graphics::vulkan::rtx {
 		buildGeometryInfo.dstAccelerationStructure = accelerationStructure;
 		buildGeometryInfo.geometryCount = 1;
 		buildGeometryInfo.geometryArrayOfPointers = VK_FALSE;
+		
+		// LOG_VERBOSE("Created Acceleration Structure " << accelerationStructure)
 	}
 	
 	void AccelerationStructure::Destroy(Device* device) {
 		if (accelerationStructure) {
 			device->DestroyAccelerationStructureKHR(accelerationStructure, nullptr);
+			// LOG_VERBOSE("Destroyed Acceleration Structure " << accelerationStructure)
 			accelerationStructure = VK_NULL_HANDLE;
 		}
 		built = false;
@@ -217,6 +220,8 @@ namespace v4d::graphics::vulkan::rtx {
 			devAddrInfo.accelerationStructure = accelerationStructure;
 		handle = device->GetAccelerationStructureDeviceAddressKHR(&devAddrInfo);
 		
+		// LOG_VERBOSE("Allocated Acceleration Structure " << accelerationStructure << "; handle " << handle << "; memory " << memory)
+		
 		// Scratch buffer
 		if (!useGlobalScratchBuffer && !scratchBufferAllocated) {
 			scratchBuffer.size = GetMemoryRequirementsForScratchBuffer(device);
@@ -229,6 +234,7 @@ namespace v4d::graphics::vulkan::rtx {
 	void AccelerationStructure::Free(Device* device) {
 		if (memory) {
 			device->FreeMemory(memory, nullptr);
+			// LOG_VERBOSE("Freed Acceleration Structure " << accelerationStructure << "; handle " << handle << "; memory " << memory)
 			memory = VK_NULL_HANDLE;
 		}
 		if (!useGlobalScratchBuffer && scratchBufferAllocated) {
