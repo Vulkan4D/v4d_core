@@ -26,6 +26,8 @@ namespace v4d::graphics {
 			indexCount = 0;
 		}
 		globalBuffers.RemoveGeometry(this);
+		
+		if (blas.use_count() == 1) LOG_VERBOSE("Destroyed Geometry with Acceleration Structure handle " << std::hex << blas->handle)
 	}
 	
 	void Geometry::MapStagingBuffers() {

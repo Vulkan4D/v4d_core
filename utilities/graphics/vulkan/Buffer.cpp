@@ -102,6 +102,7 @@ void Buffer::CopySrcData(Device* device, size_t maxCopySize) {
 
 void Buffer::Free(Device* device) {
 	if (buffer != VK_NULL_HANDLE) {
+		LOG_VERBOSE("Destroyed Buffer " << std::hex << device->GetBufferDeviceAddress(buffer))
 		device->DestroyBuffer(buffer, nullptr);
 		if (memory != VK_NULL_HANDLE) device->FreeMemory(memory, nullptr);
 		buffer = VK_NULL_HANDLE;
