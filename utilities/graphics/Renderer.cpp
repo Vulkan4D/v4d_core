@@ -1284,6 +1284,9 @@ void Renderer::Render() {
 
 	// Increment currentFrameInFlight
 	currentFrameInFlight = (currentFrameInFlight + 1) % NB_FRAMES_IN_FLIGHT;
+	
+	//TODO find a better fix...
+	renderingDevice->QueueWaitIdle(graphicsQueue.handle); // Temporary fix for occasional crash with acceleration structures
 }
 
 void Renderer::RenderLowPriority() {

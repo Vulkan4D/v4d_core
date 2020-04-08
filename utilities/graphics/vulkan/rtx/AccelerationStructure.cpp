@@ -175,7 +175,7 @@ namespace v4d::graphics::vulkan::rtx {
 	
 	void AccelerationStructure::Destroy(Device* device) {
 		if (accelerationStructure) {
-			LOG_VERBOSE("Destroyed Acceleration Structure " << accelerationStructure << "; handle " << std::hex << handle)
+			// LOG_VERBOSE("Destroyed Acceleration Structure " << accelerationStructure << "; handle " << std::hex << handle)
 			device->DestroyAccelerationStructureKHR(accelerationStructure, nullptr);
 			// LOG_VERBOSE("Destroyed Acceleration Structure " << accelerationStructure)
 			accelerationStructure = VK_NULL_HANDLE;
@@ -235,7 +235,7 @@ namespace v4d::graphics::vulkan::rtx {
 	void AccelerationStructure::Free(Device* device) {
 		if (memory) {
 			device->FreeMemory(memory, nullptr);
-			LOG_VERBOSE("Freed Acceleration Structure " << std::hex << handle)
+			// LOG_VERBOSE("Freed Acceleration Structure " << std::hex << handle)
 			memory = VK_NULL_HANDLE;
 		}
 		if (!useGlobalScratchBuffer && scratchBufferAllocated) {

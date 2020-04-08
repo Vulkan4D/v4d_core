@@ -27,7 +27,7 @@ namespace v4d::graphics {
 		}
 		globalBuffers.RemoveGeometry(this);
 		
-		if (blas.use_count() == 1) LOG_VERBOSE("Destroyed Geometry with Acceleration Structure handle " << std::hex << blas->handle)
+		// if (blas.use_count() == 1) LOG_VERBOSE("Destroyed Geometry with Acceleration Structure handle " << std::hex << blas->handle)
 	}
 	
 	void Geometry::MapStagingBuffers() {
@@ -543,12 +543,202 @@ namespace v4d::graphics {
 	}
 	
 	void Geometry::GlobalGeometryBuffers::DefragmentMemory() {
-		std::scoped_lock lock(geometryBufferMutex, vertexBufferMutex, indexBufferMutex);
-		//TODO merge free space, and maybe trim the end
+		std::scoped_lock lock(objectBufferMutex, lightBufferMutex, geometryBufferMutex, vertexBufferMutex, indexBufferMutex);
+		
+		{// Defragment Objects
+			for (int i = 0; i < nbAllocatedObjects; ++i) {
+				if (!objectAllocations[i]) {
+					for (int j = i+1; j < nbAllocatedObjects; ++j) {
+						if (objectAllocations[j]) {
+							objectAllocations[i] = objectAllocations[j];
+							objectAllocations[j] = nullptr;
+							objectAllocations[i]->objectOffset = i;
+							objectAllocations[i]->SetGeometriesDirty();
+							break;
+						}
+					}
+					if (!objectAllocations[i]) {
+						if (i == 0) {
+							objectAllocations.clear();
+							nbAllocatedObjects = 0;
+						}
+						break;
+					}
+				}
+			}
+			// Trim Objects
+			while (nbAllocatedObjects > 0 && !objectAllocations[nbAllocatedObjects - 1]) {
+				objectAllocations.erase(nbAllocatedObjects - 1);
+				nbAllocatedObjects--;
+			}
+		}
+		
+		{// Defragment Lights
+			for (int i = 0; i < nbAllocatedLights; ++i) {
+				if (!lightAllocations[i]) {
+					for (int j = i+1; j < nbAllocatedLights; ++j) {
+						if (lightAllocations[j]) {
+							lightAllocations[i] = lightAllocations[j];
+							lightAllocations[j] = nullptr;
+							lightAllocations[i]->lightOffset = i;
+							break;
+						}
+					}
+					if (!lightAllocations[i]) {
+						if (i == 0) {
+							lightAllocations.clear();
+							nbAllocatedLights = 0;
+						}
+						break;
+					}
+				}
+			}
+			// Trim Lights
+			while (nbAllocatedLights > 0 && !lightAllocations[nbAllocatedLights - 1]) {
+				lightAllocations.erase(nbAllocatedLights - 1);
+				nbAllocatedLights--;
+			}
+		}
+		
+		{// Defragment Geometries
+			for (int i = 0; i < nbAllocatedGeometries; ++i) {
+				if (!geometryAllocations[i]) {
+					for (int j = i+1; j < nbAllocatedGeometries; ++j) {
+						if (geometryAllocations[j]) {
+							geometryAllocations[i] = geometryAllocations[j];
+							geometryAllocations[j] = nullptr;
+							geometryAllocations[i]->geometryOffset = i;
+							geometryAllocations[i]->geometryInfoInitialized = false;
+							break;
+						}
+					}
+					if (!geometryAllocations[i]) {
+						if (i == 0) {
+							geometryAllocations.clear();
+							nbAllocatedGeometries = 0;
+						}
+						break;
+					}
+				}
+			}
+			// Trim Geometries
+			while (nbAllocatedGeometries > 0 && !geometryAllocations[nbAllocatedGeometries - 1]) {
+				geometryAllocations.erase(nbAllocatedGeometries - 1);
+				nbAllocatedGeometries--;
+			}
+		}
+		
+		{// Defragment Indices
+			for (int offset = 0; offset < nbAllocatedIndices; ) {
+				try {
+					indexAllocations.at(offset);
+				} catch(...) {
+					LOG_ERROR("GlobalIndexBuffer fragmentation error: overflow at offset " << offset)
+					break;
+				}
+				if (!indexAllocations[offset].data) {
+					for (int nextOffset = offset + indexAllocations[offset].n; nextOffset < nbAllocatedIndices; ) {
+						try {
+							indexAllocations.at(nextOffset);
+						} catch(...) {
+							LOG_ERROR("GlobalIndexBuffer fragmentation error: overflow at nextOffset " << nextOffset)
+						}
+						if (indexAllocations[nextOffset].data) {
+							// next allocation is not empty, swap them
+							const auto prevAlloc = indexAllocations[offset];
+							const auto alloc = indexAllocations[nextOffset];
+							indexAllocations[offset] = alloc;
+							if (nextOffset != offset+alloc.n) {
+								indexAllocations.erase(nextOffset);
+								nextOffset = offset+alloc.n;
+							}
+							indexAllocations[nextOffset] = prevAlloc;
+							alloc.data->indexOffset = offset;
+							alloc.data->geometryInfoInitialized = false;
+							break;
+						} else {
+							// next allocation is empty, merge them
+							const int nextN = indexAllocations[nextOffset].n;
+							if (nextN == 0) {
+								LOG_ERROR("GlobalIndexBuffer fragmentation error: size zero at offset " << nextOffset)
+								break;
+							}
+							indexAllocations[offset].n += nextN;
+							indexAllocations.erase(nextOffset);
+							nextOffset += nextN;
+						}
+					}
+				}
+				if (indexAllocations[offset].n == 0) break;
+				offset += indexAllocations[offset].n;
+			}
+			// Trim Indices
+			if (indexAllocations.size() > 0) {
+				auto last = indexAllocations.rbegin();
+				if (!last->second.data) {
+					nbAllocatedIndices -= last->second.n;
+					indexAllocations.erase(last->first);
+				}
+			}
+		}
+		
+		{// Defragment Vertices
+			for (int offset = 0; offset < nbAllocatedVertices; ) {
+				try {
+					vertexAllocations.at(offset);
+				} catch(...) {
+					LOG_ERROR("GlobalVertexBuffer fragmentation error: overflow at offset " << offset)
+					break;
+				}
+				if (!vertexAllocations[offset].data) {
+					for (int nextOffset = offset + vertexAllocations[offset].n; nextOffset < nbAllocatedVertices; ) {
+						try {
+							vertexAllocations.at(nextOffset);
+						} catch(...) {
+							LOG_ERROR("GlobalVertexBuffer fragmentation error: overflow at nextOffset " << nextOffset)
+						}
+						if (vertexAllocations[nextOffset].data) {
+							// next allocation is not empty, swap them
+							const auto prevAlloc = vertexAllocations[offset];
+							const auto alloc = vertexAllocations[nextOffset];
+							vertexAllocations[offset] = alloc;
+							if (nextOffset != offset+alloc.n) {
+								vertexAllocations.erase(nextOffset);
+								nextOffset = offset+alloc.n;
+							}
+							vertexAllocations[nextOffset] = prevAlloc;
+							alloc.data->vertexOffset = offset;
+							alloc.data->geometryInfoInitialized = false;
+							break;
+						} else {
+							// next allocation is empty, merge them
+							const int nextN = vertexAllocations[nextOffset].n;
+							if (nextN == 0) {
+								LOG_ERROR("GlobalVertexBuffer fragmentation error: size zero at offset " << nextOffset)
+								break;
+							}
+							vertexAllocations[offset].n += nextN;
+							vertexAllocations.erase(nextOffset);
+							nextOffset += nextN;
+						}
+					}
+				}
+				if (vertexAllocations[offset].n == 0) break;
+				offset += vertexAllocations[offset].n;
+			}
+			// Trim Vertices
+			if (vertexAllocations.size() > 0) {
+				auto last = vertexAllocations.rbegin();
+				if (!last->second.data) {
+					nbAllocatedVertices -= last->second.n;
+					vertexAllocations.erase(last->first);
+				}
+			}
+		}
+		
 	}
 	
 	#pragma endregion
-	
 	
 	#pragma region Pack Helpers
 	

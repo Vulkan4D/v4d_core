@@ -13,10 +13,12 @@ ConfigFile::ConfigFile(const std::string& filePath, std::optional<int> autoReloa
 }
 
 ConfigFile::~ConfigFile() {
-	std::lock_guard lock(mu);
 	autoReloadInterval = 0;
+	{
+		std::lock_guard lock(mu);
+	}
 	if (autoReloadThread && autoReloadThread->joinable()) {
-		autoReloadThread->detach();
+		autoReloadThread->join();
 		delete autoReloadThread;
 	}
 }
