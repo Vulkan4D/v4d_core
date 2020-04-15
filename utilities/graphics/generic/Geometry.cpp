@@ -77,6 +77,8 @@ namespace v4d::graphics {
 		vertices[i].normal = normal;
 		vertices[i].SetUV(uv);
 		
+		boundingDistance = glm::max(boundingDistance, glm::length(pos));
+		
 		isDirty = true;
 	}
 	

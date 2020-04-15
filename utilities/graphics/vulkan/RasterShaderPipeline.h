@@ -42,7 +42,7 @@ namespace v4d::graphics::vulkan {
 			nullptr, // const void* pNext
 			0, // VkPipelineMultisampleStateCreateFlags flags
 			VK_SAMPLE_COUNT_1_BIT, // VkSampleCountFlagBits rasterizationSamples
-			VK_TRUE, // VkBool32 sampleShadingEnable
+			VK_FALSE, // VkBool32 sampleShadingEnable
 			0.2f, // float minSampleShading
 			nullptr, // const VkSampleMask* pSampleMask
 			VK_FALSE, // VkBool32 alphaToCoverageEnable

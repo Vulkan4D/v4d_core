@@ -24,10 +24,9 @@ namespace v4d::graphics {
 		
 		alignas(4) bool hdr = true;
 		alignas(4) bool gammaCorrection = true;
-		alignas(4) bool shadows = true;
-		alignas(4) bool softShadows = false;
-		
-		
+		alignas(4) int renderMode = 0;
+		alignas(4) int shadows = 0;
+			
 		// alignas(16) glm::vec2 historyTxaaOffset {0};
 		
 		static constexpr float txaaKernelSize = 1.0f;
@@ -147,9 +146,10 @@ namespace v4d::graphics {
 			}
 		}
 		
-		bool IsVisibleInScreen(glm::dvec3 spherePos, double radius) {
+		// Frustum culling
+		bool IsVisibleInScreen(glm::dvec3 worldPosition, double boundingDistance) {
 			for (int i = 0; i < 6; ++i) {
-				if (glm::dot(glm::dvec3(frustumPlanes[i]), spherePos) + frustumPlanes[i].w + radius <= 0) {
+				if (glm::dot(glm::dvec3(frustumPlanes[i]), worldPosition) + frustumPlanes[i].w + boundingDistance <= 0) {
 					return false;
 				}
 			}

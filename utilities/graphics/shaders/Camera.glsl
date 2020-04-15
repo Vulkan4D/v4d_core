@@ -19,8 +19,8 @@ layout(set = 0, binding = 0) uniform Camera {
 	
 	bool hdr;
 	bool gammaCorrection;
-	bool shadows;
-	bool softShadows;
+	int renderMode;
+	int shadows;
 	
 	// vec2 historyTxaaOffset;
 	

@@ -6,18 +6,31 @@ PhysicalDevice::PhysicalDevice(xvk::Interface::InstanceInterface* vulkanInstance
 	// Properties
 	vulkanInstance->GetPhysicalDeviceProperties(handle, &deviceProperties);
 	LOG_VERBOSE("DETECTED PhysicalDevice: " << deviceProperties.deviceName);
+	
 	// Features
+	// Vulkan 1.2 features
+	vulkan12DeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+	deviceFeatures2.pNext = &vulkan12DeviceFeatures;
+	// Ray Tracing features
+	rayTracingDeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
+	vulkan12DeviceFeatures.pNext = &rayTracingDeviceFeatures;
+	// Get supported Features
+	deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	vulkanInstance->GetPhysicalDeviceFeatures(handle, &deviceFeatures);
+	vulkanInstance->GetPhysicalDeviceFeatures2(handle, &deviceFeatures2);
+	
 	// Queue Families
 	uint queueFamilyCount = 0;
 	vulkanInstance->GetPhysicalDeviceQueueFamilyProperties(handle, &queueFamilyCount, nullptr);
 	queueFamilies = new std::vector<VkQueueFamilyProperties>(queueFamilyCount);
 	vulkanInstance->GetPhysicalDeviceQueueFamilyProperties(handle, &queueFamilyCount, queueFamilies->data());
+	
 	// Supported Extensions
 	uint supportedExtensionsCount = 0;
 	vulkanInstance->EnumerateDeviceExtensionProperties(handle, nullptr, &supportedExtensionsCount, nullptr);
 	supportedExtensions = new std::vector<VkExtensionProperties>(supportedExtensionsCount);
 	vulkanInstance->EnumerateDeviceExtensionProperties(handle, nullptr, &supportedExtensionsCount, supportedExtensions->data());
+	
 }
 
 PhysicalDevice::~PhysicalDevice() {
@@ -84,6 +97,15 @@ VkPhysicalDeviceProperties PhysicalDevice::GetProperties() const {
 
 VkPhysicalDeviceFeatures PhysicalDevice::GetFeatures() const {
 	return deviceFeatures;
+}
+VkPhysicalDeviceFeatures2 PhysicalDevice::GetFeatures2() const {
+	return deviceFeatures2;
+}
+VkPhysicalDeviceVulkan12Features PhysicalDevice::GetVulkan12Features() const {
+	return vulkan12DeviceFeatures;
+}
+VkPhysicalDeviceRayTracingFeaturesKHR PhysicalDevice::GetRayTracingFeatures() const {
+	return rayTracingDeviceFeatures;
 }
 
 VkPhysicalDevice PhysicalDevice::GetHandle() const {

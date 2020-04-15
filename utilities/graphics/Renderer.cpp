@@ -30,6 +30,7 @@ void Renderer::CreateDevices() {
 		// Mandatory physicalDevice requirements for rendering graphics
 		if (!physicalDevice->QueueFamiliesContainsFlags(VK_QUEUE_GRAPHICS_BIT, 1, surface))
 			return;
+			
 		// User-defined required extensions
 		for (auto& ext : requiredDeviceExtensions) if (!physicalDevice->SupportsExtension(ext))
 			return;
@@ -47,18 +48,9 @@ void Renderer::CreateDevices() {
 	LOG("Selected Rendering PhysicalDevice: " << renderingPhysicalDevice->GetDescription());
 
 	// Prepare Device Features (remove unsupported features from list of features to enable)
-	auto supportedDeviceFeatures = renderingPhysicalDevice->GetFeatures();
-	const size_t deviceFeaturesArraySize = sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32);
-	VkBool32 supportedDeviceFeaturesData[deviceFeaturesArraySize];
-	VkBool32 appDeviceFeaturesData[deviceFeaturesArraySize];
-	memcpy(supportedDeviceFeaturesData, &supportedDeviceFeatures, sizeof(VkPhysicalDeviceFeatures));
-	memcpy(appDeviceFeaturesData, &supportedDeviceFeatures, sizeof(VkPhysicalDeviceFeatures));
-	for (size_t i = 0; i < deviceFeaturesArraySize; ++i) {
-		if (appDeviceFeaturesData[i] && !supportedDeviceFeaturesData[i]) {
-			appDeviceFeaturesData[i] = VK_FALSE;
-		}
-	}
-	memcpy(&deviceFeatures, appDeviceFeaturesData, sizeof(VkPhysicalDeviceFeatures));
+	FilterSupportedDeviceFeatures(&deviceFeatures, renderingPhysicalDevice->GetFeatures());
+	FilterSupportedDeviceFeatures(&vulkan12DeviceFeatures, renderingPhysicalDevice->GetVulkan12Features(), sizeof(VkStructureType)+sizeof(void*));
+	FilterSupportedDeviceFeatures(&rayTracingFeatures, renderingPhysicalDevice->GetRayTracingFeatures(), sizeof(VkStructureType)+sizeof(void*));
 	
 	// Prepare enabled extensions
 	deviceExtensions.clear();
@@ -616,18 +608,22 @@ void Renderer::AllocateBuffersStaged(std::vector<Buffer*>& buffers) {
 
 void Renderer::TransitionImageLayout(Image image, VkImageLayout oldLayout, VkImageLayout newLayout) {
 	auto commandBuffer = BeginSingleTimeCommands(graphicsQueue);
-	TransitionImageLayout(commandBuffer, image.image, oldLayout, newLayout, image.mipLevels, image.arrayLayers);
+	TransitionImageLayout(commandBuffer, image, oldLayout, newLayout);
 	EndSingleTimeCommands(graphicsQueue, commandBuffer);
 }
 void Renderer::TransitionImageLayout(VkCommandBuffer commandBuffer, Image image, VkImageLayout oldLayout, VkImageLayout newLayout) {
-	TransitionImageLayout(commandBuffer, image.image, oldLayout, newLayout, image.mipLevels, image.arrayLayers);
+	VkImageAspectFlags aspectMask = 0;
+	if (image.format == VK_FORMAT_D32_SFLOAT) aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT;
+	if (image.format == VK_FORMAT_D32_SFLOAT_S8_UINT) aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+	if (!aspectMask && (image.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+	TransitionImageLayout(commandBuffer, image.image, oldLayout, newLayout, image.mipLevels, image.arrayLayers, aspectMask);
 }
-void Renderer::TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint32_t layerCount) {
+void Renderer::TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint32_t layerCount, VkImageAspectFlags aspectMask) {
 	auto commandBuffer = BeginSingleTimeCommands(graphicsQueue);
-	TransitionImageLayout(commandBuffer, image, oldLayout, newLayout, mipLevels, layerCount);
+	TransitionImageLayout(commandBuffer, image, oldLayout, newLayout, mipLevels, layerCount, aspectMask);
 	EndSingleTimeCommands(graphicsQueue, commandBuffer);
 }
-void Renderer::TransitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint32_t layerCount) {
+void Renderer::TransitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint32_t layerCount, VkImageAspectFlags aspectMask) {
 	VkImageMemoryBarrier barrier = {};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	barrier.oldLayout = oldLayout; // VK_IMAGE_LAYOUT_UNDEFINED if we dont care about existing contents of the image
@@ -644,10 +640,14 @@ void Renderer::TransitionImageLayout(VkCommandBuffer commandBuffer, VkImage imag
 	barrier.srcAccessMask = 0;
 	barrier.dstAccessMask = 0;
 	//
-	if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
-		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+	if (aspectMask) {
+		barrier.subresourceRange.aspectMask = aspectMask;
 	} else {
-		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+			barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+		} else {
+			barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		}
 	}
 	//
 	VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, dstStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;

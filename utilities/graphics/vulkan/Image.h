@@ -87,7 +87,7 @@ namespace v4d::graphics::vulkan {
 			VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,// VkSamplerAddressMode addressModeV
 			VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,// VkSamplerAddressMode addressModeW
 			0.0f,// float mipLodBias
-			VK_TRUE,// VkBool32 anisotropyEnable
+			VK_FALSE,// VkBool32 anisotropyEnable
 			1.0f,// float maxAnisotropy
 			VK_FALSE,// VkBool32 compareEnable
 			VK_COMPARE_OP_NEVER,// VkCompareOp compareOp

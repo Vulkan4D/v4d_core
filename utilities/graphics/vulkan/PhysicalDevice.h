@@ -15,6 +15,9 @@ namespace v4d::graphics::vulkan {
 
 		VkPhysicalDeviceProperties deviceProperties;
 		VkPhysicalDeviceFeatures deviceFeatures;
+		VkPhysicalDeviceFeatures2 deviceFeatures2 {};
+		VkPhysicalDeviceVulkan12Features vulkan12DeviceFeatures {};
+		VkPhysicalDeviceRayTracingFeaturesKHR rayTracingDeviceFeatures {};
 		
 		std::vector<VkQueueFamilyProperties>* queueFamilies = nullptr;
 		std::vector<VkExtensionProperties>* supportedExtensions = nullptr;
@@ -32,6 +35,9 @@ namespace v4d::graphics::vulkan {
 
 		VkPhysicalDeviceProperties GetProperties() const;
 		VkPhysicalDeviceFeatures GetFeatures() const;
+		VkPhysicalDeviceFeatures2 GetFeatures2() const;
+		VkPhysicalDeviceVulkan12Features GetVulkan12Features() const;
+		VkPhysicalDeviceRayTracingFeaturesKHR GetRayTracingFeatures() const;
 		VkPhysicalDevice GetHandle() const;
 		xvk::Interface::InstanceInterface* GetVulkanInstance() const;
 		std::string GetDescription() const;

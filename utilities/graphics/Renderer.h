@@ -77,9 +77,26 @@ namespace v4d::graphics {
 		std::vector<const char*> deviceExtensions {};
 		std::unordered_map<std::string, bool> enabledDeviceExtensions {};
 		
+		template<typename T>
+		static void FilterSupportedDeviceFeatures(T* enabledFeatures, T supportedFeatures, size_t offset = 0) {
+			const size_t featuresArraySize = (sizeof(T)-offset) / sizeof(VkBool32);
+			VkBool32 supportedFeaturesData[featuresArraySize];
+			VkBool32 enabledFeaturesData[featuresArraySize];
+			memcpy(supportedFeaturesData, ((byte*)&supportedFeatures)+offset, sizeof(supportedFeaturesData));
+			memcpy(enabledFeaturesData, ((byte*)enabledFeatures)+offset, sizeof(enabledFeaturesData));
+			for (size_t i = 0; i < featuresArraySize; ++i) {
+				if (enabledFeaturesData[i] && !supportedFeaturesData[i]) {
+					enabledFeaturesData[i] = VK_FALSE;
+				}
+			}
+			memcpy(((byte*)enabledFeatures+offset), enabledFeaturesData, sizeof(enabledFeaturesData));
+		}
+		
 	public: 
-		VkPhysicalDeviceFeatures deviceFeatures {}; // This object will be modified to keep only the enabled values.
+		// These objects will be modified to keep only the supported & enabled values
+		VkPhysicalDeviceFeatures deviceFeatures {};
 		VkPhysicalDeviceVulkan12Features vulkan12DeviceFeatures {};
+		VkPhysicalDeviceRayTracingFeaturesKHR rayTracingFeatures {};
 		
 		void RequiredDeviceExtension(const char* ext);
 		void OptionalDeviceExtension(const char* ext);
@@ -168,8 +185,8 @@ namespace v4d::graphics {
 
 		void TransitionImageLayout(Image image, VkImageLayout oldLayout, VkImageLayout newLayout);
 		void TransitionImageLayout(VkCommandBuffer commandBuffer, Image image, VkImageLayout oldLayout, VkImageLayout newLayout);
-		void TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels = 1, uint32_t layerCount = 1);
-		void TransitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels = 1, uint32_t layerCount = 1);
+		void TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels = 1, uint32_t layerCount = 1, VkImageAspectFlags aspectMask = 0);
+		void TransitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels = 1, uint32_t layerCount = 1, VkImageAspectFlags aspectMask = 0);
 
 		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 		void CopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);

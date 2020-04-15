@@ -102,6 +102,8 @@ namespace v4d::graphics {
 		bool active = true;
 		bool isDirty = false;
 		
+		float boundingDistance = 0.0f;
+		
 		std::shared_ptr<v4d::graphics::vulkan::rtx::AccelerationStructure> blas = nullptr;
 		std::shared_ptr<Geometry> duplicateFrom = nullptr;
 
