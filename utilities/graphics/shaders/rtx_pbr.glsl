@@ -1,7 +1,6 @@
 // PBR rendering
 
 // settings
-const bool shadowsEnabled = true;
 const float radianceThreshold = 1e-10;
 
 const float PI = 3.1415926543;
@@ -51,14 +50,21 @@ vec3 ApplyPBRShading(vec3 hitPoint, vec3 albedo, vec3 normal, vec3 bump, float r
 		vec3 L = normalize(light.position - hitPoint);
 		
 		if (length(radiance) > radianceThreshold) {
-			if (shadowsEnabled) {
+			if (camera.shadows) {
 				shadowed = true;
+				// if (camera.softShadows) {
+				// 	vec3 tangent = normalize(cross(L, vec3(0,1,0)));
+				// 	vec3 bitangent = normalize(cross(L, tangent));
+				// 	tangent = normalize(cross(L, bitangent));
+				// 	vec2 shadowSamplingOffset = vec2(0); //TODO
+				// 	L = normalize((light.position + tangent*shadowSamplingOffset.s*light.radius + bitangent*shadowSamplingOffset.t*light.radius) - hitPoint);
+				// }
 				if (dot(L, normal) > 0) {
 					vec3 shadowRayStart = hitPoint + bump + V*(length(hitPoint)*0.00001); // starting shadow ray just outside the surface this way solves precision issues when casting shadows
 					traceRayEXT(topLevelAS, gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT, SOLID, 0, 0, 1, shadowRayStart, float(camera.znear), L, length(light.position - hitPoint) - light.radius, 2);
 				}
 			}
-			if (!shadowsEnabled || !shadowed) {
+			if (!camera.shadows || !shadowed) {
 				// cook-torrance BRDF
 				vec3 H = normalize(V + L);
 				float NdotV = max(dot(N,V), 0.000001);

@@ -16,8 +16,11 @@ layout(set = 0, binding = 0) uniform Camera {
 	dmat4 historyViewMatrix;
 	mat4 reprojectionMatrix;
 	vec2 txaaOffset;
+	
 	bool hdr;
 	bool gammaCorrection;
+	bool shadows;
+	bool softShadows;
 	
 	// vec2 historyTxaaOffset;
 	

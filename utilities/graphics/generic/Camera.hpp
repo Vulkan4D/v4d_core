@@ -21,8 +21,11 @@ namespace v4d::graphics {
 		alignas(128) glm::dmat4 historyViewMatrix {1};
 		alignas(64) glm::mat4 reprojectionMatrix {1};
 		alignas(16) glm::vec2 txaaOffset {0};
+		
 		alignas(4) bool hdr = true;
 		alignas(4) bool gammaCorrection = true;
+		alignas(4) bool shadows = true;
+		alignas(4) bool softShadows = false;
 		
 		
 		// alignas(16) glm::vec2 historyTxaaOffset {0};
