@@ -21,17 +21,12 @@ namespace v4d::graphics {
 		glm::dmat4 transform {1};
 		std::vector<GeometryInstance> geometries {};
 		std::vector<LightSource*> lightSources {};
-		glm::mat4 custom4x4 {0};
-		glm::vec3 custom3 {0};
-		glm::vec4 custom4 {0};
 		void (*generateFunc)(ObjectInstance*) = nullptr;
 		
 	private: // Cached data
 	friend Geometry;
 		std::optional<bool> isProcedural;
 		uint32_t objectOffset = 0;
-		glm::mat4 modelViewMatrix {1};
-		glm::mat3 normalMatrix {1};
 		bool geometriesDirty = true;
 		bool active = true;
 		bool generated = false;
@@ -78,10 +73,11 @@ namespace v4d::graphics {
 		}
 		
 		void WriteMatrices(const glm::dmat4& viewMatrix) {
-			modelViewMatrix = glm::mat4(viewMatrix * transform);
-			normalMatrix = glm::transpose(glm::inverse(glm::mat3(modelViewMatrix)));
-			
 			Geometry::globalBuffers.WriteObject(this);
+			
+			for (auto& geom : geometries) {
+				geom.geometry->SetGeometryTransform(transform * glm::dmat4(geom.transform), viewMatrix);
+			}
 		
 			for (auto* lightSource : lightSources) {
 				lightSource->viewSpacePosition = viewMatrix * transform * glm::dvec4(lightSource->position, 1);
@@ -256,10 +252,6 @@ namespace v4d::graphics {
 		void SetGeometriesDirty(bool dirty = true) {geometriesDirty = dirty;}
 		bool IsGeometriesDirty() const {return geometriesDirty;}
 		
-		glm::mat4& GetModelViewMatrix() {
-			return modelViewMatrix;
-		}
-		
 		int CountGeometries() const {return geometries.size();}
 		
 		std::vector<GeometryInstance>& GetGeometries() {return geometries;}
@@ -271,16 +263,6 @@ namespace v4d::graphics {
 		
 		void SetWorldTransform(const glm::dmat4 worldSpaceTransform) {
 			transform = worldSpaceTransform;
-		}
-		
-		void SetObjectCustomData(const glm::vec3& custom3, const glm::vec4& custom4 = {0,0,0,0}) {
-			this->custom3 = custom3;
-			this->custom4 = custom4;
-		}
-		void SetObjectCustomData(const glm::mat4& custom4x4, const glm::vec3& custom3, const glm::vec4& custom4 = {0,0,0,0}) {
-			this->custom4x4 = custom4x4;
-			this->custom3 = custom3;
-			this->custom4 = custom4;
 		}
 		
 		void SetVertex(uint32_t geomIndex, uint32_t vertIndex, const glm::vec3& pos, const glm::vec3& normal, const glm::vec2& uv, const glm::vec4& color) {

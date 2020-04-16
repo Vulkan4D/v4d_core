@@ -1,35 +1,67 @@
-layout(set = 0, binding = 1) readonly buffer ObjectBuffer {mat4 objectInstances[];};
+// layout(set = 0, binding = 1) readonly buffer ObjectBuffer {dmat4 objectInstances[];};
 layout(set = 0, binding = 2) readonly buffer LightBuffer {float lightSources[];};
 layout(set = 0, binding = 3) readonly buffer ActiveLights {uint activeLights; uint lightIndices[];};
-layout(set = 0, binding = 4) readonly buffer GeometryBuffer {uvec4 geometries[];};
+layout(set = 0, binding = 4) readonly buffer GeometryBuffer {float geometries[];};
 layout(set = 0, binding = 5) readonly buffer IndexBuffer {uint indices[];};
 layout(set = 0, binding = 6) readonly buffer VertexBuffer {vec4 vertices[];};
 
-struct ObjectInstance {
-	mat4 modelMatrix;
-	mat4 custom4x4;
-	mat4 modelViewMatrix;
-	mat3 normalMatrix;
-	vec3 position;
-	vec3 custom3;
-	vec4 custom4;
+struct GeometryInstance {
+	uint indexOffset;
+	uint vertexOffset;
+	uint objectIndex;
+	uint material;
+	
+	mat4 modelTransform;
+	mat4 modelViewTransform;
+	mat3 normalViewTransform;
+	
+	vec3 custom3f;
+	mat4 custom4x4f;
+	
+	//
+	vec3 viewPosition;
 };
 
-ObjectInstance GetObjectInstance(uint index) {
-	ObjectInstance obj;
-	obj.modelMatrix = objectInstances[index*4];
-	obj.custom4x4 = objectInstances[index*4+1];
-	obj.modelViewMatrix = objectInstances[index*4+2];
-	mat4 secondMatrix = objectInstances[index*4+3];
-	obj.normalMatrix = mat3(
-		secondMatrix[0].xyz,
-		vec3(secondMatrix[0].w, secondMatrix[1].x, secondMatrix[1].y),
-		vec3(secondMatrix[1].z, secondMatrix[1].w, secondMatrix[2].x)
+GeometryInstance GetGeometryInstance(uint index) {
+	GeometryInstance geometry;
+	uint i = index*64;
+	
+	geometry.indexOffset = floatBitsToUint(geometries[i++]);
+	geometry.vertexOffset = floatBitsToUint(geometries[i++]);
+	geometry.objectIndex = floatBitsToUint(geometries[i++]);
+	geometry.material = floatBitsToUint(geometries[i++]);
+	
+	geometry.modelTransform = mat4(
+		vec4(geometries[i++], geometries[i++], geometries[i++], geometries[i++]),
+		vec4(geometries[i++], geometries[i++], geometries[i++], geometries[i++]),
+		vec4(geometries[i++], geometries[i++], geometries[i++], geometries[i++]),
+		vec4(geometries[i++], geometries[i++], geometries[i++], geometries[i++])
 	);
-	obj.position = obj.modelViewMatrix[3].xyz;
-	obj.custom3 = secondMatrix[2].yzw;
-	obj.custom4 = objectInstances[index*4+3][3];
-	return obj;
+	geometry.modelViewTransform = mat4(
+		vec4(geometries[i++], geometries[i++], geometries[i++], geometries[i++]),
+		vec4(geometries[i++], geometries[i++], geometries[i++], geometries[i++]),
+		vec4(geometries[i++], geometries[i++], geometries[i++], geometries[i++]),
+		vec4(geometries[i++], geometries[i++], geometries[i++], geometries[i++])
+	);
+	geometry.normalViewTransform = mat3(
+		vec3(geometries[i++], geometries[i++], geometries[i++]),
+		vec3(geometries[i++], geometries[i++], geometries[i++]),
+		vec3(geometries[i++], geometries[i++], geometries[i++])
+	);
+	
+	geometry.custom3f = vec3(geometries[i++], geometries[i++], geometries[i++]);
+	
+	geometry.custom4x4f = mat4(
+		vec4(geometries[i++], geometries[i++], geometries[i++], geometries[i++]),
+		vec4(geometries[i++], geometries[i++], geometries[i++], geometries[i++]),
+		vec4(geometries[i++], geometries[i++], geometries[i++], geometries[i++]),
+		vec4(geometries[i++], geometries[i++], geometries[i++], geometries[i++])
+	);
+	
+	//
+	geometry.viewPosition = geometry.modelViewTransform[3].xyz;
+	
+	return geometry;
 }
 
 struct Vertex {
@@ -74,6 +106,8 @@ LightSource GetLight (uint i) {
 	}
 
 	struct ProceduralGeometry {
+		GeometryInstance geometryInstance;
+		
 		uint vertexOffset;
 		uint objectIndex;
 		uint material;
@@ -82,23 +116,21 @@ LightSource GetLight (uint i) {
 		vec3 aabbMax;
 		vec4 color;
 		float custom1;
-		
-		ObjectInstance objectInstance;
 	};
 
 	ProceduralGeometry GetProceduralGeometry(uint geometryIndex) {
 		ProceduralGeometry geom;
 		
-		geom.vertexOffset = geometries[geometryIndex].y;
-		geom.objectIndex = geometries[geometryIndex].z;
-		geom.material = geometries[geometryIndex].w;
+		geom.geometryInstance = GetGeometryInstance(geometryIndex);
+		
+		geom.vertexOffset = geom.geometryInstance.vertexOffset;
+		geom.objectIndex = geom.geometryInstance.objectIndex;
+		geom.material = geom.geometryInstance.material;
 		
 		geom.aabbMin = vertices[geom.vertexOffset*2].xyz;
 		geom.aabbMax = vec3(vertices[geom.vertexOffset*2].w, vertices[geom.vertexOffset*2+1].xy);
 		geom.color = UnpackColorFromFloat(vertices[geom.vertexOffset*2+1].z);
 		geom.custom1 = vertices[geom.vertexOffset*2+1].w;
-		
-		geom.objectInstance = GetObjectInstance(geom.objectIndex);
 		
 		return geom;
 	}

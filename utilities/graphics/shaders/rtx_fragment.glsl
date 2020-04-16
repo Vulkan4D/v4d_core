@@ -3,7 +3,7 @@ struct Fragment {
 	uint vertexOffset;
 	uint objectIndex;
 	uint material;
-	ObjectInstance objectInstance;
+	GeometryInstance geometryInstance;
 	Vertex v0;
 	Vertex v1;
 	Vertex v2;
@@ -19,13 +19,13 @@ struct Fragment {
 
 Fragment GetHitFragment(bool interpolateVertexData) {
 	Fragment f;
+
+	f.geometryInstance = GetGeometryInstance(gl_InstanceCustomIndexEXT);
 	
-	f.indexOffset = geometries[gl_InstanceCustomIndexEXT].x;
-	f.vertexOffset = geometries[gl_InstanceCustomIndexEXT].y;
-	f.objectIndex = geometries[gl_InstanceCustomIndexEXT].z;
-	f.material = geometries[gl_InstanceCustomIndexEXT].w;
-	
-	f.objectInstance = GetObjectInstance(f.objectIndex);
+	f.indexOffset = f.geometryInstance.indexOffset;
+	f.vertexOffset = f.geometryInstance.vertexOffset;
+	f.objectIndex = f.geometryInstance.objectIndex;
+	f.material = f.geometryInstance.material;
 	
 	f.v0 = GetVertex(indices[f.indexOffset + (3 * gl_PrimitiveID) + 0] + f.vertexOffset);
 	f.v1 = GetVertex(indices[f.indexOffset + (3 * gl_PrimitiveID) + 1] + f.vertexOffset);
@@ -37,8 +37,7 @@ Fragment GetHitFragment(bool interpolateVertexData) {
 	if (interpolateVertexData) {
 		f.pos = (f.v0.pos * f.barycentricCoords.x + f.v1.pos * f.barycentricCoords.y + f.v2.pos * f.barycentricCoords.z);
 		f.normal = normalize(f.v0.normal * f.barycentricCoords.x + f.v1.normal * f.barycentricCoords.y + f.v2.normal * f.barycentricCoords.z);
-		// f.normal = normalize(transpose(inverse(mat3(f.objectInstance.modelViewMatrix))) * f.normal);
-		f.viewSpaceNormal = normalize(f.objectInstance.normalMatrix * f.normal);
+		f.viewSpaceNormal = normalize(f.geometryInstance.normalViewTransform * f.normal);
 		f.uv = (f.v0.uv * f.barycentricCoords.x + f.v1.uv * f.barycentricCoords.y + f.v2.uv * f.barycentricCoords.z);
 		f.color = (f.v0.color * f.barycentricCoords.x + f.v1.color * f.barycentricCoords.y + f.v2.color * f.barycentricCoords.z);
 	}

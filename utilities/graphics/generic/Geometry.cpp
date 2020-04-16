@@ -69,6 +69,16 @@ namespace v4d::graphics {
 		geometryInfoInitialized = true;
 	}
 	
+	void Geometry::SetGeometryTransform(glm::dmat4 modelTransform, const glm::dmat4& viewMatrix) {
+		if (!geometryInfo) MapStagingBuffers();
+		
+		geometryInfo->modelTransform = modelTransform;
+		geometryInfo->modelViewTransform = viewMatrix * modelTransform;
+		geometryInfo->normalViewTransform = glm::transpose(glm::inverse(glm::mat3(geometryInfo->modelViewTransform)));
+		geometryInfo->custom3f = custom3f;
+		geometryInfo->custom4x4f = custom4x4f;
+	}
+	
 	void Geometry::SetVertex(uint32_t i, const glm::vec3& pos, const glm::vec3& normal, const glm::vec2& uv, const glm::vec4& color) {
 		if (!vertices) MapStagingBuffers();
 		
@@ -184,7 +194,7 @@ namespace v4d::graphics {
 	}
 	
 
-	void Geometry::AutoPush(Device* device, VkCommandBuffer commandBuffer) {
+	void Geometry::AutoPush(Device* device, VkCommandBuffer commandBuffer, bool forcePushTransform) {
 		if (isDirty) {
 			if (duplicateFrom) {
 				duplicateFrom->AutoPush(device, commandBuffer);
@@ -193,6 +203,8 @@ namespace v4d::graphics {
 				Push(device, commandBuffer);
 			}
 			isDirty = false;
+		} else if (forcePushTransform) {
+			Push(device, commandBuffer, GlobalGeometryBuffers::BUFFER_GEOMETRY_INFO);
 		}
 	}
 	
@@ -466,12 +478,7 @@ namespace v4d::graphics {
 		
 		ObjectBuffer_T* objData = &((ObjectBuffer_T*) (globalBuffers.objectBuffer.stagingBuffer.data)) [obj->objectOffset];
 		
-		objData->modelMatrix = obj->transform;
-		objData->custom4x4 = obj->custom4x4;
-		objData->modelViewMatrix = obj->modelViewMatrix;
-		objData->normalMatrix = obj->normalMatrix;
-		objData->custom3 = obj->custom3;
-		objData->custom4 = obj->custom4;
+		objData->modelTransform = obj->transform;
 	}
 	
 	void Geometry::GlobalGeometryBuffers::ReadObject(ObjectInstance* obj) {
@@ -481,13 +488,7 @@ namespace v4d::graphics {
 		
 		ObjectBuffer_T* objData = &((ObjectBuffer_T*) (globalBuffers.objectBuffer.stagingBuffer.data)) [obj->objectOffset];
 		
-		obj->transform = objData->modelMatrix;
-		obj->custom4x4 = objData->custom4x4;
-		obj->modelViewMatrix = objData->modelViewMatrix;
-		obj->normalMatrix = objData->normalMatrix;
-		obj->normalMatrix = objData->normalMatrix;
-		obj->custom3 = objData->custom3;
-		obj->custom4 = objData->custom4;
+		obj->transform = objData->modelTransform;
 	}
 	
 	void Geometry::GlobalGeometryBuffers::WriteLight(LightSource* lightSource) {
@@ -546,6 +547,20 @@ namespace v4d::graphics {
 			FATAL("global buffers must be allocated before Pulling Objects")
 		}
 		objectBuffer.Pull(device, commandBuffer, nbAllocatedObjects);
+	}
+	
+	void Geometry::GlobalGeometryBuffers::PushGeometriesInfo(Device* device, VkCommandBuffer commandBuffer) {
+		if (!globalBuffers.geometryBuffer.stagingBuffer.data) {
+			FATAL("global buffers must be allocated before Pushing Geometries")
+		}
+		geometryBuffer.Push(device, commandBuffer, nbAllocatedGeometries);
+	}
+	
+	void Geometry::GlobalGeometryBuffers::PullGeometriesInfo(Device* device, VkCommandBuffer commandBuffer) {
+		if (!globalBuffers.geometryBuffer.stagingBuffer.data) {
+			FATAL("global buffers must be allocated before Pulling Geometries")
+		}
+		geometryBuffer.Pull(device, commandBuffer, nbAllocatedGeometries);
 	}
 	
 	void Geometry::GlobalGeometryBuffers::DefragmentMemory() {
