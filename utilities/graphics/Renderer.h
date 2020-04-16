@@ -98,6 +98,15 @@ namespace v4d::graphics {
 		VkPhysicalDeviceVulkan12Features vulkan12DeviceFeatures {};
 		VkPhysicalDeviceRayTracingFeaturesKHR rayTracingFeatures {};
 		
+		VkPhysicalDeviceVulkan12Features* EnableVulkan12DeviceFeatures() {
+			vulkan12DeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+			return &vulkan12DeviceFeatures;
+		}
+		VkPhysicalDeviceRayTracingFeaturesKHR* EnableRayTracingFeatures() {
+			rayTracingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
+			return &rayTracingFeatures;
+		}
+		
 		void RequiredDeviceExtension(const char* ext);
 		void OptionalDeviceExtension(const char* ext);
 		bool IsDeviceExtensionEnabled(const char* ext);
@@ -106,6 +115,7 @@ namespace v4d::graphics {
 		// Init
 		virtual void ScorePhysicalDeviceSelection(int& score, PhysicalDevice* physicalDevice) = 0;
 		virtual void Init() = 0;
+		virtual void InitDeviceFeatures() = 0;
 		virtual void Info() = 0;
 		virtual void InitLayouts() = 0;
 		virtual void ConfigureShaders() = 0;

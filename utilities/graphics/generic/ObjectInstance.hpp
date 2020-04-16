@@ -21,6 +21,7 @@ namespace v4d::graphics {
 		glm::dmat4 transform {1};
 		std::vector<GeometryInstance> geometries {};
 		std::vector<LightSource*> lightSources {};
+		glm::mat4 custom4x4 {0};
 		glm::vec3 custom3 {0};
 		glm::vec4 custom4 {0};
 		void (*generateFunc)(ObjectInstance*) = nullptr;
@@ -273,6 +274,11 @@ namespace v4d::graphics {
 		}
 		
 		void SetObjectCustomData(const glm::vec3& custom3, const glm::vec4& custom4 = {0,0,0,0}) {
+			this->custom3 = custom3;
+			this->custom4 = custom4;
+		}
+		void SetObjectCustomData(const glm::mat4& custom4x4, const glm::vec3& custom3, const glm::vec4& custom4 = {0,0,0,0}) {
+			this->custom4x4 = custom4x4;
 			this->custom3 = custom3;
 			this->custom4 = custom4;
 		}

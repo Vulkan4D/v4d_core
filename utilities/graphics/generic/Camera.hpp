@@ -48,7 +48,7 @@ namespace v4d::graphics {
 			projectionMatrix[1].y *= -1;
 			
 			// TXAA 
-			if (txaa) {
+			if (txaa && !debug) {
 				static unsigned long frameCount = 0;
 				static const glm::dvec2 samples8[8] = {
 					glm::dvec2(-7.0, 1.0) / 8.0,

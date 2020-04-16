@@ -26,6 +26,12 @@ layout(set = 0, binding = 0) uniform Camera {
 	
 } camera;
 
+bool TXAA = camera.txaa && !camera.debug;
+bool HDR = camera.hdr && !camera.debug;
+bool GammaCorrection = camera.gammaCorrection && !camera.debug;
+int RenderMode = camera.debug? 0 : camera.renderMode;
+int ShadowType = camera.debug? 0 : camera.shadows;
+
 double GetTrueDistanceFromDepthBuffer(double depth) {
 	if (depth == 1) return camera.zfar;
 	return 2.0 * (camera.zfar * camera.znear) / (camera.znear + camera.zfar - (depth * 2.0 - 1.0) * (camera.znear - camera.zfar));

@@ -466,9 +466,11 @@ namespace v4d::graphics {
 		
 		ObjectBuffer_T* objData = &((ObjectBuffer_T*) (globalBuffers.objectBuffer.stagingBuffer.data)) [obj->objectOffset];
 		
+		objData->modelMatrix = obj->transform;
+		objData->custom4x4 = obj->custom4x4;
 		objData->modelViewMatrix = obj->modelViewMatrix;
 		objData->normalMatrix = obj->normalMatrix;
-		objData->custom4 = obj->custom4;
+		objData->custom3 = obj->custom3;
 		objData->custom4 = obj->custom4;
 	}
 	
@@ -479,6 +481,8 @@ namespace v4d::graphics {
 		
 		ObjectBuffer_T* objData = &((ObjectBuffer_T*) (globalBuffers.objectBuffer.stagingBuffer.data)) [obj->objectOffset];
 		
+		obj->transform = objData->modelMatrix;
+		obj->custom4x4 = objData->custom4x4;
 		obj->modelViewMatrix = objData->modelViewMatrix;
 		obj->normalMatrix = objData->normalMatrix;
 		obj->normalMatrix = objData->normalMatrix;
@@ -786,6 +790,24 @@ namespace v4d::graphics {
 		return (pack.r << 24) | (pack.g << 16) | (pack.b << 8) | pack.a;
 	}
 
+	glm::f32 PackUVasFloat(glm::vec2 uv) {
+		uv *= 65535.0f;
+		glm::uvec2 pack {
+			glm::clamp(glm::u32(uv.s), (glm::u32)0, (glm::u32)65535),
+			glm::clamp(glm::u32(uv.t), (glm::u32)0, (glm::u32)65535),
+		};
+		return glm::uintBitsToFloat((pack.s << 16) | pack.t);
+	}
+
+	glm::u32 PackUVasUint(glm::vec2 uv) {
+		uv *= 65535.0f;
+		glm::uvec2 pack {
+			glm::clamp(glm::u32(uv.s), (glm::u32)0, (glm::u32)65535),
+			glm::clamp(glm::u32(uv.t), (glm::u32)0, (glm::u32)65535),
+		};
+		return (pack.s << 16) | pack.t;
+	}
+
 	glm::vec4 UnpackColorFromFloat(glm::f32 color) {
 		glm::u32 packed = glm::floatBitsToUint(color);
 		return glm::vec4(
@@ -805,24 +827,6 @@ namespace v4d::graphics {
 		) / 255.0f;
 	}
 	
-	glm::f32 PackUVasFloat(glm::vec2 uv) {
-		uv *= 65535.0f;
-		glm::uvec2 pack {
-			glm::clamp(glm::u32(uv.s), (glm::u32)0, (glm::u32)65535),
-			glm::clamp(glm::u32(uv.t), (glm::u32)0, (glm::u32)65535),
-		};
-		return glm::uintBitsToFloat((pack.s << 16) | pack.t);
-	}
-
-	glm::u32 PackUVasUint(glm::vec2 uv) {
-		uv *= 65535.0f;
-		glm::uvec2 pack {
-			glm::clamp(glm::u32(uv.s), (glm::u32)0, (glm::u32)65535),
-			glm::clamp(glm::u32(uv.t), (glm::u32)0, (glm::u32)65535),
-		};
-		return (pack.s << 16) | pack.t;
-	}
-
 	glm::vec2 UnpackUVfromFloat(glm::f32 uv) {
 		glm::u32 packed = glm::floatBitsToUint(uv);
 		return glm::vec2(

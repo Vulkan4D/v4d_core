@@ -47,11 +47,6 @@ void Renderer::CreateDevices() {
 
 	LOG("Selected Rendering PhysicalDevice: " << renderingPhysicalDevice->GetDescription());
 
-	// Prepare Device Features (remove unsupported features from list of features to enable)
-	FilterSupportedDeviceFeatures(&deviceFeatures, renderingPhysicalDevice->GetFeatures());
-	FilterSupportedDeviceFeatures(&vulkan12DeviceFeatures, renderingPhysicalDevice->GetVulkan12Features(), sizeof(VkStructureType)+sizeof(void*));
-	FilterSupportedDeviceFeatures(&rayTracingFeatures, renderingPhysicalDevice->GetRayTracingFeatures(), sizeof(VkStructureType)+sizeof(void*));
-	
 	// Prepare enabled extensions
 	deviceExtensions.clear();
 	for (auto& ext : requiredDeviceExtensions) {
@@ -69,8 +64,20 @@ void Renderer::CreateDevices() {
 		}
 	}
 	
+	// Prepare Device Features (and disable unsupported features)
+	InitDeviceFeatures();
+	FilterSupportedDeviceFeatures(&deviceFeatures, renderingPhysicalDevice->GetFeatures());
 	void* pNext = nullptr;
+	if (rayTracingFeatures.sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR) {
+		if (IsDeviceExtensionEnabled(VK_KHR_RAY_TRACING_EXTENSION_NAME)) {
+			FilterSupportedDeviceFeatures(&rayTracingFeatures, renderingPhysicalDevice->GetRayTracingFeatures(), sizeof(VkStructureType)+sizeof(void*));
+			EnableVulkan12DeviceFeatures()->pNext = &rayTracingFeatures; //TODO improve feature chains structure for more flexibility
+		} else {
+			rayTracingFeatures = {};
+		}
+	}
 	if (vulkan12DeviceFeatures.sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES) {
+		FilterSupportedDeviceFeatures(&vulkan12DeviceFeatures, renderingPhysicalDevice->GetVulkan12Features(), sizeof(VkStructureType)+sizeof(void*));
 		pNext = &vulkan12DeviceFeatures;
 	}
 	

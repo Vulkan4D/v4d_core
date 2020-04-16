@@ -59,7 +59,9 @@ namespace v4d::modules {
 		
 		// Executed when calling LoadRenderer()
 		virtual void ScorePhysicalDeviceSelection(int& score, PhysicalDevice*) {}
-		// after selecting rendering device and queues
+		// after selecting rendering device
+		virtual void InitDeviceFeatures() {}
+		// after creating locical device and queues
 		virtual void Info() {}
 		virtual void CreateResources() {} // here we have the swapChain available
 		virtual void DestroyResources() {}

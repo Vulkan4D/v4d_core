@@ -35,6 +35,46 @@ vec4 SampleTexture(sampler2D tex, vec2 fragCoord) {
 	return texture(tex, fragCoord.st / vec2(textureSize(tex, 0)));
 }
 
+float PackColorAsFloat(vec4 color) {
+	color *= 255.0;
+	uvec4 pack = uvec4(
+		clamp(uint(color.r), uint(0), uint(255)),
+		clamp(uint(color.g), uint(0), uint(255)),
+		clamp(uint(color.b), uint(0), uint(255)),
+		clamp(uint(color.a), uint(0), uint(255))
+	);
+	return uintBitsToFloat((pack.r << 24) | (pack.g << 16) | (pack.b << 8) | pack.a);
+}
+
+uint PackColorAsUint(vec4 color) {
+	color *= 255.0;
+	uvec4 pack = uvec4(
+		clamp(uint(color.r), uint(0), uint(255)),
+		clamp(uint(color.g), uint(0), uint(255)),
+		clamp(uint(color.b), uint(0), uint(255)),
+		clamp(uint(color.a), uint(0), uint(255))
+	);
+	return (pack.r << 24) | (pack.g << 16) | (pack.b << 8) | pack.a;
+}
+
+float PackUVasFloat(vec2 uv) {
+	uv *= 65535.0;
+	uvec2 pack = uvec2(
+		clamp(uint(uv.s), uint(0), uint(65535)),
+		clamp(uint(uv.t), uint(0), uint(65535))
+	);
+	return uintBitsToFloat((pack.s << 16) | pack.t);
+}
+
+uint PackUVasUint(vec2 uv) {
+	uv *= 65535.0;
+	uvec2 pack = uvec2(
+		clamp(uint(uv.s), uint(0), uint(65535)),
+		clamp(uint(uv.t), uint(0), uint(65535))
+	);
+	return (pack.s << 16) | pack.t;
+}
+
 // vec3 UnpackNormal(in vec2 norm) {
 // 	vec2 fenc = norm * 4.0 - 2.0;
 // 	float f = dot(fenc, fenc);
