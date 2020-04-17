@@ -1,9 +1,13 @@
-// layout(set = 0, binding = 1) readonly buffer ObjectBuffer {dmat4 objectInstances[];};
-layout(set = 0, binding = 2) readonly buffer LightBuffer {float lightSources[];};
-layout(set = 0, binding = 3) readonly buffer ActiveLights {uint activeLights; uint lightIndices[];};
-layout(set = 0, binding = 4) readonly buffer GeometryBuffer {float geometries[];};
-layout(set = 0, binding = 5) readonly buffer IndexBuffer {uint indices[];};
-layout(set = 0, binding = 6) readonly buffer VertexBuffer {vec4 vertices[];};
+// layout(set = 0, binding = 1) /*readonly*/ buffer ObjectBuffer {dmat4 objectInstances[];};
+layout(set = 0, binding = 2) /*readonly*/ buffer LightBuffer {float lightSources[];};
+layout(set = 0, binding = 3) /*readonly*/ buffer ActiveLights {uint activeLights; uint lightIndices[];};
+layout(set = 0, binding = 4) /*readonly*/ buffer GeometryBuffer {float geometries[];};
+layout(set = 0, binding = 5) /*readonly*/ buffer IndexBuffer {uint indices[];};
+layout(set = 0, binding = 6) /*readonly*/ buffer VertexBuffer {vec4 vertices[];};
+
+// layout(set = 0, binding = 3) buffer GeometryBuffer {float geometries[];};
+// layout(set = 0, binding = 4) buffer IndexBuffer {uint indices[];};
+// layout(set = 0, binding = 5) buffer VertexBuffer {vec4 vertices[];};
 
 struct GeometryInstance {
 	uint indexOffset;
@@ -22,9 +26,23 @@ struct GeometryInstance {
 	vec3 viewPosition;
 };
 
+const uint GEOMETRY_BUFFER_STRIDE = 64;
+
+uint GetVertexOffset(uint geometryIndex) {
+	return floatBitsToUint(geometries[geometryIndex*GEOMETRY_BUFFER_STRIDE + 1]);
+}
+
+uint GetObjectIndex(uint geometryIndex) {
+	return floatBitsToUint(geometries[geometryIndex*GEOMETRY_BUFFER_STRIDE + 2]);
+}
+
+uint GetMaterial(uint geometryIndex) {
+	return floatBitsToUint(geometries[geometryIndex*GEOMETRY_BUFFER_STRIDE + 3]);
+}
+
 GeometryInstance GetGeometryInstance(uint index) {
 	GeometryInstance geometry;
-	uint i = index*64;
+	uint i = index*GEOMETRY_BUFFER_STRIDE;
 	
 	geometry.indexOffset = floatBitsToUint(geometries[i++]);
 	geometry.vertexOffset = floatBitsToUint(geometries[i++]);
