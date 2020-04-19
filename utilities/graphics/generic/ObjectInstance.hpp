@@ -8,10 +8,10 @@ namespace v4d::graphics {
 	struct GeometryInstance {
 		std::shared_ptr<Geometry> geometry;
 		int rayTracingInstanceIndex;
-		glm::mat4 transform;
+		glm::dmat4 transform;
 		std::string type;
 		
-		GeometryInstance(std::shared_ptr<Geometry> geometry, int rayTracingInstanceIndex = -1, glm::mat4 transform = glm::mat4 {1}, std::string type = "standard")
+		GeometryInstance(std::shared_ptr<Geometry> geometry, int rayTracingInstanceIndex = -1, glm::dmat4 transform = glm::dmat4 {1}, std::string type = "standard")
 		: geometry(geometry), rayTracingInstanceIndex(rayTracingInstanceIndex), transform(transform), type(type) {};
 	};
 
@@ -170,7 +170,7 @@ namespace v4d::graphics {
 			geometries[0].geometry->SetProceduralVertex(0, glm::vec3(-radius), glm::vec3(+radius), color, custom1);
 		}
 		
-		void SetSphereLightSource(
+		LightSource* SetSphereLightSource(
 			const std::string& type, 
 			float radius,
 			glm::f32 lightIntensity,
@@ -184,6 +184,7 @@ namespace v4d::graphics {
 			auto* lightSource = AddLightSource({0,0,0}, lightIntensity, lightColor, lightType, lightAttributes, radius);
 			if (radius > 0) SetSphereGeometry(type, radius, geomColor, lightSource->lightOffset, custom1);
 			geometries[0].geometry->rayTracingMask = Geometry::RAY_TRACING_TYPE_EMITTER;
+			return lightSource;
 		}
 		
 		#pragma endregion

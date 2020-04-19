@@ -24,10 +24,10 @@ namespace v4d::graphics::vulkan {
 		
 		void AddDescriptorSet(DescriptorSet* descriptorSet);
 		
-		void AddPushConstant(const VkPushConstantRange&);
+		int AddPushConstant(const VkPushConstantRange&);
 		template<class T>
-		void AddPushConstant(VkShaderStageFlags flags) {
-			AddPushConstant({flags, 0, sizeof(T)});
+		int AddPushConstant(VkShaderStageFlags flags) {
+			return AddPushConstant({flags, 0, sizeof(T)});
 		}
 		
 		// clears descriptor sets and push constants

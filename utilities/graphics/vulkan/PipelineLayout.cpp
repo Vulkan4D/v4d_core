@@ -10,8 +10,10 @@ void PipelineLayout::AddDescriptorSet(DescriptorSet* descriptorSet) {
 	descriptorSets.push_back(descriptorSet);
 }
 
-void PipelineLayout::AddPushConstant(const VkPushConstantRange& pushConstant) {
+int PipelineLayout::AddPushConstant(const VkPushConstantRange& pushConstant) {
+	int newIndex = pushConstants.size();
 	pushConstants.push_back(pushConstant);
+	return newIndex;
 }
 
 void PipelineLayout::Create(Device* device) {

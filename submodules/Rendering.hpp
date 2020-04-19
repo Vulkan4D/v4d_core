@@ -49,8 +49,8 @@ namespace v4d::modules {
 	
 		// Executed when calling InitRenderer() on the main Renderer
 		virtual void Init() {}
-		virtual void InitLayouts(std::map<std::string, DescriptorSet*>&, std::unordered_map<std::string, Image*>&, PipelineLayout* rayTracingPipelineLayout) {}
-		virtual void ConfigureShaders(std::unordered_map<std::string, std::vector<RasterShaderPipeline*>>& shaders, ShaderBindingTable*) {}
+		virtual void InitLayouts(std::map<std::string, DescriptorSet*>&, std::unordered_map<std::string, Image*>&, std::unordered_map<std::string, PipelineLayout*>& pipelineLayouts) {}
+		virtual void ConfigureShaders(std::unordered_map<std::string, std::vector<RasterShaderPipeline*>>& shaders, ShaderBindingTable*, std::unordered_map<std::string, PipelineLayout*>& pipelineLayouts) {}
 		
 		// Executed when calling their respective methods on the main Renderer
 		virtual void ReadShaders() {}

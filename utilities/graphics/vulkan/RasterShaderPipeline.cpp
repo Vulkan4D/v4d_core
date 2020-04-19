@@ -27,9 +27,7 @@ RasterShaderPipeline::RasterShaderPipeline(PipelineLayout& pipelineLayout, const
 	pipelineCreateInfo.basePipelineIndex = -1;
 }
 
-RasterShaderPipeline::~RasterShaderPipeline() {
-	
-}
+RasterShaderPipeline::~RasterShaderPipeline() {} // dont delete anything here, we are copying/moving this object in some modules
 
 void RasterShaderPipeline::SetData(Buffer* vertexBuffer, Buffer* indexBuffer, uint32_t indexCount) {
 	this->vertexBuffer = vertexBuffer;

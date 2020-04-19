@@ -14,6 +14,9 @@
 layout(set = 1, binding = 0) uniform accelerationStructureEXT topLevelAS;
 layout(set = 1, binding = 1, rgba16f) uniform image2D litImage;
 layout(set = 1, binding = 2, r32f) uniform image2D depthImage;
+layout(set = 1, binding = 3, rg32f) uniform image2D gBuffer_albedo_geometryIndex;
+layout(set = 1, binding = 4, rgba32f) uniform image2D gBuffer_normal_uv;
+layout(set = 1, binding = 5, rgba32f) uniform image2D gBuffer_position_dist;
 
 // Ray Tracing Payload
 struct RayPayload {

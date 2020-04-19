@@ -2,44 +2,37 @@
 
 #include <v4d.h>
 
-// namespace v4d::graphics {
-// 	using namespace glm;
+namespace v4d::graphics {
 	
-// 	enum LightSourceType : int {
-// 		POINT_LIGHT = 0,
-// 	};
+	struct LightSource {
+		glm::dvec3 position {0};
+		glm::f32 intensity = 0;
+		glm::vec3 color {1};
+		glm::u32 type = 0;
+		glm::u32 attributes = 0;
+		glm::f32 radius = 0;
+		glm::f32 custom1 = 0;
+		
+		uint32_t lightOffset = 0;
+		glm::vec3 viewSpacePosition {0};
+		
+		LightSource (
+			glm::dvec3 position = {0,0,0},
+			glm::f32 intensity = 0,
+			glm::vec3 color = {1,1,1},
+			glm::u32 type = 0,
+			glm::u32 attributes = 0,
+			glm::f32 radius = 0,
+			glm::f32 custom1 = 0
+		) : 
+			position(position),
+			intensity(intensity),
+			color(color),
+			type(type),
+			attributes(attributes),
+			radius(radius),
+			custom1(custom1)
+ 		{}
+	};
 	
-// 	struct LightSource { // used as push constant, so maximum size is 128 bytes
-// 		alignas(32)	dvec3 worldPosition;
-// 		alignas(16)	vec3 color;
-// 		alignas(4)	float intensity;
-// 		alignas(16)	vec3 worldDirection;
-// 		alignas(4)	LightSourceType type;
-// 		alignas(16)	vec3 viewPosition;
-// 		alignas(4)	float innerAngle;
-// 		alignas(16)	vec3 viewDirection;
-// 		alignas(4)	float outerAngle;
-		
-// 		// 48 bytes remaining for future use
-		
-// 		LightSource(
-// 			LightSourceType type = POINT_LIGHT, 
-// 			dvec3 worldPosition = dvec3{0}, 
-// 			vec3 color = vec3{1}, 
-// 			float intensity = 0, 
-// 			dvec3 worldDirection = dvec3{0},
-// 			float innerAngle = 0, 
-// 			float outerAngle = 0
-// 		) : 
-// 			worldPosition(worldPosition), 
-// 			color(color), 
-// 			intensity(intensity), 
-// 			worldDirection{worldDirection}, 
-// 			type(type),
-// 			viewPosition({0}),
-// 			innerAngle(innerAngle),
-// 			viewDirection({0}),
-// 			outerAngle(max(innerAngle, outerAngle))
-// 		{}
-// 	};
-// }
+}

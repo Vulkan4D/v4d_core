@@ -1,9 +1,12 @@
-// layout(set = 0, binding = 1) /*readonly*/ buffer ObjectBuffer {dmat4 objectInstances[];};
-layout(set = 0, binding = 2) /*readonly*/ buffer LightBuffer {float lightSources[];};
-layout(set = 0, binding = 3) /*readonly*/ buffer ActiveLights {uint activeLights; uint lightIndices[];};
-layout(set = 0, binding = 4) /*readonly*/ buffer GeometryBuffer {float geometries[];};
-layout(set = 0, binding = 5) /*readonly*/ buffer IndexBuffer {uint indices[];};
-layout(set = 0, binding = 6) /*readonly*/ buffer VertexBuffer {vec4 vertices[];};
+#ifndef GEOMETRY_BUFFERS_ACCESS
+	#define GEOMETRY_BUFFERS_ACCESS
+#endif
+// layout(set = 0, binding = 1) GEOMETRY_BUFFERS_ACCESS buffer ObjectBuffer {dmat4 objectInstances[];};
+layout(set = 0, binding = 2) GEOMETRY_BUFFERS_ACCESS buffer LightBuffer {float lightSources[];};
+layout(set = 0, binding = 3) GEOMETRY_BUFFERS_ACCESS buffer ActiveLights {uint activeLights; uint lightIndices[];};
+layout(set = 0, binding = 4) GEOMETRY_BUFFERS_ACCESS buffer GeometryBuffer {float geometries[];};
+layout(set = 0, binding = 5) GEOMETRY_BUFFERS_ACCESS buffer IndexBuffer {uint indices[];};
+layout(set = 0, binding = 6) GEOMETRY_BUFFERS_ACCESS buffer VertexBuffer {vec4 vertices[];};
 
 // layout(set = 0, binding = 3) buffer GeometryBuffer {float geometries[];};
 // layout(set = 0, binding = 4) buffer IndexBuffer {uint indices[];};
