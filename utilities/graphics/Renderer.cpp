@@ -68,13 +68,15 @@ void Renderer::CreateDevices() {
 	InitDeviceFeatures();
 	FilterSupportedDeviceFeatures(&deviceFeatures, renderingPhysicalDevice->GetFeatures());
 	void* pNext = nullptr;
-	if (rayTracingFeatures.sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR) {
-		if (IsDeviceExtensionEnabled(VK_KHR_RAY_TRACING_EXTENSION_NAME)) {
-			FilterSupportedDeviceFeatures(&rayTracingFeatures, renderingPhysicalDevice->GetRayTracingFeatures(), sizeof(VkStructureType)+sizeof(void*));
-			EnableVulkan12DeviceFeatures()->pNext = &rayTracingFeatures; //TODO improve feature chains structure for more flexibility
-		} else {
-			rayTracingFeatures = {};
-		}
+	if (
+		rayTracingFeatures.sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR
+	 	&& renderingPhysicalDevice->SupportsExtension(VK_KHR_RAY_TRACING_EXTENSION_NAME)
+	 	&& IsDeviceExtensionEnabled(VK_KHR_RAY_TRACING_EXTENSION_NAME)
+	) {
+		FilterSupportedDeviceFeatures(&rayTracingFeatures, renderingPhysicalDevice->GetRayTracingFeatures(), sizeof(VkStructureType)+sizeof(void*));
+		EnableVulkan12DeviceFeatures()->pNext = &rayTracingFeatures; //TODO improve feature chains structure for more flexibility
+	} else {
+		rayTracingFeatures = {};
 	}
 	if (vulkan12DeviceFeatures.sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES) {
 		FilterSupportedDeviceFeatures(&vulkan12DeviceFeatures, renderingPhysicalDevice->GetVulkan12Features(), sizeof(VkStructureType)+sizeof(void*));
