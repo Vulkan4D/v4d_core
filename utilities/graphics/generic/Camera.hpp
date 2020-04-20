@@ -9,7 +9,7 @@ namespace v4d::graphics {
 		alignas(4) bool txaa = true;
 		alignas(4) bool debug = false;
 		
-		alignas(16) glm::vec4 luminance {1}; // Averaged, a = exposure factor
+		alignas(16) glm::vec4 luminance {0}; // Averaged, a = exposure factor
 		alignas(32) glm::dvec3 worldPosition {0};
 		alignas(8) double fov = 70;
 		alignas(32) glm::dvec3 lookDirection {0,1,0}; //TODO remove if not needed
@@ -26,7 +26,11 @@ namespace v4d::graphics {
 		alignas(4) bool gammaCorrection = true;
 		alignas(4) int renderMode = 0;
 		alignas(4) int shadows = 0;
-			
+		
+		alignas(4) float brightness = 1.0f;
+		alignas(4) float contrast = 1.0f;
+		alignas(4) float gamma = 2.2f;
+		
 		// alignas(16) glm::vec2 historyTxaaOffset {0};
 		
 		static constexpr float txaaKernelSize = 1.0f;

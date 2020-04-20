@@ -21,8 +21,11 @@ layout(set = 0, binding = 0) uniform Camera {
 	bool gammaCorrection;
 	int renderMode;
 	int shadows;
+
+	float brightness;
+	float contrast;
+	float gamma;
 	
-	// vec2 historyTxaaOffset;
 	
 } camera;
 
