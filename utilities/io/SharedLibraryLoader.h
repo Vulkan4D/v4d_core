@@ -21,7 +21,7 @@ namespace v4d::io {
 	class V4DLIB SharedLibraryLoader {
 	private:
 		std::mutex loadedLibrariesMutex;
-		std::unordered_map<std::string, SharedLibraryInstance*> loadedLibraries;
+		std::unordered_map<std::string, SharedLibraryInstance*> loadedLibraries {};
 
 	public:
 	
