@@ -30,6 +30,7 @@ namespace v4d::graphics {
 		alignas(4) float brightness = 1.0f;
 		alignas(4) float contrast = 1.0f;
 		alignas(4) float gamma = 2.2f;
+		alignas(4) float time = 0;
 		
 		// alignas(16) glm::vec2 historyTxaaOffset {0};
 		

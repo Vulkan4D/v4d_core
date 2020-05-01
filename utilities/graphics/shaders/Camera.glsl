@@ -25,6 +25,7 @@ layout(set = 0, binding = 0) uniform Camera {
 	float brightness;
 	float contrast;
 	float gamma;
+	float time;
 	
 	
 } camera;
