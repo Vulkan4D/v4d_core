@@ -50,6 +50,11 @@ namespace v4d {
 		double GetElapsedSeconds() const {
 			return GetElapsedMilliseconds() * 0.001;
 		}
+		
+		static double GetCurrentTimestamp() {
+			time_point time = std::chrono::high_resolution_clock::now();
+			return time.time_since_epoch().count() * 0.001;
+		}
 
 	private:
 		/**

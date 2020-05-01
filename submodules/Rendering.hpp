@@ -79,6 +79,9 @@ namespace v4d::modules {
 		
 		#ifdef _ENABLE_IMGUI
 			virtual void RunImGui() {}
+			#ifdef _DEBUG
+				virtual void RunImGuiDebug() {}
+			#endif
 		#endif
 		
 		// Executed before each frame

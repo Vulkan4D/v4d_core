@@ -11,7 +11,8 @@ namespace v4d::io {
 	struct V4DLIB SharedLibraryInstance {
 		std::string name;
 		std::string path;
-		DLL_FILE_HANDLER handle;
+		std::string filePath {""};
+		DLL_FILE_HANDLER handle = 0;
 
 		SharedLibraryInstance(){}
 		SharedLibraryInstance(const std::string& name, const std::string& path);
@@ -20,14 +21,14 @@ namespace v4d::io {
 
 	class V4DLIB SharedLibraryLoader {
 	private:
-		std::mutex loadedLibrariesMutex;
+		std::recursive_mutex loadedLibrariesMutex;
 		std::unordered_map<std::string, SharedLibraryInstance*> loadedLibraries {};
 
 	public:
 	
-		SharedLibraryInstance* Load(const std::string& name, std::string path);
+		SharedLibraryInstance* Load(const std::string& name, std::string path = "");
 		void Unload(const std::string& name);
-		void Reload(const std::string& name);
+		SharedLibraryInstance* Reload(const std::string& name);
 		~SharedLibraryLoader();
 	};
 }
