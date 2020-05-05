@@ -6,6 +6,7 @@
 #include "helpers/event.cxx"
 #include "helpers/Base16.cxx"
 #include "helpers/Base64.cxx"
+#include "helpers/BaseN.cxx"
 #include "utilities/crypto/AES.cxx"
 #include "utilities/crypto/RSA.cxx"
 #include "utilities/crypto/SHA.cxx"
@@ -15,7 +16,7 @@
 #include "utilities/graphics/VulkanInstance.cxx"
 
 #define RUN_UNIT_TESTS(funcName, ...) { LOG("Running tests for " << #funcName << " ..."); result += funcName(__VA_ARGS__); if (result != 0) { LOG_ERROR("UNIT TESTS FAILED"); return result; } }
-#define START_UNIT_TESTS using namespace v4d::tests; int main() { LOG("Started unit tests"); int result = 0; { V4D_PROJECT_INSTANTIATE_CORE_IN_MAIN( v4dCore ) 
+#define START_UNIT_TESTS using namespace v4d::tests; int main() { LOG("Started unit tests"); int result = 0; { if (!v4d::Init()) return -1;
 #define END_UNIT_TESTS } if (result == 0) LOG_SUCCESS("ALL TESTS PASSED\n"); return result; }
 
 namespace v4d::tests {
@@ -28,6 +29,7 @@ namespace v4d::tests {
 			RUN_UNIT_TESTS( Event )
 			RUN_UNIT_TESTS( Base16 )
 			RUN_UNIT_TESTS( Base64 )
+			RUN_UNIT_TESTS( BaseN )
 			RUN_UNIT_TESTS( AES )
 			RUN_UNIT_TESTS( RSA )
 			RUN_UNIT_TESTS( SHA )

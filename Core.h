@@ -12,9 +12,6 @@ namespace v4d {
 	struct CoreDestroyEvent {};
 }
 
-DEFINE_CORE_EVENT_HEADER(V4D_CORE_INIT, CoreInitEvent&)
-DEFINE_CORE_EVENT_HEADER(V4D_CORE_DESTROY, CoreDestroyEvent&)
-
 // Signals
 DEFINE_CORE_EVENT_HEADER(SIGNAL, int)
 DEFINE_CORE_EVENT_HEADER(SIGNAL_TERMINATE, int)
@@ -30,12 +27,9 @@ EXTERNC V4DLIB void V4D_SIGNAL_HANDLER(int num);
 
 //////////////////////////////////////////////////////////
 // Some utilities prototypes
+
 namespace v4d::io {
 	class Logger;
-}
-namespace v4d::modules {
-	class ModulesLoader;
-	class ModuleInstance;
 }
 
 //////////////////////////////////////////////////////////
@@ -44,24 +38,7 @@ namespace v4d {
 	V4DLIB const std::string GetCoreBuildVersion() noexcept;
 
 	class V4DLIB Core {
-	protected:
-		std::string projectName = "V4D Project";
 	public:
-		bool Init();
-		bool Init(std::shared_ptr<v4d::io::Logger> coreLogger);
 		static std::shared_ptr<v4d::io::Logger> coreLogger;
-		v4d::modules::ModulesLoader* modulesLoader;
-		void Destroy();
-		~Core();
-		void SetProjectName(std::string);
-		std::string GetProjectName() const;
-		v4d::modules::ModuleInstance* LoadModule(const std::string& name);
-		void UnloadModule(const std::string& name);
 	};
 }
-
-//////////////////////////////////////////////////////////
-// Smart pointer type for the Core instance
-typedef std::shared_ptr<v4d::Core> v4d_core;
-typedef std::weak_ptr<v4d::Core> v4d_core_weak;
-

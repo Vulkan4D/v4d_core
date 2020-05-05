@@ -9,9 +9,6 @@
 	//////////////////////////////////////////////////////////
 	// V4D global events
 
-	DEFINE_CORE_EVENT_BODY(V4D_CORE_INIT, CoreInitEvent&)
-	DEFINE_CORE_EVENT_BODY(V4D_CORE_DESTROY, CoreDestroyEvent&)
-
 	// Signals
 	DEFINE_CORE_EVENT_BODY(SIGNAL, int)
 	DEFINE_CORE_EVENT_BODY(SIGNAL_TERMINATE, int)
@@ -74,46 +71,5 @@
 	// V4D Core Instance
 
 	std::shared_ptr<v4d::io::Logger> v4d::Core::coreLogger = v4d::io::Logger::ConsoleInstance();
-	
-	bool v4d::Core::Init() {
-		return Init(nullptr);
-	}
-
-	bool v4d::Core::Init(std::shared_ptr<v4d::io::Logger> coreLogger) {
-		CoreInitEvent e;
-		if (coreLogger) v4d::Core::coreLogger = coreLogger;
-		//...
-		v4d::event::V4D_CORE_INIT(e);
-		return true;
-	}
-
-	v4d::Core::~Core(){
-		Destroy();
-		if (modulesLoader) {
-			delete modulesLoader;
-			modulesLoader = nullptr;
-		}
-	}
-
-	void v4d::Core::Destroy() {
-		CoreDestroyEvent e;
-		v4d::event::V4D_CORE_DESTROY(e);
-		//...
-	}
-
-	void v4d::Core::SetProjectName(std::string projectName) {
-		this->projectName = projectName;
-	}
-	std::string v4d::Core::GetProjectName() const {
-		return this->projectName;
-	}
-
-	v4d::modules::ModuleInstance* v4d::Core::LoadModule(const std::string& name) {
-		return modulesLoader->Load(name);
-	}
-	
-	void v4d::Core::UnloadModule(const std::string& name) {
-		modulesLoader->Unload(name);
-	}
 
 #endif

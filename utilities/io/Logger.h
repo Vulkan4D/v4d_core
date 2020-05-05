@@ -33,10 +33,10 @@ namespace v4d::io {
 
 		std::string GetCurrentThreadIdStr() const;
 
-		template<typename T>
-		inline void Log(T&& message, const char* style = "0") {
-			Log(std::ostringstream() << message, style);
-		}
+		// template<typename T>
+		// inline void Log(T&& message, const char* style = "0") {
+		// 	Log(std::ostringstream() << message, style);
+		// }
 		
 		inline void LogError(std::ostream& message) {
 			Log(message, "1;31");

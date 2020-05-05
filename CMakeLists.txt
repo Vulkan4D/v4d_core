@@ -18,10 +18,12 @@ else()
 	)
 endif()
 target_link_libraries(v4d
-	ssl
-	crypto
-	pthread
-	glfw
+	PRIVATE
+		ssl
+		crypto
+	PUBLIC
+		pthread
+		glfw
 )
 target_include_directories(v4d
 	PUBLIC
@@ -50,14 +52,19 @@ set_target_properties(v4d
 # Platform-specific libs
 if(WIN32)
 	target_link_libraries(v4d
-		wsock32
-		ws2_32
-		gcc
-		-static-libstdc++
+		PRIVATE
+			wsock32
+			ws2_32
+		PUBLIC
+			gcc
+			-static-libstdc++
+		# INTERFACE
+		# 	stdc++
 	)
 else()
 	target_link_libraries(v4d
-		dl
+		PUBLIC
+			dl
 	)
 endif()
 
