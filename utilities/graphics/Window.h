@@ -8,9 +8,6 @@
 #pragma once
 #include <v4d.h>
 
-// GLFW
-#include <GLFW/glfw3.h>
-
 namespace v4d::graphics {
 	
 	class V4DLIB Window {

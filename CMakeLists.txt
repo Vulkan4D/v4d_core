@@ -31,9 +31,6 @@ target_include_directories(v4d
 		"${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
 		"${PROJECT_SOURCE_DIR}/src"
 		"${PROJECT_SOURCE_DIR}/src/v4d/xvk"
-		"${PROJECT_SOURCE_DIR}/src/v4d/xvk/glm"
-		"${PROJECT_SOURCE_DIR}/src/v4d/xvk/gli"
-		"${PROJECT_SOURCE_DIR}/src/v4d/xvk/glfw/include"
 		"${PROJECT_SOURCE_DIR}/src/imgui"
 	PRIVATE
 		# "${PROJECT_SOURCE_DIR}/src/openssl/include"

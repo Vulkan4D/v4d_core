@@ -44,15 +44,6 @@
 #include "utilities/graphics/Window.h"
 #include "utilities/graphics/Renderer.h"
 
-// GLM
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/hash.hpp>
-#include <glm/gtx/texture.hpp>
-
 // Ray Tracing
 #include "utilities/graphics/vulkan/rtx/AccelerationStructure.h"
 

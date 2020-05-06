@@ -28,5 +28,8 @@
 // This includes all V4D Core Utilities (Also Compiled into v4d.dll)
 #include "utilities.hh"
 
+// This includes all V4D ModuleClasses
+#include "modules.hh"
+
 // Initial source code for the End-Project
 #include "project.hh"
