@@ -54,9 +54,7 @@ if(WIN32)
 			ws2_32
 		PUBLIC
 			gcc
-			-static-libstdc++
-		# INTERFACE
-		# 	stdc++
+			stdc++
 	)
 else()
 	target_link_libraries(v4d
