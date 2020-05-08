@@ -1,7 +1,8 @@
 #pragma once
 #include <v4d.h>
 
-V4D_MODULE_CLASS_BEGIN(V4D_Input0
+class V4DLIB V4D_Input {
+	V4D_MODULE_CLASS_H(V4D_Input
 		,Init
 		,CallbackName
 		,CharCallback
@@ -39,4 +40,4 @@ V4D_MODULE_CLASS_BEGIN(V4D_Input0
 		window->RemoveMouseButtonCallback(this->CallbackName());
 	}
 	
-V4D_MODULE_CLASS_END()
+};

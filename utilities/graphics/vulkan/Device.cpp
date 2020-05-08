@@ -87,6 +87,11 @@ Device::Device(
 			GetDeviceQueue(queueInfo.queueFamilyIndex, queueInfo.indexOffset + i, &(q->handle));
 			q->familyIndex = (uint)queueInfo.queueFamilyIndex;
 		}
+		
+		// Assign a present queue to the one with a Surface
+		if (queueInfo.surface && *queueInfo.surface != VK_NULL_HANDLE) {
+			queues["present"] = queues[queueInfo.name];
+		}
 	}
 }
 
@@ -109,10 +114,10 @@ PhysicalDevice* Device::GetPhysicalDevice() const {
 }
 
 Queue Device::GetPresentationQueue(VkSurfaceKHR surface, VkDeviceQueueCreateFlags flags) {
-	return GetQueue(physicalDevice->GetQueueFamilyIndexFromFlags(flags, 1, surface));
+	return GetQueue(physicalDevice->GetQueueFamilyIndexFromFlags(flags, 1, &surface));
 }
 
-Queue Device::GetQueue(std::string name, uint index) {
+Queue& Device::GetQueue(std::string name, uint index) {
 	return queues[name][index];
 }
 
@@ -120,6 +125,10 @@ Queue Device::GetQueue(uint queueFamilyIndex, uint index) {
 	Queue q = {queueFamilyIndex, nullptr};
 	GetDeviceQueue(queueFamilyIndex, index, &q.handle);
 	return q;
+}
+
+std::unordered_map<std::string, std::vector<Queue>>& Device::GetQueues() {
+	return queues;
 }
 
 void Device::CreateCommandPool(uint queueIndex, VkCommandPoolCreateFlags flags, VkCommandPool* commandPool) {

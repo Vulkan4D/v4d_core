@@ -88,84 +88,107 @@
 // 	};
 // }
 
+#define V4D_MODULE_CLASS_CPP(moduleClassName)\
+	moduleClassName::callback moduleClassName::_modulesLoadCallback = [](moduleClassName*){};\
+	moduleClassName::callback moduleClassName::_modulesUnloadCallback = [](moduleClassName*){};\
+	moduleClassName::errorCallback moduleClassName::_modulesLoadErrorCallback = [](const char* err){\
+		std::cerr << err << std::endl;\
+	};\
+	std::recursive_mutex moduleClassName::_mutexForLoadedModules {};\
+	std::unordered_map<std::string, moduleClassName*> moduleClassName::_loadedModules {};\
+	std::unordered_map<std::string, std::vector<moduleClassName*>> moduleClassName::_loadedSortedModules {};\
+	void moduleClassName::ModulesSetLoadCallback(const callback&& func) {\
+		_modulesLoadCallback = func;\
+	}\
+	void moduleClassName::ModulesSetUnloadCallback(const callback&& func) {\
+		_modulesUnloadCallback = func;\
+	}\
+	void moduleClassName::ModulesSetLoadErrorCallback(const errorCallback&& func) {\
+		_modulesLoadErrorCallback = func;\
+	}\
+	moduleClassName* moduleClassName::LoadModule(const std::string& mod, bool triggerErrorOnFailure) {\
+		std::lock_guard lock(_mutexForLoadedModules);\
+		const std::string path = std::string("modules/") + mod + "/" + mod + "." + #moduleClassName;\
+		if (_loadedModules.find(mod) == _loadedModules.end()) {\
+			moduleClassName* instance = new moduleClassName(path);\
+			if (!instance->_handle) {\
+				if (triggerErrorOnFailure) {\
+					std::ostringstream err;\
+					err << "Module '" << path << "' failed to load with error: " << instance->_error;\
+					_modulesLoadErrorCallback(err.str().c_str());\
+				}\
+				delete instance;\
+				return nullptr;\
+			}\
+			_loadedModules.emplace(mod, instance);\
+			_modulesLoadCallback(instance);\
+		}\
+		return _loadedModules[mod];\
+	}\
+	void moduleClassName::UnloadModule(const std::string& mod) {\
+		std::lock_guard lock(_mutexForLoadedModules);\
+		moduleClassName* modPtr = nullptr;\
+		if (_loadedModules.find(mod) != _loadedModules.end()) {\
+			_modulesUnloadCallback(_loadedModules[mod]);\
+			modPtr = _loadedModules[mod];\
+			delete modPtr;\
+			_loadedModules.erase(mod);\
+		}\
+		if (modPtr) for (auto&[key, modulesList] : _loadedSortedModules) {\
+			if (auto it = std::find(modulesList.begin(), modulesList.end(), modPtr); it != modulesList.end()) {\
+				modulesList.erase(it);\
+			}\
+		}\
+	}\
+	void moduleClassName::ForEachModule(const callback&& func) {\
+		std::lock_guard lock(_mutexForLoadedModules);\
+		for (auto[mod, modulePtr] : _loadedModules) {\
+			func(modulePtr);\
+		}\
+	}\
+	void moduleClassName::ForEachSortedModule(const callback&& func, const std::string& sortedListKey) {\
+		std::lock_guard lock(_mutexForLoadedModules);\
+		for (auto* modulePtr : _loadedSortedModules[sortedListKey]) {\
+			func(modulePtr);\
+		}\
+	}\
+	void moduleClassName::SortModules(const std::function<bool(moduleClassName*, moduleClassName*)>& func, const std::string& sortedListKey) {\
+		std::lock_guard lock(_mutexForLoadedModules);\
+		_loadedSortedModules[sortedListKey].clear();\
+		_loadedSortedModules[sortedListKey].reserve(_loadedModules.size());\
+		for (auto[mod, modulePtr] : _loadedModules) {\
+			_loadedSortedModules[sortedListKey].push_back(modulePtr);\
+		}\
+		std::sort(_loadedSortedModules[sortedListKey].begin(), _loadedSortedModules[sortedListKey].end(), func);\
+	}
+
 #define V4D_MODULE_FUNC(returnType, funcName, ...)\
 		returnType (*funcName)(__VA_ARGS__) = nullptr;
-#define V4D_MODULE_CLASS_BEGIN(moduleClassName, ...)\
-	class moduleClassName {\
+
+#define V4D_MODULE_CLASS_H(moduleClassName, ...)\
+	private:\
+		using callback = std::function<void(moduleClassName*)>;\
+		using errorCallback = std::function<void(const char*)>;\
+		static callback _modulesLoadCallback;\
+		static callback _modulesUnloadCallback;\
+		static errorCallback _modulesLoadErrorCallback;\
+		static std::recursive_mutex _mutexForLoadedModules;\
+		static std::unordered_map<std::string, moduleClassName*> _loadedModules;\
+		static std::unordered_map<std::string, std::vector<moduleClassName*>> _loadedSortedModules;\
+	public:\
+		static void ModulesSetLoadCallback(const callback&& _modulesLoadCallback);\
+		static void ModulesSetUnloadCallback(const callback&& _modulesUnloadCallback);\
+		static void ModulesSetLoadErrorCallback(const errorCallback&& _modulesLoadErrorCallback);\
+		static moduleClassName* LoadModule(const std::string& mod, bool triggerErrorOnFailure = false);\
+		static void UnloadModule(const std::string& mod);\
+		static void ForEachModule(const callback&& func);\
+		static void ForEachSortedModule(const callback&& func, const std::string& sortedListKey = "");\
+		static void SortModules(const std::function<bool(moduleClassName*, moduleClassName*)>& func, const std::string& sortedListKey = "");\
+	private:\
 		__V4D_MODULE_FILE_HANDLER _handle = 0;\
 		__V4D_MODULE_ERR_TYPE _error = 0;\
 		std::string _libPath {""};\
 	public:\
-		class Modules {\
-			using callback = std::function<void(moduleClassName*)>;\
-			using errorCallback = std::function<void(const char*)>;\
-			auto& LoadCallback() const {static callback loadCallback = [](moduleClassName*){}; return loadCallback;}\
-			auto& UnloadCallback() const {static callback unloadCallback = [](moduleClassName*){}; return unloadCallback;}\
-			auto& LoadErrorCallback() const {static errorCallback loadErrorCallback = [](const char* err){std::cerr << err << std::endl;}; return loadErrorCallback;}\
-			auto& LoadedModulesMutex() const {static std::recursive_mutex loadedModulesMutex; return loadedModulesMutex;}\
-			auto& LoadedModules() const {static std::unordered_map<std::string, moduleClassName*> loadedModules {}; return loadedModules;}\
-			auto& LoadedModulesSorted() const {static std::unordered_map<std::string, std::vector<moduleClassName*>> loadedModulesSortedLists {}; return loadedModulesSortedLists;}\
-			auto& LoadedModulesSorted(const std::string& sortedListKey) const {return LoadedModulesSorted()[sortedListKey];}\
-		public:\
-			void SetLoadCallback(const callback&& loadCallback) {LoadCallback() = loadCallback;}\
-			void SetUnloadCallback(const callback&& unloadCallback) {UnloadCallback() = unloadCallback;}\
-			void SetLoadErrorCallback(const errorCallback&& loadErrorCallback) {LoadErrorCallback() = loadErrorCallback;}\
-			moduleClassName* Load(const std::string& mod, bool triggerErrorOnFailure = false) {\
-				std::lock_guard lock(LoadedModulesMutex());\
-				const std::string path = std::string("modules/") + mod + "/" + mod + "." + #moduleClassName;\
-				if (LoadedModules().find(mod) == LoadedModules().end()) {\
-					moduleClassName* instance = new moduleClassName(path);\
-					if (!instance->_handle) {\
-						if (triggerErrorOnFailure) {\
-							std::ostringstream err;\
-							err << "Module '" << path << "' failed to load with error: " << instance->_error;\
-							LoadErrorCallback()(err.str().c_str());\
-						}\
-						delete instance;\
-						return nullptr;\
-					}\
-					LoadedModules().emplace(mod, instance);\
-					LoadCallback()(instance);\
-				}\
-				return LoadedModules()[mod];\
-			}\
-			void Unload(const std::string& mod) {\
-				std::lock_guard lock(LoadedModulesMutex());\
-				moduleClassName* modPtr = nullptr;\
-				if (LoadedModules().find(mod) != LoadedModules().end()) {\
-					UnloadCallback()(LoadedModules()[mod]);\
-					modPtr = LoadedModules()[mod];\
-					delete modPtr;\
-					LoadedModules().erase(mod);\
-				}\
-				if (modPtr) for (auto&[key, modulesList] : LoadedModulesSorted()) {\
-					if (auto it = std::find(modulesList.begin(), modulesList.end(), modPtr); it != modulesList.end()) {\
-						modulesList.erase(it);\
-					}\
-				}\
-			}\
-			void ForEach(const callback&& func) const {\
-				std::lock_guard lock(LoadedModulesMutex());\
-				for (auto[mod, modulePtr] : LoadedModules()) {\
-					func(modulePtr);\
-				}\
-			}\
-			void ForEachSorted(const callback&& func, const std::string& sortedListKey = "") const {\
-				std::lock_guard lock(LoadedModulesMutex());\
-				for (auto* modulePtr : LoadedModulesSorted(sortedListKey)) {\
-					func(modulePtr);\
-				}\
-			}\
-			void Sort(const std::function<bool(moduleClassName*, moduleClassName*)>& func, const std::string& sortedListKey = "") {\
-				std::lock_guard lock(LoadedModulesMutex());\
-				LoadedModulesSorted(sortedListKey).clear();\
-				LoadedModulesSorted(sortedListKey).reserve(LoadedModules().size());\
-				for (auto[mod, modulePtr] : LoadedModules()) {\
-					LoadedModulesSorted(sortedListKey).push_back(modulePtr);\
-				}\
-				std::sort(LoadedModulesSorted(sortedListKey).begin(), LoadedModulesSorted(sortedListKey).end(), func);\
-			}\
-		};\
 		moduleClassName(const std::string& filePath) {\
 			_libPath = filePath + __V4D_MODULE_FILE_EXT;\
 			if (v4d::io::FilePath::FileExists(_libPath+".new")) {\
@@ -190,5 +213,3 @@
 			if (ModuleUnload) ModuleUnload();\
 			if (_handle) __V4D_MODULE_UNLOAD(_handle);\
 		}
-#define V4D_MODULE_CLASS_END() \
-	};

@@ -1,4 +1,5 @@
 #pragma once
 
-#include "modules/V4D_Input0.hpp"
-#include "modules/V4D_Rendering0.hpp"
+#include "modules/V4D_Input.h"
+#include "modules/V4D_Renderer.h"
+#include "modules/V4D_Game.h"

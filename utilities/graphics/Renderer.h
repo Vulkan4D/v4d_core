@@ -5,7 +5,7 @@ namespace v4d::graphics {
 	using namespace v4d::graphics::vulkan;
 
 	class V4DLIB Renderer : public Instance {
-	protected: // class members
+	public: // class members
 
 		// Main Render Surface
 		VkSurfaceKHR surface;
@@ -14,53 +14,44 @@ namespace v4d::graphics {
 		PhysicalDevice* renderingPhysicalDevice = nullptr;
 		Device* renderingDevice = nullptr;
 		
-		// Queues
-		Queue graphicsQueue, lowPriorityGraphicsQueue, 
-			#ifdef V4D_RENDERER_MAIN_COMPUTE_COMMANDS_ENABLED
-				computeQueue,  
-			#endif
-			lowPriorityComputeQueue, 
-			presentQueue,
-			transferQueue;
-
-		// Command buffers
-		std::vector<VkCommandBuffer> graphicsCommandBuffers, graphicsDynamicCommandBuffers;
-		#ifdef V4D_RENDERER_MAIN_COMPUTE_COMMANDS_ENABLED
-			std::vector<VkCommandBuffer> computeCommandBuffers, computeDynamicCommandBuffers;
-		#endif
-		#if V4D_RENDERER_LOW_PRIORITY_RECORDED_COMMANDS_ENABLED
-			VkCommandBuffer lowPriorityGraphicsCommandBuffer, lowPriorityComputeCommandBuffer;
-		#endif
+		std::vector<DeviceQueueInfo> queuesInfo {
+			{
+				"graphics",
+				VK_QUEUE_GRAPHICS_BIT,
+				2, // Count
+				{1.0f, 1.0f}, // Priorities (one per queue count)
+				&surface // Putting a surface here forces the need for a presentation feature on that specific queue family
+			},
+			{
+				"compute",
+				VK_QUEUE_COMPUTE_BIT,
+				1, // Count
+				{1.0f},
+			},
+			{
+				"transfer",
+				VK_QUEUE_TRANSFER_BIT,
+			},
+		};
 
 		// Swap Chains
 		SwapChain* swapChain = nullptr;
-
-		// Synchronizations
-		std::vector<VkSemaphore> imageAvailableSemaphores;
-		std::vector<VkSemaphore> staticRenderFinishedSemaphores;
-		std::vector<VkSemaphore> dynamicRenderFinishedSemaphores;
-		#ifdef V4D_RENDERER_MAIN_COMPUTE_COMMANDS_ENABLED
-			std::vector<VkSemaphore> computeFinishedSemaphores;
-			std::vector<VkSemaphore> dynamicComputeFinishedSemaphores;
-		#endif
-		std::vector<VkFence> graphicsFences;
-		std::vector<VkFence> computeFences;
 		size_t currentFrameInFlight = 0;
 		const int NB_FRAMES_IN_FLIGHT = 2;
-		
-		// States
-		std::recursive_mutex renderingMutex, lowPriorityRenderingMutex;
-		bool mustReload = false;
-		bool graphicsLoadedToDevice = false;
-		std::thread::id renderThreadId = std::this_thread::get_id();
 		
 		// Descriptor sets
 		VkDescriptorPool descriptorPool;
 		std::map<std::string, DescriptorSet*> descriptorSets {};
 		std::vector<VkDescriptorSet> vkDescriptorSets {};
-
-	public: // Preferences
 		
+	public: // States
+		bool mustReload = false;
+		bool graphicsLoadedToDevice = false;
+		std::thread::id renderThreadId = std::this_thread::get_id();
+		std::recursive_mutex renderMutex1, renderMutex2;
+		
+	public: // Preferences
+
 		std::vector<VkPresentModeKHR> preferredPresentModes {
 			// VK_PRESENT_MODE_MAILBOX_KHR,	// TripleBuffering (No Tearing, low latency)
 			// VK_PRESENT_MODE_FIFO_KHR,	// VSync ON (No Tearing, more latency)
@@ -71,7 +62,7 @@ namespace v4d::graphics {
 			{VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR},
 		};
 
-	private: // Device Extensions and features
+	public: // Device Extensions and features
 		std::vector<const char*> requiredDeviceExtensions { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 		std::vector<const char*> optionalDeviceExtensions {};
 		std::vector<const char*> deviceExtensions {};
@@ -92,69 +83,41 @@ namespace v4d::graphics {
 			memcpy(((byte*)enabledFeatures+offset), enabledFeaturesData, sizeof(enabledFeaturesData));
 		}
 		
-	public: 
 		// These objects will be modified to keep only the supported & enabled values
 		VkPhysicalDeviceFeatures deviceFeatures {};
 		VkPhysicalDeviceVulkan12Features vulkan12DeviceFeatures {};
 		VkPhysicalDeviceRayTracingFeaturesKHR rayTracingFeatures {};
 		
-		VkPhysicalDeviceVulkan12Features* EnableVulkan12DeviceFeatures() {
-			vulkan12DeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-			return &vulkan12DeviceFeatures;
-		}
-		VkPhysicalDeviceRayTracingFeaturesKHR* EnableRayTracingFeatures() {
-			rayTracingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
-			return &rayTracingFeatures;
-		}
+		VkPhysicalDeviceVulkan12Features* EnableVulkan12DeviceFeatures();
+		VkPhysicalDeviceRayTracingFeaturesKHR* EnableRayTracingFeatures();
 		
 		void RequiredDeviceExtension(const char* ext);
 		void OptionalDeviceExtension(const char* ext);
 		bool IsDeviceExtensionEnabled(const char* ext);
 
-	protected: // Virtual methods
+	public: // Virtual methods
 		// Init
-		virtual void ScorePhysicalDeviceSelection(int& score, PhysicalDevice* physicalDevice) = 0;
-		virtual void Init() = 0;
-		virtual void InitDeviceFeatures() = 0;
-		virtual void Info() = 0;
-		virtual void InitLayouts() = 0;
-		virtual void ConfigureShaders() = 0;
+		virtual void Init();
+		virtual void InitDeviceFeatures();
+		virtual void ConfigureRenderer();
+		virtual void InitLayouts();
+		virtual void ConfigureShaders();
 		
 		// Scene
-		virtual void ReadShaders() = 0;
-		virtual void LoadScene() = 0;
-		virtual void UnloadScene() = 0;
+		virtual void ReadShaders();
+		virtual void LoadScene();
+		virtual void UnloadScene();
 		
 		// Resources
-		virtual void CreateResources() = 0;
-		virtual void DestroyResources() = 0;
-		virtual void AllocateBuffers() = 0;
-		virtual void FreeBuffers() = 0;
+		virtual void CreateResources();
+		virtual void DestroyResources();
+		virtual void AllocateBuffers();
+		virtual void FreeBuffers();
 		
 		// Pipelines
-		virtual void CreatePipelines() = 0;
-		virtual void DestroyPipelines() = 0;
+		virtual void CreatePipelines();
+		virtual void DestroyPipelines();
 		
-		// Update
-		virtual void FrameUpdate(uint imageIndex) = 0;
-		virtual void LowPriorityFrameUpdate() = 0;
-		virtual void BeforeGraphics() {};
-		
-		// Commands
-		virtual void RunDynamicGraphics(VkCommandBuffer) = 0;
-		virtual void RecordGraphicsCommandBuffer(VkCommandBuffer, int imageIndex) = 0;
-		virtual void RunDynamicLowPriorityCompute(VkCommandBuffer) = 0;
-		virtual void RunDynamicLowPriorityGraphics(VkCommandBuffer) = 0;
-		
-		#if V4D_RENDERER_LOW_PRIORITY_RECORDED_COMMANDS_ENABLED
-			virtual void RecordLowPriorityComputeCommandBuffer(VkCommandBuffer) {}
-			virtual void RecordLowPriorityGraphicsCommandBuffer(VkCommandBuffer) {}
-		#endif
-		#ifdef V4D_RENDERER_MAIN_COMPUTE_COMMANDS_ENABLED
-			virtual void RecordComputeCommandBuffer(VkCommandBuffer, int imageIndex) {}
-			virtual void RunDynamicCompute(VkCommandBuffer) {}
-		#endif
-
 	protected: // Virtual INIT Methods
 
 		virtual void CreateDevices();
@@ -181,50 +144,47 @@ namespace v4d::graphics {
 
 	public: // Helper methods
 	
-		VkCommandBuffer BeginSingleTimeCommands(Queue);
-		void EndSingleTimeCommands(Queue, VkCommandBuffer);
-		void RunSingleTimeCommands(Queue, std::function<void(VkCommandBuffer)>&&);
+		VkCommandBuffer BeginSingleTimeCommands(const Queue&);
+		void EndSingleTimeCommands(const Queue&, VkCommandBuffer);
+		void RunSingleTimeCommands(const Queue&, std::function<void(VkCommandBuffer)>&&);
 
-		void AllocateBufferStaged(Queue, Buffer&);
-		void AllocateBuffersStaged(Queue, std::vector<Buffer>&);
-		void AllocateBuffersStaged(Queue, std::vector<Buffer*>&);
+		void AllocateBufferStaged(const Queue&, Buffer&);
+		void AllocateBuffersStaged(const Queue&, std::vector<Buffer>&);
+		void AllocateBuffersStaged(const Queue&, std::vector<Buffer*>&);
 		
-		void AllocateBufferStaged(Buffer&);
-		void AllocateBuffersStaged(std::vector<Buffer>&);
-		void AllocateBuffersStaged(std::vector<Buffer*>&);
+		// void AllocateBufferStaged(Buffer&);
+		// void AllocateBuffersStaged(std::vector<Buffer>&);
+		// void AllocateBuffersStaged(std::vector<Buffer*>&);
 
-		void TransitionImageLayout(Image image, VkImageLayout oldLayout, VkImageLayout newLayout);
+		// void TransitionImageLayout(Image image, VkImageLayout oldLayout, VkImageLayout newLayout);
 		void TransitionImageLayout(VkCommandBuffer commandBuffer, Image image, VkImageLayout oldLayout, VkImageLayout newLayout);
-		void TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels = 1, uint32_t layerCount = 1, VkImageAspectFlags aspectMask = 0);
+		// void TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels = 1, uint32_t layerCount = 1, VkImageAspectFlags aspectMask = 0);
 		void TransitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels = 1, uint32_t layerCount = 1, VkImageAspectFlags aspectMask = 0);
 
-		void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
-		void CopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+		// void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+		// void CopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
 		// void GenerateMipmaps(Texture2D* texture);
 
-		void GenerateMipmaps(VkImage image, VkFormat imageFormat, int32_t width, int32_t height, uint32_t mipLevels);
+		// void GenerateMipmaps(VkImage image, VkFormat imageFormat, int32_t width, int32_t height, uint32_t mipLevels);
 
-	protected: // Init/Reset Methods
+	public: // Init//LoadReset Methods
 		virtual void RecreateSwapChains();
 		
-	public: // Init/Load/Reset Methods
 		virtual void InitRenderer();
 		virtual void LoadRenderer();
 		virtual void UnloadRenderer();
 		virtual void ReloadRenderer();
 		
-	protected:
 		virtual void LoadGraphicsToDevice();
 		virtual void UnloadGraphicsFromDevice();
 		
 	public: // Constructor & Destructor
-		Renderer(Loader* loader, const char* applicationName, uint applicationVersion, Window* window);
+		Renderer(Loader* loader, const char* applicationName, uint applicationVersion);
 		virtual ~Renderer() override;
 		
 	public: // Public Render Methods
 		virtual void Render();
-		virtual void RenderLowPriority();
 	};
 }
 
@@ -234,45 +194,3 @@ DEFINE_EVENT(v4d::graphics::renderer, Load, Renderer*)
 DEFINE_EVENT(v4d::graphics::renderer, Unload, Renderer*)
 DEFINE_EVENT(v4d::graphics::renderer, Reload, Renderer*)
 DEFINE_EVENT(v4d::graphics::renderer, Resize, Renderer*)
-
-
-/* 
-#include <v4d.h>
-
-class MyRenderer : public v4d::graphics::Renderer {
-	using v4d::graphics::Renderer::Renderer;
-	
-private: // Init
-	void ScorePhysicalDeviceSelection(int& score, PhysicalDevice* physicalDevice) override {}
-	void Init() override {}
-	void Info() override {}
-	void InitLayouts() override {}
-	void ConfigureShaders() override {}
-
-public: // Scene configuration
-	void ReadShaders() override {}
-	void LoadScene() override {}
-	void UnloadScene() override {}
-	
-private: // Resources
-	void CreateResources() override {}
-	void DestroyResources() override {}
-	void AllocateBuffers() override {}
-	void FreeBuffers() override {}
-
-private: // Graphics configuration
-	void CreatePipelines() override {}
-	void DestroyPipelines() override {}
-	
-public: // Update
-	void FrameUpdate(uint imageIndex) override {}
-	void LowPriorityFrameUpdate() override {}
-	void BeforeGraphics() override {}
-	
-private: // Commands
-	void RunDynamicGraphics(VkCommandBuffer commandBuffer) override {}
-	void RecordGraphicsCommandBuffer(VkCommandBuffer commandBuffer, int imageIndex) override {}
-	void RunDynamicLowPriorityCompute(VkCommandBuffer commandBuffer) override {}
-	void RunDynamicLowPriorityGraphics(VkCommandBuffer commandBuffer) override {}
-	
-*/

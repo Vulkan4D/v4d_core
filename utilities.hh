@@ -24,6 +24,7 @@
 // Vulkan Graphics utilities
 #include "utilities/graphics/vulkan/Loader.h"
 #include "utilities/graphics/vulkan/PhysicalDevice.h"
+#include "utilities/graphics/vulkan/Queue.hpp"
 #include "utilities/graphics/vulkan/Device.h"
 #include "utilities/graphics/vulkan/Instance.h"
 #include "utilities/graphics/vulkan/Image.h"

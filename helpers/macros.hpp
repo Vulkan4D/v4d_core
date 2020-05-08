@@ -47,14 +47,6 @@
 #else// Project/Module
 	#define V4DLIB DLLIMPORT
 #endif
-#ifdef _V4D_MODULE
-	#define V4DMODULE EXTERNC DLLEXPORT
-	// https://www.tldp.org/HOWTO/pdf/C++-dlopen.pdf
-	// #define V4DMODULE_CLASS(className) EXTERNCPP class DLLEXPORT className
-#else// Project/Core
-	#define V4DMODULE
-	// #define V4DMODULE_CLASS(className)
-#endif
 
 
 //////////////////////////////////////////////////////////
@@ -92,7 +84,7 @@
 
 
 //////////////////////////////////////////////////////////
-// FOREACH macro (maximum of 24 arguments)
+// FOREACH macro (maximum of 32 arguments, may increase in the future if needed)
 
 #define __FE_1(__FE, X) __FE(X) 
 #define __FE_2(__FE, X, ...) __FE(X)__FE_1(__FE, __VA_ARGS__)
@@ -118,8 +110,16 @@
 #define __FE_22(__FE, X, ...) __FE(X)__FE_21(__FE, __VA_ARGS__)
 #define __FE_23(__FE, X, ...) __FE(X)__FE_22(__FE, __VA_ARGS__)
 #define __FE_24(__FE, X, ...) __FE(X)__FE_23(__FE, __VA_ARGS__)
-#define __FOR_EACH(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,_16,_17,_18,_19,_20,_21,_22,_23,_24,name,...) name 
-#define FOR_EACH(_MACRO,...) __FOR_EACH(__VA_ARGS__,__FE_24,__FE_23,__FE_22,__FE_21,__FE_20,__FE_19,__FE_18,__FE_17,__FE_16,__FE_15,__FE_14,__FE_13,__FE_12,__FE_11,__FE_10,__FE_9,__FE_8,__FE_7,__FE_6,__FE_5,__FE_4,__FE_3,__FE_2,__FE_1)(_MACRO,__VA_ARGS__)
+#define __FE_25(__FE, X, ...) __FE(X)__FE_24(__FE, __VA_ARGS__)
+#define __FE_26(__FE, X, ...) __FE(X)__FE_25(__FE, __VA_ARGS__)
+#define __FE_27(__FE, X, ...) __FE(X)__FE_26(__FE, __VA_ARGS__)
+#define __FE_28(__FE, X, ...) __FE(X)__FE_27(__FE, __VA_ARGS__)
+#define __FE_29(__FE, X, ...) __FE(X)__FE_28(__FE, __VA_ARGS__)
+#define __FE_30(__FE, X, ...) __FE(X)__FE_29(__FE, __VA_ARGS__)
+#define __FE_31(__FE, X, ...) __FE(X)__FE_30(__FE, __VA_ARGS__)
+#define __FE_32(__FE, X, ...) __FE(X)__FE_31(__FE, __VA_ARGS__)
+#define __FOR_EACH(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,_16,_17,_18,_19,_20,_21,_22,_23,_24,_25,_26,_27,_28,_29,_30,_31,_32,macroName,...) macroName 
+#define FOR_EACH(_MACRO,...) __FOR_EACH(__VA_ARGS__,__FE_32,__FE_31,__FE_30,__FE_29,__FE_28,__FE_27,__FE_26,__FE_25,__FE_24,__FE_23,__FE_22,__FE_21,__FE_20,__FE_19,__FE_18,__FE_17,__FE_16,__FE_15,__FE_14,__FE_13,__FE_12,__FE_11,__FE_10,__FE_9,__FE_8,__FE_7,__FE_6,__FE_5,__FE_4,__FE_3,__FE_2,__FE_1)(_MACRO,__VA_ARGS__)
 
 
 //////////////////////////////////////////////////////////
