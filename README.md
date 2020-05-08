@@ -1,43 +1,40 @@
 # v4d_core
+
 Source files for **Vulkan4D Core Library** (Core Utilities and Helper functions)
 
-These source files compile into `v4d.dll`
+These source files compile into `v4d.dll` (or `v4d.so` under Linux)
 
 It must be linked with when building a game using the Vulkan4D Engine.
 
-
-# Vulkan4D
-Vulkan4D is a revolutionary game engine built from the ground up for Space Games/Simulations and with Vulkan as the sole rendering API, so that we can take full advantage of the new technology. 
-
-
-### Project Structure
-- `Core` Compiled into `v4d.dll` and linked into the Project
-- `Helpers` Simple-but-useful header-only source files, compiled into anything that is part of V4D
-- `Modules` Game functionalities (and plugins/mods) compiled into individual .dll files that are loaded at runtime
-- `Libraries` Other libraries used in the project
-- `Resources` Icons, Textures, Music, ...
-- `Project` App that puts it all together to run the game
-- `Tools` Useful tools to help programmers (build scripts, shader compiler, ...)
+It may also be linked to modules when needed
 
 
 ## V4D Core Utilities
 
 Core Utilities are a solid part of Vulkan4D's Core to provide developers with interfaces to the Hardware. 
 
-They are split into 5 categories (`Audio`, `Graphics`, `IO`, `Networking`, `Processing`)
+They are split into 7 categories (`Audio`, `Graphics`, `Crypto`, `Data`, `IO`, `Networking`, `Processing`)
 
+## V4D Modules (modding system)
+
+Vulkan4D is modular and built from the ground up to fully support Modding. 
+
+A module may contain resources and shared libraries that are loaded at runtime into the application.
+
+See modding documentation in [the module sample repository](https://github.com/Vulkan4D/v4d_module_sample)
 
 ## File Structure
 The core consists of the following structure :
-- `helpers/*` Contains header-only `.hpp` files with helper methods
-- `utilities/*` Contains subdirectories for utility categories with all their utilities, each consisting of up to three files with the same [Utility] name and different extensions (`.cpp`, `.h`, `.cxx`) and other subdirectories such as `assets/`
-- `v4d.h` Main Header file to be included in anything that is part of V4D
-- `Core.h` Core header file
-- `Core.cpp` Core Source File compiled only in the core library
-- `tests.cxx` Unit Tests
-- `README.md` this documentation
 - `common/*` common headers (mostly std stuff)
-- `*.hh` Header files included in v4d.h
+- `helpers/*` Contains header-only `.hpp` files with helper methods
+- `modules/*` Contains module classes for modding
+- `utilities/*` Contains subdirectories for utility categories with all their utilities
+- `Core.cpp` Core Source File compiled only in the core library
+- `Core.h` Core header file
+- `v4d.h` Main Header file to be included in anything that is part of V4D
+- `tests.cxx` Core Unit Tests
+- `README.md` this documentation
+- `*.hh` Grouped Header files included in v4d.h
 
 
 ## Coding Standards
@@ -105,39 +102,41 @@ The core consists of the following structure :
 ### Method execution order
 #### Load
  - main()
-    - Instantiate V4DRenderer
+    - Instantiate V4D_Renderer
     - Renderer:: `InitRenderer` ()
-        - V4DRenderer:: `Init` ()
-        - V4DRenderer:: `InitLayouts` ()
-        - V4DRenderer:: `ConfigureShaders` ()
-    - V4DRenderer:: `ReadShaders` ()
-    - V4DRenderer:: `LoadScene` ()
+        - V4D_Renderer:: `Init` ()
+        - V4D_Renderer:: `InitLayouts` ()
+        - V4D_Renderer:: `ConfigureShaders` ()
+    - Renderer:: `ReadShaders` ()
+        - V4D_Renderer:: `ReadShaders` ()
+    - Renderer:: `LoadScene` ()
+        - V4D_Renderer:: `LoadScene` ()
     - Renderer:: `LoadRenderer` ()
         - Renderer:: `CreateDevices` ()
-            - V4DRenderer:: `InitDeviceFeatures` ()
-        - V4DRenderer:: `ConfigureRenderer` ()
+            - V4D_Renderer:: `InitDeviceFeatures` ()
+        - V4D_Renderer:: `ConfigureRenderer` ()
         - Renderer:: `CreateSyncObjects` ()
         - Renderer:: `CreateSwapChain` ()
         - Renderer:: `LoadGraphicsToDevice` ()
             - Renderer:: `CreateCommandPools` ()
-            - V4DRenderer:: `AllocateBuffers` ()
-            - V4DRenderer:: `CreateResources` ()
+            - V4D_Renderer:: `AllocateBuffers` ()
+            - V4D_Renderer:: `CreateResources` ()
             - Renderer:: `CreateDescriptorSets` ()
                 - Renderer:: `UpdateDescriptorSets` ()
-            - V4DRenderer:: `CreatePipelines` ()
+            - V4D_Renderer:: `CreatePipelines` ()
             - EVENT `v4d::graphics::renderer::event::PipelinesCreate` (Renderer*)
-            - Renderer:: `CreateCommandBuffers` ()
+            - V4D_Renderer:: `CreateCommandBuffers` ()
         - EVENT `v4d::graphics::renderer::event::Load` (Renderer*)
 #### Unload
  - Renderer:: `UnloadRenderer` ()
     - EVENT `v4d::graphics::renderer::event::Unload` (Renderer*)
     - Renderer:: `UnloadGraphicsFromDevice` ()
-        - Renderer:: `DestroyCommandBuffers` ()
+        - V4D_Renderer:: `DestroyCommandBuffers` ()
         - EVENT `v4d::graphics::renderer::event::PipelinesDestroy` (Renderer*)
-        - V4DRenderer:: `DestroyPipelines` ()
+        - V4D_Renderer:: `DestroyPipelines` ()
         - Renderer:: `DestroyDescriptorSets` ()
-        - V4DRenderer:: `DestroyResources` ()
-        - V4DRenderer:: `FreeBuffers` ()
+        - V4D_Renderer:: `DestroyResources` ()
+        - V4D_Renderer:: `FreeBuffers` ()
         - Renderer:: `DestroyCommandPools` ()
     - Renderer:: `DestroySwapChain` ()
     - Renderer:: `DestroySyncObjects` ()
@@ -146,64 +145,61 @@ The core consists of the following structure :
  - Renderer:: `ReloadRenderer` ()
     - EVENT `v4d::graphics::renderer::event::Unload` (Renderer*)
     - Renderer:: `UnloadGraphicsFromDevice` ()
-        - Renderer:: `DestroyCommandBuffers` ()
+        - V4D_Renderer:: `DestroyCommandBuffers` ()
         - EVENT `v4d::graphics::renderer::event::PipelinesDestroy` (Renderer*)
-        - V4DRenderer:: `DestroyPipelines` ()
+        - V4D_Renderer:: `DestroyPipelines` ()
         - Renderer:: `DestroyDescriptorSets` ()
-        - V4DRenderer:: `DestroyResources` ()
-        - V4DRenderer:: `FreeBuffers` ()
+        - V4D_Renderer:: `DestroyResources` ()
+        - V4D_Renderer:: `FreeBuffers` ()
         - Renderer:: `DestroyCommandPools` ()
     - Renderer:: `DestroySwapChain` ()
     - Renderer:: `DestroySyncObjects` ()
     - Renderer:: `DestroyDevices` ()
     - EVENT `v4d::graphics::renderer::event::Reload` (Renderer*)
-    - V4DRenderer:: `ReadShaders` ()
+    - V4D_Renderer:: `ReadShaders` ()
     - Renderer:: `CreateDevices` ()
-        - V4DRenderer:: `InitDeviceFeatures` ()
-    - V4DRenderer:: `ConfigureRenderer` ()
+        - V4D_Renderer:: `InitDeviceFeatures` ()
+    - V4D_Renderer:: `ConfigureRenderer` ()
     - Renderer:: `CreateSyncObjects` ()
     - Renderer:: `CreateSwapChain` ()
     - Renderer:: `LoadGraphicsToDevice` ()
         - Renderer:: `CreateCommandPools` ()
-        - V4DRenderer:: `AllocateBuffers` ()
-        - V4DRenderer:: `CreateResources` ()
+        - V4D_Renderer:: `AllocateBuffers` ()
+        - V4D_Renderer:: `CreateResources` ()
         - Renderer:: `CreateDescriptorSets` ()
             - Renderer:: `UpdateDescriptorSets` ()
-        - V4DRenderer:: `CreatePipelines` ()
+        - V4D_Renderer:: `CreatePipelines` ()
         - EVENT `v4d::graphics::renderer::event::PipelinesCreate` (Renderer*)
-        - Renderer:: `CreateCommandBuffers` ()
+        - V4D_Renderer:: `CreateCommandBuffers` ()
     - EVENT `v4d::graphics::renderer::event::Load` (Renderer*)
 #### Screen Resize
  - Renderer:: `RecreateSwapChains` ()
     - EVENT `v4d::graphics::renderer::event::Unload` (Renderer*)
     - Renderer:: `UnloadGraphicsFromDevice` ()
-        - Renderer:: `DestroyCommandBuffers` ()
+        - V4D_Renderer:: `DestroyCommandBuffers` ()
         - EVENT `v4d::graphics::renderer::event::PipelinesDestroy` (Renderer*)
-        - V4DRenderer:: `DestroyPipelines` ()
+        - V4D_Renderer:: `DestroyPipelines` ()
         - Renderer:: `DestroyDescriptorSets` ()
-        - V4DRenderer:: `DestroyResources` ()
-        - V4DRenderer:: `FreeBuffers` ()
+        - V4D_Renderer:: `DestroyResources` ()
+        - V4D_Renderer:: `FreeBuffers` ()
         - Renderer:: `DestroyCommandPools` ()
     - EVENT `v4d::graphics::renderer::event::Resize` (Renderer*)
     - Renderer:: `CreateSwapChain` ()
     - Renderer:: `LoadGraphicsToDevice` ()
         - Renderer:: `CreateCommandPools` ()
-        - V4DRenderer:: `AllocateBuffers` ()
-        - V4DRenderer:: `CreateResources` ()
+        - V4D_Renderer:: `AllocateBuffers` ()
+        - V4D_Renderer:: `CreateResources` ()
         - Renderer:: `CreateDescriptorSets` ()
             - Renderer:: `UpdateDescriptorSets` ()
-        - V4DRenderer:: `CreatePipelines` ()
+        - V4D_Renderer:: `CreatePipelines` ()
         - EVENT `v4d::graphics::renderer::event::PipelinesCreate` (Renderer*)
-        - Renderer:: `CreateCommandBuffers` ()
+        - V4D_Renderer:: `CreateCommandBuffers` ()
     - EVENT `v4d::graphics::renderer::event::Load` (Renderer*)
 #### Frame Update
  - main()
     - Renderer:: `Render` ()
         - [ conditional call of `RecreateSwapChains`() and return ]
         - [ conditional call of `ReloadRenderer`() and return ]
-        - V4DRenderer:: `FrameUpdate`()
-        - V4DRenderer:: `BeforeGraphics`()
-        - V4DRenderer:: `RunDynamicGraphics`()
-        - *( submit dynamic commands, wait for semaphores, then submit pre-recorded commands )*
-        - *( present )*
+        - V4D_Renderer:: `Render`()
+
 

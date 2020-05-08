@@ -18,19 +18,17 @@ namespace v4d::graphics {
 			{
 				"graphics",
 				VK_QUEUE_GRAPHICS_BIT,
-				2, // Count
-				{1.0f, 1.0f}, // Priorities (one per queue count)
-				&surface // Putting a surface here forces the need for a presentation feature on that specific queue family
-			},
-			{
-				"compute",
-				VK_QUEUE_COMPUTE_BIT,
 				1, // Count
-				{1.0f},
+				{1.0f}, // Priorities (one per queue count)
+				&surface // Putting a surface here forces the need for a presentation feature on that specific queue family
 			},
 			{
 				"transfer",
 				VK_QUEUE_TRANSFER_BIT,
+			},
+			{
+				"compute",
+				VK_QUEUE_COMPUTE_BIT,
 			},
 		};
 

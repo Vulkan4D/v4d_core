@@ -30,7 +30,6 @@ bool Renderer::IsDeviceExtensionEnabled(const char* ext) {
 #pragma region Virtual INIT Methods
 
 void Renderer::CreateDevices() {
-	LOG_VERBOSE(" [Renderer] CreateDevices()")
 	
 	// Select The Best Main PhysicalDevice using a score system
 	renderingPhysicalDevice = SelectSuitablePhysicalDevice([this](int& score, PhysicalDevice* physicalDevice){
@@ -77,7 +76,9 @@ void Renderer::CreateDevices() {
 	}
 	
 	// Prepare Device Features (and disable unsupported features)
+	
 	InitDeviceFeatures();
+	
 	FilterSupportedDeviceFeatures(&deviceFeatures, renderingPhysicalDevice->GetFeatures());
 	void* pNext = nullptr;
 	if (
@@ -111,13 +112,11 @@ void Renderer::CreateDevices() {
 }
 
 void Renderer::DestroyDevices() {
-	LOG_VERBOSE(" [Renderer] DestroyDevices()")
 	
 	delete renderingDevice;
 }
 
 void Renderer::CreateSyncObjects() {
-	LOG_VERBOSE(" [Renderer] CreateSyncObjects()")
 	
 	V4D_Renderer::ForEachSortedModule([this](auto* mod){
 		if (mod->CreateSyncObjects) mod->CreateSyncObjects();
@@ -125,7 +124,6 @@ void Renderer::CreateSyncObjects() {
 }
 
 void Renderer::DestroySyncObjects() {
-	LOG_VERBOSE(" [Renderer] DestroySyncObjects()")
 	
 	V4D_Renderer::ForEachSortedModule([this](auto* mod){
 		if (mod->DestroySyncObjects) mod->DestroySyncObjects();
@@ -133,7 +131,6 @@ void Renderer::DestroySyncObjects() {
 }
 
 void Renderer::CreateCommandPools() {
-	LOG_VERBOSE(" [Renderer] CreateCommandPools()")
 	
 	// V4D_Renderer::ForEachSortedModule([this](auto* mod){
 	// 	if (mod->CreateCommandPools) mod->CreateCommandPools();
@@ -149,7 +146,6 @@ void Renderer::CreateCommandPools() {
 }
 
 void Renderer::DestroyCommandPools() {
-	LOG_VERBOSE(" [Renderer] DestroyCommandPools()")
 	
 	// V4D_Renderer::ForEachSortedModule([this](auto* mod){
 	// 	if (mod->DestroyCommandPools) mod->DestroyCommandPools();
@@ -165,7 +161,6 @@ void Renderer::DestroyCommandPools() {
 }
 
 void Renderer::CreateDescriptorSets() {
-	LOG_VERBOSE(" [Renderer] CreateDescriptorSets()")
 	
 	for (auto[name,set] : descriptorSets) {
 		set->CreateDescriptorSetLayout(renderingDevice);
@@ -215,7 +210,6 @@ void Renderer::CreateDescriptorSets() {
 }
 
 void Renderer::DestroyDescriptorSets() {
-	LOG_VERBOSE(" [Renderer] DestroyDescriptorSets()")
 	
 	// Descriptor Sets
 	if (descriptorSets.size() > 0) {
@@ -227,7 +221,6 @@ void Renderer::DestroyDescriptorSets() {
 }
 
 void Renderer::UpdateDescriptorSets() {
-	LOG_VERBOSE(" [Renderer] UpdateDescriptorSets()")
 	
 	if (descriptorSets.size() > 0) {
 		std::vector<VkWriteDescriptorSet> descriptorWrites {};
@@ -253,7 +246,6 @@ void Renderer::UpdateDescriptorSet(DescriptorSet* set, const std::vector<uint32_
 }
 
 bool Renderer::CreateSwapChain() {
-	LOG_VERBOSE(" [Renderer] CreateSwapChain()")
 	
 	// Put old swapchain in a temporary pointer and delete it after creating new swapchain
 	SwapChain* oldSwapChain = swapChain;
@@ -293,24 +285,18 @@ bool Renderer::CreateSwapChain() {
 }
 
 void Renderer::DestroySwapChain() {
-	LOG_VERBOSE(" [Renderer] DestroySwapChain()")
-	
 	swapChain->Destroy();
 	delete swapChain;
 	swapChain = nullptr;
 }
 
 void Renderer::CreateCommandBuffers() {
-	LOG_VERBOSE(" [Renderer] CreateCommandBuffers()")
-	
 	V4D_Renderer::ForEachSortedModule([this](auto* mod){
 		if (mod->CreateCommandBuffers) mod->CreateCommandBuffers();
 	});
 }
 
 void Renderer::DestroyCommandBuffers() {
-	LOG_VERBOSE(" [Renderer] DestroyCommandBuffers()")
-	
 	V4D_Renderer::ForEachSortedModule([this](auto* mod){
 		if (mod->DestroyCommandBuffers) mod->DestroyCommandBuffers();
 	});
@@ -685,7 +671,6 @@ void Renderer::TransitionImageLayout(VkCommandBuffer commandBuffer, VkImage imag
 #pragma region Init/Load/Reset Methods
 
 void Renderer::RecreateSwapChains() {
-	LOG_VERBOSE(" [Renderer] RecreateSwapChains()")
 	std::scoped_lock lock(renderMutex1, renderMutex2);
 	
 	v4d::graphics::renderer::event::Unload(this);
@@ -706,26 +691,14 @@ void Renderer::RecreateSwapChains() {
 }
 
 void Renderer::InitRenderer() {
-	LOG_VERBOSE(" [Renderer] InitRenderer()")
-	
-	LOG_VERBOSE(" [Renderer] -> Init()")
 	Init();
-	
-	LOG_VERBOSE(" [Renderer] -> InitLayouts()")
 	InitLayouts();
-	
-	LOG_VERBOSE(" [Renderer] -> ConfigureShaders()")
 	ConfigureShaders();
 }
 
 void Renderer::LoadRenderer() {
-	LOG_VERBOSE(" [Renderer] LoadRenderer()")
-	
 	CreateDevices();
-	
-	LOG_VERBOSE(" [Renderer] -> ConfigureRenderer()")
 	ConfigureRenderer();
-	
 	CreateSyncObjects();
 	
 	if (!CreateSwapChain()) {
@@ -738,8 +711,6 @@ void Renderer::LoadRenderer() {
 }
 
 void Renderer::UnloadRenderer() {
-	LOG_VERBOSE(" [Renderer] UnloadRenderer()")
-	
 	v4d::graphics::renderer::event::Unload(this);
 	
 	if (graphicsLoadedToDevice)
@@ -751,7 +722,6 @@ void Renderer::UnloadRenderer() {
 }
 
 void Renderer::ReloadRenderer() {
-	LOG_VERBOSE(" [Renderer] ReloadRenderer()")
 	std::scoped_lock lock(renderMutex1, renderMutex2);
 	
 	if (renderThreadId != std::this_thread::get_id()) {
@@ -773,14 +743,10 @@ void Renderer::ReloadRenderer() {
 	
 	v4d::graphics::renderer::event::Reload(this);
 	
-	LOG_VERBOSE(" [Renderer] -> ReadShaders()")
 	ReadShaders();
 	
 	CreateDevices();
-	
-	LOG_VERBOSE(" [Renderer] -> ConfigureRenderer()")
 	ConfigureRenderer();
-	
 	CreateSyncObjects();
 	
 	if (!CreateSwapChain()) {
@@ -793,20 +759,12 @@ void Renderer::ReloadRenderer() {
 }
 
 void Renderer::LoadGraphicsToDevice() {
-	LOG_VERBOSE(" [Renderer] LoadGraphicsToDevice()")
-	
 	CreateCommandPools();
-	
-	LOG_VERBOSE(" [Renderer] -> AllocateBuffers()")
 	AllocateBuffers();
-	
-	LOG_VERBOSE(" [Renderer] -> CreateResources()")
 	CreateResources();
-	
 	CreateDescriptorSets();
-	
-	LOG_VERBOSE(" [Renderer] -> CreatePipelines()")
 	CreatePipelines(); // shaders are assigned here
+	
 	v4d::graphics::renderer::event::PipelinesCreate(this);
 	
 	CreateCommandBuffers(); // objects are rendered here
@@ -816,25 +774,17 @@ void Renderer::LoadGraphicsToDevice() {
 }
 
 void Renderer::UnloadGraphicsFromDevice() {
-	LOG_VERBOSE(" [Renderer] UnloadGraphicsFromDevice()")
-	
 	// Wait for renderingDevice to be idle before destroying everything
 	renderingDevice->DeviceWaitIdle(); // We can also wait for operations in a specific command queue to be finished with vkQueueWaitIdle. These functions can be used as a very rudimentary way to perform synchronization. 
 
 	DestroyCommandBuffers();
 	
-	LOG_VERBOSE(" [Renderer] -> DestroyPipelines()")
 	v4d::graphics::renderer::event::PipelinesDestroy(this);
+	
 	DestroyPipelines();
-	
 	DestroyDescriptorSets();
-	
-	LOG_VERBOSE(" [Renderer] -> DestroyResources()")
 	DestroyResources();
-	
-	LOG_VERBOSE(" [Renderer] -> FreeBuffers()")
 	FreeBuffers();
-	
 	DestroyCommandPools();
 	
 	graphicsLoadedToDevice = false;
@@ -851,42 +801,7 @@ Renderer::~Renderer() {}
 
 #pragma endregion
 
-#pragma region Public Methods
-
-void Renderer::Render() {
-	renderThreadId = std::this_thread::get_id();
-	std::scoped_lock lock(renderMutex1);
-	
-	if (!graphicsLoadedToDevice) {
-		RecreateSwapChains();
-		return;
-	}
-	
-	if (mustReload) {
-		ReloadRenderer();
-		return;
-	}
-	
-	V4D_Renderer::ForEachSortedModule([this](auto* mod){
-		if (mod->Render) mod->Render();
-	});
-}
-
-#pragma endregion
-
-
-
-
-
-
-
-////////////////////
-
-
-
-
-
-
+#pragma region V4D_Renderer modules passthrough
 
 // Init
 void Renderer::Init() {
@@ -989,3 +904,24 @@ void Renderer::DestroyPipelines() {
 		if (mod->DestroyPipelines) mod->DestroyPipelines();
 	});
 }
+
+void Renderer::Render() {
+	renderThreadId = std::this_thread::get_id();
+	std::scoped_lock lock(renderMutex1);
+	
+	if (!graphicsLoadedToDevice) {
+		RecreateSwapChains();
+		return;
+	}
+	
+	if (mustReload) {
+		ReloadRenderer();
+		return;
+	}
+	
+	V4D_Renderer::ForEachSortedModule([this](auto* mod){
+		if (mod->Render) mod->Render();
+	});
+}
+
+#pragma endregion
