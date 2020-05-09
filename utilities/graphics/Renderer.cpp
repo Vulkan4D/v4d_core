@@ -671,23 +671,25 @@ void Renderer::TransitionImageLayout(VkCommandBuffer commandBuffer, VkImage imag
 #pragma region Init/Load/Reset Methods
 
 void Renderer::RecreateSwapChains() {
-	std::scoped_lock lock(renderMutex1, renderMutex2);
+	ReloadRenderer();return; // Temporary fix for crash when resizing window
 	
-	v4d::graphics::renderer::event::Unload(this);
+	// std::scoped_lock lock(renderMutex1, renderMutex2);
 	
-	if (graphicsLoadedToDevice)
-		UnloadGraphicsFromDevice();
+	// v4d::graphics::renderer::event::Unload(this);
+	
+	// if (graphicsLoadedToDevice)
+	// 	UnloadGraphicsFromDevice();
 		
-	v4d::graphics::renderer::event::Resize(this);
+	// v4d::graphics::renderer::event::Resize(this);
 	
-	// Re-Create the SwapChain
-	if (!CreateSwapChain()) {
-		SLEEP(100ms)
-		return;
-	}
+	// // Re-Create the SwapChain
+	// if (!CreateSwapChain()) {
+	// 	SLEEP(100ms)
+	// 	return;
+	// }
 	
-	LoadGraphicsToDevice();
-	v4d::graphics::renderer::event::Load(this);
+	// LoadGraphicsToDevice();
+	// v4d::graphics::renderer::event::Load(this);
 }
 
 void Renderer::InitRenderer() {

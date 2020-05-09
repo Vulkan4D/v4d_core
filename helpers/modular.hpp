@@ -189,6 +189,8 @@
 		__V4D_MODULE_ERR_TYPE _error = 0;\
 		std::string _libPath {""};\
 	public:\
+		__V4D_MODULE_FILE_HANDLER ModuleLibraryHandle() const {return _handle;}\
+		std::string ModuleLibraryFilePath() const {return _libPath;}\
 		moduleClassName(const std::string& filePath) {\
 			_libPath = filePath + __V4D_MODULE_FILE_EXT;\
 			if (v4d::io::FilePath::FileExists(_libPath+".new")) {\

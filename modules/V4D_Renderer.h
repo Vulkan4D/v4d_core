@@ -33,6 +33,11 @@ class V4DLIB V4D_Renderer {
 		__V4D_Renderer_IMGUI
 		,Render
 		,Render2
+		// Getters
+		,GetPipelineLayout
+		,GetShaderGroup
+		,GetShaderBindingTable
+		,GetScene
 	)
 	V4D_MODULE_FUNC(int, OrderIndex)
 	V4D_MODULE_FUNC(void, ScorePhysicalDeviceSelection, int& score, v4d::graphics::vulkan::PhysicalDevice*)
@@ -60,4 +65,9 @@ class V4DLIB V4D_Renderer {
 	#endif
 	V4D_MODULE_FUNC(void, Render)
 	V4D_MODULE_FUNC(void, Render2)
+	// Getters
+	V4D_MODULE_FUNC(v4d::graphics::vulkan::PipelineLayout*, GetPipelineLayout, std::string name)
+	V4D_MODULE_FUNC(std::vector<v4d::graphics::vulkan::RasterShaderPipeline*>&, GetShaderGroup, std::string groupName)
+	V4D_MODULE_FUNC(v4d::graphics::vulkan::rtx::ShaderBindingTable*, GetShaderBindingTable)
+	V4D_MODULE_FUNC(v4d::graphics::Scene*, GetScene)
 };
