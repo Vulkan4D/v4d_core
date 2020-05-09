@@ -249,28 +249,34 @@ bool Renderer::CreateSwapChain() {
 	
 	// Put old swapchain in a temporary pointer and delete it after creating new swapchain
 	SwapChain* oldSwapChain = swapChain;
+	swapChain = nullptr;
 
-	// Create the new swapchain object
-	swapChain = new SwapChain(
-		renderingDevice,
-		surface,
-		NB_FRAMES_IN_FLIGHT,
-		{ // Preferred Extent (Screen Resolution)
-			0, // width
-			0 // height
-		},
-		preferredFormats,
-		preferredPresentModes
-	);
-	// Assign queues
-	// swapChain->AssignQueues({renderingDevice->GetQueue("present").familyIndex, renderingDevice->GetQueue("graphics").familyIndex});
-	// Set custom params
-	// swapChain->createInfo.xxxx = xxxxxx...
-	// swapChain->imageViewsCreateInfo.xxxx = xxxxxx...
-	
-	if (swapChain->extent.width == 0 || swapChain->extent.height == 0) {
-		return false;
-	}
+	do {
+		if (swapChain) {
+			delete swapChain;
+			SLEEP(100ms)
+		}
+		
+		// Create the new swapchain object
+		swapChain = new SwapChain(
+			renderingDevice,
+			surface,
+			NB_FRAMES_IN_FLIGHT,
+			{ // Preferred Extent (Screen Resolution)
+				0, // width
+				0 // height
+			},
+			preferredFormats,
+			preferredPresentModes
+		);
+		
+		// Assign queues
+		// swapChain->AssignQueues({renderingDevice->GetQueue("present").familyIndex, renderingDevice->GetQueue("graphics").familyIndex});
+		// Set custom params
+		// swapChain->createInfo.xxxx = xxxxxx...
+		// swapChain->imageViewsCreateInfo.xxxx = xxxxxx...
+		
+	} while (swapChain->extent.width == 0 || swapChain->extent.height == 0);
 
 	// Create the swapchain handle and corresponding imageviews
 	swapChain->Create(oldSwapChain);
@@ -682,12 +688,6 @@ void Renderer::RecreateSwapChains() {
 		
 	// v4d::graphics::renderer::event::Resize(this);
 	
-	// // Re-Create the SwapChain
-	// if (!CreateSwapChain()) {
-	// 	SLEEP(100ms)
-	// 	return;
-	// }
-	
 	// LoadGraphicsToDevice();
 	// v4d::graphics::renderer::event::Load(this);
 }
@@ -702,12 +702,6 @@ void Renderer::LoadRenderer() {
 	CreateDevices();
 	ConfigureRenderer();
 	CreateSyncObjects();
-	
-	if (!CreateSwapChain()) {
-		SLEEP(100ms)
-		return;
-	}
-	
 	LoadGraphicsToDevice();
 	v4d::graphics::renderer::event::Load(this);
 }
@@ -751,16 +745,19 @@ void Renderer::ReloadRenderer() {
 	ConfigureRenderer();
 	CreateSyncObjects();
 	
-	if (!CreateSwapChain()) {
-		SLEEP(100ms)
-		return;
-	}
-	
 	LoadGraphicsToDevice();
 	v4d::graphics::renderer::event::Load(this);
 }
 
 void Renderer::LoadGraphicsToDevice() {
+	std::scoped_lock lock(renderMutex1, renderMutex2);
+	while (!CreateSwapChain()) {
+		LOG_WARN("Failed to create SwapChain... Reloading renderer...")
+		SLEEP(1s)
+		ReloadRenderer();
+		return;
+	}
+	
 	CreateCommandPools();
 	AllocateBuffers();
 	CreateResources();
@@ -776,6 +773,8 @@ void Renderer::LoadGraphicsToDevice() {
 }
 
 void Renderer::UnloadGraphicsFromDevice() {
+	std::scoped_lock lock(renderMutex1, renderMutex2);
+	
 	// Wait for renderingDevice to be idle before destroying everything
 	renderingDevice->DeviceWaitIdle(); // We can also wait for operations in a specific command queue to be finished with vkQueueWaitIdle. These functions can be used as a very rudimentary way to perform synchronization. 
 
@@ -911,12 +910,7 @@ void Renderer::Render() {
 	renderThreadId = std::this_thread::get_id();
 	std::scoped_lock lock(renderMutex1);
 	
-	if (!graphicsLoadedToDevice) {
-		RecreateSwapChains();
-		return;
-	}
-	
-	if (mustReload) {
+	if (!graphicsLoadedToDevice || mustReload) {
 		ReloadRenderer();
 		return;
 	}
