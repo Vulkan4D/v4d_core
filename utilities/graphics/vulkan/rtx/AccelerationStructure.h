@@ -52,7 +52,7 @@ namespace v4d::graphics::vulkan::rtx {
 		static bool useGlobalScratchBuffer;
 		uint64_t globalScratchBufferOffset = 0;
 		
-		VkDeviceSize GetMemoryRequirementsForScratchBuffer(Device* device) const;
+		VkDeviceSize GetMemoryRequirementSizeForScratchBuffer(Device* device) const;
 		
 		void AssignBottomLevel(Device* device, std::shared_ptr<Geometry> geom);
 		

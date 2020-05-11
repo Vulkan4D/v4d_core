@@ -4,7 +4,7 @@ namespace v4d::graphics::vulkan::rtx {
 	
 	bool AccelerationStructure::useGlobalScratchBuffer = false;
 
-	VkDeviceSize AccelerationStructure::GetMemoryRequirementsForScratchBuffer(Device* device) const {
+	VkDeviceSize AccelerationStructure::GetMemoryRequirementSizeForScratchBuffer(Device* device) const {
 		VkMemoryRequirements2 memoryRequirementsBuild {};
 			memoryRequirementsBuild.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
 		VkAccelerationStructureMemoryRequirementsInfoKHR memoryRequirementsInfo {};
@@ -13,19 +13,14 @@ namespace v4d::graphics::vulkan::rtx {
 			memoryRequirementsInfo.buildType = VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR;
 			memoryRequirementsInfo.accelerationStructure = accelerationStructure;
 		device->GetAccelerationStructureMemoryRequirementsKHR(&memoryRequirementsInfo, &memoryRequirementsBuild);
-		VkDeviceSize size, alignment;
+		VkDeviceSize size;
 		if (allowUpdate) {
 			VkMemoryRequirements2 memoryRequirementsUpdate {};
 			memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_KHR;
 			device->GetAccelerationStructureMemoryRequirementsKHR(&memoryRequirementsInfo, &memoryRequirementsUpdate);
 			size = std::max(memoryRequirementsBuild.memoryRequirements.size, memoryRequirementsUpdate.memoryRequirements.size);
-			alignment = memoryRequirementsUpdate.memoryRequirements.alignment;
 		} else {
 			size = memoryRequirementsBuild.memoryRequirements.size;
-			alignment = memoryRequirementsBuild.memoryRequirements.alignment;
-		}
-		if ((size % alignment) > 0) {
-			size += alignment - (size % alignment);
 		}
 		return size;
 	}
@@ -225,7 +220,7 @@ namespace v4d::graphics::vulkan::rtx {
 		
 		// Scratch buffer
 		if (!useGlobalScratchBuffer && !scratchBufferAllocated) {
-			scratchBuffer.size = GetMemoryRequirementsForScratchBuffer(device);
+			scratchBuffer.size = GetMemoryRequirementSizeForScratchBuffer(device);
 			scratchBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, false);
 			scratchBufferAllocated = true;
 			buildGeometryInfo.scratchData = device->GetBufferDeviceOrHostAddress(scratchBuffer.buffer);
