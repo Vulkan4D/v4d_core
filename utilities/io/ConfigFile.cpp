@@ -169,7 +169,7 @@ void ConfigFile::WriteToINI(const std::string& section, std::vector<Conf> config
 	// Write all lines to file
 	std::ofstream file(filePath);
 	for (auto line : lines) {
-		file << line << "\r\n";
+		file << line << "\n";
 	}
 	file.close();
 }
