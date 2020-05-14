@@ -24,6 +24,9 @@ target_link_libraries(v4d
 	PUBLIC
 		pthread
 		glfw
+		# BulletDynamics
+		# LinearMath
+		# BulletCollision
 )
 target_include_directories(v4d
 	PUBLIC
@@ -32,6 +35,7 @@ target_include_directories(v4d
 		"${PROJECT_SOURCE_DIR}/src"
 		"${PROJECT_SOURCE_DIR}/src/v4d/xvk"
 		"${PROJECT_SOURCE_DIR}/src/imgui"
+		# "${PROJECT_SOURCE_DIR}/src/bullet3/src/"
 	PRIVATE
 		# "${PROJECT_SOURCE_DIR}/src/openssl/include"
 )
@@ -40,6 +44,7 @@ target_compile_definitions(v4d
 )
 set_target_properties(v4d
 	PROPERTIES
+		COMPILE_FLAGS ${BUILD_FLAGS}
 		LIBRARY_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/debug"
 		RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/debug"
 		LIBRARY_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/release"
