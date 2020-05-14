@@ -567,9 +567,9 @@ namespace v4d::graphics {
 		std::scoped_lock lock(objectBufferMutex, lightBufferMutex, geometryBufferMutex, vertexBufferMutex, indexBufferMutex);
 		
 		{// Defragment Objects
-			for (int i = 0; i < nbAllocatedObjects; ++i) {
+			for (uint32_t i = 0; i < nbAllocatedObjects; ++i) {
 				if (!objectAllocations[i]) {
-					for (int j = i+1; j < nbAllocatedObjects; ++j) {
+					for (uint32_t j = i+1; j < nbAllocatedObjects; ++j) {
 						if (objectAllocations[j]) {
 							objectAllocations[i] = objectAllocations[j];
 							objectAllocations[j] = nullptr;
@@ -595,9 +595,9 @@ namespace v4d::graphics {
 		}
 		
 		{// Defragment Lights
-			for (int i = 0; i < nbAllocatedLights; ++i) {
+			for (uint32_t i = 0; i < nbAllocatedLights; ++i) {
 				if (!lightAllocations[i]) {
-					for (int j = i+1; j < nbAllocatedLights; ++j) {
+					for (uint32_t j = i+1; j < nbAllocatedLights; ++j) {
 						if (lightAllocations[j]) {
 							lightAllocations[i] = lightAllocations[j];
 							lightAllocations[j] = nullptr;
@@ -622,9 +622,9 @@ namespace v4d::graphics {
 		}
 		
 		{// Defragment Geometries
-			for (int i = 0; i < nbAllocatedGeometries; ++i) {
+			for (uint32_t i = 0; i < nbAllocatedGeometries; ++i) {
 				if (!geometryAllocations[i]) {
-					for (int j = i+1; j < nbAllocatedGeometries; ++j) {
+					for (uint32_t j = i+1; j < nbAllocatedGeometries; ++j) {
 						if (geometryAllocations[j]) {
 							geometryAllocations[i] = geometryAllocations[j];
 							geometryAllocations[j] = nullptr;
@@ -650,7 +650,7 @@ namespace v4d::graphics {
 		}
 		
 		{// Defragment Indices
-			for (int offset = 0; offset < nbAllocatedIndices; ) {
+			for (uint32_t offset = 0; offset < nbAllocatedIndices; ) {
 				try {
 					indexAllocations.at(offset);
 				} catch(...) {
@@ -658,7 +658,7 @@ namespace v4d::graphics {
 					break;
 				}
 				if (!indexAllocations[offset].data) {
-					for (int nextOffset = offset + indexAllocations[offset].n; nextOffset < nbAllocatedIndices; ) {
+					for (uint32_t nextOffset = offset + indexAllocations[offset].n; nextOffset < nbAllocatedIndices; ) {
 						try {
 							indexAllocations.at(nextOffset);
 						} catch(...) {
@@ -704,7 +704,7 @@ namespace v4d::graphics {
 		}
 		
 		{// Defragment Vertices
-			for (int offset = 0; offset < nbAllocatedVertices; ) {
+			for (uint32_t offset = 0; offset < nbAllocatedVertices; ) {
 				try {
 					vertexAllocations.at(offset);
 				} catch(...) {
@@ -712,7 +712,7 @@ namespace v4d::graphics {
 					break;
 				}
 				if (!vertexAllocations[offset].data) {
-					for (int nextOffset = offset + vertexAllocations[offset].n; nextOffset < nbAllocatedVertices; ) {
+					for (uint32_t nextOffset = offset + vertexAllocations[offset].n; nextOffset < nbAllocatedVertices; ) {
 						try {
 							vertexAllocations.at(nextOffset);
 						} catch(...) {
