@@ -21,14 +21,15 @@
 #include <xvk.hpp>
 
 #define V4D_ENGINE_NAME "Vulkan4D"
-#define V4D_ENGINE_VERSION VK_MAKE_VERSION(1, 0, 0)
-#define VULKAN_API_VERSION VK_API_VERSION_1_2
+#define V4D_ENGINE_VERSION VK_MAKE_VERSION(V4D_VERSION_MAJOR, V4D_VERSION_MINOR, V4D_VERSION_PATCH)
 
 namespace v4d::graphics::vulkan {
 	
 	class V4DLIB Loader : public xvk::Loader {
 	public:
 		using xvk::Loader::Loader;
+		static uint32_t VULKAN_API_VERSION;
+		static uint32_t VULKAN_API_VERSION_ALTERNATIVE;
 	
 		// Required Instance Extensions
 		std::vector<const char*> requiredInstanceExtensions {

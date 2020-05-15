@@ -13,8 +13,8 @@ namespace v4d::graphics::vulkan {
 		xvk::Interface::InstanceInterface* vulkanInstance;
 		VkPhysicalDevice handle;
 
-		VkPhysicalDeviceProperties deviceProperties;
-		VkPhysicalDeviceFeatures deviceFeatures;
+		VkPhysicalDeviceProperties deviceProperties {};
+		VkPhysicalDeviceFeatures deviceFeatures {};
 		VkPhysicalDeviceFeatures2 deviceFeatures2 {};
 		VkPhysicalDeviceVulkan12Features vulkan12DeviceFeatures {};
 		VkPhysicalDeviceRayTracingFeaturesKHR rayTracingDeviceFeatures {};

@@ -54,7 +54,7 @@ void Buffer::Allocate(Device* device, VkMemoryPropertyFlags properties, bool cop
 	
 	VkMemoryAllocateFlagsInfo memoryAllocateFlagsInfo {};
 		memoryAllocateFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
-		if (usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT_KHR) {
+		if (Loader::VULKAN_API_VERSION >= VK_API_VERSION_1_2 && usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
 			memoryAllocateFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
 		}
 

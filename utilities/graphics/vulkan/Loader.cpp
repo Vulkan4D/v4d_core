@@ -4,6 +4,9 @@ using namespace v4d::graphics::vulkan;
 
 #ifndef XVK_USE_QT_VULKAN_LOADER
 
+uint32_t Loader::VULKAN_API_VERSION = VK_API_VERSION_1_2;
+uint32_t Loader::VULKAN_API_VERSION_ALTERNATIVE = VK_API_VERSION_1_1;
+
 void Loader::CheckExtensions(bool logging) {
 	if (logging) LOG_VERBOSE("Initializing Vulkan Extensions...");
 	

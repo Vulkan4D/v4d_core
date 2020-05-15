@@ -82,7 +82,7 @@ using namespace v4d::graphics::vulkan;
 			applicationVersion,
 			V4D_ENGINE_NAME,
 			V4D_ENGINE_VERSION,
-			VULKAN_API_VERSION
+			vulkan::Loader::VULKAN_API_VERSION
 		};
 
 		// Create the Vulkan instance
@@ -145,7 +145,10 @@ Instance::~Instance() {
 }
 
 void Instance::LoadAvailablePhysicalDevices() {
-	LOG_VERBOSE("Initializing Physical Devices...");
+	uint vMajor = (Loader::VULKAN_API_VERSION & (511 << 22)) >> 22;
+	uint vMinor = (Loader::VULKAN_API_VERSION & (1023 << 12)) >> 12;
+	uint vPatch = Loader::VULKAN_API_VERSION & 4095;
+	LOG_VERBOSE("Initializing Physical Devices supporting Vulkan " << vMajor << "." << vMinor << "." << vPatch);
 	
 	// Get Devices List
 	uint physicalDeviceCount = 0;
@@ -159,12 +162,18 @@ void Instance::LoadAvailablePhysicalDevices() {
 	for (const auto& physicalDevice : physicalDevices) {
 		VkPhysicalDeviceProperties properties = {};
 		GetPhysicalDeviceProperties(physicalDevice, &properties);
-		if (properties.apiVersion >= VULKAN_API_VERSION)
+		if (properties.apiVersion >= Loader::VULKAN_API_VERSION)
 			availablePhysicalDevices.push_back(new PhysicalDevice(this, physicalDevice));
 	}
 	
-	// Error if no PhysicalDevice was found
+	// Error if no PhysicalDevice was found (or try alternative vulkan version)
 	if (availablePhysicalDevices.size() == 0) {
+		if (Loader::VULKAN_API_VERSION_ALTERNATIVE && Loader::VULKAN_API_VERSION_ALTERNATIVE != Loader::VULKAN_API_VERSION) {
+			Loader::VULKAN_API_VERSION = Loader::VULKAN_API_VERSION_ALTERNATIVE;
+			Loader::VULKAN_API_VERSION_ALTERNATIVE = 0;
+			LoadAvailablePhysicalDevices();
+			return;
+		}
 		throw std::runtime_error("No suitable PhysicalDevice was found for required vulkan version");
 	}
 }

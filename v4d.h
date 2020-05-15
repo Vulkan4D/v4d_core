@@ -4,8 +4,15 @@
 // This file is the only header to include for anything that is part of V4D
 
 
-#define V4D_VERSION "0.0.0" 
+#define V4D_VERSION_MAJOR 0
+#define V4D_VERSION_MINOR 0
+#define V4D_VERSION_PATCH 0
 
+
+//////////////////////////////////////////////////////
+#define __V4D_MACRO_STR_(x) #x
+#define __V4D_MACRO_STR(x) __V4D_MACRO_STR_(x)
+#define V4D_VERSION __V4D_MACRO_STR(V4D_VERSION_MAJOR) "." __V4D_MACRO_STR(V4D_VERSION_MINOR) "." __V4D_MACRO_STR(V4D_VERSION_PATCH)
 
 //////////////////////////////////////////////////////
 // Includes (the order is important)

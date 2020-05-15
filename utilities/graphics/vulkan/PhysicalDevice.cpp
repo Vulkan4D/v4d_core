@@ -14,16 +14,20 @@ PhysicalDevice::PhysicalDevice(xvk::Interface::InstanceInterface* vulkanInstance
 	vulkanInstance->EnumerateDeviceExtensionProperties(handle, nullptr, &supportedExtensionsCount, supportedExtensions->data());
 	
 	// Features
+	deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	// Vulkan 1.2 features
-	vulkan12DeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-	deviceFeatures2.pNext = &vulkan12DeviceFeatures;
-	// Ray Tracing features
-	if (SupportsExtension(VK_KHR_RAY_TRACING_EXTENSION_NAME)) {
-		rayTracingDeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
-		vulkan12DeviceFeatures.pNext = &rayTracingDeviceFeatures;
+	if (Loader::VULKAN_API_VERSION >= VK_API_VERSION_1_2) {
+		vulkan12DeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+		deviceFeatures2.pNext = &vulkan12DeviceFeatures;
+		// Ray Tracing features
+		if (SupportsExtension(VK_KHR_RAY_TRACING_EXTENSION_NAME)) {
+			rayTracingDeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
+			vulkan12DeviceFeatures.pNext = &rayTracingDeviceFeatures;
+		}
+	} else {
+		rayTracingDeviceFeatures = {};
 	}
 	// Get supported Features
-	deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	vulkanInstance->GetPhysicalDeviceFeatures(handle, &deviceFeatures);
 	vulkanInstance->GetPhysicalDeviceFeatures2(handle, &deviceFeatures2);
 	
