@@ -3,6 +3,7 @@
 
 class V4DLIB V4D_Input {
 	V4D_MODULE_CLASS_H(V4D_Input
+		,OrderIndex
 		,Init
 		,CallbackName
 		,CharCallback
@@ -12,6 +13,7 @@ class V4DLIB V4D_Input {
 		,Update
 	)
 	
+	V4D_MODULE_FUNC(int, OrderIndex)
 	V4D_MODULE_FUNC(void, Init, v4d::graphics::Window*, v4d::graphics::Renderer*)
 	V4D_MODULE_FUNC(std::string, CallbackName)
 	V4D_MODULE_FUNC(void, CharCallback, unsigned int c)
