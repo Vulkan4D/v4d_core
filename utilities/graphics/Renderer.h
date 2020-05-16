@@ -95,7 +95,6 @@ namespace v4d::graphics {
 
 	public: // Virtual methods
 		// Init
-		virtual void Init();
 		virtual void InitDeviceFeatures();
 		virtual void ConfigureRenderer();
 		virtual void InitLayouts();
@@ -103,8 +102,6 @@ namespace v4d::graphics {
 		
 		// Scene
 		virtual void ReadShaders();
-		virtual void LoadScene();
-		virtual void UnloadScene();
 		
 		// Resources
 		virtual void CreateResources();

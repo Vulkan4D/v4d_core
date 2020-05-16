@@ -700,7 +700,6 @@ void Renderer::RecreateSwapChains() {
 }
 
 void Renderer::InitRenderer() {
-	Init();
 	InitLayouts();
 	ConfigureShaders();
 }
@@ -811,14 +810,6 @@ Renderer::~Renderer() {}
 
 #pragma region V4D_Renderer modules passthrough
 
-// Init
-void Renderer::Init() {
-	// Modules
-	V4D_Renderer::ForEachSortedModule([this](auto* mod){
-		if (mod->Init) mod->Init(this);
-	});
-}
-
 void Renderer::InitDeviceFeatures() {
 	// Modules
 	V4D_Renderer::ForEachSortedModule([](auto* mod){
@@ -852,20 +843,6 @@ void Renderer::ReadShaders() {
 	// Modules
 	V4D_Renderer::ForEachSortedModule([this](auto* mod){
 		if (mod->ReadShaders) mod->ReadShaders();
-	});
-}
-
-void Renderer::LoadScene() {
-	// Modules
-	V4D_Renderer::ForEachSortedModule([this](auto* mod){
-		if (mod->LoadScene) mod->LoadScene();
-	});
-}
-
-void Renderer::UnloadScene() {
-	// Modules
-	V4D_Renderer::ForEachSortedModule([this](auto* mod){
-		if (mod->UnloadScene) mod->UnloadScene();
 	});
 }
 

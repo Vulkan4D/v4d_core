@@ -97,20 +97,23 @@ The core consists of the following structure :
 - `Configure*`, `Generate*`, `Make*`, `Build*`, `Read*`, `Write*` may be called any number of times, and no need to free any memory
 
 
-## Renderer
+## Application Method/Modules execution order
 
-### Method execution order
-#### Load
+#### Start
  - main()
     - Instantiate V4D_Renderer
+    - V4D_Renderer:: `Init` ()
+    - V4D_Game:: `Init` ()
+    - V4D_Physics:: `Init` ()
+    - V4D_Input:: `Init` ()
+    - V4D_Input:: `AddCallbacks` ()
+    - V4D_Physics:: `LoadScene` ()
+    - V4D_Game:: `LoadScene` ()
     - Renderer:: `InitRenderer` ()
-        - V4D_Renderer:: `Init` ()
         - V4D_Renderer:: `InitLayouts` ()
         - V4D_Renderer:: `ConfigureShaders` ()
     - Renderer:: `ReadShaders` ()
         - V4D_Renderer:: `ReadShaders` ()
-    - Renderer:: `LoadScene` ()
-        - V4D_Renderer:: `LoadScene` ()
     - Renderer:: `LoadRenderer` ()
         - Renderer:: `CreateDevices` ()
             - V4D_Renderer:: `InitDeviceFeatures` ()
@@ -121,13 +124,17 @@ The core consists of the following structure :
             - Renderer:: `CreateCommandPools` ()
             - V4D_Renderer:: `AllocateBuffers` ()
             - V4D_Renderer:: `CreateResources` ()
+                - V4D_Game:: `RendererCreateResources` ()
             - Renderer:: `CreateDescriptorSets` ()
                 - Renderer:: `UpdateDescriptorSets` ()
             - V4D_Renderer:: `CreatePipelines` ()
             - EVENT `v4d::graphics::renderer::event::PipelinesCreate` (Renderer*)
             - V4D_Renderer:: `CreateCommandBuffers` ()
         - EVENT `v4d::graphics::renderer::event::Load` (Renderer*)
-#### Unload
+    - Start threads and game loops
+#### Quit
+ - Stop game loops and Join threads
+ - V4D_Input:: `RemoveCallbacks` ()
  - Renderer:: `UnloadRenderer` ()
     - EVENT `v4d::graphics::renderer::event::Unload` (Renderer*)
     - Renderer:: `UnloadGraphicsFromDevice` ()
@@ -136,11 +143,14 @@ The core consists of the following structure :
         - V4D_Renderer:: `DestroyPipelines` ()
         - Renderer:: `DestroyDescriptorSets` ()
         - V4D_Renderer:: `DestroyResources` ()
+            - V4D_Game:: `RendererDestroyResources` ()
         - V4D_Renderer:: `FreeBuffers` ()
         - Renderer:: `DestroyCommandPools` ()
     - Renderer:: `DestroySwapChain` ()
     - Renderer:: `DestroySyncObjects` ()
     - Renderer:: `DestroyDevices` ()
+ - V4D_Game:: `UnloadScene` ()
+ - V4D_Physics:: `UnloadScene` ()
 #### Reload
  - Renderer:: `ReloadRenderer` ()
     - EVENT `v4d::graphics::renderer::event::Unload` (Renderer*)
@@ -150,6 +160,7 @@ The core consists of the following structure :
         - V4D_Renderer:: `DestroyPipelines` ()
         - Renderer:: `DestroyDescriptorSets` ()
         - V4D_Renderer:: `DestroyResources` ()
+            - V4D_Game:: `RendererDestroyResources` ()
         - V4D_Renderer:: `FreeBuffers` ()
         - Renderer:: `DestroyCommandPools` ()
     - Renderer:: `DestroySwapChain` ()
@@ -166,40 +177,32 @@ The core consists of the following structure :
         - Renderer:: `CreateCommandPools` ()
         - V4D_Renderer:: `AllocateBuffers` ()
         - V4D_Renderer:: `CreateResources` ()
+            - V4D_Game:: `RendererCreateResources` ()
         - Renderer:: `CreateDescriptorSets` ()
             - Renderer:: `UpdateDescriptorSets` ()
         - V4D_Renderer:: `CreatePipelines` ()
         - EVENT `v4d::graphics::renderer::event::PipelinesCreate` (Renderer*)
         - V4D_Renderer:: `CreateCommandBuffers` ()
     - EVENT `v4d::graphics::renderer::event::Load` (Renderer*)
-#### Screen Resize
- - Renderer:: `RecreateSwapChains` ()
-    - EVENT `v4d::graphics::renderer::event::Unload` (Renderer*)
-    - Renderer:: `UnloadGraphicsFromDevice` ()
-        - V4D_Renderer:: `DestroyCommandBuffers` ()
-        - EVENT `v4d::graphics::renderer::event::PipelinesDestroy` (Renderer*)
-        - V4D_Renderer:: `DestroyPipelines` ()
-        - Renderer:: `DestroyDescriptorSets` ()
-        - V4D_Renderer:: `DestroyResources` ()
-        - V4D_Renderer:: `FreeBuffers` ()
-        - Renderer:: `DestroyCommandPools` ()
-    - EVENT `v4d::graphics::renderer::event::Resize` (Renderer*)
-    - Renderer:: `CreateSwapChain` ()
-    - Renderer:: `LoadGraphicsToDevice` ()
-        - Renderer:: `CreateCommandPools` ()
-        - V4D_Renderer:: `AllocateBuffers` ()
-        - V4D_Renderer:: `CreateResources` ()
-        - Renderer:: `CreateDescriptorSets` ()
-            - Renderer:: `UpdateDescriptorSets` ()
-        - V4D_Renderer:: `CreatePipelines` ()
-        - EVENT `v4d::graphics::renderer::event::PipelinesCreate` (Renderer*)
-        - V4D_Renderer:: `CreateCommandBuffers` ()
-    - EVENT `v4d::graphics::renderer::event::Load` (Renderer*)
-#### Frame Update
- - main()
+#### Slow Game Loop
+    - V4D_Game:: `SlowUpdate` ()
+    - V4D_Physics:: `SlowStepSimulation` ()
+#### Game Loop
+    - V4D_Game:: `Update` ()
+    - V4D_Physics:: `StepSimulation` ()
+#### Frame Update 2 (secondary rendering)
+    - V4D_Renderer:: `RunUi` ()
+        - V4D_Game:: `RendererRunUi` ()
+        - V4D_Game:: `RendererRunUiDebug` ()
+    - V4D_Physics:: `RunUi` ()
+    - V4D_Renderer:: `Render2` ()
+        - V4D_Game:: `RendererFrameUpdate2` ()
+        - V4D_Game:: `RendererFrameCompute` ()
+#### Frame Update (main rendering)
     - Renderer:: `Render` ()
-        - [ conditional call of `RecreateSwapChains`() and return ]
-        - [ conditional call of `ReloadRenderer`() and return ]
-        - V4D_Renderer:: `Render`()
-
+        - V4D_Renderer:: `Render` ()
+            - V4D_Game:: `RendererFrameUpdate` ()
+            - V4D_Physics:: `RendererFrameDebug` ()
+#### Input Loop
+    - V4D_Input:: `Update` ()
 

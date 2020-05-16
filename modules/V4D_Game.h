@@ -1,42 +1,33 @@
 #pragma once
 #include <v4d.h>
 
-#ifdef _ENABLE_IMGUI
-	// #ifdef _DEBUG
-		#define __V4D_Game_IMGUI ,RunImGui, RunImGuiDebug
-	// #else
-		// #define __V4D_Game_IMGUI ,RunImGui
-	// #endif
-#else
-	#define __V4D_Game_IMGUI
-#endif
-
 class V4DLIB V4D_Game {
 	V4D_MODULE_CLASS_H(V4D_Game
 		,OrderIndex
 		,Init
 		,LoadScene
 		,UnloadScene
-		,CreateResources
-		,DestroyResources
-		__V4D_Game_IMGUI
 		,Update
-		,Update2
-		,Compute
+		,SlowUpdate
+		,RendererCreateResources
+		,RendererDestroyResources
+		,RendererRunUi
+		,RendererRunUiDebug
+		,RendererFrameUpdate
+		,RendererFrameUpdate2
+		,RendererFrameCompute
 	)
 	V4D_MODULE_FUNC(int, OrderIndex)
-	V4D_MODULE_FUNC(void, Init, v4d::graphics::Scene&)
-	V4D_MODULE_FUNC(void, LoadScene, v4d::graphics::Scene&)
-	V4D_MODULE_FUNC(void, UnloadScene, v4d::graphics::Scene&)
-	V4D_MODULE_FUNC(void, CreateResources, v4d::graphics::vulkan::Device*)
-	V4D_MODULE_FUNC(void, DestroyResources, v4d::graphics::vulkan::Device*)
-	#ifdef _ENABLE_IMGUI
-		V4D_MODULE_FUNC(void, RunImGui)
-		// #ifdef _DEBUG
-			V4D_MODULE_FUNC(void, RunImGuiDebug)
-		// #endif
-	#endif
-	V4D_MODULE_FUNC(void, Update, v4d::graphics::Scene&)
-	V4D_MODULE_FUNC(void, Update2, v4d::graphics::Scene&)
-	V4D_MODULE_FUNC(void, Compute, VkCommandBuffer)
+	V4D_MODULE_FUNC(void, Init, v4d::graphics::Scene*)
+	V4D_MODULE_FUNC(void, LoadScene)
+	V4D_MODULE_FUNC(void, UnloadScene)
+	V4D_MODULE_FUNC(void, Update, double deltaTime)
+	V4D_MODULE_FUNC(void, SlowUpdate, double deltaTime)
+	V4D_MODULE_FUNC(void, RendererCreateResources, v4d::graphics::vulkan::Device*)
+	V4D_MODULE_FUNC(void, RendererDestroyResources, v4d::graphics::vulkan::Device*)
+	V4D_MODULE_FUNC(void, RendererRunUi)
+	V4D_MODULE_FUNC(void, RendererRunUiDebug)
+	V4D_MODULE_FUNC(void, RendererFrameUpdate)
+	V4D_MODULE_FUNC(void, RendererFrameUpdate2)
+	V4D_MODULE_FUNC(void, RendererFrameCompute, VkCommandBuffer)
 };
