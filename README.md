@@ -21,7 +21,7 @@ Vulkan4D is modular and built from the ground up to fully support Modding.
 
 A module may contain resources and shared libraries that are loaded at runtime into the application.
 
-See modding documentation in [the module sample repository](https://github.com/Vulkan4D/v4d_module_sample)
+See modding documentation in [the sample module repository](https://github.com/Vulkan4D/v4d_module_sample)
 
 ## File Structure
 The core consists of the following structure :
