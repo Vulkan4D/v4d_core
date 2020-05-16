@@ -8,15 +8,31 @@ namespace v4d::graphics::vulkan::rtx {
 	private:
 		
 		std::map<uint32_t, ShaderInfo> shaderFiles;
+		std::vector<VkRayTracingShaderGroupCreateInfoKHR> rayGenGroups;
+		std::vector<VkRayTracingShaderGroupCreateInfoKHR> rayMissGroups;
+		std::vector<VkRayTracingShaderGroupCreateInfoKHR> rayHitGroups;
 		std::vector<VkRayTracingShaderGroupCreateInfoKHR> groups;
 		std::vector<Shader> shaderObjects;
 		std::vector<VkPipelineShaderStageCreateInfo> stages;
 		
-		uint32_t hitGroupOffset = 0;
-		uint32_t missGroupOffset = 0;
+		// uint32_t hitGroupOffset = 0;
+		// uint32_t missGroupOffset = 0;
 		
 		uint32_t nextHitShaderOffset = 0;
 		uint32_t nextMissShaderOffset = 0;
+		
+		VkDeviceSize bufferOffset = 0;
+		VkDeviceSize bufferSize = 0;
+		VkDeviceSize rayGenShaderRegionOffset = 0;
+		VkDeviceSize rayGenShaderRegionSize = 0;
+		VkDeviceSize rayMissShaderRegionOffset = 0;
+		VkDeviceSize rayMissShaderRegionSize = 0;
+		VkDeviceSize rayHitShaderRegionOffset = 0;
+		VkDeviceSize rayHitShaderRegionSize = 0;
+		VkStridedBufferRegionKHR rayGenBufferRegion {};
+		VkStridedBufferRegionKHR rayMissBufferRegion {};
+		VkStridedBufferRegionKHR rayHitBufferRegion {};
+		VkStridedBufferRegionKHR rayCallableBufferRegion {};
 		
 		PipelineLayout* pipelineLayout = nullptr;
 		VkPipeline pipeline = VK_NULL_HANDLE;
@@ -25,11 +41,16 @@ namespace v4d::graphics::vulkan::rtx {
 
 		VkPipeline GetPipeline() const;
 		PipelineLayout* GetPipelineLayout() const;
-		std::vector<VkRayTracingShaderGroupCreateInfoKHR> GetGroups() const;
+		// std::vector<VkRayTracingShaderGroupCreateInfoKHR> GetGroups() const;
 		std::vector<VkPipelineShaderStageCreateInfo> GetStages() const;
 		
-		uint32_t GetHitGroupOffset() const;
-		uint32_t GetMissGroupOffset() const;
+		// uint32_t GetHitGroupOffset() const;
+		// uint32_t GetMissGroupOffset() const;
+		
+		VkStridedBufferRegionKHR* GetRayGenBufferRegion();
+		VkStridedBufferRegionKHR* GetRayMissBufferRegion();
+		VkStridedBufferRegionKHR* GetRayHitBufferRegion();
+		VkStridedBufferRegionKHR* GetRayCallableBufferRegion();
 
 		// Rules: 
 			// If type is VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR then generalShader must be a valid index into pStages referring to a shader of VK_SHADER_STAGE_RAYGEN_BIT_KHR, VK_SHADER_STAGE_MISS_BIT_KHR, or VK_SHADER_STAGE_CALLABLE_BIT_KHR
@@ -48,12 +69,13 @@ namespace v4d::graphics::vulkan::rtx {
 		
 		void ReadShaders();
 		
-		void CreateShaderStages(Device* device);
-		void DestroyShaderStages(Device* device);
+		void CreateShaderStages(Device*);
+		void DestroyShaderStages(Device*);
 		
-		VkPipeline CreateRayTracingPipeline(Device* device);
-		void DestroyRayTracingPipeline(Device* device);
+		VkPipeline CreateRayTracingPipeline(Device*);
+		void DestroyRayTracingPipeline(Device*);
 		
-		void WriteShaderBindingTableToBuffer(Device* device, Buffer* buffer, uint32_t shaderGroupHandleSize);
+		VkDeviceSize GetSbtBufferSize(const VkPhysicalDeviceRayTracingPropertiesKHR&);
+		void WriteShaderBindingTableToBuffer(Device*, Buffer*, VkDeviceSize offset, const VkPhysicalDeviceRayTracingPropertiesKHR&);
 	};
 }
