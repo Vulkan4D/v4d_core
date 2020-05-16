@@ -123,7 +123,7 @@ The core consists of the following structure :
         - Renderer:: `LoadGraphicsToDevice` ()
             - Renderer:: `CreateCommandPools` ()
             - V4D_Renderer:: `AllocateBuffers` ()
-            - V4D_Renderer:: `CreateResources` ()
+            - V4D_Renderer:: `CreateResources` () PRIMARY
                 - V4D_Game:: `RendererCreateResources` ()
             - Renderer:: `CreateDescriptorSets` ()
                 - Renderer:: `UpdateDescriptorSets` ()
@@ -142,7 +142,7 @@ The core consists of the following structure :
         - EVENT `v4d::graphics::renderer::event::PipelinesDestroy` (Renderer*)
         - V4D_Renderer:: `DestroyPipelines` ()
         - Renderer:: `DestroyDescriptorSets` ()
-        - V4D_Renderer:: `DestroyResources` ()
+        - V4D_Renderer:: `DestroyResources` () PRIMARY
             - V4D_Game:: `RendererDestroyResources` ()
         - V4D_Renderer:: `FreeBuffers` ()
         - Renderer:: `DestroyCommandPools` ()
@@ -159,7 +159,7 @@ The core consists of the following structure :
         - EVENT `v4d::graphics::renderer::event::PipelinesDestroy` (Renderer*)
         - V4D_Renderer:: `DestroyPipelines` ()
         - Renderer:: `DestroyDescriptorSets` ()
-        - V4D_Renderer:: `DestroyResources` ()
+        - V4D_Renderer:: `DestroyResources` () PRIMARY
             - V4D_Game:: `RendererDestroyResources` ()
         - V4D_Renderer:: `FreeBuffers` ()
         - Renderer:: `DestroyCommandPools` ()
@@ -176,7 +176,7 @@ The core consists of the following structure :
     - Renderer:: `LoadGraphicsToDevice` ()
         - Renderer:: `CreateCommandPools` ()
         - V4D_Renderer:: `AllocateBuffers` ()
-        - V4D_Renderer:: `CreateResources` ()
+        - V4D_Renderer:: `CreateResources` () PRIMARY
             - V4D_Game:: `RendererCreateResources` ()
         - Renderer:: `CreateDescriptorSets` ()
             - Renderer:: `UpdateDescriptorSets` ()
@@ -191,18 +191,19 @@ The core consists of the following structure :
     - V4D_Game:: `Update` ()
     - V4D_Physics:: `StepSimulation` ()
 #### Frame Update 2 (secondary rendering)
-    - V4D_Renderer:: `RunUi` ()
+    - V4D_Renderer:: `RunUi` () PRIMARY
         - V4D_Game:: `RendererRunUi` ()
         - V4D_Game:: `RendererRunUiDebug` ()
     - V4D_Physics:: `RunUi` ()
-    - V4D_Renderer:: `Render2` ()
+    - V4D_Renderer:: `Update2` () PRIMARY
         - V4D_Game:: `RendererFrameUpdate2` ()
         - V4D_Game:: `RendererFrameCompute` ()
+        - V4D_Renderer:: `Render2` ()
 #### Frame Update (main rendering)
-    - Renderer:: `Render` ()
-        - V4D_Renderer:: `Render` ()
+    - Renderer:: `Update` ()
+        - V4D_Renderer:: `Update` () PRIMARY
             - V4D_Game:: `RendererFrameUpdate` ()
-            - V4D_Physics:: `RendererFrameDebug` ()
+            - V4D_Renderer:: `Render` ()
 #### Input Loop
     - V4D_Input:: `Update` ()
 

@@ -7,7 +7,6 @@ class V4DLIB V4D_Physics {
 		,Init
 		,LoadScene
 		,UnloadScene
-		,RendererFrameDebug
 		,RunUi
 		,StepSimulation
 		,SlowStepSimulation
@@ -16,7 +15,6 @@ class V4DLIB V4D_Physics {
 	V4D_MODULE_FUNC(void, Init, v4d::graphics::Renderer*, v4d::graphics::Scene*)
 	V4D_MODULE_FUNC(void, LoadScene)
 	V4D_MODULE_FUNC(void, UnloadScene)
-	V4D_MODULE_FUNC(void, RendererFrameDebug)
 	V4D_MODULE_FUNC(void, RunUi)
 	V4D_MODULE_FUNC(void, StepSimulation, double deltaTime)
 	V4D_MODULE_FUNC(void, SlowStepSimulation, double deltaTime)

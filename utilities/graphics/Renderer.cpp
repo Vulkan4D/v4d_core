@@ -890,7 +890,7 @@ void Renderer::DestroyPipelines() {
 	});
 }
 
-void Renderer::Render() {
+void Renderer::Update() {
 	renderThreadId = std::this_thread::get_id();
 	std::scoped_lock lock(renderMutex1);
 	
@@ -900,7 +900,7 @@ void Renderer::Render() {
 	}
 	
 	V4D_Renderer::ForEachSortedModule([this](auto* mod){
-		if (mod->Render) mod->Render();
+		if (mod->Update) mod->Update();
 	});
 }
 

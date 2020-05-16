@@ -178,8 +178,8 @@ namespace v4d::graphics {
 		Renderer(Loader* loader, const char* applicationName, uint applicationVersion);
 		virtual ~Renderer() override;
 		
-	public: // Public Render Methods
-		virtual void Render();
+	public: // Public Update Methods
+		virtual void Update();
 	};
 }
 

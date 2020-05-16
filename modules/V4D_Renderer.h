@@ -4,6 +4,7 @@
 class V4DLIB V4D_Renderer {
 	V4D_MODULE_CLASS_H(V4D_Renderer
 		,OrderIndex
+		,RenderOrderIndex
 		,ScorePhysicalDeviceSelection
 		,Init
 		,InitDeviceFeatures
@@ -22,6 +23,8 @@ class V4DLIB V4D_Renderer {
 		,CreatePipelines
 		,DestroyPipelines
 		,RunUi
+		,Update
+		,Update2
 		,Render
 		,Render2
 		// Getters
@@ -30,6 +33,7 @@ class V4DLIB V4D_Renderer {
 		,GetShaderBindingTable
 	)
 	V4D_MODULE_FUNC(int, OrderIndex)
+	V4D_MODULE_FUNC(int, RenderOrderIndex)
 	V4D_MODULE_FUNC(void, ScorePhysicalDeviceSelection, int& score, v4d::graphics::vulkan::PhysicalDevice*)
 	V4D_MODULE_FUNC(void, Init, v4d::graphics::Renderer*, v4d::graphics::Scene*)
 	V4D_MODULE_FUNC(void, InitDeviceFeatures)
@@ -48,8 +52,10 @@ class V4DLIB V4D_Renderer {
 	V4D_MODULE_FUNC(void, CreatePipelines)
 	V4D_MODULE_FUNC(void, DestroyPipelines)
 	V4D_MODULE_FUNC(void, RunUi) // Main Renderer module must call V4D_Game::RendererRunUi and V4D_Game::RendererRunUiDebug
-	V4D_MODULE_FUNC(void, Render) // Main Renderer module must call V4D_Game::RendererFrameUpdate and V4D_Physics::RendererFrameDebug
-	V4D_MODULE_FUNC(void, Render2) // Main Renderer module must call V4D_Game::RendererFrameUpdate2 and V4D_Game::RendererFrameCompute
+	V4D_MODULE_FUNC(void, Update) // Main Renderer module must call V4D_Game::RendererFrameUpdate and V4D_Renderer::Render
+	V4D_MODULE_FUNC(void, Update2) // Main Renderer module must call V4D_Game::RendererFrameUpdate2 and V4D_Game::RendererFrameCompute and V4D_Renderer::Render2
+	V4D_MODULE_FUNC(void, Render, VkCommandBuffer)
+	V4D_MODULE_FUNC(void, Render2, VkCommandBuffer)
 	// Getters
 	V4D_MODULE_FUNC(v4d::graphics::vulkan::PipelineLayout*, GetPipelineLayout, std::string name)
 	V4D_MODULE_FUNC(std::vector<v4d::graphics::vulkan::RasterShaderPipeline*>&, GetShaderGroup, std::string groupName)

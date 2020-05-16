@@ -146,6 +146,20 @@
 			func(modulePtr);\
 		}\
 	}\
+	moduleClassName* moduleClassName::GetPrimaryModule() {\
+		std::lock_guard lock(_mutexForLoadedModules);\
+		for (auto[mod, modulePtr] : _loadedModules) {\
+			if (modulePtr->ModuleIsPrimary && modulePtr->ModuleIsPrimary()) {\
+				return modulePtr;\
+			}\
+		}\
+		return nullptr;\
+	}\
+	void moduleClassName::ForPrimaryModule(const callback&& func) {\
+		if (auto* modulePtr = GetPrimaryModule()) {\
+			func(modulePtr);\
+		}\
+	}\
 	void moduleClassName::ForEachSortedModule(const callback&& func, const std::string& sortedListKey) {\
 		std::lock_guard lock(_mutexForLoadedModules);\
 		for (auto* modulePtr : _loadedSortedModules[sortedListKey]) {\
@@ -183,6 +197,8 @@
 		static void UnloadModule(const std::string& mod);\
 		static void ForEachModule(const callback&& func);\
 		static void ForEachSortedModule(const callback&& func, const std::string& sortedListKey = "");\
+		static moduleClassName* GetPrimaryModule();\
+		static void ForPrimaryModule(const callback&& func);\
 		static void SortModules(const std::function<bool(moduleClassName*, moduleClassName*)>& func, const std::string& sortedListKey = "");\
 	private:\
 		__V4D_MODULE_FILE_HANDLER _handle = 0;\
@@ -204,6 +220,7 @@
 			__V4D_MODULE_FUNC_LOAD(ModuleUnload)\
 			__V4D_MODULE_FUNC_LOAD(ModuleSetCustomPtr)\
 			__V4D_MODULE_FUNC_LOAD(ModuleGetCustomPtr)\
+			__V4D_MODULE_FUNC_LOAD(ModuleIsPrimary)\
 			if (ModuleLoad) ModuleLoad();\
 		}\
 		DELETE_COPY_MOVE_CONSTRUCTORS(moduleClassName)\
@@ -211,6 +228,7 @@
 		V4D_MODULE_FUNC(void, ModuleUnload)\
 		V4D_MODULE_FUNC(void, ModuleSetCustomPtr, int, void*)\
 		V4D_MODULE_FUNC(void*, ModuleGetCustomPtr, int)\
+		V4D_MODULE_FUNC(bool, ModuleIsPrimary)\
 		~moduleClassName() {\
 			if (ModuleUnload) ModuleUnload();\
 			if (_handle) __V4D_MODULE_UNLOAD(_handle);\
