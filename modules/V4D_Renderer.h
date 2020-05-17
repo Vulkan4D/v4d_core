@@ -28,8 +28,9 @@ class V4DLIB V4D_Renderer {
 		,Render
 		,Render2
 		// Getters
+		,GetImage
 		,GetPipelineLayout
-		,GetShaderGroup
+		,AddShader
 		,GetShaderBindingTable
 	)
 	V4D_MODULE_FUNC(int, OrderIndex)
@@ -57,7 +58,8 @@ class V4DLIB V4D_Renderer {
 	V4D_MODULE_FUNC(void, Render, VkCommandBuffer)
 	V4D_MODULE_FUNC(void, Render2, VkCommandBuffer)
 	// Getters
-	V4D_MODULE_FUNC(v4d::graphics::vulkan::PipelineLayout*, GetPipelineLayout, std::string name)
-	V4D_MODULE_FUNC(std::vector<v4d::graphics::vulkan::RasterShaderPipeline*>&, GetShaderGroup, std::string groupName)
-	V4D_MODULE_FUNC(v4d::graphics::vulkan::rtx::ShaderBindingTable*, GetShaderBindingTable)
+	V4D_MODULE_FUNC(v4d::graphics::vulkan::Image*, GetImage, const std::string& name)
+	V4D_MODULE_FUNC(v4d::graphics::vulkan::PipelineLayout*, GetPipelineLayout, const std::string& name)
+	V4D_MODULE_FUNC(void, AddShader, const std::string& groupName, v4d::graphics::vulkan::RasterShaderPipeline* shader)
+	V4D_MODULE_FUNC(v4d::graphics::vulkan::rtx::ShaderBindingTable*, GetShaderBindingTable, const std::string& sbtName)
 };
