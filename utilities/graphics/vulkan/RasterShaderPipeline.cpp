@@ -2,8 +2,8 @@
 
 using namespace v4d::graphics::vulkan;
 
-RasterShaderPipeline::RasterShaderPipeline(PipelineLayout& pipelineLayout, const std::vector<ShaderInfo>& shaderInfo)
- : ShaderPipeline(pipelineLayout, shaderInfo) {
+RasterShaderPipeline::RasterShaderPipeline(PipelineLayout& pipelineLayout, const std::vector<ShaderInfo>& shaderInfo, int sortIndex)
+ : ShaderPipeline(pipelineLayout, shaderInfo, sortIndex) {
 	colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;

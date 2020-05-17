@@ -40,6 +40,8 @@ namespace v4d::graphics::vulkan {
 		
 		Buffer(VkBufferUsageFlags usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VkDeviceSize size = 0, bool alignedUniformSize = false);
 		
+		void ExtendSize(VkDeviceSize);
+		
 		void AddSrcDataPtr(void* srcDataPtr, size_t size);
 		template<class T>
 		void AddSrcDataPtr(std::vector<T>* vector) {
@@ -76,7 +78,9 @@ namespace v4d::graphics::vulkan {
 		Buffer deviceLocalBuffer;
 		
 		StagedBuffer(VkBufferUsageFlags usage, VkDeviceSize size = 0, bool alignedUniformSize = false);
-		 
+		
+		void ExtendSize(VkDeviceSize);
+		
 		void AddSrcDataPtr(void* srcDataPtr, size_t size);
 		void ResetSrcData();
 		

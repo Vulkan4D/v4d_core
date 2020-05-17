@@ -29,8 +29,10 @@ namespace v4d::graphics::vulkan {
 		
 	public:
 
-		ShaderProgram(PipelineLayout& pipelineLayout, const std::vector<ShaderInfo>& infos);
+		ShaderProgram(PipelineLayout& pipelineLayout, const std::vector<ShaderInfo>& infos, int sortIndex = 0);
 		virtual ~ShaderProgram();
+		
+		int sortIndex = 0;
 		
 		// sets up bindings
 		void AddVertexInputBinding(uint32_t binding, uint32_t stride, VkVertexInputRate inputRate, std::vector<VertexInputAttributeDescription> attrs);

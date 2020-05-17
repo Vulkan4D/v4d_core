@@ -4,6 +4,13 @@ using namespace v4d::graphics::vulkan;
 
 Buffer::Buffer(VkBufferUsageFlags usage, VkDeviceSize size, bool alignedUniformSize) : usage(usage), size(size), alignedUniformSize(alignedUniformSize) {}
 
+void Buffer::ExtendSize(VkDeviceSize additionalSize) {
+	if (memory != VK_NULL_HANDLE) {
+		throw std::runtime_error("Cannot extend buffer size because it has already been allocated");
+	}
+	size += additionalSize;
+}
+
 void Buffer::AddSrcDataPtr(void* srcDataPtr, size_t size) {
 	srcDataPointers.push_back(BufferSrcDataPtr(srcDataPtr, size));
 }
@@ -158,6 +165,11 @@ BufferSrcDataPtr::BufferSrcDataPtr(void* dataPtr, size_t size) : dataPtr(dataPtr
 
 StagedBuffer::StagedBuffer(VkBufferUsageFlags usage, VkDeviceSize size, bool alignedUniformSize)
 : stagingBuffer({usage | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, size, alignedUniformSize}), deviceLocalBuffer({usage | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, size, alignedUniformSize}) {}
+
+void StagedBuffer::ExtendSize(VkDeviceSize additionalSize) {
+	stagingBuffer.ExtendSize(additionalSize);
+	deviceLocalBuffer.ExtendSize(additionalSize);
+}
 
 void StagedBuffer::AddSrcDataPtr(void* srcDataPtr, size_t size) {
 	stagingBuffer.AddSrcDataPtr(srcDataPtr, size);

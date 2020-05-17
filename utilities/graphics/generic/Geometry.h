@@ -155,6 +155,10 @@ namespace v4d::graphics {
 		struct GlobalBuffer : public StagedBuffer {
 			GlobalBuffer(uint32_t initialBlocks) : StagedBuffer(U, sizeof(T) * initialBlocks, false) {}
 			
+			void Extend(uint32_t nBlocks) {
+				ExtendSize(sizeof(T) * nBlocks);
+			}
+			
 			void Push(Device* device, VkCommandBuffer commandBuffer, int count, int offset = 0) {
 				Buffer::Copy(device, commandBuffer, stagingBuffer, deviceLocalBuffer, sizeof(T) * count, sizeof(T) * offset, sizeof(T) * offset);
 			}
@@ -167,6 +171,10 @@ namespace v4d::graphics {
 		template<class T, VkBufferUsageFlags U>
 		struct GlobalHostBuffer : public Buffer {
 			GlobalHostBuffer(uint32_t initialBlocks) : Buffer(U, sizeof(T) * initialBlocks, false) {}
+			
+			void Extend(uint32_t nBlocks) {
+				ExtendSize(sizeof(T) * nBlocks);
+			}
 		};
 
 		typedef GlobalBuffer<ObjectBuffer_T, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT> ObjectBuffer;
@@ -197,12 +205,12 @@ namespace v4d::graphics {
 			std::map<int, GeometryBufferAllocation> vertexAllocations {};
 			std::map<int, LightSource*> lightAllocations {};
 			
-			// 938 mb total
-			static const int nbInitialObjects = 65536; // 65k objects @ 128 bytes each = 8 mb
-			static const int nbInitialGeometries = nbInitialObjects * 2; // 131k geometries @ 256 bytes each = 32 mb
-			static const int nbInitialVertices = 16777216; // 16 million @ 32 bytes each = 512 mb
-			static const int nbInitialIndices = nbInitialVertices * 6; // 100 million @ 4 bytes each = 384 mb
-			static const int nbInitialLights = 65536; // 65k lights @ 32 bytes each = 2 mb
+			// 59 mb total
+			static const int nbInitialObjects = 4096; // 4k objects @ 128 bytes each = 512 kb
+			static const int nbInitialGeometries = nbInitialObjects * 2; // 8k geometries @ 256 bytes each = 2 mb
+			static const int nbInitialVertices = 1048576; // 1 million @ 32 bytes each = 32 mb
+			static const int nbInitialIndices = nbInitialVertices * 6; // 6 million @ 4 bytes each = 24 mb
+			static const int nbInitialLights = 256; // 256 lights @ 32 bytes each = 8 kb
 		
 		public:
 			

@@ -74,7 +74,7 @@ namespace v4d::graphics::vulkan {
 		VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo {};
 		std::vector<VkDynamicState> dynamicStates {}; // Dynamic settings that CAN be changed at runtime but preferably NOT every frame
 		
-		RasterShaderPipeline(PipelineLayout& pipelineLayout, const std::vector<ShaderInfo>& shaderInfo);
+		RasterShaderPipeline(PipelineLayout& pipelineLayout, const std::vector<ShaderInfo>& shaderInfo, int sortIndex = 0);
 		virtual ~RasterShaderPipeline();
 		
 		// set what data to draw
