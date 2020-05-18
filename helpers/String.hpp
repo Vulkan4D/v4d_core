@@ -23,6 +23,10 @@ namespace v4d {
 			std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c){ return std::tolower(c); });
 		}
 		
+		static void ToUpperCase(std::string& s) {
+			std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c){ return std::toupper(c); });
+		}
+		
 		static bool Replace(std::string& str, const std::string& from, const std::string& to) {
 			size_t start_pos = str.find(from);
 			if (start_pos == std::string::npos) return false;

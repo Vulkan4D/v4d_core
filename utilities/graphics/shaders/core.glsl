@@ -1,4 +1,4 @@
-#version 460 core
+// #version 460 core (this is the default)
 #extension GL_ARB_enhanced_layouts : enable
 
 precision highp int;
