@@ -6,8 +6,8 @@ namespace v4d::graphics {
 	struct V4DLIB Camera {
 		alignas(4) int width = 0;
 		alignas(4) int height = 0;
-		alignas(4) bool txaa = true;
-		alignas(4) bool debug = false;
+		alignas(4) uint32_t renderOptions = 0;
+		alignas(4) uint32_t debugOptions = 0;
 		
 		alignas(16) glm::vec4 luminance {0}; // Averaged, a = exposure factor
 		alignas(32) glm::dvec3 worldPosition {0};
@@ -21,11 +21,6 @@ namespace v4d::graphics {
 		alignas(128) glm::dmat4 historyViewMatrix {1};
 		alignas(64) glm::mat4 reprojectionMatrix {1};
 		alignas(16) glm::vec2 txaaOffset {0};
-		
-		alignas(4) bool hdr = true;
-		alignas(4) bool gammaCorrection = true;
-		alignas(4) int renderMode = 0;
-		alignas(4) int shadows = 0;
 		
 		alignas(4) float brightness = 1.0f;
 		alignas(4) float contrast = 1.0f;
@@ -51,34 +46,6 @@ namespace v4d::graphics {
 			// this technique while also reversing the normal depth test operation will make the depth buffer linear again, giving it a better depth precision on the entire range. 
 			projectionMatrix = glm::perspective(glm::radians(fov), (double) width / height, zfar, znear);
 			projectionMatrix[1].y *= -1;
-			
-			// TXAA 
-			if (txaa && !debug) {
-				static unsigned long frameCount = 0;
-				static const glm::dvec2 samples8[8] = {
-					glm::dvec2(-7.0, 1.0) / 8.0,
-					glm::dvec2(-5.0, -5.0) / 8.0,
-					glm::dvec2(-1.0, -3.0) / 8.0,
-					glm::dvec2(3.0, -7.0) / 8.0,
-					glm::dvec2(5.0, -1.0) / 8.0,
-					glm::dvec2(7.0, 7.0) / 8.0,
-					glm::dvec2(1.0, 3.0) / 8.0,
-					glm::dvec2(-3.0, 5.0) / 8.0
-				};
-				glm::dvec2 texelSize = 1.0 / glm::dvec2(width, height);
-				glm::dvec2 subSample = samples8[frameCount % 8] * texelSize * double(txaaKernelSize);
-				projectionMatrix[2].x = subSample.x;
-				projectionMatrix[2].y = subSample.y;
-				// historyTxaaOffset = txaaOffset;
-				txaaOffset = subSample / 2.0;
-				frameCount++;
-				
-				reprojectionMatrix = (projectionMatrix * historyViewMatrix) * inverse(projectionMatrix * viewMatrix);
-				
-				// Save Projection and View matrices from previous frame
-				historyViewMatrix = viewMatrix;
-			}
-			
 		}
 		
 		void MakeViewMatrix(glm::dvec3 worldPosition, glm::dvec3 lookDirection, glm::dvec3 viewUp) {

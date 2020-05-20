@@ -3,6 +3,7 @@
 #include <v4d.h>
 
 #include "LightSource.hpp"
+#include "geometry_attributes.hh"
 
 namespace v4d::graphics {
 	
@@ -53,17 +54,11 @@ namespace v4d::graphics {
 		uint32_t material;
 		bool isProcedural;
 		
-		enum : uint32_t {
-			RAY_TRACING_TYPE_SOLID = 0x01,
-			RAY_TRACING_TYPE_PLAYER = 0x02,
-			RAY_TRACING_TYPE_FOG = 0x04,
-			RAY_TRACING_TYPE_PARTICLE = 0x08,
-			RAY_TRACING_TYPE_COLLIDER = 0x10,
-			RAY_TRACING_TYPE_CUTOUT = 0x20,
-			RAY_TRACING_TYPE_CELESTIAL = 0x40,
-			RAY_TRACING_TYPE_EMITTER = 0x80,
-		};
-		uint32_t rayTracingMask = RAY_TRACING_TYPE_SOLID;
+		uint32_t rayTracingMask = 	GEOMETRY_ATTR_PRIMARY_VISIBLE|
+									GEOMETRY_ATTR_CAST_SHADOWS|
+									GEOMETRY_ATTR_REFLECTION_VISIBLE|
+									GEOMETRY_ATTR_COLLIDER;
+									
 		VkGeometryInstanceFlagsKHR flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
 		glm::vec3 custom3f = {0,0,0};
 		glm::mat4 custom4x4f = glm::mat4{0};

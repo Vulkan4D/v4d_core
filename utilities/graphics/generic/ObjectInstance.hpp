@@ -183,7 +183,7 @@ namespace v4d::graphics {
 			lightSources.clear();
 			auto* lightSource = AddLightSource({0,0,0}, lightIntensity, lightColor, lightType, lightAttributes, radius);
 			if (radius > 0) SetSphereGeometry(type, radius, geomColor, lightSource->lightOffset, custom1);
-			geometries[0].geometry->rayTracingMask = Geometry::RAY_TRACING_TYPE_EMITTER;
+			geometries[0].geometry->rayTracingMask = GEOMETRY_ATTR_PRIMARY_VISIBLE | GEOMETRY_ATTR_EMITTER | GEOMETRY_ATTR_COLLIDER | GEOMETRY_ATTR_REFLECTION_VISIBLE;
 			return lightSource;
 		}
 		
