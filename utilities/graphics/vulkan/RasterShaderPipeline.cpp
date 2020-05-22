@@ -56,15 +56,6 @@ void RasterShaderPipeline::SetData(Buffer* vertexBuffer, uint32_t vertexCount) {
 	this->indexOffset = 0;
 }
 
-void RasterShaderPipeline::SetData(Buffer* vertexBuffer, VkDeviceSize vertexOffset, uint32_t vertexCount) {
-	this->vertexBuffer = vertexBuffer;
-	this->indexBuffer = nullptr;
-	this->vertexCount = vertexCount;
-	this->vertexOffset = vertexOffset;
-	this->indexCount = 0;
-	this->indexOffset = 0;
-}
-
 void RasterShaderPipeline::SetData(uint32_t vertexCount) {
 	this->vertexBuffer = nullptr;
 	this->indexBuffer = nullptr;
@@ -197,13 +188,15 @@ void RasterShaderPipeline::Render(Device* device, VkCommandBuffer cmdBuffer, uin
 		device->CmdBindVertexBuffers(cmdBuffer, 0, 1, &vertexBuffer->buffer, &vertexOffset);
 		if (indexBuffer == nullptr) {
 			// Draw vertices
-			device->CmdDraw(cmdBuffer,
-				vertexCount, // vertexCount
-				instanceCount, // instanceCount
-				0, // firstVertex (defines the lowest value of gl_VertexIndex)
-				0  // firstInstance (defines the lowest value of gl_InstanceIndex)
-			);
-		} else {
+			if (vertexCount > 0) {
+				device->CmdDraw(cmdBuffer,
+					vertexCount, // vertexCount
+					instanceCount, // instanceCount
+					0, // firstVertex (defines the lowest value of gl_VertexIndex)
+					0  // firstInstance (defines the lowest value of gl_InstanceIndex)
+				);
+			}
+		} else if (indexCount > 0) {
 			// Draw indices
 			device->CmdBindIndexBuffer(cmdBuffer, indexBuffer->buffer, indexOffset, VK_INDEX_TYPE_UINT32);
 			device->CmdDrawIndexed(cmdBuffer,

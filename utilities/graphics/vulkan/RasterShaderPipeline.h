@@ -78,10 +78,9 @@ namespace v4d::graphics::vulkan {
 		virtual ~RasterShaderPipeline();
 		
 		// set what data to draw
-		void SetData(Buffer* vertexBuffer, Buffer* indexBuffer, uint32_t indexCount = 0);
+		void SetData(Buffer* vertexBuffer, Buffer* indexBuffer, uint32_t indexCount);
 		void SetData(Buffer* vertexBuffer, VkDeviceSize vertexOffset, Buffer* indexBuffer, VkDeviceSize indexOffset, uint32_t indexCount);
 		void SetData(Buffer* vertexBuffer, uint32_t vertexCount);
-		void SetData(Buffer* vertexBuffer, VkDeviceSize vertexOffset, uint32_t vertexCount);
 		void SetData(uint32_t vertexCount);
 
 		virtual void CreatePipeline(Device* device) override;
