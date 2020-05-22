@@ -29,6 +29,8 @@ namespace v4d::graphics::vulkan {
 		static uint CompactVec4ToUint(float r, float g, float b, float a);
 		static float CompactVec3ToFloat(float r, float g, float b);
 		
+		std::string GetShaderPath(std::string type) const;
+		
 	protected:
 		VkPipeline pipeline = VK_NULL_HANDLE;
 		

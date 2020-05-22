@@ -7,6 +7,7 @@
 		
 	// Ray Tracing Payload
 	struct RayPayload_visibility {
+		uint geometryIndex;
 		vec3 viewSpacePosition;
 		vec3 viewSpaceNormal;
 		vec3 albedo;

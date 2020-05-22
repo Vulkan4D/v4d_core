@@ -39,6 +39,11 @@ namespace v4d::graphics {
 	V4DLIB glm::vec2 UnpackUVfromUint(glm::u32 uv);
 
 	#pragma endregion
+	
+	struct GeometryRenderType {
+		RasterShaderPipeline* rasterShader = nullptr;
+		uint32_t sbtOffset = 0;
+	};
 
 	struct ObjectInstance;
 	
@@ -103,9 +108,6 @@ namespace v4d::graphics {
 			
 			static std::vector<VertexInputAttributeDescription> GetInputAttributes() {
 				return {
-					// {0, offsetof(VertexBuffer_T, pos), VK_FORMAT_R32G32B32A32_SFLOAT},
-					// {1, offsetof(VertexBuffer_T, normal), VK_FORMAT_R32G32B32A32_SFLOAT},
-					
 					{0, offsetof(VertexBuffer_T, pos), VK_FORMAT_R32G32B32_SFLOAT},
 					{1, offsetof(VertexBuffer_T, _color), VK_FORMAT_R32_UINT},
 					{2, offsetof(VertexBuffer_T, normal), VK_FORMAT_R32G32B32_SFLOAT},
@@ -121,6 +123,15 @@ namespace v4d::graphics {
 			
 			void SetColor(const glm::vec4& rgba) {_color = PackColorAsFloat(rgba);}
 			glm::vec4 GetColor() const {return UnpackColorFromFloat(_color);}
+			
+			static std::vector<VertexInputAttributeDescription> GetInputAttributes() {
+				return {
+					{0, offsetof(ProceduralVertexBuffer_T, aabbMin), VK_FORMAT_R32G32B32_SFLOAT},
+					{1, offsetof(ProceduralVertexBuffer_T, aabbMax), VK_FORMAT_R32G32B32_SFLOAT},
+					{2, offsetof(ProceduralVertexBuffer_T, _color), VK_FORMAT_R32_UINT},
+					{3, offsetof(ProceduralVertexBuffer_T, custom1), VK_FORMAT_R32_SFLOAT},
+				};
+			}
 		};
 		struct LightBuffer_T { // 32 bytes
 			glm::vec3 position;
@@ -144,7 +155,7 @@ namespace v4d::graphics {
 			}
 		};
 		
-		static std::unordered_map<std::string, uint32_t> rayTracingShaderOffsets;
+		static std::unordered_map<std::string, GeometryRenderType> geometryRenderTypes;
 
 		template<class T, VkBufferUsageFlags U>
 		struct GlobalBuffer : public StagedBuffer {

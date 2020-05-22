@@ -4,7 +4,7 @@ namespace v4d::graphics {
 	
 	Geometry::GlobalGeometryBuffers Geometry::globalBuffers {};
 
-	std::unordered_map<std::string, uint32_t> Geometry::rayTracingShaderOffsets {};
+	std::unordered_map<std::string, GeometryRenderType> Geometry::geometryRenderTypes {};
 
 	Geometry::Geometry(uint32_t vertexCount, uint32_t indexCount, uint32_t material, bool isProcedural)
 	 : vertexCount(vertexCount), indexCount(indexCount), material(material), isProcedural(isProcedural) {
@@ -100,6 +100,8 @@ namespace v4d::graphics {
 		vert->aabbMax = aabbMax;
 		vert->SetColor(color);
 		vert->custom1 = custom1;
+		
+		boundingDistance = glm::max(boundingDistance, glm::max(glm::length(aabbMin), glm::length(aabbMax)));
 		
 		isDirty = true;
 	}

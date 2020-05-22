@@ -117,6 +117,41 @@ vec4 UnpackColorFromUint(in uint color) {
 }
 
 
+float GetSphereIntersectionViewDistance(vec3 viewPos, vec3 sphereCenterViewPos, float sphereRadius) {
+	float dist = length(sphereCenterViewPos);
+	if (dist <= sphereRadius) {
+		return 0; // we are inside the sphere
+	} else if (sphereRadius > 0.0) {
+		vec3 direction = normalize(viewPos);
+		vec3 oc = -sphereCenterViewPos;
+		if (dot(normalize(oc), direction) < 0) {
+			float a = dot(direction, direction);
+			float b = 2.0 * dot(oc, direction);
+			float c = dot(oc,oc) - sphereRadius*sphereRadius;
+			float discriminent = b*b - 4*a*c;
+			dist = (-b - sqrt(discriminent)) / (2.0*a);
+			if (discriminent >= 0) {
+				return dist;
+			}
+		}
+	}
+	return -1;
+}
+
+bool ProceduralSphereIntersection(vec3 centerPos, float sphereRadius, inout vec3 viewPos, out vec3 normal, inout float dist) {
+	float minDistance = dist;
+	dist = GetSphereIntersectionViewDistance(viewPos, centerPos, sphereRadius);
+	if (dist >= 0) {
+		dist = max(dist, minDistance);
+		viewPos = normalize(viewPos)*dist;
+		normal = normalize(viewPos - centerPos);
+		return true;
+	}
+	dist = minDistance;
+	return false;
+}
+
+
 // float linearstep(float a, float b, float x) {
 // 	if (b == a) return (x >= a ? 1 : 0);
 // 	return (x - a) / (b - a);

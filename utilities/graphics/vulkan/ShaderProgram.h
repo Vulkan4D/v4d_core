@@ -17,7 +17,7 @@ namespace v4d::graphics::vulkan {
 	};
 
 	class V4DLIB ShaderProgram {
-	private:
+	protected:
 		std::vector<ShaderInfo> shaderFiles;
 		std::vector<Shader> shaders;
 		std::vector<VkPipelineShaderStageCreateInfo> stages;

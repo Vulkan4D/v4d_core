@@ -207,6 +207,7 @@ namespace v4d::graphics {
 		void ClearGeometries() {
 			geometriesDirty = true;
 			RemoveGeometries();
+			RemoveLightSources();
 		}
 		
 		#pragma endregion

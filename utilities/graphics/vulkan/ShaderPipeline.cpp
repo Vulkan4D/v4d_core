@@ -39,3 +39,12 @@ uint ShaderPipeline::CompactVec4ToUint(float r, float g, float b, float a) {
 float ShaderPipeline::CompactVec3ToFloat(float r, float g, float b) {
 	return r + g * 256.0f + b * 256.0f * 256.0f;
 }
+
+std::string ShaderPipeline::GetShaderPath(std::string type) const {
+	for (auto& s : shaderFiles) {
+		if (s.filepath.substr(s.filepath.length()-type.length(), type.length()) == type) {
+			return s.filepath;
+		}
+	}
+	return "";
+}
