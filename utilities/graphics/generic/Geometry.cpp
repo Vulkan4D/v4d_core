@@ -88,6 +88,7 @@ namespace v4d::graphics {
 		vertices[i].SetUV(uv);
 		
 		boundingDistance = glm::max(boundingDistance, glm::length(pos));
+		boundingBoxSize = glm::max(glm::abs(pos), boundingBoxSize);
 		
 		isDirty = true;
 	}
@@ -102,6 +103,7 @@ namespace v4d::graphics {
 		vert->custom1 = custom1;
 		
 		boundingDistance = glm::max(boundingDistance, glm::max(glm::length(aabbMin), glm::length(aabbMax)));
+		boundingBoxSize = glm::vec3(boundingDistance);
 		
 		isDirty = true;
 	}
@@ -181,6 +183,12 @@ namespace v4d::graphics {
 		if (!indices) MapStagingBuffers();
 		
 		return indices[i];
+	}
+
+	Geometry::IndexBuffer_T* Geometry::GetIndexPtr(uint32_t i) {
+		if (!indices) MapStagingBuffers();
+		
+		return &indices[i];
 	}
 	
 	void Geometry::GetIndices(std::vector<IndexBuffer_T>* vertexIndices, uint32_t count, uint32_t startAt) {

@@ -34,6 +34,25 @@ namespace v4d::graphics {
 		mutable std::mutex mu;
 		
 	public:
+	
+		#pragma region Physics
+		
+			// Reserved for use by V4D_Physics module class
+			enum class RigidBodyType : int {
+				NONE = 0,
+				KINEMATIC,
+				STATIC,
+				DYNAMIC
+			};
+			RigidBodyType rigidbodyType = RigidBodyType::NONE;
+			mutable std::recursive_mutex physicsMutex;
+			double mass = 0;
+			void* physicsObject = nullptr;
+			bool physicsDirty = false;
+			void (*removePhysicsCallback)(ObjectInstance*) = nullptr;
+		
+		#pragma endregion
+	
 		#pragma region Constructor/Destructor
 		
 		ObjectInstance() {
@@ -41,6 +60,8 @@ namespace v4d::graphics {
 		}
 		
 		~ObjectInstance() {
+			Disable();
+			if (removePhysicsCallback) removePhysicsCallback(this);
 			ClearGeometries();
 			RemoveLightSources();
 			Geometry::globalBuffers.RemoveObject(this);
@@ -52,7 +73,7 @@ namespace v4d::graphics {
 		
 		void GenerateGeometries() {
 			if (generateFunc && !generated) generateFunc(this);
-			generated = true;
+			SetGenerated();
 			WriteGeometriesInformation();
 		}
 		
@@ -168,6 +189,7 @@ namespace v4d::graphics {
 				geometries.emplace_back(std::make_shared<Geometry>(1, 0, material, true), -1, glm::dmat4{1}, type);
 			}
 			geometries[0].geometry->SetProceduralVertex(0, glm::vec3(-radius), glm::vec3(+radius), color, custom1);
+			geometries[0].geometry->colliderType = Geometry::ColliderType::SPHERE;
 		}
 		
 		LightSource* SetSphereLightSource(
@@ -192,6 +214,8 @@ namespace v4d::graphics {
 		#pragma region Clear
 		
 		void RemoveGeometries() {
+			std::lock_guard lock(physicsMutex);
+			if (physicsObject) physicsDirty = true;
 			geometries.clear();
 			generated = false;
 		}
@@ -285,6 +309,14 @@ namespace v4d::graphics {
 			mu.unlock();
 		}
 		
+		void LockPhysics() const {
+			physicsMutex.lock();
+		}
+		
+		void UnlockPhysics() const {
+			physicsMutex.unlock();
+		}
+		
 		#pragma endregion
 		
 		#pragma region Active/Inactive
@@ -301,10 +333,14 @@ namespace v4d::graphics {
 		}
 		
 		void Enable() {
+			std::lock_guard lock(physicsMutex);
+			if (!active && physicsObject) physicsDirty = true;
 			active = true;
 		}
 		
 		void Disable() {
+			std::lock_guard lock(physicsMutex);
+			if (active && physicsObject) physicsDirty = true;
 			active = false;
 		}
 		
@@ -313,6 +349,8 @@ namespace v4d::graphics {
 		}
 		
 		void SetGenerated() {
+			std::lock_guard lock(physicsMutex);
+			if (physicsObject) physicsDirty = true;
 			generated = true;
 		}
 		
@@ -321,6 +359,9 @@ namespace v4d::graphics {
 		}
 		
 		void MarkForDeletion() {
+			Disable();
+			std::lock_guard lock(physicsMutex);
+			if (physicsObject) physicsDirty = true;
 			markedForDeletion = true;
 		}
 		

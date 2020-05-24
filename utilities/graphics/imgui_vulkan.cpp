@@ -45,6 +45,7 @@
 //  2016-08-27: Vulkan: Fix Vulkan example for use when a depth buffer is active.
 
 #ifdef _ENABLE_IMGUI
+	#include "../../imgui_v4d_config.hh"
 	#include <v4d.h>
 	
 	using namespace XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE;

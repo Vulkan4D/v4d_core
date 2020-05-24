@@ -76,6 +76,26 @@ namespace v4d::graphics {
 		bool isDirty = false;
 		
 		float boundingDistance = 0.0f;
+		glm::vec3 boundingBoxSize = {0,0,0};
+		
+		
+		#pragma region Physics
+			
+			// Reserved for use by V4D_Physics module class
+			enum class ColliderType : int {
+				NONE,
+				SPHERE,
+				BOX,
+				TRIANGLE_MESH,
+				STATIC_PLANE,
+				HEIGHTFIELD
+			};
+			ColliderType colliderType = ColliderType::TRIANGLE_MESH;
+			void* colliderShapeObject = nullptr;
+			bool colliderDirty = true;
+		
+		#pragma endregion
+	
 		
 		std::shared_ptr<v4d::graphics::vulkan::rtx::AccelerationStructure> blas = nullptr;
 		std::shared_ptr<Geometry> duplicateFrom = nullptr;
@@ -321,15 +341,17 @@ namespace v4d::graphics {
 		
 		void GetVertex(uint32_t i, glm::vec3* pos, glm::vec3* normal = nullptr, glm::vec2* uv = nullptr, glm::vec4* color = nullptr);
 		
-		VertexBuffer_T* GetVertexPtr(uint32_t i);
+		VertexBuffer_T* GetVertexPtr(uint32_t i = 0);
 		
 		void GetProceduralVertex(uint32_t i, glm::vec3* aabbMin, glm::vec3* aabbMax, glm::vec4* color = nullptr, float* custom1 = nullptr);
 		
-		ProceduralVertexBuffer_T* GetProceduralVertexPtr(uint32_t i);
+		ProceduralVertexBuffer_T* GetProceduralVertexPtr(uint32_t i = 0);
 		
 		void GetIndex(uint32_t i, IndexBuffer_T* vertexIndex);
 		
 		IndexBuffer_T GetIndex(uint32_t i);
+		
+		IndexBuffer_T* GetIndexPtr(uint32_t i = 0);
 		
 		void GetIndices(std::vector<IndexBuffer_T>* vertexIndices, uint32_t count = 0, uint32_t startAt = 0);
 		

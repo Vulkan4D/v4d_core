@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef IMGUI_API
 	#ifdef _WINDOWS
 		#ifdef _V4D_CORE
