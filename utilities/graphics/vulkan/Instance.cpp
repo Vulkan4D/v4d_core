@@ -69,7 +69,7 @@ using namespace v4d::graphics::vulkan;
 		this->loader = loader;
 		if (logging) LOG("Creating Vulkan instance...");
 		
-		// Create the Vulkan instance
+		// Check extensions and layers
 		loader->CheckLayers(logging);
 		loader->CheckExtensions(logging);
 		loader->CheckVulkanVersion();
@@ -96,8 +96,6 @@ using namespace v4d::graphics::vulkan;
 			(uint32_t)loader->requiredInstanceExtensions.size(),
 			loader->requiredInstanceExtensions.data()
 		};
-
-		// Create the Vulkan instance
 		if (vulkanLoader->vkCreateInstance(&createInfo, nullptr, &handle) != VK_SUCCESS)
 			throw std::runtime_error("Failed to create Vulkan Instance");
 			

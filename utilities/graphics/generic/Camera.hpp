@@ -12,9 +12,9 @@ namespace v4d::graphics {
 		alignas(16) glm::vec4 luminance {0}; // Averaged, a = exposure factor
 		alignas(32) glm::dvec3 worldPosition {0};
 		alignas(8) double fov = 70;
-		alignas(32) glm::dvec3 lookDirection {0,1,0}; //TODO remove if not needed
+		alignas(32) glm::dvec3 lookDirection {0,1,0};
 		alignas(8) double znear = 0.001; // 1 mm
-		alignas(32) glm::dvec3 viewUp = {0,0,1}; //TODO remove if not needed
+		alignas(32) glm::dvec3 viewUp = {0,0,1};
 		alignas(8) double zfar = 1.e16; // 1e16 = 1 light-year
 		alignas(128) glm::dmat4 viewMatrix {1};
 		alignas(128) glm::dmat4 projectionMatrix {1};

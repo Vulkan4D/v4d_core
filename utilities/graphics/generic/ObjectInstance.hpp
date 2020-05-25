@@ -47,9 +47,25 @@ namespace v4d::graphics {
 			RigidBodyType rigidbodyType = RigidBodyType::NONE;
 			mutable std::recursive_mutex physicsMutex;
 			double mass = 0;
+			glm::dvec3 centerOfMass {0,0,0};
 			void* physicsObject = nullptr;
 			bool physicsDirty = false;
 			void (*removePhysicsCallback)(ObjectInstance*) = nullptr;
+			bool addedForce = false;
+			glm::dvec3 forcePoint {0,0,0};
+			glm::dvec3 forceDirection {0,0,0};
+			void SetForce(glm::dvec3 forceDir, glm::dvec3 atPoint = {0,0,0}) {
+				std::lock_guard lock(physicsMutex);
+				addedForce = (forceDir.length() > 0);
+				forcePoint = atPoint;
+				forceDirection = forceDir;
+			}
+			std::queue<std::tuple<glm::dvec3, glm::dvec3>> physicsForceImpulses {};
+			void AddImpulse(glm::dvec3 impulseDir, glm::dvec3 atPoint = {0,0,0}) {
+				if (impulseDir.length() == 0) return;
+				std::lock_guard lock(physicsMutex);
+				physicsForceImpulses.emplace(impulseDir, atPoint);
+			}
 		
 		#pragma endregion
 	
@@ -61,7 +77,6 @@ namespace v4d::graphics {
 		
 		~ObjectInstance() {
 			Disable();
-			if (removePhysicsCallback) removePhysicsCallback(this);
 			ClearGeometries();
 			RemoveLightSources();
 			Geometry::globalBuffers.RemoveObject(this);
@@ -72,8 +87,11 @@ namespace v4d::graphics {
 		#pragma region Write to device
 		
 		void GenerateGeometries() {
-			if (generateFunc && !generated) generateFunc(this);
-			SetGenerated();
+			{
+				std::lock_guard lock(physicsMutex);
+				if (generateFunc && !generated) generateFunc(this);
+				SetGenerated();
+			}
 			WriteGeometriesInformation();
 		}
 		
@@ -94,6 +112,8 @@ namespace v4d::graphics {
 		}
 		
 		void WriteMatrices(const glm::dmat4& viewMatrix) {
+			std::lock_guard physicsLock(physicsMutex);
+			
 			Geometry::globalBuffers.WriteObject(this);
 			
 			for (auto& geom : geometries) {
@@ -111,10 +131,12 @@ namespace v4d::graphics {
 		#pragma region Configure
 		
 		void SetTranslation(const glm::dvec3 t) {
+			std::lock_guard physicsLock(physicsMutex);
 			transform = glm::translate(transform, t);
 		}
 		
 		void SetRotation(double angle, const glm::dvec3& axis = {0,0,1}) {
+			std::lock_guard physicsLock(physicsMutex);
 			transform = glm::rotate(transform, glm::radians(angle), axis);
 		}
 		
@@ -123,6 +145,7 @@ namespace v4d::graphics {
 		}
 		
 		void Configure(void (*genFunc)(ObjectInstance*), const glm::dvec3 position = {0,0,0}, double angle = 0, const glm::dvec3 axis = {0,0,1}) {
+			std::lock_guard physicsLock(physicsMutex);
 			transform = glm::rotate(glm::translate(glm::dmat4(1), position), glm::radians(angle), axis);
 			generateFunc = genFunc;
 		}
@@ -190,6 +213,7 @@ namespace v4d::graphics {
 			}
 			geometries[0].geometry->SetProceduralVertex(0, glm::vec3(-radius), glm::vec3(+radius), color, custom1);
 			geometries[0].geometry->colliderType = Geometry::ColliderType::SPHERE;
+			geometries[0].geometry->boundingDistance = radius;
 		}
 		
 		LightSource* SetSphereLightSource(
@@ -215,7 +239,7 @@ namespace v4d::graphics {
 		
 		void RemoveGeometries() {
 			std::lock_guard lock(physicsMutex);
-			if (physicsObject) physicsDirty = true;
+			if (removePhysicsCallback) removePhysicsCallback(this);
 			geometries.clear();
 			generated = false;
 		}
@@ -239,6 +263,8 @@ namespace v4d::graphics {
 		#pragma region Getters/Setters
 		
 		glm::dmat4 GetWorldTransform() const {
+			std::lock_guard physicsLock(physicsMutex);
+			// copy transform object while physics is locked
 			return transform;
 		}
 		
@@ -288,6 +314,7 @@ namespace v4d::graphics {
 		#pragma region Realtime / Per-Frame Updates
 		
 		void SetWorldTransform(const glm::dmat4 worldSpaceTransform) {
+			std::lock_guard physicsLock(physicsMutex);
 			transform = worldSpaceTransform;
 		}
 		
@@ -334,7 +361,7 @@ namespace v4d::graphics {
 		
 		void Enable() {
 			std::lock_guard lock(physicsMutex);
-			if (!active && physicsObject) physicsDirty = true;
+			if (!active && rigidbodyType != RigidBodyType::NONE) physicsDirty = true;
 			active = true;
 		}
 		
@@ -350,7 +377,7 @@ namespace v4d::graphics {
 		
 		void SetGenerated() {
 			std::lock_guard lock(physicsMutex);
-			if (physicsObject) physicsDirty = true;
+			if (rigidbodyType != RigidBodyType::NONE) physicsDirty = true;
 			generated = true;
 		}
 		

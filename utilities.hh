@@ -50,7 +50,7 @@
 #include "utilities/graphics/vulkan/rtx/AccelerationStructure.h"
 
 // Generic Graphics Objects
-#include "utilities/graphics/generic/Scene.hpp"
+#include "utilities/graphics/generic/Scene.h"
 
 // ImGui
 #ifdef _ENABLE_IMGUI

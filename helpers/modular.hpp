@@ -174,6 +174,14 @@
 			_loadedSortedModules[sortedListKey].push_back(modulePtr);\
 		}\
 		std::sort(_loadedSortedModules[sortedListKey].begin(), _loadedSortedModules[sortedListKey].end(), func);\
+	}\
+	void moduleClassName::UnloadModules() {\
+		std::lock_guard lock(_mutexForLoadedModules);\
+		for (auto[mod, modulePtr] : _loadedModules) {\
+			delete modulePtr;\
+		}\
+		_loadedModules.clear();\
+		_loadedSortedModules.clear();\
 	}
 
 #define V4D_MODULE_FUNC(returnType, funcName, ...)\
@@ -200,6 +208,7 @@
 		static moduleClassName* GetPrimaryModule();\
 		static void ForPrimaryModule(const callback&& func);\
 		static void SortModules(const std::function<bool(moduleClassName*, moduleClassName*)>& func, const std::string& sortedListKey = "");\
+		static void UnloadModules();\
 	private:\
 		__V4D_MODULE_FILE_HANDLER _handle = 0;\
 		__V4D_MODULE_ERR_TYPE _error = 0;\
