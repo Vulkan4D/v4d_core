@@ -25,7 +25,7 @@ namespace v4d::graphics::vulkan::rtx {
 		return size;
 	}
 	
-	void AccelerationStructure::AssignBottomLevel(Device* device, std::shared_ptr<Geometry> geom) {
+	void AccelerationStructure::AssignBottomLevel(Device* device, std::shared_ptr<v4d::scene::Geometry> geom) {
 		isTopLevel = false;
 		this->device = device;
 		
@@ -35,26 +35,26 @@ namespace v4d::graphics::vulkan::rtx {
 		geometry->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
 		geometry->flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
 		#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
-			auto vertexBufferAddr = device->GetBufferDeviceOrHostAddressConst(Geometry::globalBuffers.vertexBuffer.deviceLocalBuffer.buffer);
+			auto vertexBufferAddr = device->GetBufferDeviceOrHostAddressConst(v4d::scene::Geometry::globalBuffers.vertexBuffer.deviceLocalBuffer.buffer);
 		#else
-			auto vertexBufferAddr = device->GetBufferDeviceOrHostAddressConst(Geometry::globalBuffers.vertexBuffer.buffer);
+			auto vertexBufferAddr = device->GetBufferDeviceOrHostAddressConst(v4d::scene::Geometry::globalBuffers.vertexBuffer.buffer);
 		#endif
 		if (geom->isProcedural) {
 			geometry->geometryType = VK_GEOMETRY_TYPE_AABBS_KHR;
 			geometry->geometry.aabbs.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR;
-			geometry->geometry.aabbs.stride = sizeof(Geometry::ProceduralVertexBuffer_T);
+			geometry->geometry.aabbs.stride = sizeof(v4d::scene::Geometry::ProceduralVertexBuffer_T);
 			geometry->geometry.aabbs.data = vertexBufferAddr;
 		} else {
 			geometry->geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
 			geometry->geometry.triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-			geometry->geometry.triangles.vertexStride = sizeof(Geometry::VertexBuffer_T);
+			geometry->geometry.triangles.vertexStride = sizeof(v4d::scene::Geometry::VertexBuffer_T);
 			geometry->geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-			geometry->geometry.triangles.indexType = sizeof(Geometry::IndexBuffer_T)==2? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
+			geometry->geometry.triangles.indexType = sizeof(v4d::scene::Geometry::IndexBuffer_T)==2? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
 			geometry->geometry.triangles.vertexData = vertexBufferAddr;
 			#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
-				geometry->geometry.triangles.indexData = device->GetBufferDeviceOrHostAddressConst(Geometry::globalBuffers.indexBuffer.deviceLocalBuffer.buffer);
+				geometry->geometry.triangles.indexData = device->GetBufferDeviceOrHostAddressConst(v4d::scene::Geometry::globalBuffers.indexBuffer.deviceLocalBuffer.buffer);
 			#else
-				geometry->geometry.triangles.indexData = device->GetBufferDeviceOrHostAddressConst(Geometry::globalBuffers.indexBuffer.buffer);
+				geometry->geometry.triangles.indexData = device->GetBufferDeviceOrHostAddressConst(v4d::scene::Geometry::globalBuffers.indexBuffer.buffer);
 			#endif
 			if (geom->transformBuffer) {
 				geometry->geometry.triangles.transformData = device->GetBufferDeviceOrHostAddressConst(geom->transformBuffer->buffer);
@@ -72,7 +72,7 @@ namespace v4d::graphics::vulkan::rtx {
 		};
 		buildOffsetInfo = {
 			geom->isProcedural? geom->vertexCount : (geom->indexCount/3), // primitiveCount
-			(uint32_t)(geom->isProcedural? (geom->vertexOffset*sizeof(Geometry::ProceduralVertexBuffer_T)) : (geom->indexOffset*sizeof(Geometry::IndexBuffer_T))), // primitiveOffset
+			(uint32_t)(geom->isProcedural? (geom->vertexOffset*sizeof(v4d::scene::Geometry::ProceduralVertexBuffer_T)) : (geom->indexOffset*sizeof(v4d::scene::Geometry::IndexBuffer_T))), // primitiveOffset
 			geom->isProcedural? 0 : geom->vertexOffset, // firstVertex
 			(uint32_t)geom->transformOffset // transformOffset
 		};

@@ -1,54 +1,51 @@
 #include <v4d.h>
 
-namespace v4d::graphics {
+namespace v4d::scene {
 	Scene::~Scene() {
+		ClearAllRemainingObjects();
+	}
+	
+	ObjectInstancePtr Scene::AddObjectInstance() {
 		std::lock_guard lock(sceneMutex);
-		for (auto* obj : objectInstances) if (obj) {
-			delete obj;
+		auto obj = objectInstances.emplace_back(std::make_shared<ObjectInstance>());
+		return obj;
+	}
+	
+	void Scene::RemoveObjectInstance(ObjectInstancePtr obj) {
+		std::lock_guard lock(sceneMutex);
+		obj->Disable();
+		for (auto&[_, func] : objectInstanceRemovedCallbacks) {
+			func(obj);
 		}
-		objectInstances.clear();
-	}
-	
-	ObjectInstance* Scene::AddObjectInstance() {
-		std::lock_guard lock(sceneMutex);
-		return objectInstances.emplace_back(new ObjectInstance());
-	}
-	
-	void Scene::RemoveObjectInstance(ObjectInstance* obj) {
-		std::lock_guard lock(sceneMutex);
-		if (!obj) return;
-		if (obj->AnyGeometryHasInstanceIndex()) { //TODO maybe replace this with usage count in the future, or smart pointer...
-			obj->Disable();
-			obj->MarkForDeletion();
+		obj->ClearGeometries();
+		int lastIndex = objectInstances.size() - 1;
+		auto objInScene = std::find(objectInstances.begin(), objectInstances.end(), obj);
+		if (objInScene != objectInstances.end()) {
+			if (*objInScene != objectInstances[lastIndex]) {
+				*objInScene = objectInstances[lastIndex];
+			}
+			objectInstances.pop_back();
 		} else {
-			int lastIndex = objectInstances.size() - 1;
-			auto objInScene = std::find(objectInstances.begin(), objectInstances.end(), obj);
-			if (objInScene != objectInstances.end()) {
-				delete obj;
-				if (*objInScene != objectInstances[lastIndex]) {
-					*objInScene = objectInstances[lastIndex];
-				}
-				objectInstances.pop_back();
-			} else {
-				LOG_WARN("Scene Object to be removed was not present in objectInstances. Object NOT deleted.")
-			}
-		}
-	}
-	
-	void Scene::CollectGarbage() {
-		std::lock_guard lock(sceneMutex);
-		for (auto* obj : objectInstances) if (obj) {
-			if (obj->IsMarkedForDeletion() && !obj->AnyGeometryHasInstanceIndex()) {
-				RemoveObjectInstance(obj);
-			}
+			LOG_WARN("Scene Object to be removed was not present in objectInstances. Object NOT deleted.")
 		}
 	}
 	
 	void Scene::ClenupObjectInstancesGeometries() {
 		std::lock_guard lock(sceneMutex);
-		for (auto* obj : objectInstances) if (obj) {
+		for (auto obj : objectInstances) {
+			for (auto&[_, func] : objectInstanceRemovedCallbacks) {
+				func(obj);
+			}
 			obj->ClearGeometries();
 		}
+	}
+	
+	void Scene::ClearAllRemainingObjects() {
+		std::lock_guard lock(sceneMutex);
+		for (auto obj : objectInstances) {
+			RemoveObjectInstance(obj);
+		}
+		objectInstances.clear();
 	}
 	
 	int Scene::GetObjectCount() const {
@@ -74,7 +71,7 @@ namespace v4d::graphics {
 	}
 	
 	Scene::RayCastHit::RayCastHit() {}
-	Scene::RayCastHit::RayCastHit(v4d::graphics::ObjectInstance* o, glm::dvec3 p, glm::dvec3 n) : obj(o), position(p), normal(n) {}
+	Scene::RayCastHit::RayCastHit(v4d::scene::ObjectInstancePtr o, glm::dvec3 p, glm::dvec3 n) : obj(o), position(p), normal(n) {}
 	
 	bool Scene::RayCastClosest(Scene::RayCastHit* hit, double minDistance, double maxDistance, uint32_t mask) const {
 		return RayCastClosest(hit, camera.worldPosition + camera.lookDirection*minDistance, camera.lookDirection*(maxDistance<0? 1e16 : maxDistance), mask);

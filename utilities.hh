@@ -49,8 +49,8 @@
 // Ray Tracing
 #include "utilities/graphics/vulkan/rtx/AccelerationStructure.h"
 
-// Generic Graphics Objects
-#include "utilities/graphics/generic/Scene.h"
+// Scene-related Objects
+#include "utilities/scene/Scene.h"
 
 // ImGui
 #ifdef _ENABLE_IMGUI

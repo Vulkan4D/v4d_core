@@ -5,7 +5,8 @@
 #include "LightSource.hpp"
 #include "geometry_attributes.hh"
 
-namespace v4d::graphics {
+namespace v4d::scene {
+	using namespace v4d::graphics;
 	
 	#pragma region Pack Helpers
 	

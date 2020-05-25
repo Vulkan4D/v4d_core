@@ -18,7 +18,7 @@ class V4DLIB V4D_Game {
 		,RendererFrameCompute
 	)
 	V4D_MODULE_FUNC(int, OrderIndex)
-	V4D_MODULE_FUNC(void, Init, v4d::graphics::Scene*)
+	V4D_MODULE_FUNC(void, Init, v4d::scene::Scene*)
 	V4D_MODULE_FUNC(void, LoadScene)
 	V4D_MODULE_FUNC(void, UnloadScene)
 	V4D_MODULE_FUNC(void, Update, double deltaTime)

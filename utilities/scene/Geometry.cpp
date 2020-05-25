@@ -1,6 +1,6 @@
 #include <v4d.h>
 
-namespace v4d::graphics {
+namespace v4d::scene {
 	
 	Geometry::GlobalGeometryBuffers Geometry::globalBuffers {};
 

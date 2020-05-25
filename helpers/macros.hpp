@@ -84,7 +84,7 @@
 
 
 //////////////////////////////////////////////////////////
-// FOREACH macro (maximum of 32 arguments, may increase in the future if needed)
+// FOREACH macro (maximum of 64 arguments, may increase in the future if needed)
 
 #define __FE_1(__FE, X) __FE(X) 
 #define __FE_2(__FE, X, ...) __FE(X)__FE_1(__FE, __VA_ARGS__)
@@ -118,8 +118,40 @@
 #define __FE_30(__FE, X, ...) __FE(X)__FE_29(__FE, __VA_ARGS__)
 #define __FE_31(__FE, X, ...) __FE(X)__FE_30(__FE, __VA_ARGS__)
 #define __FE_32(__FE, X, ...) __FE(X)__FE_31(__FE, __VA_ARGS__)
-#define __FOR_EACH(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,_16,_17,_18,_19,_20,_21,_22,_23,_24,_25,_26,_27,_28,_29,_30,_31,_32,macroName,...) macroName 
-#define FOR_EACH(_MACRO,...) __FOR_EACH(__VA_ARGS__,__FE_32,__FE_31,__FE_30,__FE_29,__FE_28,__FE_27,__FE_26,__FE_25,__FE_24,__FE_23,__FE_22,__FE_21,__FE_20,__FE_19,__FE_18,__FE_17,__FE_16,__FE_15,__FE_14,__FE_13,__FE_12,__FE_11,__FE_10,__FE_9,__FE_8,__FE_7,__FE_6,__FE_5,__FE_4,__FE_3,__FE_2,__FE_1)(_MACRO,__VA_ARGS__)
+#define __FE_33(__FE, X, ...) __FE(X)__FE_32(__FE, __VA_ARGS__)
+#define __FE_34(__FE, X, ...) __FE(X)__FE_33(__FE, __VA_ARGS__)
+#define __FE_35(__FE, X, ...) __FE(X)__FE_34(__FE, __VA_ARGS__)
+#define __FE_36(__FE, X, ...) __FE(X)__FE_35(__FE, __VA_ARGS__)
+#define __FE_37(__FE, X, ...) __FE(X)__FE_36(__FE, __VA_ARGS__)
+#define __FE_38(__FE, X, ...) __FE(X)__FE_37(__FE, __VA_ARGS__)
+#define __FE_39(__FE, X, ...) __FE(X)__FE_38(__FE, __VA_ARGS__)
+#define __FE_40(__FE, X, ...) __FE(X)__FE_39(__FE, __VA_ARGS__)
+#define __FE_41(__FE, X, ...) __FE(X)__FE_40(__FE, __VA_ARGS__)
+#define __FE_42(__FE, X, ...) __FE(X)__FE_41(__FE, __VA_ARGS__)
+#define __FE_43(__FE, X, ...) __FE(X)__FE_42(__FE, __VA_ARGS__)
+#define __FE_44(__FE, X, ...) __FE(X)__FE_43(__FE, __VA_ARGS__)
+#define __FE_45(__FE, X, ...) __FE(X)__FE_44(__FE, __VA_ARGS__)
+#define __FE_46(__FE, X, ...) __FE(X)__FE_45(__FE, __VA_ARGS__)
+#define __FE_47(__FE, X, ...) __FE(X)__FE_46(__FE, __VA_ARGS__)
+#define __FE_48(__FE, X, ...) __FE(X)__FE_47(__FE, __VA_ARGS__)
+#define __FE_49(__FE, X, ...) __FE(X)__FE_48(__FE, __VA_ARGS__)
+#define __FE_50(__FE, X, ...) __FE(X)__FE_49(__FE, __VA_ARGS__)
+#define __FE_51(__FE, X, ...) __FE(X)__FE_50(__FE, __VA_ARGS__)
+#define __FE_52(__FE, X, ...) __FE(X)__FE_51(__FE, __VA_ARGS__)
+#define __FE_53(__FE, X, ...) __FE(X)__FE_52(__FE, __VA_ARGS__)
+#define __FE_54(__FE, X, ...) __FE(X)__FE_53(__FE, __VA_ARGS__)
+#define __FE_55(__FE, X, ...) __FE(X)__FE_54(__FE, __VA_ARGS__)
+#define __FE_56(__FE, X, ...) __FE(X)__FE_55(__FE, __VA_ARGS__)
+#define __FE_57(__FE, X, ...) __FE(X)__FE_56(__FE, __VA_ARGS__)
+#define __FE_58(__FE, X, ...) __FE(X)__FE_57(__FE, __VA_ARGS__)
+#define __FE_59(__FE, X, ...) __FE(X)__FE_58(__FE, __VA_ARGS__)
+#define __FE_60(__FE, X, ...) __FE(X)__FE_59(__FE, __VA_ARGS__)
+#define __FE_61(__FE, X, ...) __FE(X)__FE_60(__FE, __VA_ARGS__)
+#define __FE_62(__FE, X, ...) __FE(X)__FE_61(__FE, __VA_ARGS__)
+#define __FE_63(__FE, X, ...) __FE(X)__FE_62(__FE, __VA_ARGS__)
+#define __FE_64(__FE, X, ...) __FE(X)__FE_63(__FE, __VA_ARGS__)
+#define __FOR_EACH(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,_16,_17,_18,_19,_20,_21,_22,_23,_24,_25,_26,_27,_28,_29,_30,_31,_32,_33,_34,_35,_36,_37,_38,_39,_40,_41,_42,_43,_44,_45,_46,_47,_48,_49,_50,_51,_52,_53,_54,_55,_56,_57,_58,_59,_60,_61,_62,_63,_64,macroName,...) macroName 
+#define FOR_EACH(_MACRO,...) __FOR_EACH(__VA_ARGS__,__FE_64,__FE_63,__FE_62,__FE_61,__FE_60,__FE_59,__FE_58,__FE_57,__FE_56,__FE_55,__FE_54,__FE_53,__FE_52,__FE_51,__FE_50,__FE_49,__FE_48,__FE_47,__FE_46,__FE_45,__FE_44,__FE_43,__FE_42,__FE_41,__FE_40,__FE_39,__FE_38,__FE_37,__FE_36,__FE_35,__FE_34,__FE_33,__FE_32,__FE_31,__FE_30,__FE_29,__FE_28,__FE_27,__FE_26,__FE_25,__FE_24,__FE_23,__FE_22,__FE_21,__FE_20,__FE_19,__FE_18,__FE_17,__FE_16,__FE_15,__FE_14,__FE_13,__FE_12,__FE_11,__FE_10,__FE_9,__FE_8,__FE_7,__FE_6,__FE_5,__FE_4,__FE_3,__FE_2,__FE_1)(_MACRO,__VA_ARGS__)
 
 
 //////////////////////////////////////////////////////////

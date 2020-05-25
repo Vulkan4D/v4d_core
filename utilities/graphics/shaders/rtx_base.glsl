@@ -29,4 +29,4 @@
 	#extension GL_EXT_ray_query : enable
 #endif
 
-#include "v4d/core/utilities/graphics/generic/geometry_attributes.hh"
+#include "v4d/core/utilities/scene/geometry_attributes.hh"

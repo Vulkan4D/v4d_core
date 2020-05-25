@@ -3,7 +3,8 @@
 #include <v4d.h>
 #include "Geometry.h"
 
-namespace v4d::graphics {
+namespace v4d::scene {
+	using namespace v4d::graphics;
 	
 	struct GeometryInstance {
 		std::shared_ptr<Geometry> geometry;
@@ -14,7 +15,7 @@ namespace v4d::graphics {
 		GeometryInstance(std::shared_ptr<Geometry> geometry, int rayTracingInstanceIndex = -1, glm::dmat4 transform = glm::dmat4 {1}, std::string type = "standard")
 		: geometry(geometry), rayTracingInstanceIndex(rayTracingInstanceIndex), transform(transform), type(type) {};
 	};
-
+	
 	class V4DLIB ObjectInstance {
 		
 	private:
@@ -30,7 +31,6 @@ namespace v4d::graphics {
 		bool geometriesDirty = true;
 		bool active = true;
 		bool generated = false;
-		bool markedForDeletion = false;
 		mutable std::mutex mu;
 		
 	public:
@@ -45,17 +45,14 @@ namespace v4d::graphics {
 				DYNAMIC
 			};
 			RigidBodyType rigidbodyType = RigidBodyType::NONE;
-			mutable std::recursive_mutex physicsMutex;
 			double mass = 0;
 			glm::dvec3 centerOfMass {0,0,0};
 			void* physicsObject = nullptr;
 			bool physicsDirty = false;
-			void (*removePhysicsCallback)(ObjectInstance*) = nullptr;
 			bool addedForce = false;
 			glm::dvec3 forcePoint {0,0,0};
 			glm::dvec3 forceDirection {0,0,0};
 			void SetForce(glm::dvec3 forceDir, glm::dvec3 atPoint = {0,0,0}) {
-				std::lock_guard lock(physicsMutex);
 				addedForce = (forceDir.length() > 0);
 				forcePoint = atPoint;
 				forceDirection = forceDir;
@@ -63,7 +60,6 @@ namespace v4d::graphics {
 			std::queue<std::tuple<glm::dvec3, glm::dvec3>> physicsForceImpulses {};
 			void AddImpulse(glm::dvec3 impulseDir, glm::dvec3 atPoint = {0,0,0}) {
 				if (impulseDir.length() == 0) return;
-				std::lock_guard lock(physicsMutex);
 				physicsForceImpulses.emplace(impulseDir, atPoint);
 			}
 		
@@ -88,7 +84,6 @@ namespace v4d::graphics {
 		
 		void GenerateGeometries() {
 			{
-				std::lock_guard lock(physicsMutex);
 				if (generateFunc && !generated) generateFunc(this);
 				SetGenerated();
 			}
@@ -112,8 +107,6 @@ namespace v4d::graphics {
 		}
 		
 		void WriteMatrices(const glm::dmat4& viewMatrix) {
-			std::lock_guard physicsLock(physicsMutex);
-			
 			Geometry::globalBuffers.WriteObject(this);
 			
 			for (auto& geom : geometries) {
@@ -131,12 +124,10 @@ namespace v4d::graphics {
 		#pragma region Configure
 		
 		void SetTranslation(const glm::dvec3 t) {
-			std::lock_guard physicsLock(physicsMutex);
 			transform = glm::translate(transform, t);
 		}
 		
 		void SetRotation(double angle, const glm::dvec3& axis = {0,0,1}) {
-			std::lock_guard physicsLock(physicsMutex);
 			transform = glm::rotate(transform, glm::radians(angle), axis);
 		}
 		
@@ -145,7 +136,6 @@ namespace v4d::graphics {
 		}
 		
 		void Configure(void (*genFunc)(ObjectInstance*), const glm::dvec3 position = {0,0,0}, double angle = 0, const glm::dvec3 axis = {0,0,1}) {
-			std::lock_guard physicsLock(physicsMutex);
 			transform = glm::rotate(glm::translate(glm::dmat4(1), position), glm::radians(angle), axis);
 			generateFunc = genFunc;
 		}
@@ -238,8 +228,6 @@ namespace v4d::graphics {
 		#pragma region Clear
 		
 		void RemoveGeometries() {
-			std::lock_guard lock(physicsMutex);
-			if (removePhysicsCallback) removePhysicsCallback(this);
 			geometries.clear();
 			generated = false;
 		}
@@ -263,8 +251,6 @@ namespace v4d::graphics {
 		#pragma region Getters/Setters
 		
 		glm::dmat4 GetWorldTransform() const {
-			std::lock_guard physicsLock(physicsMutex);
-			// copy transform object while physics is locked
 			return transform;
 		}
 		
@@ -294,13 +280,6 @@ namespace v4d::graphics {
 		
 		uint32_t GetObjectOffset() const {return objectOffset;}
 		
-		bool AnyGeometryHasInstanceIndex() const {
-			for (auto& g : geometries) {
-				if (g.rayTracingInstanceIndex != -1) return true;
-			}
-			return false;
-		}
-		
 		void SetGeometriesDirty(bool dirty = true) {geometriesDirty = dirty;}
 		bool IsGeometriesDirty() const {return geometriesDirty;}
 		
@@ -314,7 +293,6 @@ namespace v4d::graphics {
 		#pragma region Realtime / Per-Frame Updates
 		
 		void SetWorldTransform(const glm::dmat4 worldSpaceTransform) {
-			std::lock_guard physicsLock(physicsMutex);
 			transform = worldSpaceTransform;
 		}
 		
@@ -336,14 +314,6 @@ namespace v4d::graphics {
 			mu.unlock();
 		}
 		
-		void LockPhysics() const {
-			physicsMutex.lock();
-		}
-		
-		void UnlockPhysics() const {
-			physicsMutex.unlock();
-		}
-		
 		#pragma endregion
 		
 		#pragma region Active/Inactive
@@ -356,17 +326,15 @@ namespace v4d::graphics {
 		}
 		
 		bool IsActive() const {
-			return !markedForDeletion && active;
+			return active;
 		}
 		
 		void Enable() {
-			std::lock_guard lock(physicsMutex);
 			if (!active && rigidbodyType != RigidBodyType::NONE) physicsDirty = true;
 			active = true;
 		}
 		
 		void Disable() {
-			std::lock_guard lock(physicsMutex);
 			if (active && physicsObject) physicsDirty = true;
 			active = false;
 		}
@@ -376,20 +344,8 @@ namespace v4d::graphics {
 		}
 		
 		void SetGenerated() {
-			std::lock_guard lock(physicsMutex);
 			if (rigidbodyType != RigidBodyType::NONE) physicsDirty = true;
 			generated = true;
-		}
-		
-		bool IsMarkedForDeletion() const {
-			return markedForDeletion;
-		}
-		
-		void MarkForDeletion() {
-			Disable();
-			std::lock_guard lock(physicsMutex);
-			if (physicsObject) physicsDirty = true;
-			markedForDeletion = true;
 		}
 		
 		#pragma endregion

@@ -14,7 +14,7 @@ class V4DLIB V4D_Input {
 	)
 	
 	V4D_MODULE_FUNC(int, OrderIndex)
-	V4D_MODULE_FUNC(void, Init, v4d::graphics::Window*, v4d::graphics::Renderer*, v4d::graphics::Scene*)
+	V4D_MODULE_FUNC(void, Init, v4d::graphics::Window*, v4d::graphics::Renderer*, v4d::scene::Scene*)
 	V4D_MODULE_FUNC(std::string, CallbackName)
 	V4D_MODULE_FUNC(void, CharCallback, unsigned int c)
 	V4D_MODULE_FUNC(void, KeyCallback, int key, int scancode, int action, int mods)

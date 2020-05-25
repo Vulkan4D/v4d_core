@@ -35,6 +35,8 @@
 				listeners.emplace_back(func); \
 			} \
 			v4d::event:: ___EVENT_TYPE_ ## eventName v4d::event:: eventName;
+	#else
+		#define DEFINE_CORE_EVENT_BODY(eventName, ...)
 	#endif
 	#define DEFINE_EVENT(nameSpace, eventName, ...) \
 		namespace nameSpace::event { \
@@ -82,6 +84,8 @@
 				} \
 			} \
 			v4d::event:: ___EVENT_TYPE_ ## eventName v4d::event:: eventName;
+	#else
+		#define DEFINE_CORE_EVENT_BODY(eventName, objType)
 	#endif
 	#define DEFINE_EVENT(nameSpace, eventName, objType) \
 		namespace nameSpace::event { \

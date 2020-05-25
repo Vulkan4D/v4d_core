@@ -2,7 +2,7 @@
 
 #include <v4d.h>
 
-namespace v4d::graphics {
+namespace v4d::scene {
 	struct V4DLIB Camera {
 		alignas(4) int width = 0;
 		alignas(4) int height = 0;

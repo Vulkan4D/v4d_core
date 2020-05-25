@@ -2,24 +2,32 @@
 
 #include <v4d.h>
 
+namespace v4d::scene {
+	struct ObjectInstance;
+	typedef std::shared_ptr<ObjectInstance> ObjectInstancePtr;
+	typedef std::weak_ptr<ObjectInstance> ObjectInstanceWeakPtr;
+}
+
 #include "Camera.hpp"
 #include "LightSource.hpp"
 #include "ObjectInstance.hpp"
 
-namespace v4d::graphics {
+namespace v4d::scene {
 	struct V4DLIB Scene {
 		mutable std::recursive_mutex sceneMutex;
 		
 		Camera camera {};
-		std::vector<ObjectInstance*> objectInstances {};
+		std::vector<ObjectInstancePtr> objectInstances {};
+		
+		std::unordered_map<std::string, std::function<void(ObjectInstancePtr)>> objectInstanceRemovedCallbacks {};
 
 		~Scene();
 		
-		ObjectInstance* AddObjectInstance();
-		void RemoveObjectInstance(ObjectInstance* obj);
+		ObjectInstancePtr AddObjectInstance();
+		void RemoveObjectInstance(ObjectInstancePtr obj);
 		
-		void CollectGarbage();
 		void ClenupObjectInstancesGeometries();
+		void ClearAllRemainingObjects();
 		
 		int GetObjectCount() const;
 		
@@ -27,11 +35,11 @@ namespace v4d::graphics {
 		void Unlock() const;
 		
 		struct V4DLIB RayCastHit {
-			v4d::graphics::ObjectInstance* obj = nullptr;
+			v4d::scene::ObjectInstancePtr obj = nullptr;
 			glm::dvec3 position {0,0,0};
 			glm::dvec3 normal {0,0,0};
 			RayCastHit();
-			RayCastHit(v4d::graphics::ObjectInstance* o, glm::dvec3 p, glm::dvec3 n);
+			RayCastHit(v4d::scene::ObjectInstancePtr o, glm::dvec3 p, glm::dvec3 n);
 		};
 		
 		bool RayCastClosest(RayCastHit* hit, const glm::dvec3& origin, const glm::dvec3& target, uint32_t mask = 0xffffffff) const;

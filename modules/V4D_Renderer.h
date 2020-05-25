@@ -7,6 +7,8 @@ class V4DLIB V4D_Renderer {
 		,RenderOrderIndex
 		,ScorePhysicalDeviceSelection
 		,Init
+		,LoadScene
+		,UnloadScene
 		,InitDeviceFeatures
 		,ConfigureRenderer
 		,InitLayouts
@@ -42,7 +44,9 @@ class V4DLIB V4D_Renderer {
 	V4D_MODULE_FUNC(int, OrderIndex)
 	V4D_MODULE_FUNC(int, RenderOrderIndex)
 	V4D_MODULE_FUNC(void, ScorePhysicalDeviceSelection, int& score, v4d::graphics::vulkan::PhysicalDevice*) // this is executed once for each available GPU
-	V4D_MODULE_FUNC(void, Init, v4d::graphics::Renderer*, v4d::graphics::Scene*)
+	V4D_MODULE_FUNC(void, Init, v4d::graphics::Renderer*, v4d::scene::Scene*)
+	V4D_MODULE_FUNC(void, LoadScene)
+	V4D_MODULE_FUNC(void, UnloadScene)
 	
 	// May be Executed many times (ie: when renderer is reloading or screen is resizing)
 	V4D_MODULE_FUNC(void, InitDeviceFeatures)

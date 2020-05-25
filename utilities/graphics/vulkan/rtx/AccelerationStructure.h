@@ -6,7 +6,7 @@
 	#define RAY_TRACING_TLAS_MAX_INSTANCES 65536
 #endif
 
-namespace v4d::graphics {
+namespace v4d::scene {
 	class Geometry;
 }
 
@@ -54,7 +54,7 @@ namespace v4d::graphics::vulkan::rtx {
 		
 		VkDeviceSize GetMemoryRequirementSizeForScratchBuffer(Device* device) const;
 		
-		void AssignBottomLevel(Device* device, std::shared_ptr<Geometry> geom);
+		void AssignBottomLevel(Device* device, std::shared_ptr<v4d::scene::Geometry> geom);
 		
 		void AssignTopLevel();
 		void SetGlobalScratchBuffer(Device* device, VkBuffer buffer);
