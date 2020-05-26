@@ -220,7 +220,7 @@
 			_libPath = filePath + __V4D_MODULE_FILE_EXT;\
 			if (v4d::io::FilePath::FileExists(_libPath+".new")) {\
 				__V4D_MODULE_COPY_NEW(_libPath)\
-				std::filesystem::remove(filePath+".new");\
+				std::filesystem::remove(_libPath+".new");\
 			}\
 			_handle = __V4D_MODULE_LOAD(_libPath.c_str());\
 			if (!_handle) {_error = __V4D_MODULE_GET_ERROR(); return;}\

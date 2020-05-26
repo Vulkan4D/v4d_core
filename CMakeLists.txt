@@ -24,9 +24,6 @@ target_link_libraries(v4d
 	PUBLIC
 		pthread
 		glfw
-		# BulletDynamics
-		# LinearMath
-		# BulletCollision
 )
 target_include_directories(v4d
 	PUBLIC
@@ -35,7 +32,6 @@ target_include_directories(v4d
 		"${PROJECT_SOURCE_DIR}/src"
 		"${PROJECT_SOURCE_DIR}/src/v4d/xvk"
 		"${PROJECT_SOURCE_DIR}/src/imgui"
-		# "${PROJECT_SOURCE_DIR}/src/bullet3/src/"
 	PRIVATE
 		# "${PROJECT_SOURCE_DIR}/src/openssl/include"
 )
