@@ -2,7 +2,7 @@
 #include <v4d.h>
 
 class V4DLIB V4D_Input {
-	V4D_MODULE_CLASS_H(V4D_Input
+	V4D_MODULE_CLASS_HEADER(V4D_Input
 		,OrderIndex
 		,Init
 		,CallbackName
@@ -13,14 +13,14 @@ class V4DLIB V4D_Input {
 		,Update
 	)
 	
-	V4D_MODULE_FUNC(int, OrderIndex)
-	V4D_MODULE_FUNC(void, Init, v4d::graphics::Window*, v4d::graphics::Renderer*, v4d::scene::Scene*)
-	V4D_MODULE_FUNC(std::string, CallbackName)
-	V4D_MODULE_FUNC(void, CharCallback, unsigned int c)
-	V4D_MODULE_FUNC(void, KeyCallback, int key, int scancode, int action, int mods)
-	V4D_MODULE_FUNC(void, ScrollCallback, double x, double y)
-	V4D_MODULE_FUNC(void, MouseButtonCallback, int button, int action, int mods)
-	V4D_MODULE_FUNC(void, Update, double deltaTime)
+	V4D_MODULE_FUNC_DECLARE(int, OrderIndex)
+	V4D_MODULE_FUNC_DECLARE(void, Init, v4d::graphics::Window*, v4d::graphics::Renderer*, v4d::scene::Scene*)
+	V4D_MODULE_FUNC_DECLARE(std::string, CallbackName)
+	V4D_MODULE_FUNC_DECLARE(void, CharCallback, unsigned int c)
+	V4D_MODULE_FUNC_DECLARE(void, KeyCallback, int key, int scancode, int action, int mods)
+	V4D_MODULE_FUNC_DECLARE(void, ScrollCallback, double x, double y)
+	V4D_MODULE_FUNC_DECLARE(void, MouseButtonCallback, int button, int action, int mods)
+	V4D_MODULE_FUNC_DECLARE(void, Update, double deltaTime)
 
 	void AddCallbacks(v4d::graphics::Window* window) {
 		if (this->KeyCallback) {

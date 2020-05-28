@@ -1,27 +1,7 @@
 #pragma once
 #include <v4d.h>
 
-#ifdef _WIN32
-	#define __V4D_MODULE_FILE_HANDLER HINSTANCE
-	#define __V4D_MODULE_ERR_TYPE DWORD
-	#define __V4D_MODULE_FILE_EXT ".dll"
-	#define __V4D_MODULE_LOAD(filePath) LoadLibrary(filePath)
-	#define __V4D_MODULE_GET_ERROR() GetLastError()
-	#define __V4D_MODULE_UNLOAD(handle) FreeLibrary(handle)
-	#define __V4D_MODULE_FUNC_LOAD(funcName) *(void **)(&funcName) = (void*)GetProcAddress(_handle, #funcName);
-	// QuickFix for windows.. because 'overwrite_existing' option is not working... we get the 'file exists' error... WTF...
-	#define __V4D_MODULE_COPY_NEW(filePath) {std::filesystem::remove(filePath); std::filesystem::copy_file(filePath+".new", filePath);}
-#else
-	#define __V4D_MODULE_FILE_HANDLER void*
-	#define __V4D_MODULE_ERR_TYPE char*
-	#define __V4D_MODULE_FILE_EXT ".so"
-	#define __V4D_MODULE_LOAD(filePath) dlopen(filePath, RTLD_LAZY)
-	#define __V4D_MODULE_GET_ERROR() dlerror()
-	#define __V4D_MODULE_UNLOAD(handle) dlclose(handle)
-	#define __V4D_MODULE_FUNC_LOAD(funcName) *(void **)(&funcName) = dlsym(_handle, #funcName);
-	#define __V4D_MODULE_COPY_NEW(filePath) {std::filesystem::copy_file(filePath+".new", filePath, std::filesystem::copy_options::overwrite_existing);}
-#endif
-
+/*
 // namespace v4d::modular {
 // 	struct ModuleID {
 // 		unsigned long vendor = 0;
@@ -87,6 +67,7 @@
 // 		}
 // 	};
 // }
+*/
 
 #define V4D_MODULE_CLASS_CPP(moduleClassName)\
 	moduleClassName::callback moduleClassName::_modulesLoadCallback = [](moduleClassName*){};\
@@ -184,10 +165,48 @@
 		_loadedSortedModules.clear();\
 	}
 
-#define V4D_MODULE_FUNC(returnType, funcName, ...)\
-		returnType (*funcName)(__VA_ARGS__) = nullptr;
+#ifdef _WIN32
+	#define __V4D_MODULE_FILE_HANDLER HINSTANCE
+	#define __V4D_MODULE_ERR_TYPE DWORD
+	#define __V4D_MODULE_FILE_EXT ".dll"
+	#define __V4D_MODULE_LOAD(filePath) LoadLibrary(filePath)
+	#define __V4D_MODULE_GET_ERROR() GetLastError()
+	#define __V4D_MODULE_UNLOAD(handle) FreeLibrary(handle)
+	#ifdef _V4D_IN_EDITOR // This is just for ease of editor validation, using a fake class method overrider instead of a function pointer definition
+		#define __V4D_MODULE_FUNC_LOAD(funcName)
+	#else
+		#define __V4D_MODULE_FUNC_LOAD(funcName) *(void **)(&funcName) = (void*)GetProcAddress(_handle, #funcName);
+	#endif
+	// QuickFix for windows.. because 'overwrite_existing' option is not working... we get the 'file exists' error... WTF...
+	#define __V4D_MODULE_COPY_NEW(filePath) {std::filesystem::remove(filePath); std::filesystem::copy_file(filePath+".new", filePath);}
+#else
+	#define __V4D_MODULE_FILE_HANDLER void*
+	#define __V4D_MODULE_ERR_TYPE char*
+	#define __V4D_MODULE_FILE_EXT ".so"
+	#define __V4D_MODULE_LOAD(filePath) dlopen(filePath, RTLD_LAZY)
+	#define __V4D_MODULE_GET_ERROR() dlerror()
+	#define __V4D_MODULE_UNLOAD(handle) dlclose(handle)
+	#ifdef _V4D_IN_EDITOR // This is just for ease of editor validation, using a fake class method overrider instead of a function pointer definition
+		#define __V4D_MODULE_FUNC_LOAD(funcName)
+	#else
+		#define __V4D_MODULE_FUNC_LOAD(funcName) *(void **)(&funcName) = dlsym(_handle, #funcName);
+	#endif
+	#define __V4D_MODULE_COPY_NEW(filePath) {std::filesystem::copy_file(filePath+".new", filePath, std::filesystem::copy_options::overwrite_existing);}
+#endif
 
-#define V4D_MODULE_CLASS_H(moduleClassName, ...)\
+#ifdef _V4D_IN_EDITOR // This is just for ease of editor validation, using a fake class method overrider instead of a function pointer definition
+	// Define which class your module extends
+	#define V4D_MODULE_CLASS(c) struct c ## _MOD : public c
+	// Define a function within your module, using the same structure as in the V4D_MODULE_FUNC_DECLARE lines in the module class declaration
+	#define V4D_MODULE_FUNC(returnType, funcName, ...) returnType funcName ## _MOD (__VA_ARGS__) override
+	#define V4D_MODULE_FUNC_DECLARE(returnType, funcName, ...) virtual returnType funcName ## _MOD (__VA_ARGS__); returnType (*funcName)(__VA_ARGS__) = nullptr;
+#else
+	#define V4D_MODULE_CLASS(c) extern "C"
+	#define V4D_MODULE_FUNC(returnType, funcName, ...) returnType funcName (__VA_ARGS__)
+	#define V4D_MODULE_FUNC_DECLARE(returnType, funcName, ...) returnType (*funcName)(__VA_ARGS__) = nullptr;
+#endif
+
+#define V4D_MODULE_CLASS_HEADER(moduleClassName, ...)\
 	private:\
 		using callback = std::function<void(moduleClassName*)>;\
 		using errorCallback = std::function<void(const char*)>;\
@@ -233,11 +252,11 @@
 			if (ModuleLoad) ModuleLoad();\
 		}\
 		DELETE_COPY_MOVE_CONSTRUCTORS(moduleClassName)\
-		V4D_MODULE_FUNC(void, ModuleLoad)\
-		V4D_MODULE_FUNC(void, ModuleUnload)\
-		V4D_MODULE_FUNC(void, ModuleSetCustomPtr, int, void*)\
-		V4D_MODULE_FUNC(void*, ModuleGetCustomPtr, int)\
-		V4D_MODULE_FUNC(bool, ModuleIsPrimary)\
+		V4D_MODULE_FUNC_DECLARE(void, ModuleLoad)\
+		V4D_MODULE_FUNC_DECLARE(void, ModuleUnload)\
+		V4D_MODULE_FUNC_DECLARE(void, ModuleSetCustomPtr, int, void*)\
+		V4D_MODULE_FUNC_DECLARE(void*, ModuleGetCustomPtr, int)\
+		V4D_MODULE_FUNC_DECLARE(bool, ModuleIsPrimary)\
 		~moduleClassName() {\
 			if (ModuleUnload) ModuleUnload();\
 			if (_handle) __V4D_MODULE_UNLOAD(_handle);\
