@@ -196,14 +196,14 @@
 
 #ifdef _V4D_IN_EDITOR // This is just for ease of editor validation, using a fake class method overrider instead of a function pointer definition
 	// Define which class your module extends
-	#define V4D_MODULE_CLASS(c) struct c ## _MOD : public c
+	#define V4D_MODULE_CLASS(c) class c ## _MOD : private c
 	// Define a function within your module, using the same structure as in the V4D_MODULE_FUNC_DECLARE lines in the module class declaration
 	#define V4D_MODULE_FUNC(returnType, funcName, ...) returnType funcName ## _MOD (__VA_ARGS__) override
-	#define V4D_MODULE_FUNC_DECLARE(returnType, funcName, ...) virtual returnType funcName ## _MOD (__VA_ARGS__); returnType (*funcName)(__VA_ARGS__) = nullptr;
+	#define V4D_MODULE_FUNC_DECLARE(returnType, funcName, ...) private: virtual returnType funcName ## _MOD (__VA_ARGS__); public: returnType (*funcName)(__VA_ARGS__) = nullptr;
 #else
 	#define V4D_MODULE_CLASS(c) extern "C"
 	#define V4D_MODULE_FUNC(returnType, funcName, ...) returnType funcName (__VA_ARGS__)
-	#define V4D_MODULE_FUNC_DECLARE(returnType, funcName, ...) returnType (*funcName)(__VA_ARGS__) = nullptr;
+	#define V4D_MODULE_FUNC_DECLARE(returnType, funcName, ...) public: returnType (*funcName)(__VA_ARGS__) = nullptr;
 #endif
 
 #define V4D_MODULE_CLASS_HEADER(moduleClassName, ...)\
