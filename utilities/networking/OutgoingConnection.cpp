@@ -116,6 +116,7 @@ bool OutgoingConnection::AnonymousRequest() {
 			Error(errCode, "Error while trying to connect to server: " + errMsg);
 			return false;
 	}
+	LOG_ERROR("Unknown auth response from server")
 	return false;
 }
 
@@ -154,6 +155,7 @@ bool OutgoingConnection::AuthRequest(v4d::data::Stream& authData) {
 			Error(errCode, "Error while trying to connect to server: " + errMsg);
 			return false;
 	}
+	LOG_ERROR("Unknown auth response from server")
 	return false;
 }
 

@@ -163,7 +163,12 @@ void ListeningServer::AnonymousRequest(v4d::io::SharedSocket& socket, byte clien
 		}
 		return;
 	}
-	clients.try_emplace(clientID, std::make_shared<IncomingClient>(clientID));
+	if (socket->IsTCP()) {
+		clients.try_emplace(clientID, std::make_shared<IncomingClient>(clientID));
+		// Send response
+		*socket << ZAP::OK;
+		socket->Flush();
+	}
 	HandleNewClient(socket, clientID, clientType);
 }
 
