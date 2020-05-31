@@ -2,25 +2,26 @@
 
 using namespace v4d::io;
 
-std::vector<std::string>& StringListFile::Load() {
+std::string TextFile::Load() {
 	ASCIIFile::Load([](ASCIIFile*){});
-	return lines;
+	return text.str();
 }
 
-void StringListFile::ReadFromFile() {
+void TextFile::ReadFromFile() {
 	std::ifstream file(filePath);
 	std::string line;
 	while (std::getline(file, line)) {
-		v4d::String::Trim(line);
 		if (line.length() == 0) continue;
-		lines.push_back(line);
+		text << line << std::endl;
 	}
 	file.close();
 }
 
-void StringListFile::WriteToFile() {
+void TextFile::WriteToFile() {
+	// Write all lines to file
 	std::ofstream file(filePath);
-	for (auto line : lines) {
+	std::string line;
+	while (std::getline(text, line)) {
 		file << line << std::endl;
 	}
 	file.close();

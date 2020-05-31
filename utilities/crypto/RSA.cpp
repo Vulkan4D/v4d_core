@@ -19,22 +19,40 @@ v4d::crypto::RSA::RSA(void* rsaHandle) {
 	this->rsaHandle = (::RSA*)rsaHandle;
 }
 
+v4d::crypto::RSA::RSA(std::string pem, bool isPrivateKey) {
+	if (pem == "") return;
+	::RSA* rsa = RSA_new();
+	BIO* bio = BIO_new(BIO_s_mem());
+	BIO_write(bio, pem.c_str(), (int)pem.size());
+	if (isPrivateKey) {
+		rsa = PEM_read_bio_RSAPrivateKey(bio, NULL, NULL, NULL);
+	} else {
+		rsa = PEM_read_bio_RSAPublicKey(bio, NULL, NULL, NULL);
+	}
+	BIO_free(bio);
+	this->rsaHandle = rsa;
+}
+
 v4d::crypto::RSA::~RSA() {
 	RSA_free((::RSA*)rsaHandle);
 }
 
 size_t v4d::crypto::RSA::GetSize() const {
+	if (!rsaHandle) return 0;
 	return (size_t)RSA_size((::RSA*)rsaHandle);
 }
 size_t v4d::crypto::RSA::GetBits() const {
+	if (!rsaHandle) return 0;
 	return (size_t)RSA_bits((::RSA*)rsaHandle);
 }
 
 size_t v4d::crypto::RSA::GetMaxBlockSize() const {
+	if (!rsaHandle) return 0;
 	return GetSize() - RSA_PKCS1_PADDING_SIZE;
 }
 
 std::string v4d::crypto::RSA::GetPrivateKeyPEM() const {
+	if (!rsaHandle) return "";
 	BIO* bio = BIO_new(BIO_s_mem());
 	PEM_write_bio_RSAPrivateKey(bio, (::RSA*)rsaHandle, NULL, NULL, 0, NULL, NULL);
 	size_t size = (size_t)BIO_pending(bio);
@@ -44,6 +62,7 @@ std::string v4d::crypto::RSA::GetPrivateKeyPEM() const {
 	return std::string(str, size);
 }
 std::string v4d::crypto::RSA::GetPublicKeyPEM() const {
+	if (!rsaHandle) return "";
 	BIO* bio = BIO_new(BIO_s_mem());
 	PEM_write_bio_RSAPublicKey(bio, (::RSA*)rsaHandle);
 	size_t size = (size_t)BIO_pending(bio);
@@ -57,7 +76,7 @@ v4d::crypto::RSA v4d::crypto::RSA::FromPrivateKeyPEM(const std::string& pem) {
 	::RSA* rsa = RSA_new();
 	BIO* bio = BIO_new(BIO_s_mem());
 	BIO_write(bio, pem.c_str(), (int)pem.size());
-	PEM_read_bio_RSAPrivateKey(bio, &rsa, NULL, NULL);
+	rsa = PEM_read_bio_RSAPrivateKey(bio, NULL, NULL, NULL);
 	BIO_free(bio);
 	return v4d::crypto::RSA{rsa};
 }
@@ -66,7 +85,7 @@ v4d::crypto::RSA v4d::crypto::RSA::FromPublicKeyPEM(const std::string& pem) {
 	::RSA* rsa = RSA_new();
 	BIO* bio = BIO_new(BIO_s_mem());
 	BIO_write(bio, pem.c_str(), (int)pem.size());
-	PEM_read_bio_RSAPublicKey(bio, &rsa, NULL, NULL);
+	rsa = PEM_read_bio_RSAPublicKey(bio, NULL, NULL, NULL);
 	BIO_free(bio);
 	return v4d::crypto::RSA{rsa};
 }

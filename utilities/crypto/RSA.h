@@ -5,7 +5,7 @@ namespace v4d::crypto {
 
 	class V4DLIB RSA : public Crypto {
 	private:
-		void* rsaHandle;
+		void* rsaHandle = nullptr;
 		RSA(void*);
 
 	public:
@@ -18,6 +18,7 @@ namespace v4d::crypto {
 		static RSA FromPublicKeyPEM(const std::string&);
 		
 		RSA(int bits, long unsigned int exponent);
+		RSA(std::string pemText, bool isPrivateKey);
 		~RSA();
 		DELETE_COPY_MOVE_CONSTRUCTORS(RSA)
 

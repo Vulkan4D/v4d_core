@@ -2,20 +2,20 @@
 #include <v4d.h>
 
 namespace v4d::io {
-	class V4DLIB StringListFile : public ASCIIFile {
+	class V4DLIB TextFile : public ASCIIFile {
 	public: // Virtual methods
 		using ASCIIFile::ASCIIFile;
 		using ASCIIFile::Load;
 	
-		std::vector<std::string> lines {};
+		std::stringstream text {};
 
-		std::vector<std::string>& Load();
+		std::string Load();
 		
 		void ReadFromFile();
 		void WriteToFile();
 		
 		static auto Instance(FilePath filePath, std::optional<int> autoReloadInterval = std::nullopt)
-			STATIC_CLASS_INSTANCES((std::string)filePath, StringListFile, filePath, autoReloadInterval)
+			STATIC_CLASS_INSTANCES((std::string)filePath, TextFile, filePath, autoReloadInterval)
 
 	};
 }

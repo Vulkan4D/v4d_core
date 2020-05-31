@@ -15,6 +15,8 @@
 #include "utilities/io/FilePath.h"
 #include "utilities/io/BinaryFileStream.h"
 #include "utilities/io/ConfigFile.h"
+#include "utilities/io/ASCIIFile.h"
+#include "utilities/io/TextFile.h"
 #include "utilities/io/StringListFile.h"
 #include "utilities/io/Socket.h"
 #include "utilities/networking/ZAP.hh"
