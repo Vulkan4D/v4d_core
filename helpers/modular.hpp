@@ -142,7 +142,7 @@
 		}\
 	}\
 	void moduleClassName::ForEachSortedModule(const callback&& func, const std::string& sortedListKey) {\
-		std::lock_guard lock(_mutexForLoadedModules);\
+		/*std::lock_guard lock(_mutexForLoadedModules);*/\
 		for (auto* modulePtr : _loadedSortedModules[sortedListKey]) {\
 			func(modulePtr);\
 		}\
