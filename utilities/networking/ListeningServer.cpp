@@ -20,6 +20,10 @@ void ListeningServer::Stop()  {
 	listeningSocket.Disconnect();
 }
 
+bool ListeningServer::IsListening() const {
+	return listeningSocket.IsListening();
+}
+
 void ListeningServer::HandleNewConnection(v4d::io::SharedSocket socket){
 	// If receive nothing after timeout, Disconnect now!
 	if (socket->Poll(newConnectionFirstByteTimeout) <= 0) {

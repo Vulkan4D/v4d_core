@@ -22,9 +22,10 @@ namespace v4d::networking {
 		int listenInterval = 10;
 		int newConnectionFirstByteTimeout = 500;
 
-		void Start(uint16_t port);
-
-		void Stop();
+		virtual void Start(uint16_t port);
+		virtual void Stop();
+		
+		virtual bool IsListening() const;
 
 	// Pure-Virtual methods
 		virtual std::string GetAppName() const = 0;
