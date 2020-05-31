@@ -22,6 +22,9 @@ else()
 	add_definitions(-D_LINUX)
 endif()
 
+# Compiler optimizations and CPU Extensions
+set(BUILD_FLAGS "-mavx2")
+
 # Release / Debug
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 	set(DEBUG 1)
