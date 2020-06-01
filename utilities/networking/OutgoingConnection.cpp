@@ -3,20 +3,26 @@
 using namespace v4d::networking;
 
 OutgoingConnection::OutgoingConnection(v4d::io::SOCKET_TYPE type, v4d::crypto::RSA* serverPublicKey, int aesBits)
-	: id(0), token(""), socket(type), rsa(serverPublicKey), aes(aesBits) {}
+	: id(0), token(""), socket(nullptr), rsa(serverPublicKey), aes(aesBits) {
+		socket = std::make_shared<v4d::io::Socket>(type);
+	}
 
 OutgoingConnection::OutgoingConnection(ulong id, std::string token, v4d::io::SOCKET_TYPE type, v4d::crypto::RSA* serverPublicKey, std::string aesHex)
-	: id(id), token(token), socket(type), rsa(serverPublicKey), aes(aesHex) {}
+	: id(id), token(token), socket(nullptr), rsa(serverPublicKey), aes(aesHex) {
+		socket = std::make_shared<v4d::io::Socket>(type);
+	}
 
 OutgoingConnection::OutgoingConnection(OutgoingConnection& c)
-	: id(c.id), token(c.token), socket(c.socket.IsTCP()?v4d::io::TCP:v4d::io::UDP), rsa(c.rsa), aes(c.aes.GetHexKey()) {}
+	: id(c.id), token(c.token), socket(nullptr), rsa(c.rsa), aes(c.aes.GetHexKey()) {
+		socket = std::make_shared<v4d::io::Socket>(c.socket->IsTCP()?v4d::io::TCP:v4d::io::UDP);
+	}
 
 OutgoingConnection::~OutgoingConnection(){
 	Disconnect();
 }
 
 void OutgoingConnection::Disconnect() {
-	socket.Disconnect();
+	socket->Disconnect();
 	if (asyncRunThread) {
 		if (asyncRunThread->joinable()) {
 			asyncRunThread->join();
@@ -27,16 +33,16 @@ void OutgoingConnection::Disconnect() {
 }
 
 void OutgoingConnection::SendHello(byte clientType) {
-	socket << ZAP::HELLO << zapdata::ClientHello{GetAppName(), GetVersion(), clientType};
+	*socket << ZAP::HELLO << zapdata::ClientHello{GetAppName(), GetVersion(), clientType};
 }
 
 bool OutgoingConnection::Connect(std::string ip, uint16_t port, byte clientType) {
 	Connect:
-	socket.Connect(ip, port);
+	socket->Connect(ip, port);
 	SendHello(clientType);
 
 	if (id) {
-		socket << ZAP::TOKEN;
+		*socket << ZAP::TOKEN;
 		LOG_VERBOSE("Connecting using TOKEN....")
 		if (!TokenRequest()) {
 			LOG_ERROR_VERBOSE("Token Connection failed, will try Auth connection...")
@@ -49,11 +55,11 @@ bool OutgoingConnection::Connect(std::string ip, uint16_t port, byte clientType)
 		Authenticate(&authData);
 		if (authData.GetWriteBufferSize() == 0) {
 			LOG_VERBOSE("Connecting anonymously....")
-			socket << ZAP::ANONYM;
+			*socket << ZAP::ANONYM;
 			return AnonymousRequest();
 		} else {
 			LOG_VERBOSE("Connecting using AUTH....")
-			socket << ZAP::AUTH;
+			*socket << ZAP::AUTH;
 			return AuthRequest(authData);
 		}
 	}
@@ -68,28 +74,28 @@ bool OutgoingConnection::ConnectRunAsync(std::string ip, uint16_t port, byte cli
 
 std::string OutgoingConnection::GetServerPublicKey(std::string ip, uint16_t port) {
 	std::string publicKey{""};
-	socket.Connect(ip, port);
+	socket->Connect(ip, port);
 	SendHello();
 	LOG_VERBOSE("Getting server public key....")
-	socket << ZAP::PUBKEY;
-	socket.Flush();
-	if (socket.Read<byte>() == ZAP::OK) {
-		publicKey = socket.Read<std::string>();
+	*socket << ZAP::PUBKEY;
+	socket->Flush();
+	if (socket->Read<byte>() == ZAP::OK) {
+		publicKey = socket->Read<std::string>();
 	}
-	socket.Disconnect();
+	socket->Disconnect();
 	return publicKey;
 }
 
 bool OutgoingConnection::TokenRequest() {
 	static std::atomic<ulong> requestIncrement = 0;
-	socket << zapdata::ClientToken{id, ++requestIncrement, zapdata::EncryptedString{}.Encrypt(&aes, token)};
-	if (socket.IsUDP()) return true;
-	socket.Flush();
-	if (socket.Poll(connectionTimeoutMilliseconds) <= 0) {
+	*socket << zapdata::ClientToken{id, ++requestIncrement, zapdata::EncryptedString{}.Encrypt(&aes, token)};
+	if (socket->IsUDP()) return true;
+	socket->Flush();
+	if (socket->Poll(connectionTimeoutMilliseconds) <= 0) {
 		Error(ZAP_CODES::SERVER_RESPONSE_TIMEOUT, ZAP_CODES::SERVER_RESPONSE_TIMEOUT_text);
 		return false;
 	}
-	switch (socket.Read<byte>()) {
+	switch (socket->Read<byte>()) {
 		case ZAP::OK:
 			return HandleConnection();
 		break;
@@ -102,12 +108,12 @@ bool OutgoingConnection::TokenRequest() {
 }
 
 bool OutgoingConnection::AnonymousRequest() {
-	socket.Flush();
-	if (socket.Poll(connectionTimeoutMilliseconds) <= 0) {
+	socket->Flush();
+	if (socket->Poll(connectionTimeoutMilliseconds) <= 0) {
 		Error(ZAP_CODES::SERVER_RESPONSE_TIMEOUT, ZAP_CODES::SERVER_RESPONSE_TIMEOUT_text);
 		return false;
 	}
-	switch (socket.Read<byte>()) {
+	switch (socket->Read<byte>()) {
 		case ZAP::OK:
 			return HandleConnection();
 		break;
@@ -123,29 +129,29 @@ bool OutgoingConnection::AnonymousRequest() {
 bool OutgoingConnection::AuthRequest(v4d::data::Stream& authData) {
 	authData << aes.GetHexKey();
 	if (rsa) {
-		socket.WriteEncryptedStream(rsa, authData);
+		socket->WriteEncryptedStream(rsa, authData);
 	} else {
-		socket.WriteStream(authData);
+		socket->WriteStream(authData);
 	}
-	socket.Flush();
-	if (socket.IsUDP()) {
+	socket->Flush();
+	if (socket->IsUDP()) {
 		return HandleConnection();
 	}
-	if (socket.Poll(connectionTimeoutMilliseconds) <= 0) {
+	if (socket->Poll(connectionTimeoutMilliseconds) <= 0) {
 		Error(ZAP_CODES::SERVER_RESPONSE_TIMEOUT, ZAP_CODES::SERVER_RESPONSE_TIMEOUT_text);
 		return false;
 	}
-	switch (socket.Read<byte>()) {
+	switch (socket->Read<byte>()) {
 		case ZAP::OK:
 			{
 				if (rsa) {
-					auto signature = socket.Read<std::vector, byte>();
+					auto signature = socket->Read<std::vector, byte>();
 					if (!rsa->Verify(authData.GetData(), signature)) {
 						Error(ZAP_CODES::SERVER_SIGNATURE_FAILED, "Error while trying to connect to server. " + ZAP_CODES::SERVER_SIGNATURE_FAILED_text);
 						return false;
 					}
 				}
-				auto tokenAndId = socket.ReadEncryptedStream(&aes);
+				auto tokenAndId = socket->ReadEncryptedStream(&aes);
 				tokenAndId >> token >> id;
 				return HandleConnection();
 			}

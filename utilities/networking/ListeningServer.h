@@ -6,7 +6,7 @@ namespace v4d::networking {
 	class V4DLIB ListeningServer {
 	protected:
 		const ulong REQ_INCREMENT_MAX_DIFF = 100000; // maximum acceptable difference in the increment index between two requests
-		v4d::io::Socket listeningSocket;
+		v4d::io::SocketPtr listeningSocket;
 		v4d::crypto::RSA* rsa;
 
 		std::unordered_map<ulong, std::shared_ptr<IncomingClient>> clients{};
@@ -38,14 +38,14 @@ namespace v4d::networking {
 	protected:
 		virtual void HandleNewConnection(v4d::io::SocketPtr socket);
 		
-		virtual bool ValidateAppName(v4d::io::SocketPtr& socket, const std::string& clientAppName);
-		virtual bool ValidateVersion(v4d::io::SocketPtr& socket, const std::string& clientVersion);
+		virtual bool ValidateAppName(v4d::io::SocketPtr socket, const std::string& clientAppName);
+		virtual bool ValidateVersion(v4d::io::SocketPtr socket, const std::string& clientVersion);
 		
-		virtual void ExtendedRequest(v4d::io::SocketPtr& socket, byte clientType);
+		virtual void ExtendedRequest(v4d::io::SocketPtr socket, byte clientType);
 		
-		virtual void TokenRequest(v4d::io::SocketPtr& socket, byte clientType);
-		virtual void AnonymousRequest(v4d::io::SocketPtr& socket, byte clientType);
-		virtual void AuthRequest(v4d::io::SocketPtr& socket, byte clientType);
+		virtual void TokenRequest(v4d::io::SocketPtr socket, byte clientType);
+		virtual void AnonymousRequest(v4d::io::SocketPtr socket, byte clientType);
+		virtual void AuthRequest(v4d::io::SocketPtr socket, byte clientType);
 
 		virtual void HandleNewClient(v4d::io::SocketPtr socket, ulong clientID, byte clientType);
 

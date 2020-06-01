@@ -6,8 +6,8 @@ namespace v4d::networking {
 	public:
 		ulong id;
 		std::string token;
-		v4d::io::Socket socket;
 	protected:
+		v4d::io::SocketPtr socket;
 		v4d::crypto::RSA* rsa;
 		v4d::crypto::AES aes;
 
@@ -28,14 +28,14 @@ namespace v4d::networking {
 		inline void SetAsync() {
 			runAsync = true;
 		}
-
+		
 	// Pure-Virtual methods
 		virtual std::string GetAppName() const = 0;
 		virtual std::string GetVersion() const = 0;
 
 	protected: // Pure-Virtual methods
 		virtual void Authenticate(v4d::data::Stream* authStream) = 0;
-		virtual void Run(v4d::io::Socket& socket) = 0;
+		virtual void Run(v4d::io::SocketPtr socket) = 0;
 
 	public:
 		virtual void SendHello(byte clientType = 0);
