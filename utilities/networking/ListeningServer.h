@@ -33,21 +33,21 @@ namespace v4d::networking {
 
 	protected: // Pure-Virtual methods
 		virtual ulong Authenticate(v4d::data::ReadOnlyStream* /*authStream*/) = 0;
-		virtual void RunClient(v4d::io::SharedSocket, std::shared_ptr<IncomingClient>, byte /*clientType*/) = 0;
+		virtual void RunClient(v4d::io::SocketPtr, std::shared_ptr<IncomingClient>, byte /*clientType*/) = 0;
 
 	protected:
-		virtual void HandleNewConnection(v4d::io::SharedSocket socket);
+		virtual void HandleNewConnection(v4d::io::SocketPtr socket);
 		
-		virtual bool ValidateAppName(v4d::io::SharedSocket& socket, const std::string& clientAppName);
-		virtual bool ValidateVersion(v4d::io::SharedSocket& socket, const std::string& clientVersion);
+		virtual bool ValidateAppName(v4d::io::SocketPtr& socket, const std::string& clientAppName);
+		virtual bool ValidateVersion(v4d::io::SocketPtr& socket, const std::string& clientVersion);
 		
-		virtual void ExtendedRequest(v4d::io::SharedSocket& socket, byte clientType);
+		virtual void ExtendedRequest(v4d::io::SocketPtr& socket, byte clientType);
 		
-		virtual void TokenRequest(v4d::io::SharedSocket& socket, byte clientType);
-		virtual void AnonymousRequest(v4d::io::SharedSocket& socket, byte clientType);
-		virtual void AuthRequest(v4d::io::SharedSocket& socket, byte clientType);
+		virtual void TokenRequest(v4d::io::SocketPtr& socket, byte clientType);
+		virtual void AnonymousRequest(v4d::io::SocketPtr& socket, byte clientType);
+		virtual void AuthRequest(v4d::io::SocketPtr& socket, byte clientType);
 
-		virtual void HandleNewClient(v4d::io::SharedSocket socket, ulong clientID, byte clientType);
+		virtual void HandleNewClient(v4d::io::SocketPtr socket, ulong clientID, byte clientType);
 
 		virtual std::string GenerateToken() const;
 	};

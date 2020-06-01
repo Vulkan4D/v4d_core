@@ -1,73 +1,71 @@
 #pragma once
 #include <v4d.h>
 
-/*
-// namespace v4d::modular {
-// 	struct ModuleID {
-// 		unsigned long vendor = 0;
-// 		unsigned long module = 0;
-// 		ModuleID(unsigned long vendorID, unsigned long moduleID) : vendor(vendorID), module(moduleID) {}
-// 		ModuleID(const std::string& str) {
-// 			auto _ = str.find('_');
-// 			if (_ == std::string::npos)
-// 				return;
-// 			std::string vendorStr = str.substr(0, _);
-// 			std::string moduleStr = str.substr(_+1);
-// 			if (vendorStr.length() > 12 || moduleStr.length() > 12 || vendorStr.length() == 0 || moduleStr.length() == 0)
-// 				return;
-// 			if (std::string(BASE26_UPPER_CHARS).find(vendorStr[0]) == std::string::npos || std::string(BASE26_LOWER_CHARS).find(moduleStr[0]) == std::string::npos)
-// 				return;
-// 			vendor = v4d::BaseN::DecodeLong(vendorStr, BASE36_UPPER_CHARS);
-// 			module = v4d::BaseN::DecodeLong(moduleStr, BASE36_LOWER_CHARS);
-// 		}
-// 		ModuleID(const char* str) : ModuleID(std::string(str)) {}
-// 		operator std::string () const {
-// 			return String();
-// 		}
-// 		std::string String() const {
-// 			if (vendor == 0 || module == 0) return "";
-// 			return v4d::BaseN::EncodeLong(vendor, BASE36_UPPER_CHARS) + "_" + v4d::BaseN::EncodeLong(module, BASE36_LOWER_CHARS);
-// 		}
-// 		bool IsValid() const {
-// 			ModuleID tmp = String();
-// 			return tmp.vendor != 0 && tmp.module != 0;
-// 		}
-// 	};
-// 	struct ModuleClassID {
-// 		unsigned long vendor = 0;
-// 		unsigned long moduleClass = 0;
-// 		ModuleClassID(unsigned long vendorID, unsigned long classID) : vendor(vendorID), moduleClass(classID) {}
-// 		ModuleClassID(const std::string& str) {
-// 			auto _ = str.find('_');
-// 			if (_ == std::string::npos)
-// 				return;
-// 			std::string vendorStr = str.substr(0, _);
-// 			std::string moduleClassStr = str.substr(_+1);
-// 			if (vendorStr.length() > 12 || moduleClassStr.length() > 12 || vendorStr.length() == 0 || moduleClassStr.length() == 0)
-// 				return;
-// 			if (std::string(BASE26_UPPER_CHARS).find(vendorStr[0]) == std::string::npos || std::string(BASE26_UPPER_CHARS).find(moduleClassStr[0]) == std::string::npos)
-// 				return;
-// 			moduleClassStr[0] = std::tolower(moduleClassStr[0]);
-// 			vendor = v4d::BaseN::DecodeLong(vendorStr, BASE36_UPPER_CHARS);
-// 			moduleClass = v4d::BaseN::DecodeLong(moduleClassStr, BASE36_LOWER_CHARS);
-// 		}
-// 		ModuleClassID(const char* str) : ModuleClassID(std::string(str)) {}
-// 		operator std::string () const {
-// 			return String();
-// 		}
-// 		std::string String() const {
-// 			if (vendor == 0 || moduleClass == 0) return "";
-// 			std::string moduleClassStr = v4d::BaseN::EncodeLong(moduleClass, BASE36_LOWER_CHARS);
-// 			moduleClassStr[0] = std::toupper(moduleClassStr[0]);
-// 			return v4d::BaseN::EncodeLong(vendor, BASE36_UPPER_CHARS) + "_" + moduleClassStr;
-// 		}
-// 		bool IsValid() const {
-// 			ModuleClassID tmp = String();
-// 			return tmp.vendor != 0 && tmp.moduleClass != 0;
-// 		}
-// 	};
-// }
-*/
+namespace v4d::modular {
+	struct ModuleID {
+		uint64_t vendor = 0;
+		uint64_t module = 0;
+		ModuleID(uint64_t vendorID, uint64_t moduleID) : vendor(vendorID), module(moduleID) {}
+		ModuleID(const std::string& str) {
+			auto _ = str.find('_');
+			if (_ == std::string::npos)
+				return;
+			std::string vendorStr = str.substr(0, _);
+			std::string moduleStr = str.substr(_+1);
+			if (vendorStr.length() > 12 || moduleStr.length() > 12 || vendorStr.length() == 0 || moduleStr.length() == 0)
+				return;
+			if (std::string(BASE26_UPPER_CHARS).find(vendorStr[0]) == std::string::npos || std::string(BASE26_LOWER_CHARS).find(moduleStr[0]) == std::string::npos)
+				return;
+			vendor = v4d::BaseN::DecodeLong(vendorStr, BASE36_UPPER_CHARS);
+			module = v4d::BaseN::DecodeLong(moduleStr, BASE36_LOWER_CHARS);
+		}
+		ModuleID(const char* str) : ModuleID(std::string(str)) {}
+		operator std::string () const {
+			return String();
+		}
+		std::string String() const {
+			if (vendor == 0 || module == 0) return "";
+			return v4d::BaseN::EncodeLong(vendor, BASE36_UPPER_CHARS) + "_" + v4d::BaseN::EncodeLong(module, BASE36_LOWER_CHARS);
+		}
+		bool IsValid() const {
+			ModuleID tmp = String();
+			return tmp.vendor != 0 && tmp.module != 0;
+		}
+	};
+	struct ModuleClassID {
+		uint64_t vendor = 0;
+		uint64_t moduleClass = 0;
+		ModuleClassID(uint64_t vendorID, uint64_t classID) : vendor(vendorID), moduleClass(classID) {}
+		ModuleClassID(const std::string& str) {
+			auto _ = str.find('_');
+			if (_ == std::string::npos)
+				return;
+			std::string vendorStr = str.substr(0, _);
+			std::string moduleClassStr = str.substr(_+1);
+			if (vendorStr.length() > 12 || moduleClassStr.length() > 12 || vendorStr.length() == 0 || moduleClassStr.length() == 0)
+				return;
+			if (std::string(BASE26_UPPER_CHARS).find(vendorStr[0]) == std::string::npos || std::string(BASE26_UPPER_CHARS).find(moduleClassStr[0]) == std::string::npos)
+				return;
+			moduleClassStr[0] = std::tolower(moduleClassStr[0]);
+			vendor = v4d::BaseN::DecodeLong(vendorStr, BASE36_UPPER_CHARS);
+			moduleClass = v4d::BaseN::DecodeLong(moduleClassStr, BASE36_LOWER_CHARS);
+		}
+		ModuleClassID(const char* str) : ModuleClassID(std::string(str)) {}
+		operator std::string () const {
+			return String();
+		}
+		std::string String() const {
+			if (vendor == 0 || moduleClass == 0) return "";
+			std::string moduleClassStr = v4d::BaseN::EncodeLong(moduleClass, BASE36_LOWER_CHARS);
+			moduleClassStr[0] = std::toupper(moduleClassStr[0]);
+			return v4d::BaseN::EncodeLong(vendor, BASE36_UPPER_CHARS) + "_" + moduleClassStr;
+		}
+		bool IsValid() const {
+			ModuleClassID tmp = String();
+			return tmp.vendor != 0 && tmp.moduleClass != 0;
+		}
+	};
+}
 
 #define V4D_MODULE_CLASS_CPP(moduleClassName)\
 	moduleClassName::callback moduleClassName::_modulesLoadCallback = [](moduleClassName*){};\
@@ -105,6 +103,13 @@
 			_modulesLoadCallback(instance);\
 		}\
 		return _loadedModules[mod];\
+	}\
+	moduleClassName* moduleClassName::GetModule(const std::string& mod) {\
+		/*std::lock_guard lock(_mutexForLoadedModules);*/\
+		if (_loadedModules.find(mod) == _loadedModules.end()) {\
+			return nullptr;\
+		}\
+		return _loadedModules.at(mod);\
 	}\
 	void moduleClassName::UnloadModule(const std::string& mod) {\
 		std::lock_guard lock(_mutexForLoadedModules);\
@@ -221,6 +226,7 @@
 		static void ModulesSetUnloadCallback(const callback&& _modulesUnloadCallback);\
 		static void ModulesSetLoadErrorCallback(const errorCallback&& _modulesLoadErrorCallback);\
 		static moduleClassName* LoadModule(const std::string& mod, bool triggerErrorOnFailure = false);\
+		static moduleClassName* GetModule(const std::string& mod);\
 		static void UnloadModule(const std::string& mod);\
 		static void ForEachModule(const callback&& func);\
 		static void ForEachSortedModule(const callback&& func, const std::string& sortedListKey = "");\

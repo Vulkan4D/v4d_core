@@ -12,7 +12,7 @@ namespace v4d::tests {
 
 			server.Bind(44444);
 
-			server.StartListeningThread(10, [](v4d::io::SharedSocket socket) {
+			server.StartListeningThread(10, [](v4d::io::SocketPtr socket) {
 				auto msg = socket->Read<std::string>();
 				int a = socket->Read<int>();
 				socket->Write<int>(a * 2);
@@ -48,7 +48,7 @@ namespace v4d::tests {
 
 			server.Bind(44444);
 
-			server.StartListeningThread(10, [&result](v4d::io::SharedSocket socket) {
+			server.StartListeningThread(10, [&result](v4d::io::SocketPtr socket) {
 				int in = socket->Read<int>();
 				auto in_bytes = socket->Read<std::vector, byte>();
 				auto in_ints = socket->Read<std::vector, int>();
@@ -85,7 +85,7 @@ namespace v4d::tests {
 			v4d::io::Socket server(v4d::io::UDP);
 			server.Bind(44444);
 
-			server.StartListeningThread(10, [&result](v4d::io::SharedSocket socket/*, int& result*/){
+			server.StartListeningThread(10, [&result](v4d::io::SocketPtr socket/*, int& result*/){
 				std::string msg = socket->Read<std::string>();
 				int a = socket->Read<int>();
 				int b = socket->Read<int>();
@@ -117,7 +117,7 @@ namespace v4d::tests {
 			v4d::io::Socket server(v4d::io::UDP);
 			server.Bind(44444);
 
-			server.StartListeningThread(10, [&result](v4d::io::SharedSocket socket){
+			server.StartListeningThread(10, [&result](v4d::io::SocketPtr socket){
 				auto stream = socket->ReadStream();
 				result -= stream.Read<int>();
 				result -= stream.Read<short>();
@@ -156,7 +156,7 @@ namespace v4d::tests {
 
 			server.Bind(44444);
 
-			server.StartListeningThread(10, [&rsa](v4d::io::SharedSocket socket) {
+			server.StartListeningThread(10, [&rsa](v4d::io::SocketPtr socket) {
 				auto msg = socket->ReadEncrypted<std::string>(&rsa);
 				int a = socket->ReadEncrypted<int>(&rsa);
 				socket->WriteEncrypted<int>(&rsa, a * 2);
@@ -191,7 +191,7 @@ namespace v4d::tests {
 			v4d::io::Socket server(v4d::io::UDP);
 			server.Bind(44444);
 
-			server.StartListeningThread(10, [&result, &rsa](v4d::io::SharedSocket socket){
+			server.StartListeningThread(10, [&result, &rsa](v4d::io::SocketPtr socket){
 				auto stream = socket->ReadEncryptedStream(&rsa);
 				result -= stream.Read<int>();
 				result -= stream.Read<short>();

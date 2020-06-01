@@ -19,6 +19,24 @@ Socket::~Socket() {
 }
 
 
+int Socket::Poll(int timeoutMilliseconds) {
+	pollfd fds[1] = {pollfd{socket, POLLIN, 0}};
+	#ifdef _WINDOWS
+		return ::WSAPoll(fds, 1, timeoutMilliseconds);
+	#else
+		return ::poll(fds, 1, timeoutMilliseconds);
+	#endif
+}
+
+std::string Socket::GetLastError() const {
+	#ifdef _WINDOWS
+		// https://docs.microsoft.com/en-us/windows/win32/winsock/windows-sockets-error-codes-2
+		return std::to_string(::WSAGetLastError());
+	#else
+		return "";
+	#endif
+}
+
 void Socket::Send() {
 	if (IsConnected()) {
 		if (IsTCP()) {
@@ -177,10 +195,11 @@ void Socket::StartListeningThread(int waitIntervalMilliseconds, ListeningThreadC
 }
 
 std::vector<byte> Socket::GetData() {
-	std::scoped_lock lock(readMutex);
-	// Copy and return buffer
-	std::vector<byte> data(_GetReadBuffer_().size());
-	memcpy(data.data(), _GetReadBuffer_().data(), _GetReadBuffer_().size());
+	LockRead();
+		// Copy and return buffer
+		std::vector<byte> data(_GetReadBuffer_().size());
+		memcpy(data.data(), _GetReadBuffer_().data(), _GetReadBuffer_().size());
+	UnlockRead();
 	return data;
 };
 

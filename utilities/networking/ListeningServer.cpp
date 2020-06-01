@@ -11,7 +11,7 @@ ListeningServer::~ListeningServer() {
 
 void ListeningServer::Start(uint16_t port) {
 	listeningSocket.Bind(port);
-	listeningSocket.StartListeningThread(listenInterval, [this](v4d::io::SharedSocket socket){
+	listeningSocket.StartListeningThread(listenInterval, [this](v4d::io::SocketPtr socket){
 		HandleNewConnection(std::move(socket));
 	});
 }
@@ -24,7 +24,7 @@ bool ListeningServer::IsListening() const {
 	return listeningSocket.IsListening();
 }
 
-void ListeningServer::HandleNewConnection(v4d::io::SharedSocket socket){
+void ListeningServer::HandleNewConnection(v4d::io::SocketPtr socket){
 	// If receive nothing after timeout, Disconnect now!
 	if (socket->Poll(newConnectionFirstByteTimeout) <= 0) {
 		LOG_ERROR_VERBOSE("ListeningServer: new connection failed to send first data in time")
@@ -89,7 +89,7 @@ void ListeningServer::HandleNewConnection(v4d::io::SharedSocket socket){
 	}
 }
 
-bool ListeningServer::ValidateAppName(v4d::io::SharedSocket& socket, const std::string& clientAppName) {
+bool ListeningServer::ValidateAppName(v4d::io::SocketPtr& socket, const std::string& clientAppName) {
 	if (strcmp(GetAppName().c_str(), clientAppName.c_str()) != 0) {
 		*socket << ZAP::DENY;
 		*socket << zapdata::Error{ZAP_CODES::APPNAME_MISMATCH, ZAP_CODES::APPNAME_MISMATCH_text};
@@ -100,7 +100,7 @@ bool ListeningServer::ValidateAppName(v4d::io::SharedSocket& socket, const std::
 	return true;
 }
 
-bool ListeningServer::ValidateVersion(v4d::io::SharedSocket& socket, const std::string& clientVersion) {
+bool ListeningServer::ValidateVersion(v4d::io::SocketPtr& socket, const std::string& clientVersion) {
 	if (strcmp(GetVersion().c_str(), clientVersion.c_str()) != 0) {
 		*socket << ZAP::DENY;
 		*socket << zapdata::Error{ZAP_CODES::VERSION_MISMATCH, ZAP_CODES::VERSION_MISMATCH_text};
@@ -111,11 +111,11 @@ bool ListeningServer::ValidateVersion(v4d::io::SharedSocket& socket, const std::
 	return true;
 }
 
-void ListeningServer::ExtendedRequest(v4d::io::SharedSocket& socket, byte /*clientType*/) {
+void ListeningServer::ExtendedRequest(v4d::io::SocketPtr& socket, byte /*clientType*/) {
 	socket->Disconnect();
 }
 
-void ListeningServer::TokenRequest(v4d::io::SharedSocket& socket, byte clientType) {
+void ListeningServer::TokenRequest(v4d::io::SocketPtr& socket, byte clientType) {
 	auto[clientID, increment, encryptedToken] = zapdata::ClientToken::ReadFrom(socket);
 	if (clients.find(clientID) == clients.end()) {
 		if (socket->IsTCP()) {
@@ -156,7 +156,7 @@ void ListeningServer::TokenRequest(v4d::io::SharedSocket& socket, byte clientTyp
 	HandleNewClient(socket, clientID, clientType);
 }
 
-void ListeningServer::AnonymousRequest(v4d::io::SharedSocket& socket, byte clientType) {
+void ListeningServer::AnonymousRequest(v4d::io::SocketPtr& socket, byte clientType) {
 	ulong clientID = Authenticate(nullptr);
 	if (!clientID) {
 		if (socket->IsTCP()) {
@@ -176,7 +176,7 @@ void ListeningServer::AnonymousRequest(v4d::io::SharedSocket& socket, byte clien
 	HandleNewClient(socket, clientID, clientType);
 }
 
-void ListeningServer::AuthRequest(v4d::io::SharedSocket& socket, byte clientType) {
+void ListeningServer::AuthRequest(v4d::io::SocketPtr& socket, byte clientType) {
 	// Receive AUTH data
 	v4d::data::ReadOnlyStream authStream = rsa? socket->ReadEncryptedStream(rsa) : socket->ReadStream();
 	if (rsa && authStream.GetDataBufferRemaining() == 0) {
@@ -219,7 +219,7 @@ void ListeningServer::AuthRequest(v4d::io::SharedSocket& socket, byte clientType
 	HandleNewClient(socket, clientID, clientType);
 }
 
-void ListeningServer::HandleNewClient(v4d::io::SharedSocket socket, ulong clientID, byte clientType) {
+void ListeningServer::HandleNewClient(v4d::io::SocketPtr socket, ulong clientID, byte clientType) {
 	if (clientID && clients.find(clientID) != clients.end()) {
 		auto client = clients.at(clientID);
 		if (socket->IsTCP()) {

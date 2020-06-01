@@ -39,7 +39,7 @@ public:
 		}
 	}
 
-	void RunClient(v4d::io::SharedSocket, std::shared_ptr<v4d::networking::IncomingClient>, byte /*clientType*/) override {
+	void RunClient(v4d::io::SocketPtr, std::shared_ptr<v4d::networking::IncomingClient>, byte /*clientType*/) override {
 		result -= 30;
 	}
 

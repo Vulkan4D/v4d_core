@@ -20,11 +20,7 @@ namespace v4d::data {
 
 		std::vector<byte> writeBuffer{};
 
-
-	public: // members
-
 		std::recursive_mutex writeMutex, readMutex;
-
 
 	protected: // Virtual methods to override for data sources
 
@@ -47,6 +43,14 @@ namespace v4d::data {
 			readMutex.lock();
 		}
 		void UnlockRead() {
+			readMutex.unlock();
+		}
+		void LockReadWrite() {
+			readMutex.lock();
+			writeMutex.lock();
+		}
+		void UnlockReadWrite() {
+			writeMutex.unlock();
 			readMutex.unlock();
 		}
 

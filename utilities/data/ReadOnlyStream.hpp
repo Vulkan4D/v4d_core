@@ -31,9 +31,11 @@ namespace v4d::data {
 		}
 
 		virtual std::vector<byte> GetData() override {
-			std::lock_guard lock(readMutex);
-			// Copy and return buffer
-			return dataBuffer;
+			LockRead();
+				// Copy and return buffer
+				std::vector<byte> buf = dataBuffer;
+			UnlockRead();
+			return buf;
 		}
 
 

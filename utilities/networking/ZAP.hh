@@ -165,7 +165,7 @@ namespace v4d::networking::ZAP {
 			*stream >> data; \
 			return data; \
 		} \
-		static structName ReadFrom(v4d::io::SharedSocket& stream) { \
+		static structName ReadFrom(v4d::io::SocketPtr& stream) { \
 			structName data; \
 			*stream >> data; \
 			return data; \

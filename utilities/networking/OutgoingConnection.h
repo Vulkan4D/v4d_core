@@ -6,8 +6,8 @@ namespace v4d::networking {
 	public:
 		ulong id;
 		std::string token;
-	protected:
 		v4d::io::Socket socket;
+	protected:
 		v4d::crypto::RSA* rsa;
 		v4d::crypto::AES aes;
 
@@ -25,6 +25,9 @@ namespace v4d::networking {
 
 		void Disconnect();
 
+		inline void SetAsync() {
+			runAsync = true;
+		}
 
 	// Pure-Virtual methods
 		virtual std::string GetAppName() const = 0;
