@@ -69,6 +69,20 @@ ReadOnlyStream Stream::ReadStream() {
 	ReadBytes(data, size);
 	return ReadOnlyStream(data, size);
 }
+void Stream::ReadStream(ReadOnlyStream& stream) {
+	std::lock_guard lock(readMutex);
+	size_t size = ReadSize();
+	stream._GetReadBuffer_().resize(size);
+	ReadBytes(stream._GetReadBuffer_().data(), size);
+}
+void Stream::WriteStream(Stream& stream) {
+	std::lock_guard lock(writeMutex);
+	stream.LockWrite();
+	size_t size(stream._GetWriteBuffer_().size());
+	WriteSize(size);
+	WriteBytes(stream._GetWriteBuffer_().data(), size);
+	stream.UnlockWrite();
+}
 
 // Encrypted Stream
 ReadOnlyStream Stream::ReadEncryptedStream(v4d::crypto::Crypto* crypto) {

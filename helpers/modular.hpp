@@ -90,6 +90,7 @@ namespace v4d::modular {
 		const std::string path = std::string("modules/") + mod + "/" + mod + "." + #moduleClassName;\
 		if (_loadedModules.find(mod) == _loadedModules.end()) {\
 			moduleClassName* instance = new moduleClassName(path);\
+			instance->_moduleName = mod;\
 			if (!instance->_handle) {\
 				if (triggerErrorOnFailure) {\
 					std::ostringstream err;\
@@ -238,9 +239,11 @@ namespace v4d::modular {
 		__V4D_MODULE_FILE_HANDLER _handle = 0;\
 		__V4D_MODULE_ERR_TYPE _error = 0;\
 		std::string _libPath {""};\
+		std::string _moduleName {""};\
 	public:\
 		__V4D_MODULE_FILE_HANDLER ModuleLibraryHandle() const {return _handle;}\
 		std::string ModuleLibraryFilePath() const {return _libPath;}\
+		std::string ModuleName() const {return _moduleName;}\
 		moduleClassName(const std::string& filePath) {\
 			_libPath = filePath + __V4D_MODULE_FILE_EXT;\
 			if (v4d::io::FilePath::FileExists(_libPath+".new")) {\

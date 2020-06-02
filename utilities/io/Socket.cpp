@@ -92,8 +92,8 @@ size_t Socket::Receive(byte* data, size_t maxBytesToRead) {
 				#endif
 
 				if (rec <= 0) {
-					LOG_ERROR("TCP SOCKET RECEIVE ERROR: " << ::WSAGetLastError())
 					bytesRead = 0;
+					throw std::runtime_error("Error Reading Data from TCP Socket");
 				} else {
 					bytesRead = (size_t)rec;
 				}
@@ -115,8 +115,8 @@ size_t Socket::Receive(byte* data, size_t maxBytesToRead) {
 				#endif
 				
 				if (rec <= 0) {
-					LOG_ERROR("UDP SOCKET RECEIVE ERROR: " << ::WSAGetLastError())
 					bytesRead = 0;
+					throw std::runtime_error("Error Reading Data from UDP Socket");
 				} else {
 					bytesRead = (size_t)rec;
 				}
@@ -126,7 +126,7 @@ size_t Socket::Receive(byte* data, size_t maxBytesToRead) {
 		}
 	} else {
 		memset(data, 0, maxBytesToRead);
-		LOG_ERROR_VERBOSE("Cannot Read Data from Socket: Not Connected")
+		throw std::runtime_error("Cannot Read Data from Socket: Not Connected");
 	}
 	return (size_t)bytesRead;
 }
@@ -164,7 +164,7 @@ void Socket::StartListeningThread(int waitIntervalMilliseconds, ListeningThreadC
 					memset(&incomingAddr, 0, sizeof(incomingAddr));
 					SOCKET clientSocket = ::accept(socket, (struct sockaddr*)&incomingAddr, &addrLen);
 					if (IsListening() && IsValid(clientSocket)) {
-						newSocketCallback(std::make_shared<Socket>(clientSocket, incomingAddr, type, protocol));
+						newSocketCallback(clientSockets.emplace_back(std::make_shared<Socket>(clientSocket, incomingAddr, type, protocol)));
 					}
 				} else {
 					INVALIDCODE("polled > 1")
@@ -214,9 +214,16 @@ void Socket::Disconnect() {
 		#endif
 		socket = INVALID_SOCKET;
 	}
+	for (auto& s : clientSockets) {
+		s->Disconnect();
+	}
+	clientSockets.clear();
 }
 
 void Socket::StopListening() {
+	if (bound) {
+		Unbind();
+	}
 	listening = false;
 	if (listeningThread) {
 		if (listeningThread->joinable()) {
@@ -238,14 +245,18 @@ bool Socket::Connect(const std::string& host, uint16_t port) {
 		return false;
 	}
 
-	remoteAddr.sin_port = htons(port);
+	if (port != 0) {
+		remoteAddr.sin_port = htons(port);
+	}
 
-	// Convert IP to socket address
-	#ifdef _WINDOWS
-		remoteAddr.sin_addr.s_addr = ::inet_addr(host.c_str());
-	#else
-		::inet_pton(protocol, host.c_str(), &remoteAddr.sin_addr);
-	#endif
+	if (host != "") {
+		// Convert IP to socket address
+		#ifdef _WINDOWS
+			remoteAddr.sin_addr.s_addr = ::inet_addr(host.c_str());
+		#else
+			::inet_pton(protocol, host.c_str(), &remoteAddr.sin_addr);
+		#endif
+	}
 
 	if (IsTCP()) {
 		connected = (::connect(socket, (struct sockaddr*)&remoteAddr, sizeof remoteAddr) >= 0);
@@ -259,10 +270,12 @@ bool Socket::Connect(const std::string& host, uint16_t port) {
 bool Socket::Bind(uint16_t port, uint32_t addr) {
 	if (!IsValid() || IsBound()) return false;
 
-	this->port = port;
+	if (port != 0) this->port = port;
 
-	remoteAddr.sin_port = htons(port);
-	remoteAddr.sin_addr.s_addr = htonl(addr);
+	if (this->port != 0) {
+		remoteAddr.sin_port = htons(this->port);
+		remoteAddr.sin_addr.s_addr = htonl(addr);
+	}
 	
 	// Socket Options
 	::setsockopt(socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &so_reuse, sizeof so_reuse);
@@ -273,6 +286,12 @@ bool Socket::Bind(uint16_t port, uint32_t addr) {
 	// Bind socket
 	bound = (::bind(socket, (const struct sockaddr*) &remoteAddr, sizeof remoteAddr) >= 0);
 	return bound;
+}
+
+void Socket::Unbind() {
+	remoteAddr.sin_port = htons(0);
+	::bind(socket, (const struct sockaddr*) &remoteAddr, sizeof remoteAddr);
+	bound = false;
 }
 
 void Socket::ResetSocket() {

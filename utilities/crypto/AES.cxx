@@ -1,5 +1,12 @@
 #include <v4d.h>
 
+namespace v4d::networking::ZAP::data {
+	ZAPDATA( ClientTokenTest, 
+		Int64_u increment;
+		EncryptedString token;
+	)
+}
+
 namespace v4d::tests {
 	int AES() {
 		int result = 0;
@@ -81,7 +88,7 @@ namespace v4d::tests {
 			v4d::crypto::AES aes2(aesHex);
 
 			std::string token = "123456789";
-			auto data = zapdata::ClientToken{1, 4, zapdata::EncryptedString{}.Encrypt(&aes, token)};
+			auto data = zapdata::ClientTokenTest{4, zapdata::EncryptedString{}.Encrypt(&aes, token)};
 			std::string token2 = data.token.Decrypt(&aes2);
 
 			if (strcmp(token.c_str(), token2.c_str()) != 0) LOG_ERROR("ERROR: AES Test4 failed")

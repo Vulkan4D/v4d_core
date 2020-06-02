@@ -71,10 +71,10 @@ namespace v4d::data {
 			std::lock_guard lock(writeMutex);
 			writeBuffer.resize(0);
 		}
-		std::vector<byte>& _GetReadBuffer_() {
+		virtual std::vector<byte>& _GetReadBuffer_() {
 			return readBuffer;
 		}
-		std::vector<byte>& _GetWriteBuffer_() {
+		virtual std::vector<byte>& _GetWriteBuffer_() {
 			return writeBuffer;
 		}
 
@@ -87,7 +87,7 @@ namespace v4d::data {
 
 	public: // Constructor & Destructor
 
-		Stream(size_t bufferSize = 1024, bool useReadBuffer = false) : useReadBuffer(useReadBuffer), readBufferCursor(0) {
+		Stream(size_t bufferSize = 512, bool useReadBuffer = false) : useReadBuffer(useReadBuffer), readBufferCursor(0) {
 			if (bufferSize > 0) {
 				writeBuffer.reserve(bufferSize);
 			}
@@ -315,14 +315,8 @@ namespace v4d::data {
 
 		// Stream
 		ReadOnlyStream ReadStream();
-		void WriteStream(Stream& stream) {
-			std::lock_guard lock(writeMutex);
-			stream.LockWrite();
-			size_t size(stream._GetWriteBuffer_().size());
-			WriteSize(size);
-			WriteBytes(stream._GetWriteBuffer_().data(), size);
-			stream.UnlockWrite();
-		}
+		void ReadStream(ReadOnlyStream& stream);
+		void WriteStream(Stream& stream);
 
 		// Encryption
 		template<typename T>

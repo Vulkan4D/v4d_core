@@ -35,7 +35,7 @@ namespace v4d::io {
 							connected = false, 
 							listening = false,
 							logErrors = true;
-		uint16_t port;
+		uint16_t port = 0;
 
 		// Socket Options
 		#ifdef _WINDOWS
@@ -53,6 +53,7 @@ namespace v4d::io {
 		socklen_t addrLen = sizeof incomingAddr;
 
 		std::thread* listeningThread = nullptr;
+		std::vector<std::shared_ptr<v4d::io::Socket>> clientSockets {};
 
 		virtual void Send() override;
 
@@ -70,8 +71,40 @@ namespace v4d::io {
 		DELETE_COPY_MOVE_CONSTRUCTORS(Socket)
 
 		void ResetSocket();
+		
+		std::vector<std::shared_ptr<v4d::io::Socket>>& GetClientSockets() {
+			return clientSockets;
+		}
 
 		virtual std::vector<byte> GetData() override;
+		
+		inline uint16_t GetPort() const {
+			return port;
+		}
+		
+		inline void SetPort(uint16_t port) {
+			this->port = port;
+		}
+		
+		inline sockaddr_in GetRemoteAddr() const {
+			return remoteAddr;
+		}
+		
+		inline void SetRemoteAddr(sockaddr_in addr) {
+			remoteAddr = addr;
+		}
+		
+		inline SOCKET_TYPE GetSocketType() const {
+			return type;
+		}
+		
+		inline void SetSocketType(SOCKET_TYPE t) {
+			type = t;
+		}
+		
+		inline SOCKET_PROTOCOL GetProtocol() const {
+			return protocol;
+		}
 
 		std::string GetLastError() const;
 
@@ -79,11 +112,7 @@ namespace v4d::io {
 			this->logErrors = logErrors;
 		}
 
-		inline sockaddr_in GetRemoteAddress() const {
-			return remoteAddr;
-		}
-
-		inline sockaddr_in GetIncomingAddress() const {
+		inline sockaddr_in GetIncomingAddr() const {
 			return incomingAddr;
 		}
 
@@ -118,6 +147,9 @@ namespace v4d::io {
 		inline bool IsConnected() const {
 			return IsValid() && connected;
 		}
+		inline void SetConnected(bool isConnected = true) {
+			connected = isConnected;
+		}
 		inline bool IsTCP() const {
 			return type == TCP;
 		}
@@ -127,9 +159,10 @@ namespace v4d::io {
 
 		////////////////////////////////////////////////////////////////////////////
 
-		virtual bool Bind(uint16_t port, uint32_t addr = INADDR_ANY);
+		virtual bool Bind(uint16_t port = 0, uint32_t addr = INADDR_ANY);
+		virtual void Unbind();
 
-		virtual bool Connect(const std::string& host, uint16_t port);
+		virtual bool Connect(const std::string& host = "", uint16_t port = 0);
 
 		void Disconnect();
 

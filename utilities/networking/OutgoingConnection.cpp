@@ -12,10 +12,19 @@ OutgoingConnection::OutgoingConnection(ulong id, std::string token, v4d::io::SOC
 		socket = std::make_shared<v4d::io::Socket>(type);
 	}
 
-OutgoingConnection::OutgoingConnection(OutgoingConnection& c)
-	: id(c.id), token(c.token), socket(nullptr), rsa(c.rsa), aes(c.aes.GetHexKey()) {
-		socket = std::make_shared<v4d::io::Socket>(c.socket->IsTCP()?v4d::io::TCP:v4d::io::UDP);
-	}
+OutgoingConnection::OutgoingConnection(OutgoingConnection& src)
+: id(src.id), token(src.token), socket(nullptr), rsa(src.rsa), aes(src.aes.GetHexKey()) {
+	socket = std::make_shared<v4d::io::Socket>(src.socket->GetSocketType());
+	socket->SetPort(src.socket->GetPort());
+	socket->SetRemoteAddr(src.socket->GetRemoteAddr());
+}
+
+OutgoingConnection::OutgoingConnection(v4d::io::SOCKET_TYPE type, OutgoingConnection& src)
+: id(src.id), token(src.token), socket(nullptr), rsa(src.rsa), aes(src.aes.GetHexKey()) {
+	socket = std::make_shared<v4d::io::Socket>(type);
+	socket->SetPort(src.socket->GetPort());
+	socket->SetRemoteAddr(src.socket->GetRemoteAddr());
+}
 
 OutgoingConnection::~OutgoingConnection(){
 	Disconnect();
@@ -87,42 +96,52 @@ std::string OutgoingConnection::GetServerPublicKey(std::string ip, uint16_t port
 }
 
 bool OutgoingConnection::TokenRequest() {
-	static std::atomic<ulong> requestIncrement = 0;
-	*socket << zapdata::ClientToken{id, ++requestIncrement, zapdata::EncryptedString{}.Encrypt(&aes, token)};
-	if (socket->IsUDP()) return true;
-	socket->Flush();
-	if (socket->Poll(connectionTimeoutMilliseconds) <= 0) {
-		Error(ZAP_CODES::SERVER_RESPONSE_TIMEOUT, ZAP_CODES::SERVER_RESPONSE_TIMEOUT_text);
-		return false;
-	}
-	switch (socket->Read<byte>()) {
-		case ZAP::OK:
-			return HandleConnection();
-		break;
-		case ZAP::DENY:
-			auto[errCode, errMsg] = zapdata::Error::ReadFrom(socket);
-			Error(errCode, "Error while trying to connect to server: " + errMsg);
+	static std::atomic<uint64_t> requestIncrement = 0;
+	socket->Write<uint64_t>(id);
+	v4d::data::Stream tokenToEncrypt(64);
+	tokenToEncrypt << zapdata::ClientToken {++requestIncrement, token};
+	socket->WriteEncryptedStream(&aes, tokenToEncrypt);
+	if (socket->IsUDP()) {
+		return HandleConnection();
+	} else {
+		socket->Flush();
+		if (socket->Poll(connectionTimeoutMilliseconds) <= 0) {
+			Error(ZAP_CODES::SERVER_RESPONSE_TIMEOUT, ZAP_CODES::SERVER_RESPONSE_TIMEOUT_text);
 			return false;
+		}
+		switch (socket->Read<byte>()) {
+			case ZAP::OK:
+				return HandleConnection();
+			break;
+			case ZAP::DENY:
+				auto[errCode, errMsg] = zapdata::Error::ReadFrom(socket);
+				Error(errCode, "Error while trying to connect to server: " + errMsg);
+				return false;
+		}
 	}
 	return false;
 }
 
 bool OutgoingConnection::AnonymousRequest() {
-	socket->Flush();
-	if (socket->Poll(connectionTimeoutMilliseconds) <= 0) {
-		Error(ZAP_CODES::SERVER_RESPONSE_TIMEOUT, ZAP_CODES::SERVER_RESPONSE_TIMEOUT_text);
-		return false;
-	}
-	switch (socket->Read<byte>()) {
-		case ZAP::OK:
-			return HandleConnection();
-		break;
-		case ZAP::DENY:
-			auto[errCode, errMsg] = zapdata::Error::ReadFrom(socket);
-			Error(errCode, "Error while trying to connect to server: " + errMsg);
+	if (socket->IsUDP()) {
+		return HandleConnection();
+	} else {
+		socket->Flush();
+		if (socket->Poll(connectionTimeoutMilliseconds) <= 0) {
+			Error(ZAP_CODES::SERVER_RESPONSE_TIMEOUT, ZAP_CODES::SERVER_RESPONSE_TIMEOUT_text);
 			return false;
+		}
+		switch (socket->Read<byte>()) {
+			case ZAP::OK:
+				return HandleConnection();
+			break;
+			case ZAP::DENY:
+				auto[errCode, errMsg] = zapdata::Error::ReadFrom(socket);
+				Error(errCode, "Error while trying to connect to server: " + errMsg);
+				return false;
+		}
+		LOG_ERROR("Unknown auth response from server")
 	}
-	LOG_ERROR("Unknown auth response from server")
 	return false;
 }
 
@@ -167,7 +186,9 @@ bool OutgoingConnection::AuthRequest(v4d::data::Stream& authData) {
 
 bool OutgoingConnection::HandleConnection() {
 	if (runAsync) {
-		asyncRunThread = new std::thread(&OutgoingConnection::Run, this, std::ref(socket));
+		if (!asyncRunThread) {
+			asyncRunThread = new std::thread(&OutgoingConnection::Run, this, socket);
+		}
 	} else {
 		Run(socket);
 	}

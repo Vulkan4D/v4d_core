@@ -11,9 +11,11 @@ namespace v4d::data {
 
 		ReadOnlyStream() : Stream(0) {}
 
+		ReadOnlyStream(size_t bufferSize) : Stream(0), dataBuffer(bufferSize) {}
+
 		ReadOnlyStream(std::vector<byte> bytes) : ReadOnlyStream(bytes.data(), bytes.size()) {}
 
-		ReadOnlyStream(byte* data, size_t size) : Stream(0) {
+		ReadOnlyStream(byte* data, size_t size) : Stream(0), dataBuffer(size) {
 			ImportData(data, size);
 		}
 
@@ -38,6 +40,9 @@ namespace v4d::data {
 			return buf;
 		}
 
+		std::vector<byte>& _GetReadBuffer_() override {
+			return dataBuffer;
+		}
 
 	protected:
 

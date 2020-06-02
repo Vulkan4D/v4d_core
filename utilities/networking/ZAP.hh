@@ -60,7 +60,8 @@ namespace v4d::networking::ZAP {
 	TOKEN connection : 
 		ClientHello								---> 
 		TOKEN (Byte)							--->
-		ClientToken aesEncrypted				--->	(server decrypts and checks id, token and increment>lastIncrement)
+		id (Int64_u)							--->
+		ClientToken (EncryptedStream) aes		--->	(server decrypts and checks token and increment>lastIncrement with client id)
 												<---	OK (Byte)
 														Stay connected
 	*/
@@ -222,9 +223,8 @@ namespace v4d::networking::ZAP {
 			Byte clientType;
 		)
 		ZAPDATA( ClientToken, 
-			Int64_u id;
 			Int64_u increment;
-			EncryptedString token;
+			String token;
 		)
 		ZAPDATA( Error, 
 			Int32 code;

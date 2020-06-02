@@ -19,7 +19,8 @@ namespace v4d::networking {
 
 		OutgoingConnection(v4d::io::SOCKET_TYPE type = v4d::io::TCP, v4d::crypto::RSA* serverPublicKey = nullptr, int aesBits = 256);
 		OutgoingConnection(ulong id, std::string token, v4d::io::SOCKET_TYPE type = v4d::io::TCP, v4d::crypto::RSA* serverPublicKey = nullptr, std::string aesHex = "");
-		OutgoingConnection(OutgoingConnection&);
+		OutgoingConnection(OutgoingConnection& src);
+		OutgoingConnection(v4d::io::SOCKET_TYPE type, OutgoingConnection& src);
 
 		virtual ~OutgoingConnection();
 
@@ -39,8 +40,8 @@ namespace v4d::networking {
 
 	public:
 		virtual void SendHello(byte clientType = 0);
-		virtual bool Connect(std::string ip, uint16_t port, byte clientType = 1);
-		virtual bool ConnectRunAsync(std::string ip, uint16_t port, byte clientType = 1);
+		virtual bool Connect(std::string ip = "", uint16_t port = 0, byte clientType = 1);
+		virtual bool ConnectRunAsync(std::string ip = "", uint16_t port = 0, byte clientType = 1);
 		virtual std::string GetServerPublicKey(std::string ip, uint16_t port);
 
 		virtual bool TokenRequest();

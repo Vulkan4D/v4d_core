@@ -17,4 +17,6 @@ namespace v4d::networking {
 
 		DELETE_COPY_MOVE_CONSTRUCTORS(IncomingClient)
 	};
+	
+	typedef std::shared_ptr<IncomingClient> IncomingClientPtr;
 }

@@ -9,11 +9,13 @@ namespace v4d::networking {
 		v4d::io::SocketPtr listeningSocket;
 		v4d::crypto::RSA* rsa;
 
-		std::unordered_map<ulong, std::shared_ptr<IncomingClient>> clients{};
-
 	public:
 
+		std::shared_ptr<std::unordered_map<ulong, std::shared_ptr<IncomingClient>>> clients = nullptr;
+		std::mutex clientsMutex;
+
 		ListeningServer(v4d::io::SOCKET_TYPE type = v4d::io::TCP, v4d::crypto::RSA* serverPrivateKey = nullptr);
+		ListeningServer(v4d::io::SOCKET_TYPE type, ListeningServer& src);
 
 		virtual ~ListeningServer();
 
@@ -22,7 +24,7 @@ namespace v4d::networking {
 		int listenInterval = 10;
 		int newConnectionFirstByteTimeout = 500;
 
-		virtual void Start(uint16_t port);
+		virtual void Start(uint16_t port = 0);
 		virtual void Stop();
 		
 		virtual bool IsListening() const;
@@ -46,7 +48,7 @@ namespace v4d::networking {
 		virtual void TokenRequest(v4d::io::SocketPtr socket, byte clientType);
 		virtual void AnonymousRequest(v4d::io::SocketPtr socket, byte clientType);
 		virtual void AuthRequest(v4d::io::SocketPtr socket, byte clientType);
-
+		
 		virtual void HandleNewClient(v4d::io::SocketPtr socket, ulong clientID, byte clientType);
 
 		virtual std::string GenerateToken() const;
