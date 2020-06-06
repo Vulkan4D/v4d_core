@@ -21,6 +21,10 @@ namespace v4d::data {
 		std::vector<byte> writeBuffer{};
 
 		std::recursive_mutex writeMutex, readMutex;
+		
+	public: // optional Begin/End lambdas for safe and flexible usage when passing socket ptr to a module or function for it to send streams
+		std::function<void()> Begin = [](){};
+		std::function<void()> End = [](){};
 
 	protected: // Virtual methods to override for data sources
 
@@ -83,7 +87,6 @@ namespace v4d::data {
 			// Copy and return buffer
 			return writeBuffer;
 		}
-
 
 	public: // Constructor & Destructor
 

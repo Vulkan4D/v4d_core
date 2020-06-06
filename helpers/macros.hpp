@@ -12,6 +12,26 @@
 #endif
 
 
+// Assert
+#ifdef _DEBUG
+	#define DEBUG_ASSERT(expression) assert(expression);
+	#define DEBUG_ASSERT_WARN(expression, msg) {\
+		if (!(expression)) {\
+			LOG_WARN(msg)\
+		}\
+	}
+	#define DEBUG_ASSERT_ERROR(expression, msg) {\
+		if (!(expression)) {\
+			LOG_ERROR(msg)\
+		}\
+	}
+#else
+	#define DEBUG_ASSERT
+	#define DEBUG_ASSERT_WARN
+	#define DEBUG_ASSERT_ERROR
+#endif
+
+
 //////////////////////////////////////////////////////////
 // Delete Default Constructors
 

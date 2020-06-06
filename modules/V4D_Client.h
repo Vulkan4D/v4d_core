@@ -14,8 +14,8 @@ class V4DLIB V4D_Client {
 	)
 	V4D_MODULE_FUNC_DECLARE(int, OrderIndex)
 	V4D_MODULE_FUNC_DECLARE(void, Init, std::shared_ptr<OutgoingConnection> client, v4d::scene::Scene*)
-	V4D_MODULE_FUNC_DECLARE(void, SendActions, std::vector<v4d::data::Stream>& streams)
-	V4D_MODULE_FUNC_DECLARE(void, SendBursts, std::vector<v4d::data::Stream>& streams)
-	V4D_MODULE_FUNC_DECLARE(void, ReceiveAction, v4d::data::ReadOnlyStream& stream)
-	V4D_MODULE_FUNC_DECLARE(void, ReceiveBurst, v4d::data::ReadOnlyStream& stream)
+	V4D_MODULE_FUNC_DECLARE(void, SendActions, v4d::io::SocketPtr stream)
+	V4D_MODULE_FUNC_DECLARE(void, SendBursts, v4d::io::SocketPtr stream)
+	V4D_MODULE_FUNC_DECLARE(void, ReceiveAction, v4d::io::SocketPtr stream)
+	V4D_MODULE_FUNC_DECLARE(void, ReceiveBurst, v4d::io::SocketPtr stream)
 };
