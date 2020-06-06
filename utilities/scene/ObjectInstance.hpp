@@ -64,6 +64,13 @@ namespace v4d::scene {
 			}
 		
 		#pragma endregion
+		
+		#pragma region Ray Tracing
+		
+		uint32_t rayTracingMaskAdded = 0x0;
+		uint32_t rayTracingMaskRemoved = 0x0;
+		
+		#pragma endregion
 	
 		#pragma region Constructor/Destructor
 		

@@ -15,11 +15,11 @@ namespace v4d::data {
 
 		// Optional Read Buffer
 		bool useReadBuffer = false;
-		size_t readBufferCursor;
+		size_t readBufferCursor = 0;
+		
 		std::vector<byte> readBuffer{};
-
 		std::vector<byte> writeBuffer{};
-
+		
 		std::recursive_mutex writeMutex, readMutex;
 		
 	public: // optional Begin/End lambdas for safe and flexible usage when passing socket ptr to a module or function for it to send streams
@@ -98,10 +98,15 @@ namespace v4d::data {
 				readBuffer.reserve(bufferSize);
 			}
 		}
+		
+		Stream(const Stream& stream) : useReadBuffer(stream.useReadBuffer), readBufferCursor(0) {
+			writeBuffer = stream.writeBuffer;
+			if (useReadBuffer) readBuffer = stream.readBuffer;
+		}
 
 		virtual ~Stream() {}
 
-		DELETE_COPY_MOVE_CONSTRUCTORS(Stream)
+		DELETE_MOVE_CONSTRUCTORS(Stream)
 
 
 	public: // Read & Write

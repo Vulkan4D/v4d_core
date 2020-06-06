@@ -53,6 +53,7 @@
 
 // Scene-related Objects
 #include "utilities/scene/Scene.h"
+#include "utilities/scene/NetworkGameObject.hpp"
 
 // ImGui
 #ifdef _ENABLE_IMGUI

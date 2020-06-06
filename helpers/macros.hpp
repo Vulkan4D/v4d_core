@@ -44,10 +44,8 @@
 	ClassName& operator=(ClassName&&) = delete;
 
 #define DELETE_COPY_MOVE_CONSTRUCTORS(ClassName) \
-	ClassName(const ClassName&) = delete; \
-	ClassName& operator=(const ClassName&) = delete; \
-	ClassName(ClassName&&) = delete; \
-	ClassName& operator=(ClassName&&) = delete;
+	DELETE_COPY_CONSTRUCTORS(ClassName)\
+	DELETE_MOVE_CONSTRUCTORS(ClassName)
 
 
 //////////////////////////////////////////////////////////

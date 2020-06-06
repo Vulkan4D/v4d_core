@@ -17,6 +17,8 @@ namespace v4d::scene {
 		mutable std::recursive_mutex sceneMutex;
 		
 		Camera camera {};
+		ObjectInstancePtr cameraParent = nullptr;
+		glm::dmat4 cameraOffset {1};
 		std::vector<ObjectInstancePtr> objectInstances {};
 		
 		std::unordered_map<std::string, std::function<void(ObjectInstancePtr)>> objectInstanceRemovedCallbacks {};
