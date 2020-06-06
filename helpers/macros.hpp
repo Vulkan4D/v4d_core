@@ -26,9 +26,9 @@
 		}\
 	}
 #else
-	#define DEBUG_ASSERT
-	#define DEBUG_ASSERT_WARN
-	#define DEBUG_ASSERT_ERROR
+	#define DEBUG_ASSERT(expression)
+	#define DEBUG_ASSERT_WARN(expression, msg)
+	#define DEBUG_ASSERT_ERROR(expression, msg)
 #endif
 
 
