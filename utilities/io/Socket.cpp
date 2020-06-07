@@ -21,11 +21,22 @@ Socket::~Socket() {
 
 int Socket::Poll(int timeoutMilliseconds) {
 	pollfd fds[1] = {pollfd{socket, POLLIN, 0}};
+	int polled;
 	#ifdef _WINDOWS
-		return ::WSAPoll(fds, 1, timeoutMilliseconds);
+		polled = ::WSAPoll(fds, 1, timeoutMilliseconds);
 	#else
-		return ::poll(fds, 1, timeoutMilliseconds);
+		polled = ::poll(fds, 1, timeoutMilliseconds);
 	#endif
+	if (polled > 0) {
+		// Check if socket has been closed
+		char b;
+		if (::recv(socket, &b, 1, MSG_PEEK) == 0) {
+			// Disconnected
+			connected = false;
+			return -1;
+		}
+	}
+	return polled;
 }
 
 std::string Socket::GetLastError() const {
@@ -38,6 +49,7 @@ std::string Socket::GetLastError() const {
 }
 
 void Socket::Send() {
+	if (_GetWriteBuffer_().size() == 0) return;
 	if (IsConnected()) {
 		if (IsTCP()) {
 			#ifdef _WINDOWS
@@ -48,11 +60,15 @@ void Socket::Send() {
 					size_t size = _GetWriteBuffer_().size();
 					char data[size];
 					memcpy(data, _GetWriteBuffer_().data(), size);
-					::send(socket, data, (int)size, MSG_DONTWAIT);
+					if (::send(socket, data, (int)size, MSG_DONTWAIT) == -1) {
+						connected = false;
+					}
 				#endif
 
 			#else
-				::send(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT);
+				if (::send(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT) == -1) {
+					connected = false;
+				}
 				// ::write(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size());
 			#endif
 		} else 
@@ -78,11 +94,11 @@ void Socket::Send() {
 }
 
 size_t Socket::Receive(byte* data, size_t maxBytesToRead) {
+	if (maxBytesToRead == 0) return 0;
 	ssize_t bytesRead = 0;
 	if (IsConnected()) {
 		if (IsTCP()) {
 			#ifdef _WINDOWS
-
 				#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
 					int rec = ::recv(socket, reinterpret_cast<char*>(data), (int)maxBytesToRead, MSG_WAITALL);
 				#else
@@ -90,17 +106,18 @@ size_t Socket::Receive(byte* data, size_t maxBytesToRead) {
 					int rec = ::recv(socket, bytes, (int)maxBytesToRead, MSG_WAITALL);
 					memcpy(data, bytes, maxBytesToRead);
 				#endif
-
-				if (rec <= 0) {
-					bytesRead = 0;
-					throw std::runtime_error("Error Reading Data from TCP Socket");
-				} else {
-					bytesRead = (size_t)rec;
-				}
 			#else
-				bytesRead = ::recv(socket, data, maxBytesToRead, MSG_WAITALL);
-				// bytesRead = ::read(socket, data, maxBytesToRead);
+				int rec = ::recv(socket, data, maxBytesToRead, MSG_WAITALL);
+				// int rec = ::read(socket, data, maxBytesToRead);
 			#endif
+			
+			if (rec <= 0) {
+				bytesRead = 0;
+				connected = false;
+				// throw std::runtime_error("Error Reading Data from TCP Socket");
+			} else {
+				bytesRead = (size_t)rec;
+			}
 		} else 
 		if (IsUDP()) {
 			memset((char*) &incomingAddr, 0, sizeof(incomingAddr));
@@ -113,20 +130,21 @@ size_t Socket::Receive(byte* data, size_t maxBytesToRead) {
 					int rec = ::recvfrom(socket, bytes, (int)maxBytesToRead, 0, (struct sockaddr*) &incomingAddr, &addrLen);
 					memcpy(data, bytes, maxBytesToRead);
 				#endif
-				
-				if (rec <= 0) {
-					bytesRead = 0;
-					throw std::runtime_error("Error Reading Data from UDP Socket");
-				} else {
-					bytesRead = (size_t)rec;
-				}
 			#else
-				bytesRead = ::recvfrom(socket, data, maxBytesToRead, 0, (struct sockaddr*) &incomingAddr, &addrLen);
+				int rec = ::recvfrom(socket, data, maxBytesToRead, 0, (struct sockaddr*) &incomingAddr, &addrLen);
 			#endif
+			
+			if (rec <= 0) {
+				bytesRead = 0;
+				// throw std::runtime_error("Error Reading Data from UDP Socket");
+			} else {
+				bytesRead = (size_t)rec;
+			}
 		}
-	} else {
+	}
+	if (bytesRead == 0) {
 		memset(data, 0, maxBytesToRead);
-		throw std::runtime_error("Cannot Read Data from Socket: Not Connected");
+		throw std::runtime_error("Socket Disconnected");
 	}
 	return (size_t)bytesRead;
 }

@@ -130,17 +130,8 @@ namespace v4d::data {
 			readBufferCursor = 0;
 		}
 
-		virtual Stream& WriteBytes(const byte* data, size_t n) {
-			std::lock_guard lock(writeMutex);
-			if ((writeBuffer.size() + n) > writeBuffer.capacity()) {
-				Flush();
-			}
-			writeBuffer.insert(writeBuffer.end(), data, data+n);
-			return *this;
-		}
-
+		virtual Stream& WriteBytes(const byte* data, size_t n);
 		virtual Stream& ReadBytes(byte* data, size_t n);
-
 
 	public: // Read & Write (Overloads & Templates)
 

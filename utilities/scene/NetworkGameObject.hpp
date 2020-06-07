@@ -9,56 +9,74 @@ namespace v4d::networking::ZAP::data {
 		double y;
 		double z;
 	)
-	ZAPDATA(DQuaternion,
-		double x;
-		double y;
-		double z;
-		double w;
+	ZAPDATA(DMat3x4,
+		double x0;
+		double x1;
+		double x2;
+		double y0;
+		double y1;
+		double y2;
+		double z0;
+		double z1;
+		double z2;
+		double w0;
+		double w1;
+		double w2;
 	)
 	
 	struct NetworkGameObjectTransform {
-		ZAPABLE(NetworkGameObjectTransform) // 80 bytes
+		ZAPABLE(NetworkGameObjectTransform) // 120 bytes
 		
-		DVector3 position {0,0,0};
-		DQuaternion rotation {0,0,0,1};
+		DMat3x4 m;
 		DVector3 velocity {0,0,0};
 		
 		void SetFromTransformAndVelocity(const glm::dmat4& mat, const glm::dvec3& v) {
-			glm::dvec3 pos = glm::dvec3(mat[3]);
-			glm::dquat rot = glm::quat_cast(glm::transpose(glm::dmat3(mat)));
-			position.x = pos.x;
-			position.y = pos.y;
-			position.z = pos.z;
-			rotation.x = rot.x;
-			rotation.y = rot.y;
-			rotation.z = rot.z;
-			rotation.w = rot.w;
+			m.x0 = mat[0][0];
+			m.x1 = mat[0][1];
+			m.x2 = mat[0][2];
+			
+			m.y0 = mat[1][0];
+			m.y1 = mat[1][1];
+			m.y2 = mat[1][2];
+			
+			m.z0 = mat[2][0];
+			m.z1 = mat[2][1];
+			m.z2 = mat[2][2];
+			
+			m.w0 = mat[3][0];
+			m.w1 = mat[3][1];
+			m.w2 = mat[3][2];
+			
 			velocity.x = v.x;
 			velocity.y = v.y;
 			velocity.z = v.z;
 		}
 		
 		void GetTransformAndVelocity(glm::dmat4& mat, glm::dvec3& v) const {
-			mat = glm::mat4_cast(glm::dquat(rotation.x, rotation.y, rotation.z, rotation.w)) * glm::translate(glm::dmat4{1}, glm::dvec3(position.x, position.y, position.z));
+			mat[0][0] = m.x0;
+			mat[0][1] = m.x1;
+			mat[0][2] = m.x2;
+			mat[0][3] = 0;
+			
+			mat[1][0] = m.y0;
+			mat[1][1] = m.y1;
+			mat[1][2] = m.y2;
+			mat[1][3] = 0;
+			
+			mat[2][0] = m.z0;
+			mat[2][1] = m.z1;
+			mat[2][2] = m.z2;
+			mat[2][3] = 0;
+			
+			mat[3][0] = m.w0;
+			mat[3][1] = m.w1;
+			mat[3][2] = m.w2;
+			mat[3][3] = 1;
+			
 			v.x = velocity.x;
 			v.y = velocity.y;
 			v.z = velocity.z;
 		}
-		
-		// void Read(v4d::data::Stream* stream) {
-		// 	*stream
-		// 		>> position
-		// 		>> rotation
-		// 		>> velocity
-		// 	;
-		// }
-		// void Write(v4d::data::Stream* stream) const {
-		// 	*stream
-		// 		<< position
-		// 		<< rotation
-		// 		<< velocity
-		// 	;
-		// }
 	};
 }
 
@@ -149,7 +167,7 @@ namespace v4d::scene {
 				// objectInstance->Lock();
 				
 				objectInstance->rigidbodyType = physicsControl? ObjectInstance::RigidBodyType::DYNAMIC : ObjectInstance::RigidBodyType::KINEMATIC;
-				objectInstance->physicsDirty = true;
+				// objectInstance->physicsDirty = true;
 				
 				// objectInstance->Unlock();
 			}
