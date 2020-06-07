@@ -190,3 +190,8 @@
 		}
 #endif
 
+
+//////////////////////////////////////////////////////////
+// Threads
+
+#define THREAD_ID_STR std::to_string(std::hash<std::thread::id>{}(std::this_thread::get_id()))

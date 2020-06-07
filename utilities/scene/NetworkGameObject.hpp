@@ -78,11 +78,15 @@ namespace v4d::scene {
 		
 		// Attributes
 		bool active = false;
-		// bool hasRigidbodies = false;
-		// bool isDynamic = false;
+		bool isDynamic = false;
+		const std::vector<bool*> attributesPtrs {
+			/* maximum of 32 variables */
+			&active,
+			&isDynamic,
+		};
 		
 		ObjectInstancePtr objectInstance = nullptr;
-		Iteration iteration = 0;
+		Iteration iteration = 1;
 		glm::dmat4 transform {1};
 		glm::dvec3 velocity {0};
 		
@@ -120,9 +124,6 @@ namespace v4d::scene {
 			return transform[3];
 		}
 		
-		const std::array<bool*, 1/* max 32 */> attributesPtrs {
-			&active,
-		};
 		void SetAttributes(Attributes attrs) {
 			for (size_t i = 0; i < attributesPtrs.size(); ++i) {
 				*attributesPtrs[i] = attrs & (1 << i);
@@ -165,6 +166,13 @@ namespace v4d::scene {
 		
 		void ReverseUpdateObjectInstanceTransform() {
 			transform = objectInstance->GetWorldTransform();
+		}
+		
+		void RemoveObjectInstance(Scene* scene) {
+			if (objectInstance) {
+				scene->RemoveObjectInstance(objectInstance);
+				objectInstance = nullptr;
+			}
 		}
 		
 	};
