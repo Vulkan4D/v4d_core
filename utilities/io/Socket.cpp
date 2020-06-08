@@ -258,7 +258,7 @@ bool Socket::Connect(const std::string& host, uint16_t port) {
 		LOG_ERROR("Socket already bound")
 		return false;
 	}
-	if (IsConnected()) {
+	if (IsTCP() && IsConnected()) {
 		LOG_ERROR("Socket already connected")
 		return false;
 	}

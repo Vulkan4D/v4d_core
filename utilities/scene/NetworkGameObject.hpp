@@ -164,7 +164,7 @@ namespace v4d::scene {
 		
 		void UpdateObjectInstance() {
 			if (objectInstance) {
-				// objectInstance->Lock();
+				objectInstance->Lock();
 				if (objectInstance->rigidbodyType == ObjectInstance::RigidBodyType::DYNAMIC || objectInstance->rigidbodyType == ObjectInstance::RigidBodyType::KINEMATIC) {
 					if (isDynamic) {
 						objectInstance->rigidbodyType = physicsControl? ObjectInstance::RigidBodyType::DYNAMIC : ObjectInstance::RigidBodyType::KINEMATIC;
@@ -172,24 +172,28 @@ namespace v4d::scene {
 						objectInstance->rigidbodyType = ObjectInstance::RigidBodyType::STATIC;
 					}
 				}
-				// objectInstance->Unlock();
+				objectInstance->Unlock();
 			}
 		}
 		
 		void UpdateObjectInstanceTransform() {
-			if (objectInstance && (!posInit || !physicsControl)) {
-				if (!posInit && physicsControl) {
-					objectInstance->AddImpulse(velocity * objectInstance->mass);
+			if (objectInstance) {
+				if (!posInit || !physicsControl) {
+					objectInstance->Lock();
+						if (!posInit && physicsControl) {
+							objectInstance->AddImpulse(velocity * objectInstance->mass);
+						}
+						posInit = true;
+						objectInstance->SetWorldTransform(transform); //TODO handle parent objects
+					objectInstance->Unlock();
 				}
-				posInit = true;
-				// objectInstance->Lock();
-				objectInstance->SetWorldTransform(transform); //TODO handle parent objects
-				// objectInstance->Unlock();
 			}
 		}
 		
 		void ReverseUpdateObjectInstanceTransform() {
-			transform = objectInstance->GetWorldTransform();
+			objectInstance->Lock();
+				transform = objectInstance->GetWorldTransform();
+			objectInstance->Unlock();
 		}
 		
 		void RemoveObjectInstance(Scene* scene) {

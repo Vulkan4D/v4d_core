@@ -301,7 +301,7 @@ namespace v4d::scene {
 		
 		#pragma region Realtime / Per-Frame Updates
 		
-		void SetWorldTransform(const glm::dmat4 worldSpaceTransform) {
+		void SetWorldTransform(const glm::dmat4& worldSpaceTransform) {
 			transform = worldSpaceTransform;
 		}
 		
