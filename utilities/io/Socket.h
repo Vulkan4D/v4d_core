@@ -76,7 +76,7 @@ namespace v4d::io {
 			return clientSockets;
 		}
 		
-		inline const int& GetFd() const {
+		inline SOCKET GetFd() const {
 			return socket;
 		}
 

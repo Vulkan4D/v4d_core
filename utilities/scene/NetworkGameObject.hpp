@@ -135,7 +135,7 @@ namespace v4d::scene {
 		}
 		
 		glm::dvec3 GetLookDirection() const {
-			return glm::transpose(glm::dmat3(transform)) * glm::dvec3(0,1,0)/*forward*/;
+			return glm::transpose(glm::dmat3(transform)) * glm::dvec3(0,0,1)/*forward*/;
 		}
 		
 		glm::dvec3 GetWorldPosition() const {
@@ -165,16 +165,22 @@ namespace v4d::scene {
 		void UpdateObjectInstance() {
 			if (objectInstance) {
 				// objectInstance->Lock();
-				
-				objectInstance->rigidbodyType = physicsControl? ObjectInstance::RigidBodyType::DYNAMIC : ObjectInstance::RigidBodyType::KINEMATIC;
-				// objectInstance->physicsDirty = true;
-				
+				if (objectInstance->rigidbodyType == ObjectInstance::RigidBodyType::DYNAMIC || objectInstance->rigidbodyType == ObjectInstance::RigidBodyType::KINEMATIC) {
+					if (isDynamic) {
+						objectInstance->rigidbodyType = physicsControl? ObjectInstance::RigidBodyType::DYNAMIC : ObjectInstance::RigidBodyType::KINEMATIC;
+					} else {
+						objectInstance->rigidbodyType = ObjectInstance::RigidBodyType::STATIC;
+					}
+				}
 				// objectInstance->Unlock();
 			}
 		}
 		
 		void UpdateObjectInstanceTransform() {
 			if (objectInstance && (!posInit || !physicsControl)) {
+				if (!posInit && physicsControl) {
+					objectInstance->AddImpulse(velocity * objectInstance->mass);
+				}
 				posInit = true;
 				// objectInstance->Lock();
 				objectInstance->SetWorldTransform(transform); //TODO handle parent objects

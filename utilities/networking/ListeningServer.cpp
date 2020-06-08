@@ -60,7 +60,10 @@ void ListeningServer::HandleNewConnection(v4d::io::SocketPtr socket){
 	}
 	
 	// Client Requests
-	switch (byte request = socket->Read<byte>(); request) {
+	byte request = socket->Read<byte>();
+	LOG_VERBOSE("New client connection type " << (int)clientType << " request " << (int)request << " from " << socket->GetRemoteIP())
+	
+	switch (request) {
 
 		// Authentication
 		case ZAP::TOKEN:
