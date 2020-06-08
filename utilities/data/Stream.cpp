@@ -94,6 +94,12 @@ void Stream::WriteStream(Stream& stream) {
 	WriteBytes(stream._GetWriteBuffer_().data(), size);
 	stream.UnlockWrite();
 }
+void Stream::EmplaceStream(Stream& stream) {
+	std::lock_guard lock(writeMutex);
+	stream.LockWrite();
+	WriteBytes(stream._GetWriteBuffer_().data(), stream._GetWriteBuffer_().size());
+	stream.UnlockWrite();
+}
 
 // Encrypted Stream
 ReadOnlyStream Stream::ReadEncryptedStream(v4d::crypto::Crypto* crypto) {

@@ -316,6 +316,7 @@ namespace v4d::data {
 		ReadOnlyStream ReadStream();
 		void ReadStream(ReadOnlyStream& stream);
 		void WriteStream(Stream& stream);
+		void EmplaceStream(Stream& stream);
 
 		// Encryption
 		template<typename T>

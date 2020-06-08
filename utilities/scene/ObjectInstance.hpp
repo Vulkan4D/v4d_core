@@ -169,7 +169,9 @@ namespace v4d::scene {
 				LOG_ERROR("A procedural object cannot contain triangle geometries")
 				return nullptr;
 			}
-			return geometries.emplace_back(std::make_shared<Geometry>(count, 0, material, true), -1, transform, type).geometry;
+			auto geometry = geometries.emplace_back(std::make_shared<Geometry>(count, 0, material, true), -1, transform, type).geometry;
+			geometry->colliderType = Geometry::ColliderType::BOX;
+			return geometry;
 		}
 		
 		std::shared_ptr<Geometry> AddGeometry(std::shared_ptr<Geometry> templaceGeometry, glm::dmat4 transform = glm::dmat4{1}) {

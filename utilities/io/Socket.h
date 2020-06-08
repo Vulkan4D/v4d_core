@@ -75,6 +75,10 @@ namespace v4d::io {
 		std::vector<std::shared_ptr<v4d::io::Socket>>& GetClientSockets() {
 			return clientSockets;
 		}
+		
+		inline const int& GetFd() const {
+			return socket;
+		}
 
 		virtual std::vector<byte> GetData() override;
 		

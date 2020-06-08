@@ -103,7 +103,7 @@ namespace v4d::scene {
 		vert->custom1 = custom1;
 		
 		boundingDistance = glm::max(boundingDistance, glm::max(glm::length(aabbMin), glm::length(aabbMax)));
-		boundingBoxSize = glm::vec3(boundingDistance);
+		boundingBoxSize = glm::max(boundingBoxSize, (aabbMax - aabbMin) / 2.0f);
 		
 		isDirty = true;
 	}
