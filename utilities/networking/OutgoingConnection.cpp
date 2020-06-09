@@ -52,11 +52,15 @@ bool OutgoingConnection::Connect(std::string ip, uint16_t port, byte clientType)
 
 	if (id) {
 		*socket << ZAP::TOKEN;
-		LOG_VERBOSE("Connecting using TOKEN....")
+		if (socket->IsTCP()) LOG_VERBOSE("Connecting using TOKEN....")
 		if (!TokenRequest()) {
-			LOG_ERROR_VERBOSE("Token Connection failed, will try Auth connection...")
-			id = 0;
-			goto Connect;
+			if (socket->IsTCP()) { 
+				LOG_ERROR_VERBOSE("Token Connection failed, will try Auth connection...")
+				id = 0;
+				goto Connect;
+			} else {
+				return false;
+			}
 		}
 		return true;
 	} else {

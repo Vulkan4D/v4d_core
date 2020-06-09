@@ -30,8 +30,8 @@ namespace v4d::networking {
 		virtual bool IsListening() const;
 
 	// Pure-Virtual methods
-		virtual std::string GetAppName() const = 0;
-		virtual std::string GetVersion() const = 0;
+		virtual uint64_t GetAppName() const = 0;
+		virtual uint16_t GetVersion() const = 0;
 
 	protected: // Pure-Virtual methods
 		virtual ulong Authenticate(v4d::data::ReadOnlyStream* /*authStream*/) = 0;
@@ -40,8 +40,8 @@ namespace v4d::networking {
 	protected:
 		virtual void HandleNewConnection(v4d::io::SocketPtr socket);
 		
-		virtual bool ValidateAppName(v4d::io::SocketPtr socket, const std::string& clientAppName);
-		virtual bool ValidateVersion(v4d::io::SocketPtr socket, const std::string& clientVersion);
+		virtual bool ValidateAppName(v4d::io::SocketPtr socket, uint64_t clientAppName);
+		virtual bool ValidateVersion(v4d::io::SocketPtr socket, uint16_t clientVersion);
 		
 		virtual void ExtendedRequest(v4d::io::SocketPtr socket, byte clientType);
 		

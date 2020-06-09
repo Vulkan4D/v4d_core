@@ -35,7 +35,7 @@ bool ListeningServer::IsListening() const {
 
 void ListeningServer::HandleNewConnection(v4d::io::SocketPtr socket){
 	// If receive nothing after timeout, Disconnect now!
-	if (socket->Poll(newConnectionFirstByteTimeout) <= 0) {
+	if (socket->Poll(socket->IsTCP()? newConnectionFirstByteTimeout : 0) <= 0) {
 		LOG_ERROR_VERBOSE("ListeningServer: new connection failed to send first data in time")
 		socket->Disconnect();
 		return;
@@ -54,7 +54,7 @@ void ListeningServer::HandleNewConnection(v4d::io::SocketPtr socket){
 
 	// If no more data was sent, Disconnect now!
 	if (socket->Poll(0) <= 0) {
-		LOG_ERROR_VERBOSE("ListeningServer: new connection failed to send authentication request in time")
+		LOG_ERROR_VERBOSE("ListeningServer: new connection type " << (int)clientType << " failed to send authentication request in time")
 		socket->Disconnect();
 		return;
 	}
@@ -79,16 +79,24 @@ void ListeningServer::HandleNewConnection(v4d::io::SocketPtr socket){
 		// Other requests
 
 		case ZAP::PUBKEY:
-			*socket << ZAP::OK;
-			*socket << (rsa? rsa->GetPublicKeyPEM() : std::string(""));
-			socket->Flush();
-			socket->Disconnect();
+			if (socket->IsTCP()) {
+				*socket << ZAP::OK;
+				*socket << (rsa? rsa->GetPublicKeyPEM() : std::string(""));
+				socket->Flush();
+				socket->Disconnect();
+			} else {
+				LOG_ERROR("ListeningServer: Received new connection request for PUBKEY over UDP")
+			}
 		break;
 		
 		case ZAP::PING:
-			*socket << ZAP::PONG;
-			socket->Flush();
-			socket->Disconnect();
+			if (socket->IsTCP()) {
+				*socket << ZAP::PONG;
+				socket->Flush();
+				socket->Disconnect();
+			} else {
+				LOG_ERROR("ListeningServer: Received new connection request for PING over UDP")
+			}
 		break;
 
 		case ZAP::EXT:
@@ -101,29 +109,36 @@ void ListeningServer::HandleNewConnection(v4d::io::SocketPtr socket){
 	}
 }
 
-bool ListeningServer::ValidateAppName(v4d::io::SocketPtr socket, const std::string& clientAppName) {
-	if (strcmp(GetAppName().c_str(), clientAppName.c_str()) != 0) {
-		*socket << ZAP::DENY;
-		*socket << zapdata::Error{ZAP_CODES::APPNAME_MISMATCH, ZAP_CODES::APPNAME_MISMATCH_text};
-		socket->Flush();
-		socket->Disconnect();
+bool ListeningServer::ValidateAppName(v4d::io::SocketPtr socket, uint64_t clientAppName) {
+	if (GetAppName() != clientAppName) {
+		if (socket->IsTCP()) {
+			*socket << ZAP::DENY;
+			*socket << zapdata::Error{ZAP_CODES::APPNAME_MISMATCH, ZAP_CODES::APPNAME_MISMATCH_text};
+			socket->Flush();
+			socket->Disconnect();
+		}
+		LOG_ERROR("ListeningServer new connection : received wrong AppName")
 		return false;
 	}
 	return true;
 }
 
-bool ListeningServer::ValidateVersion(v4d::io::SocketPtr socket, const std::string& clientVersion) {
-	if (strcmp(GetVersion().c_str(), clientVersion.c_str()) != 0) {
-		*socket << ZAP::DENY;
-		*socket << zapdata::Error{ZAP_CODES::VERSION_MISMATCH, ZAP_CODES::VERSION_MISMATCH_text};
-		socket->Flush();
-		socket->Disconnect();
+bool ListeningServer::ValidateVersion(v4d::io::SocketPtr socket, uint16_t clientVersion) {
+	if (GetVersion() != clientVersion) {
+		if (socket->IsTCP()) {
+			*socket << ZAP::DENY;
+			*socket << zapdata::Error{ZAP_CODES::VERSION_MISMATCH, ZAP_CODES::VERSION_MISMATCH_text};
+			socket->Flush();
+			socket->Disconnect();
+		}
+		LOG_ERROR("ListeningServer new connection : received wrong Version")
 		return false;
 	}
 	return true;
 }
 
 void ListeningServer::ExtendedRequest(v4d::io::SocketPtr socket, byte /*clientType*/) {
+	LOG_ERROR("ListeningServer: Received new connection extended request but has not been implemented")
 	socket->Disconnect();
 }
 

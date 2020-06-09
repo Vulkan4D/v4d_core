@@ -16,8 +16,8 @@ namespace v4d::modular {
 				return;
 			if (std::string(BASE26_UPPER_CHARS).find(vendorStr[0]) == std::string::npos || std::string(BASE26_LOWER_CHARS).find(moduleStr[0]) == std::string::npos)
 				return;
-			vendor = v4d::BaseN::DecodeLong(vendorStr, BASE36_UPPER_CHARS);
-			module = v4d::BaseN::DecodeLong(moduleStr, BASE36_LOWER_CHARS);
+			vendor = v4d::BaseN::EncodeStringToUInt64(vendorStr, BASE36_UPPER_CHARS);
+			module = v4d::BaseN::EncodeStringToUInt64(moduleStr, BASE36_LOWER_CHARS);
 		}
 		ModuleID(const char* str) : ModuleID(std::string(str)) {}
 		operator std::string () const {
@@ -25,7 +25,7 @@ namespace v4d::modular {
 		}
 		std::string String() const {
 			if (vendor == 0 || module == 0) return "";
-			return v4d::BaseN::EncodeLong(vendor, BASE36_UPPER_CHARS) + "_" + v4d::BaseN::EncodeLong(module, BASE36_LOWER_CHARS);
+			return v4d::BaseN::DecodeStringFromUInt64(vendor, BASE36_UPPER_CHARS) + "_" + v4d::BaseN::DecodeStringFromUInt64(module, BASE36_LOWER_CHARS);
 		}
 		bool IsValid() const {
 			ModuleID tmp = String();
@@ -47,8 +47,8 @@ namespace v4d::modular {
 			if (std::string(BASE26_UPPER_CHARS).find(vendorStr[0]) == std::string::npos || std::string(BASE26_UPPER_CHARS).find(moduleClassStr[0]) == std::string::npos)
 				return;
 			moduleClassStr[0] = std::tolower(moduleClassStr[0]);
-			vendor = v4d::BaseN::DecodeLong(vendorStr, BASE36_UPPER_CHARS);
-			moduleClass = v4d::BaseN::DecodeLong(moduleClassStr, BASE36_LOWER_CHARS);
+			vendor = v4d::BaseN::EncodeStringToUInt64(vendorStr, BASE36_UPPER_CHARS);
+			moduleClass = v4d::BaseN::EncodeStringToUInt64(moduleClassStr, BASE36_LOWER_CHARS);
 		}
 		ModuleClassID(const char* str) : ModuleClassID(std::string(str)) {}
 		operator std::string () const {
@@ -56,9 +56,9 @@ namespace v4d::modular {
 		}
 		std::string String() const {
 			if (vendor == 0 || moduleClass == 0) return "";
-			std::string moduleClassStr = v4d::BaseN::EncodeLong(moduleClass, BASE36_LOWER_CHARS);
+			std::string moduleClassStr = v4d::BaseN::DecodeStringFromUInt64(moduleClass, BASE36_LOWER_CHARS);
 			moduleClassStr[0] = std::toupper(moduleClassStr[0]);
-			return v4d::BaseN::EncodeLong(vendor, BASE36_UPPER_CHARS) + "_" + moduleClassStr;
+			return v4d::BaseN::DecodeStringFromUInt64(vendor, BASE36_UPPER_CHARS) + "_" + moduleClassStr;
 		}
 		bool IsValid() const {
 			ModuleClassID tmp = String();

@@ -218,8 +218,8 @@ namespace v4d::networking::ZAP {
 
 		// Handshake
 		ZAPDATA( ClientHello, 
-			String appName;
-			String version;
+			Int64_u appName;
+			Int16_u version;
 			Byte clientType;
 		)
 		ZAPDATA( ClientToken, 

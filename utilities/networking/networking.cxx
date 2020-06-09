@@ -14,11 +14,11 @@ class TestServer : public v4d::networking::ListeningServer{
 public:
 	using ListeningServer::ListeningServer;
 
-	std::string GetAppName() const override {
-		return "V4D";
+	uint64_t GetAppName() const override {
+		return v4d::BaseN::EncodeStringToUInt64("V4D", v4d::BASE40_UPPER_CHARS);
 	}
-	std::string GetVersion() const override {
-		return "0.0.0";
+	uint16_t GetVersion() const override {
+		return 168;
 	}
 
 	ulong Authenticate(v4d::data::ReadOnlyStream* authStream) override {
@@ -49,11 +49,11 @@ class TestClient : public v4d::networking::OutgoingConnection {
 public:
 	using OutgoingConnection::OutgoingConnection;
 
-	std::string GetAppName() const override {
-		return "V4D";
+	uint64_t GetAppName() const override {
+		return v4d::BaseN::EncodeStringToUInt64("V4D", v4d::BASE40_UPPER_CHARS);
 	}
-	std::string GetVersion() const override {
-		return "0.0.0";
+	uint16_t GetVersion() const override {
+		return 168;
 	}
 
 	void Authenticate(v4d::data::Stream* authStream) override {

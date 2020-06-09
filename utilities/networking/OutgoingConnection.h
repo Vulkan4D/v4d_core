@@ -31,8 +31,8 @@ namespace v4d::networking {
 		}
 		
 	// Pure-Virtual methods
-		virtual std::string GetAppName() const = 0;
-		virtual std::string GetVersion() const = 0;
+		virtual uint64_t GetAppName() const = 0;
+		virtual uint16_t GetVersion() const = 0;
 
 	protected: // Pure-Virtual methods
 		virtual void Authenticate(v4d::data::Stream* authStream) = 0;

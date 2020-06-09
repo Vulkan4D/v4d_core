@@ -120,7 +120,7 @@ namespace v4d::data {
 		}
 		virtual Stream& FlushDebug() {
 			std::lock_guard lock(writeMutex);
-			DEBUG("Debug Flush " << writeBuffer)
+			DEBUG("Debug Flush " << writeBuffer.size() << " " << writeBuffer)
 			return Flush();
 		}
 

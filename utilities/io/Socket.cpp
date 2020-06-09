@@ -27,7 +27,7 @@ int Socket::Poll(int timeoutMilliseconds) {
 	#else
 		polled = ::poll(fds, 1, timeoutMilliseconds);
 	#endif
-	if (polled > 0) {
+	if (polled > 0 && IsTCP()) {
 		// Check if socket has been closed
 		char b;
 		if (::recv(socket, &b, 1, MSG_PEEK) == 0) {
