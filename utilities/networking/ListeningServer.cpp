@@ -19,7 +19,10 @@ ListeningServer::~ListeningServer() {
 }
 
 void ListeningServer::Start(uint16_t port) {
-	listeningSocket->Bind(port);
+	if (!listeningSocket->Bind(port)) {
+		LOG_ERROR("ListeningServer: Failed to bind socket")
+		return;
+	}
 	listeningSocket->StartListeningThread(listenInterval, [this](v4d::io::SocketPtr socket){
 		HandleNewConnection(std::move(socket));
 	});
@@ -35,7 +38,7 @@ bool ListeningServer::IsListening() const {
 
 void ListeningServer::HandleNewConnection(v4d::io::SocketPtr socket){
 	// If receive nothing after timeout, Disconnect now!
-	if (socket->Poll(socket->IsTCP()? newConnectionFirstByteTimeout : 0) <= 0) {
+	if (socket->Poll(newConnectionFirstByteTimeout) <= 0) {
 		LOG_ERROR_VERBOSE("ListeningServer: new connection failed to send first data in time")
 		socket->Disconnect();
 		return;
@@ -53,7 +56,7 @@ void ListeningServer::HandleNewConnection(v4d::io::SocketPtr socket){
 	if (!ValidateVersion(socket, clientAppVersion)) return;
 
 	// If no more data was sent, Disconnect now!
-	if (socket->Poll(0) <= 0) {
+	if (socket->Poll(newConnectionFirstByteTimeout) <= 0) {
 		LOG_ERROR_VERBOSE("ListeningServer: new connection type " << (int)clientType << " failed to send authentication request in time")
 		socket->Disconnect();
 		return;
@@ -61,7 +64,7 @@ void ListeningServer::HandleNewConnection(v4d::io::SocketPtr socket){
 	
 	// Client Requests
 	byte request = socket->Read<byte>();
-	LOG_VERBOSE("New client connection type " << (int)clientType << " request " << (int)request << " from " << socket->GetRemoteIP())
+	if (socket->IsTCP()) LOG_VERBOSE("New client connection type " << (int)clientType << " request " << (int)request << " from " << socket->GetIncomingIP())
 	
 	switch (request) {
 

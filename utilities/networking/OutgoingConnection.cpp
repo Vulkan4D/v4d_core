@@ -15,14 +15,12 @@ OutgoingConnection::OutgoingConnection(ulong id, std::string token, v4d::io::SOC
 OutgoingConnection::OutgoingConnection(OutgoingConnection& src)
 : id(src.id), token(src.token), socket(nullptr), rsa(src.rsa), aes(src.aes.GetHexKey()) {
 	socket = std::make_shared<v4d::io::Socket>(src.socket->GetSocketType());
-	socket->SetPort(src.socket->GetPort());
 	socket->SetRemoteAddr(src.socket->GetRemoteAddr());
 }
 
 OutgoingConnection::OutgoingConnection(v4d::io::SOCKET_TYPE type, OutgoingConnection& src)
 : id(src.id), token(src.token), socket(nullptr), rsa(src.rsa), aes(src.aes.GetHexKey()) {
 	socket = std::make_shared<v4d::io::Socket>(type);
-	socket->SetPort(src.socket->GetPort());
 	socket->SetRemoteAddr(src.socket->GetRemoteAddr());
 }
 

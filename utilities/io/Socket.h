@@ -6,8 +6,9 @@
 #endif
 
 #ifdef _WINDOWS
-	#define MSG_DONTWAIT 0
-	#define SO_REUSEPORT 0
+	#define MSG_CONFIRM 0
+	#define MSG_DONTWAIT 0x40
+	#define SO_REUSEPORT 15
 #else
 	#define INVALID_SOCKET -1
 #endif
@@ -35,7 +36,6 @@ namespace v4d::io {
 							connected = false, 
 							listening = false,
 							logErrors = true;
-		uint16_t port = 0;
 
 		// Socket Options
 		#ifdef _WINDOWS
@@ -48,9 +48,9 @@ namespace v4d::io {
 		#endif
 
 		struct hostent *remoteHost;
-		struct sockaddr_in remoteAddr; // Used for bind, connect and sending data
-		struct sockaddr_in incomingAddr; // Used as temporary addr for receiving(UDP) and listening(TCP)
-		socklen_t addrLen = sizeof incomingAddr;
+		struct sockaddr_in remoteAddr {}; // Used for bind, connect and sending data
+		struct sockaddr_in incomingAddr {}; // Used as temporary addr for receiving(UDP) and listening(TCP)
+		socklen_t addrLen = sizeof(incomingAddr);
 
 		std::thread* listeningThread = nullptr;
 		std::vector<std::shared_ptr<v4d::io::Socket>> clientSockets {};
@@ -81,14 +81,6 @@ namespace v4d::io {
 		}
 
 		virtual std::vector<byte> GetData() override;
-		
-		inline uint16_t GetPort() const {
-			return port;
-		}
-		
-		inline void SetPort(uint16_t port) {
-			this->port = port;
-		}
 		
 		inline sockaddr_in GetRemoteAddr() const {
 			return remoteAddr;
@@ -121,11 +113,11 @@ namespace v4d::io {
 		}
 
 		inline std::string GetRemoteIP() const {
-			return inet_ntoa(remoteAddr.sin_addr);
+			return std::string(inet_ntoa(remoteAddr.sin_addr));
 		}
 
 		inline std::string GetIncomingIP() const {
-			return inet_ntoa(incomingAddr.sin_addr);
+			return IsTCP()? GetRemoteIP() : std::string(inet_ntoa(incomingAddr.sin_addr));
 		}
 
 		inline bool IsValid() const {
@@ -163,7 +155,7 @@ namespace v4d::io {
 
 		////////////////////////////////////////////////////////////////////////////
 
-		virtual bool Bind(uint16_t port = 0, uint32_t addr = INADDR_ANY);
+		virtual bool Bind(uint16_t port, const std::string& host = "0.0.0.0");
 		virtual void Unbind();
 
 		virtual bool Connect(const std::string& host = "", uint16_t port = 0);

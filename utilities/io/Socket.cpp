@@ -12,7 +12,9 @@ Socket::Socket(SOCKET_TYPE type, SOCKET_PROTOCOL protocol)
 }
 
 Socket::Socket(SOCKET socket, const sockaddr_in& remoteAddr, SOCKET_TYPE type, SOCKET_PROTOCOL protocol)
-	: Stream(SOCKET_BUFFER_SIZE, /*useReadBuffer*/type==UDP), type(type), protocol(protocol), socket(socket), connected(true), remoteAddr(remoteAddr) {}
+	: Stream(SOCKET_BUFFER_SIZE, /*useReadBuffer*/type==UDP), type(type), protocol(protocol), socket(socket), connected(true), remoteAddr(remoteAddr) {
+		memset(&incomingAddr, 0, sizeof(incomingAddr));
+	}
 
 Socket::~Socket() {
 	Disconnect();
@@ -55,12 +57,12 @@ void Socket::Send() {
 			#ifdef _WINDOWS
 
 				#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
-					::send(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_DONTWAIT);
+					::send(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT);
 				#else
 					size_t size = _GetWriteBuffer_().size();
 					char data[size];
 					memcpy(data, _GetWriteBuffer_().data(), size);
-					if (::send(socket, data, (int)size, MSG_DONTWAIT) == -1) {
+					if (::send(socket, data, (int)size, MSG_CONFIRM | MSG_DONTWAIT) == -1) {
 						connected = false;
 					}
 				#endif
@@ -69,23 +71,22 @@ void Socket::Send() {
 				if (::send(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT) == -1) {
 					connected = false;
 				}
-				// ::write(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size());
 			#endif
 		} else 
 		if (IsUDP()) {
 			#ifdef _WINDOWS
 			
 				#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
-					::sendto(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_DONTWAIT, (const struct sockaddr*) &remoteAddr, sizeof remoteAddr);
+					::sendto(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT, (struct sockaddr*) &remoteAddr, sizeof(incomingAddr));
 				#else
 					size_t size = _GetWriteBuffer_().size();
 					char data[size];
 					memcpy(data, _GetWriteBuffer_().data(), size);
-					::sendto(socket, data, (int)size, MSG_DONTWAIT, (const struct sockaddr*) &remoteAddr, sizeof remoteAddr);
+					::sendto(socket, data, (int)size, MSG_CONFIRM | MSG_DONTWAIT, (struct sockaddr*) &remoteAddr, sizeof(incomingAddr));
 				#endif
 
 			#else
-				::sendto(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT, (const struct sockaddr*) &remoteAddr, sizeof remoteAddr);
+				::sendto(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT, (struct sockaddr*) &remoteAddr, sizeof(incomingAddr));
 			#endif
 		}
 	} else {
@@ -120,9 +121,8 @@ size_t Socket::Receive(byte* data, size_t maxBytesToRead) {
 			}
 		} else 
 		if (IsUDP()) {
-			memset((char*) &incomingAddr, 0, sizeof(incomingAddr));
+			memset(&incomingAddr, 0, addrLen=sizeof(incomingAddr));
 			#ifdef _WINDOWS
-
 				#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
 					int rec = ::recvfrom(socket, reinterpret_cast<char*>(data), (int)maxBytesToRead, 0, (struct sockaddr*) &incomingAddr, &addrLen);
 				#else
@@ -262,7 +262,7 @@ bool Socket::Connect(const std::string& host, uint16_t port) {
 		LOG_ERROR("Socket already connected")
 		return false;
 	}
-
+	
 	if (port != 0) {
 		remoteAddr.sin_port = htons(port);
 	}
@@ -277,7 +277,7 @@ bool Socket::Connect(const std::string& host, uint16_t port) {
 	}
 
 	if (IsTCP()) {
-		connected = (::connect(socket, (struct sockaddr*)&remoteAddr, sizeof remoteAddr) >= 0);
+		connected = (::connect(socket, (struct sockaddr*)&remoteAddr, sizeof(remoteAddr)) >= 0);
 	} else {
 		connected = true;
 	}
@@ -285,15 +285,19 @@ bool Socket::Connect(const std::string& host, uint16_t port) {
 	return connected;
 }
 
-bool Socket::Bind(uint16_t port, uint32_t addr) {
+bool Socket::Bind(uint16_t port, const std::string& host) {
 	if (!IsValid() || IsBound()) return false;
 
-	if (port != 0) this->port = port;
-
-	if (this->port != 0) {
-		remoteAddr.sin_port = htons(this->port);
-		remoteAddr.sin_addr.s_addr = htonl(addr);
-	}
+	memset((char*)&remoteAddr, 0, sizeof remoteAddr);
+	remoteAddr.sin_family = protocol;
+	remoteAddr.sin_port = htons(port);
+	
+	// Convert IP to socket address
+	#ifdef _WINDOWS
+		remoteAddr.sin_addr.s_addr = ::inet_addr(host.c_str());
+	#else
+		::inet_pton(protocol, host.c_str(), &remoteAddr.sin_addr);
+	#endif
 	
 	// Socket Options
 	::setsockopt(socket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &so_reuse, sizeof so_reuse);
@@ -302,13 +306,13 @@ bool Socket::Bind(uint16_t port, uint32_t addr) {
 	}
 	
 	// Bind socket
-	bound = (::bind(socket, (const struct sockaddr*) &remoteAddr, sizeof remoteAddr) >= 0);
+	bound = (::bind(socket, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr)) >= 0);
 	return bound;
 }
 
 void Socket::Unbind() {
 	remoteAddr.sin_port = htons(0);
-	::bind(socket, (const struct sockaddr*) &remoteAddr, sizeof remoteAddr);
+	::bind(socket, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
 	bound = false;
 }
 
@@ -329,6 +333,7 @@ void Socket::ResetSocket() {
 	#endif
 	socket = ::socket(protocol, type, 0);
 	memset(&remoteAddr, 0, sizeof(remoteAddr));
+	memset(&incomingAddr, 0, sizeof(incomingAddr));
 	remoteAddr.sin_family = protocol;
 }
 
