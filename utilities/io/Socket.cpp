@@ -76,15 +76,15 @@ void Socket::Send() {
 			try {
 			#ifdef _WINDOWS
 				#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
-					sent = ::send(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_CONFIRM /*| MSG_DONTWAIT*/);
+					sent = ::send(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT);
 				#else
 					size_t size = _GetWriteBuffer_().size();
 					char data[size];
 					memcpy(data, _GetWriteBuffer_().data(), size);
-					sent = ::send(socket, data, (int)size, MSG_CONFIRM /*| MSG_DONTWAIT*/);
+					sent = ::send(socket, data, (int)size, MSG_CONFIRM | MSG_DONTWAIT);
 				#endif
 			#else
-				sent = ::send(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_CONFIRM /*| MSG_DONTWAIT*/);
+				sent = ::send(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT);
 			#endif
 			} catch (...) {
 				sent = -1;
@@ -98,16 +98,16 @@ void Socket::Send() {
 			#ifdef _WINDOWS
 			
 				#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
-					::sendto(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_CONFIRM /*| MSG_DONTWAIT*/, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
+					::sendto(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
 				#else
 					size_t size = _GetWriteBuffer_().size();
 					char data[size];
 					memcpy(data, _GetWriteBuffer_().data(), size);
-					::sendto(socket, data, (int)size, MSG_CONFIRM /*| MSG_DONTWAIT*/, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
+					::sendto(socket, data, (int)size, MSG_CONFIRM | MSG_DONTWAIT, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
 				#endif
 
 			#else
-				::sendto(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_CONFIRM /*| MSG_DONTWAIT*/, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
+				::sendto(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
 			#endif
 		}
 	} else {
