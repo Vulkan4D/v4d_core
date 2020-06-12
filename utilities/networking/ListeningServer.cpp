@@ -38,7 +38,7 @@ bool ListeningServer::IsListening() const {
 
 void ListeningServer::HandleNewConnection(v4d::io::SocketPtr socket){
 	// If receive nothing after timeout, Disconnect now!
-	if (socket->Poll(newConnectionFirstByteTimeout) <= 0) {
+	if (socket->IsTCP() && socket->Poll(newConnectionFirstByteTimeout) <= 0) {
 		LOG_ERROR_VERBOSE("ListeningServer: new connection failed to send first data in time")
 		socket->Disconnect();
 		return;
@@ -56,7 +56,7 @@ void ListeningServer::HandleNewConnection(v4d::io::SocketPtr socket){
 	if (!ValidateVersion(socket, clientAppVersion)) return;
 
 	// If no more data was sent, Disconnect now!
-	if (socket->Poll(newConnectionFirstByteTimeout) <= 0) {
+	if (socket->IsTCP() && socket->Poll(newConnectionFirstByteTimeout) <= 0) {
 		LOG_ERROR_VERBOSE("ListeningServer: new connection type " << (int)clientType << " failed to send authentication request in time")
 		socket->Disconnect();
 		return;
@@ -64,7 +64,7 @@ void ListeningServer::HandleNewConnection(v4d::io::SocketPtr socket){
 	
 	// Client Requests
 	byte request = socket->Read<byte>();
-	if (socket->IsTCP()) LOG_VERBOSE("New client connection type " << (int)clientType << " request " << (int)request << " from " << socket->GetIncomingIP())
+	if (socket->IsTCP()) LOG_VERBOSE("New client connection type " << (int)clientType << " request " << (int)request << " from " << socket->GetIncomingIP() << ":" << socket->GetIncomingPort())
 	
 	switch (request) {
 

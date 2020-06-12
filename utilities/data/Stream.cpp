@@ -17,7 +17,7 @@ Stream& Stream::ReadBytes(byte* data, size_t n) {
 	std::lock_guard lock(readMutex);
 	if (useReadBuffer) {
 		// Reset read buffer if we have read it completely
-		if (readBufferCursor == readBuffer.size()) {
+		if (readBufferCursor > 0 && readBufferCursor == readBuffer.size()) {
 			ResetReadBuffer();
 		}
 		size_t remainingDataInBuffer = readBuffer.size() - readBufferCursor;

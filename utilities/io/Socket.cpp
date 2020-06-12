@@ -9,15 +9,33 @@ using namespace v4d::io;
 Socket::Socket(SOCKET_TYPE type, SOCKET_PROTOCOL protocol)
 	: Stream(SOCKET_BUFFER_SIZE, /*useReadBuffer*/type==UDP), type(type), protocol(protocol) {
 	ResetSocket();
+	isOriginalSocket = true;
 }
 
 Socket::Socket(SOCKET socket, const sockaddr_in& remoteAddr, SOCKET_TYPE type, SOCKET_PROTOCOL protocol)
 	: Stream(SOCKET_BUFFER_SIZE, /*useReadBuffer*/type==UDP), type(type), protocol(protocol), socket(socket), connected(true), remoteAddr(remoteAddr) {
 		memset(&incomingAddr, 0, sizeof(incomingAddr));
+		isOriginalSocket = false;
 	}
 
 Socket::~Socket() {
 	Disconnect();
+}
+
+std::string Socket::GetRemoteIP() const {
+	return std::string(inet_ntoa(remoteAddr.sin_addr));
+}
+
+uint16_t Socket::GetRemotePort() const {
+	return ntohs(remoteAddr.sin_port);
+}
+
+std::string Socket::GetIncomingIP() const {
+	return IsTCP()? GetRemoteIP() : std::string(inet_ntoa(incomingAddr.sin_addr));
+}
+
+uint16_t Socket::GetIncomingPort() const {
+	return IsTCP()? GetRemotePort() : ntohs(incomingAddr.sin_port);
 }
 
 
@@ -54,39 +72,42 @@ void Socket::Send() {
 	if (_GetWriteBuffer_().size() == 0) return;
 	if (IsConnected()) {
 		if (IsTCP()) {
+			int sent;
+			try {
 			#ifdef _WINDOWS
-
 				#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
-					::send(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT);
+					sent = ::send(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_CONFIRM /*| MSG_DONTWAIT*/);
 				#else
 					size_t size = _GetWriteBuffer_().size();
 					char data[size];
 					memcpy(data, _GetWriteBuffer_().data(), size);
-					if (::send(socket, data, (int)size, MSG_CONFIRM | MSG_DONTWAIT) == -1) {
-						connected = false;
-					}
+					sent = ::send(socket, data, (int)size, MSG_CONFIRM /*| MSG_DONTWAIT*/);
 				#endif
-
 			#else
-				if (::send(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT) == -1) {
-					connected = false;
-				}
+				sent = ::send(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_CONFIRM /*| MSG_DONTWAIT*/);
 			#endif
+			} catch (...) {
+				sent = -1;
+			}
+			if (sent == -1) {
+				connected = false;
+				LOG_ERROR_VERBOSE("Disconnected in socket Send")
+			}
 		} else 
 		if (IsUDP()) {
 			#ifdef _WINDOWS
 			
 				#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
-					::sendto(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT, (struct sockaddr*) &remoteAddr, sizeof(incomingAddr));
+					::sendto(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_CONFIRM /*| MSG_DONTWAIT*/, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
 				#else
 					size_t size = _GetWriteBuffer_().size();
 					char data[size];
 					memcpy(data, _GetWriteBuffer_().data(), size);
-					::sendto(socket, data, (int)size, MSG_CONFIRM | MSG_DONTWAIT, (struct sockaddr*) &remoteAddr, sizeof(incomingAddr));
+					::sendto(socket, data, (int)size, MSG_CONFIRM /*| MSG_DONTWAIT*/, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
 				#endif
 
 			#else
-				::sendto(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT, (struct sockaddr*) &remoteAddr, sizeof(incomingAddr));
+				::sendto(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_CONFIRM /*| MSG_DONTWAIT*/, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
 			#endif
 		}
 	} else {
@@ -115,6 +136,7 @@ size_t Socket::Receive(byte* data, size_t maxBytesToRead) {
 			if (rec <= 0) {
 				bytesRead = 0;
 				connected = false;
+				LOG_ERROR_VERBOSE("Disconnected in socket Receive")
 				// throw std::runtime_error("Error Reading Data from TCP Socket");
 			} else {
 				bytesRead = (size_t)rec;
@@ -224,7 +246,7 @@ std::vector<byte> Socket::GetData() {
 void Socket::Disconnect() {
 	connected = false;
 	StopListening();
-	if (IsValid()) {
+	if (IsValid() && isOriginalSocket) {
 		#ifdef _WINDOWS
 			::closesocket(socket);
 		#else
@@ -268,20 +290,27 @@ bool Socket::Connect(const std::string& host, uint16_t port) {
 	}
 
 	if (host != "") {
-		// Convert IP to socket address
-		#ifdef _WINDOWS
-			remoteAddr.sin_addr.s_addr = ::inet_addr(host.c_str());
-		#else
-			::inet_pton(protocol, host.c_str(), &remoteAddr.sin_addr);
-		#endif
+		
+		// HostName or IP Address
+			// Convert hostname to IP address
+			struct hostent* hostaddr = gethostbyname(host.c_str());
+			if (!hostaddr)
+				return false;
+			memcpy(&remoteAddr.sin_addr.s_addr, hostaddr->h_addr, hostaddr->h_length);
+		
+		// IP ADDRESS ONLY
+			// // Convert IP to socket address
+			// #ifdef _WINDOWS
+			// 	remoteAddr.sin_addr.s_addr = ::inet_addr(host.c_str());
+			// #else
+			// 	::inet_pton(protocol, host.c_str(), &remoteAddr.sin_addr);
+			// #endif
 	}
 
 	if (IsTCP()) {
 		connected = (::connect(socket, (struct sockaddr*)&remoteAddr, sizeof(remoteAddr)) >= 0);
-	} else {
-		connected = true;
-	}
-
+	} else if (IsUDP()) connected = true;
+	
 	return connected;
 }
 

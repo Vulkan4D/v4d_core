@@ -47,10 +47,10 @@ namespace v4d::io {
 			int so_nodelay = 1;
 		#endif
 
-		struct hostent *remoteHost;
 		struct sockaddr_in remoteAddr {}; // Used for bind, connect and sending data
 		struct sockaddr_in incomingAddr {}; // Used as temporary addr for receiving(UDP) and listening(TCP)
 		socklen_t addrLen = sizeof(incomingAddr);
+		bool isOriginalSocket = true;
 
 		std::thread* listeningThread = nullptr;
 		std::vector<std::shared_ptr<v4d::io::Socket>> clientSockets {};
@@ -112,14 +112,11 @@ namespace v4d::io {
 			return incomingAddr;
 		}
 
-		inline std::string GetRemoteIP() const {
-			return std::string(inet_ntoa(remoteAddr.sin_addr));
-		}
-
-		inline std::string GetIncomingIP() const {
-			return IsTCP()? GetRemoteIP() : std::string(inet_ntoa(incomingAddr.sin_addr));
-		}
-
+		std::string GetRemoteIP() const;
+		uint16_t GetRemotePort() const;
+		std::string GetIncomingIP() const;
+		uint16_t GetIncomingPort() const;
+		
 		inline bool IsValid() const {
 			#ifdef _WINDOWS
 				return socket != INVALID_SOCKET;
