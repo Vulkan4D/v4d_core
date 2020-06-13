@@ -21,6 +21,8 @@ namespace v4d::scene {
 		glm::dmat4 cameraOffset {1};
 		std::vector<ObjectInstancePtr> objectInstances {};
 		
+		glm::dvec3 gravityVector {0,0,-9.8};
+		
 		std::unordered_map<std::string, std::function<void(ObjectInstancePtr)>> objectInstanceRemovedCallbacks {};
 
 		~Scene();

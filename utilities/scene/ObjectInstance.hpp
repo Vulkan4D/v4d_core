@@ -31,7 +31,7 @@ namespace v4d::scene {
 		bool geometriesDirty = true;
 		bool active = true;
 		bool generated = false;
-		mutable std::mutex mu;
+		mutable std::recursive_mutex mu;
 		
 	public:
 	
@@ -46,9 +46,11 @@ namespace v4d::scene {
 			};
 			RigidBodyType rigidbodyType = RigidBodyType::NONE;
 			double mass = 0;
+			float boundingDistance = 0;
 			glm::dvec3 centerOfMass {0,0,0};
 			void* physicsObject = nullptr;
 			bool physicsDirty = false;
+			bool physicsActive = true;
 			bool addedForce = false;
 			glm::dvec3 forcePoint {0,0,0};
 			glm::dvec3 forceDirection {0,0,0};
@@ -61,6 +63,9 @@ namespace v4d::scene {
 			void AddImpulse(glm::dvec3 impulseDir, glm::dvec3 atPoint = {0,0,0}) {
 				if (impulseDir.length() == 0) return;
 				physicsForceImpulses.emplace(impulseDir, atPoint);
+			}
+			bool IsPhysicsActive() {
+				return IsActive() && physicsActive;
 			}
 		
 		#pragma endregion
@@ -100,6 +105,7 @@ namespace v4d::scene {
 		void WriteGeometriesInformation() {
 			for (auto& geom : geometries) {
 				if (!geom.geometry->geometryInfoInitialized) geom.geometry->SetGeometryInfo(objectOffset, geom.geometry->material);
+				boundingDistance = glm::max(boundingDistance, geom.geometry->boundingDistance);
 			}
 		}
 		
@@ -227,8 +233,10 @@ namespace v4d::scene {
 		) {
 			lightSources.clear();
 			auto* lightSource = AddLightSource({0,0,0}, lightIntensity, lightColor, lightType, lightAttributes, radius);
-			if (radius > 0) SetSphereGeometry(type, radius, geomColor, lightSource->lightOffset, custom1);
-			geometries[0].geometry->rayTracingMask = GEOMETRY_ATTR_PRIMARY_VISIBLE | GEOMETRY_ATTR_EMITTER | GEOMETRY_ATTR_COLLIDER | GEOMETRY_ATTR_REFLECTION_VISIBLE;
+			if (radius > 0) {
+				SetSphereGeometry(type, radius, geomColor, lightSource->lightOffset, custom1);
+				geometries[0].geometry->rayTracingMask = GEOMETRY_ATTR_PRIMARY_VISIBLE | GEOMETRY_ATTR_EMITTER | GEOMETRY_ATTR_COLLIDER | GEOMETRY_ATTR_REFLECTION_VISIBLE;
+			}
 			return lightSource;
 		}
 		
@@ -261,6 +269,10 @@ namespace v4d::scene {
 		
 		glm::dmat4 GetWorldTransform() const {
 			return transform;
+		}
+		
+		glm::dvec3 GetWorldPosition() const {
+			return transform[3];
 		}
 		
 		int GetFirstGeometryOffset() const {

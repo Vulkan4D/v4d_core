@@ -224,6 +224,8 @@ namespace v4d::scene {
 		
 		bool geometryInfoInitialized = false;
 		
+		std::vector<IndexBuffer_T> simplifiedMeshIndices {};
+		
 		class V4DLIB GlobalGeometryBuffers {
 			std::mutex geometryBufferMutex, vertexBufferMutex, indexBufferMutex, objectBufferMutex, lightBufferMutex;
 			std::map<int, ObjectInstance*> objectAllocations {};

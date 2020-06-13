@@ -198,6 +198,7 @@ namespace v4d::scene {
 		
 		void RemoveObjectInstance(Scene* scene) {
 			if (objectInstance) {
+				objectInstance->ClearGeometries();
 				scene->RemoveObjectInstance(objectInstance);
 				objectInstance = nullptr;
 			}

@@ -81,6 +81,7 @@ namespace v4d::scene {
 	
 	void Geometry::SetVertex(uint32_t i, const glm::vec3& pos, const glm::vec3& normal, const glm::vec2& uv, const glm::vec4& color) {
 		if (!vertices) MapStagingBuffers();
+		DEBUG_ASSERT(i < vertexCount)
 		
 		vertices[i].pos = pos;
 		vertices[i].SetColor(color);
@@ -95,6 +96,7 @@ namespace v4d::scene {
 	
 	void Geometry::SetProceduralVertex(uint32_t i, glm::vec3 aabbMin, glm::vec3 aabbMax, const glm::vec4& color, float custom1) {
 		if (!vertices) MapStagingBuffers();
+		DEBUG_ASSERT(i < vertexCount)
 		
 		auto* vert = GetProceduralVertexPtr(i);
 		vert->aabbMin = aabbMin;
@@ -110,6 +112,7 @@ namespace v4d::scene {
 	
 	void Geometry::SetIndex(uint32_t i, IndexBuffer_T vertexIndex) {
 		if (!indices) MapStagingBuffers();
+		DEBUG_ASSERT(i < indexCount)
 		
 		indices[i] = vertexIndex;
 	}
@@ -145,6 +148,7 @@ namespace v4d::scene {
 	
 	void Geometry::GetVertex(uint32_t i, glm::vec3* pos, glm::vec3* normal, glm::vec2* uv, glm::vec4* color) {
 		if (!vertices) MapStagingBuffers();
+		DEBUG_ASSERT(i < vertexCount)
 		
 		if (pos) *pos = vertices[i].pos;
 		if (normal) *normal = vertices[i].normal;
@@ -154,11 +158,13 @@ namespace v4d::scene {
 
 	Geometry::VertexBuffer_T* Geometry::GetVertexPtr(uint32_t i) {
 		if (!vertices) MapStagingBuffers();
+		DEBUG_ASSERT(i < vertexCount)
 		return &vertices[i];
 	}
 	
 	void Geometry::GetProceduralVertex(uint32_t i, glm::vec3* aabbMin, glm::vec3* aabbMax, glm::vec4* color, float* custom1) {
 		if (!vertices) MapStagingBuffers();
+		DEBUG_ASSERT(i < vertexCount)
 		
 		auto* vert = GetProceduralVertexPtr(i);
 		
@@ -170,24 +176,25 @@ namespace v4d::scene {
 	
 	Geometry::ProceduralVertexBuffer_T* Geometry::GetProceduralVertexPtr(uint32_t i) {
 		if (!vertices) MapStagingBuffers();
+		DEBUG_ASSERT(i < vertexCount)
 		return &((ProceduralVertexBuffer_T*)vertices)[i];
 	}
 	
 	void Geometry::GetIndex(uint32_t i, IndexBuffer_T* vertexIndex) {
 		if (!indices) MapStagingBuffers();
-		
+		DEBUG_ASSERT(i < indexCount)
 		if (vertexIndex) *vertexIndex = indices[i];
 	}
 
 	Geometry::IndexBuffer_T Geometry::GetIndex(uint32_t i) {
 		if (!indices) MapStagingBuffers();
-		
+		DEBUG_ASSERT(i < indexCount)
 		return indices[i];
 	}
 
 	Geometry::IndexBuffer_T* Geometry::GetIndexPtr(uint32_t i) {
 		if (!indices) MapStagingBuffers();
-		
+		DEBUG_ASSERT(i < indexCount)
 		return &indices[i];
 	}
 	
@@ -266,13 +273,12 @@ namespace v4d::scene {
 		if (geometry->indexCount > 0) {
 			geometry->indexOffset = nbAllocatedIndices;
 			for (auto [i, alloc] : indexAllocations) {
-				if (!alloc.data) {
-					if (alloc.n >= geometry->indexCount) {
-						geometry->indexOffset = i;
-						if (alloc.n > geometry->indexCount) {
-							indexAllocations[geometry->indexOffset+geometry->indexCount] = {alloc.n - geometry->indexCount, nullptr};
-						}
+				if (!alloc.data && alloc.n >= geometry->indexCount) {
+					geometry->indexOffset = i;
+					if (alloc.n > geometry->indexCount) {
+						indexAllocations[geometry->indexOffset+geometry->indexCount] = {alloc.n - geometry->indexCount, nullptr};
 					}
+					break;
 				}
 			}
 			nbAllocatedIndices = std::max(nbAllocatedIndices, geometry->indexOffset + geometry->indexCount);
@@ -283,13 +289,12 @@ namespace v4d::scene {
 		if (geometry->vertexCount > 0) {
 			geometry->vertexOffset = nbAllocatedVertices;
 			for (auto [i, alloc] : vertexAllocations) {
-				if (!alloc.data) {
-					if (alloc.n >= geometry->vertexCount) {
-						geometry->vertexOffset = i;
-						if (alloc.n > geometry->vertexCount) {
-							vertexAllocations[geometry->vertexOffset+geometry->vertexCount] = {alloc.n - geometry->vertexCount, nullptr};
-						}
+				if (!alloc.data && alloc.n >= geometry->vertexCount) {
+					geometry->vertexOffset = i;
+					if (alloc.n > geometry->vertexCount) {
+						vertexAllocations[geometry->vertexOffset+geometry->vertexCount] = {alloc.n - geometry->vertexCount, nullptr};
 					}
+					break;
 				}
 			}
 			nbAllocatedVertices = std::max(nbAllocatedVertices, geometry->vertexOffset + geometry->vertexCount);
@@ -381,6 +386,7 @@ namespace v4d::scene {
 	}
 	
 	void Geometry::GlobalGeometryBuffers::Allocate(Device* device, const std::vector<uint32_t>& queueFamilies) {
+		std::scoped_lock lock(objectBufferMutex, lightBufferMutex, geometryBufferMutex, vertexBufferMutex, indexBufferMutex);
 		objectBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, queueFamilies);
 		geometryBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, queueFamilies);
 		#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
@@ -396,6 +402,7 @@ namespace v4d::scene {
 	}
 	
 	void Geometry::GlobalGeometryBuffers::Free(Device* device) {
+		std::scoped_lock lock(objectBufferMutex, lightBufferMutex, geometryBufferMutex, vertexBufferMutex, indexBufferMutex);
 		objectBuffer.Free(device);
 		geometryBuffer.Free(device);
 		#ifndef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
@@ -420,6 +427,7 @@ namespace v4d::scene {
 	}
 	
 	void Geometry::GlobalGeometryBuffers::PushAllGeometries(Device* device, VkCommandBuffer commandBuffer) {
+		std::scoped_lock lock(geometryBufferMutex, indexBufferMutex, vertexBufferMutex);
 		if (nbAllocatedGeometries == 0) return;
 		geometryBuffer.Push(device, commandBuffer, nbAllocatedGeometries);
 		#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
@@ -429,6 +437,7 @@ namespace v4d::scene {
 	}
 	
 	void Geometry::GlobalGeometryBuffers::PullAllGeometries(Device* device, VkCommandBuffer commandBuffer) {
+		std::scoped_lock lock(geometryBufferMutex, indexBufferMutex, vertexBufferMutex);
 		if (nbAllocatedGeometries == 0) return;
 		geometryBuffer.Pull(device, commandBuffer, nbAllocatedGeometries);
 		#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
@@ -444,6 +453,7 @@ namespace v4d::scene {
 							, uint32_t indexCount, uint32_t indexOffset
 						#endif
 	) {
+		std::scoped_lock lock(geometryBufferMutex, indexBufferMutex, vertexBufferMutex);
 		if (geometryBuffersMask & BUFFER_GEOMETRY_INFO) geometryBuffer.Push(device, commandBuffer, 1, geometry->geometryOffset);
 		#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
 			if (geometryBuffersMask & BUFFER_INDEX) {
@@ -466,6 +476,7 @@ namespace v4d::scene {
 							, uint32_t indexCount, uint32_t indexOffset
 						#endif
 	) {
+		std::scoped_lock lock(geometryBufferMutex, indexBufferMutex, vertexBufferMutex);
 		if (geometryBuffersMask & BUFFER_GEOMETRY_INFO) geometryBuffer.Pull(device, commandBuffer, 1, geometry->geometryOffset);
 		#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
 			if (geometryBuffersMask & BUFFER_INDEX) {
@@ -482,6 +493,7 @@ namespace v4d::scene {
 	}
 
 	void Geometry::GlobalGeometryBuffers::WriteObject(ObjectInstance* obj) {
+		std::scoped_lock lock(objectBufferMutex);
 		if (!globalBuffers.objectBuffer.stagingBuffer.data) {
 			FATAL("global buffers must be allocated before Writing Objects")
 		}
@@ -492,6 +504,7 @@ namespace v4d::scene {
 	}
 	
 	void Geometry::GlobalGeometryBuffers::ReadObject(ObjectInstance* obj) {
+		std::scoped_lock lock(objectBufferMutex);
 		if (!globalBuffers.objectBuffer.stagingBuffer.data) {
 			FATAL("global buffers must be allocated before Reading Objects")
 		}
@@ -502,6 +515,7 @@ namespace v4d::scene {
 	}
 	
 	void Geometry::GlobalGeometryBuffers::WriteLight(LightSource* lightSource) {
+		std::scoped_lock lock(lightBufferMutex);
 		if (!globalBuffers.lightBuffer.stagingBuffer.data) {
 			FATAL("global buffers must be allocated before Writing Light Sources")
 		}
@@ -517,6 +531,7 @@ namespace v4d::scene {
 	}
 	
 	void Geometry::GlobalGeometryBuffers::ReadLight(LightSource* lightSource) {
+		std::scoped_lock lock(lightBufferMutex);
 		if (!globalBuffers.lightBuffer.stagingBuffer.data) {
 			FATAL("global buffers must be allocated before Reading Light Sources")
 		}
@@ -532,6 +547,7 @@ namespace v4d::scene {
 	}
 
 	void Geometry::GlobalGeometryBuffers::PushLights(Device* device, VkCommandBuffer commandBuffer) {
+		std::scoped_lock lock(lightBufferMutex);
 		if (!globalBuffers.lightBuffer.stagingBuffer.data) {
 			FATAL("global buffers must be allocated before Pushing Light Sources")
 		}
@@ -539,6 +555,7 @@ namespace v4d::scene {
 	}
 
 	void Geometry::GlobalGeometryBuffers::PullLights(Device* device, VkCommandBuffer commandBuffer) {
+		std::scoped_lock lock(lightBufferMutex);
 		if (!globalBuffers.lightBuffer.stagingBuffer.data) {
 			FATAL("global buffers must be allocated before Pulling Light Sources")
 		}
@@ -546,6 +563,7 @@ namespace v4d::scene {
 	}
 	
 	void Geometry::GlobalGeometryBuffers::PushObjects(Device* device, VkCommandBuffer commandBuffer) {
+		std::scoped_lock lock(objectBufferMutex);
 		if (!globalBuffers.objectBuffer.stagingBuffer.data) {
 			FATAL("global buffers must be allocated before Pushing Objects")
 		}
@@ -553,6 +571,7 @@ namespace v4d::scene {
 	}
 	
 	void Geometry::GlobalGeometryBuffers::PullObjects(Device* device, VkCommandBuffer commandBuffer) {
+		std::scoped_lock lock(objectBufferMutex);
 		if (!globalBuffers.objectBuffer.stagingBuffer.data) {
 			FATAL("global buffers must be allocated before Pulling Objects")
 		}
@@ -560,6 +579,7 @@ namespace v4d::scene {
 	}
 	
 	void Geometry::GlobalGeometryBuffers::PushGeometriesInfo(Device* device, VkCommandBuffer commandBuffer) {
+		std::scoped_lock lock(geometryBufferMutex);
 		if (!globalBuffers.geometryBuffer.stagingBuffer.data) {
 			FATAL("global buffers must be allocated before Pushing Geometries")
 		}
@@ -567,6 +587,7 @@ namespace v4d::scene {
 	}
 	
 	void Geometry::GlobalGeometryBuffers::PullGeometriesInfo(Device* device, VkCommandBuffer commandBuffer) {
+		std::scoped_lock lock(geometryBufferMutex);
 		if (!globalBuffers.geometryBuffer.stagingBuffer.data) {
 			FATAL("global buffers must be allocated before Pulling Geometries")
 		}
