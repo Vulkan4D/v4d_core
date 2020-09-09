@@ -270,3 +270,7 @@ namespace v4d::modular {
 			if (ModuleUnload) ModuleUnload();\
 			if (_handle) __V4D_MODULE_UNLOAD(_handle);\
 		}
+		
+#define V4D_MODULE_ASSET_PATH(moduleName, assetRelativePath) (\
+	"modules/" moduleName "/assets/" assetRelativePath \
+)
