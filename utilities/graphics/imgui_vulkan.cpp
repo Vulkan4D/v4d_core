@@ -3,8 +3,7 @@
 
 // Implemented features:
 //  [X] Renderer: Support for large meshes (64k+ vertices) with 16-bit indices.
-// Missing features:
-//  [ ] Renderer: User texture binding. Changes of ImTextureID aren't supported by this binding! See https://github.com/ocornut/imgui/pull/914
+// In this binding, ImTextureID is used to store a 'VkDescriptorSet' texture identifier. Read the FAQ about ImTextureID in imgui.cpp.
 
 // You can copy and use unmodified imgui_impl_* files in your project. See main.cpp for an example of using this.
 // If you are new to dear imgui, read examples/README.txt and read the documentation at the top of imgui.cpp.
@@ -275,11 +274,9 @@
 
 	static void ImGui_ImplVulkan_SetupRenderState(ImDrawData* draw_data, VkPipeline pipeline, VkCommandBuffer command_buffer, ImGui_ImplVulkanH_FrameRenderBuffers* rb, int fb_width, int fb_height)
 	{
-		// Bind pipeline and descriptor sets:
+		// Bind pipeline:
 		{
 			vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-			VkDescriptorSet desc_set[1] = { g_DescriptorSet };
-			vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_PipelineLayout, 0, 1, desc_set, 0, NULL);
 		}
 
 		// Bind Vertex And Index Buffer:
@@ -432,6 +429,10 @@
 						scissor.extent.width = (uint32_t)(clip_rect.z - clip_rect.x);
 						scissor.extent.height = (uint32_t)(clip_rect.w - clip_rect.y);
 						vkCmdSetScissor(command_buffer, 0, 1, &scissor);
+
+						// Bind descriptorset with font or user texture
+						VkDescriptorSet desc_set[1] = { (VkDescriptorSet)pcmd->TextureId };
+						vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, g_PipelineLayout, 0, 1, desc_set, 0, NULL);
 
 						// Draw
 						vkCmdDrawIndexed(command_buffer, pcmd->ElemCount, 1, pcmd->IdxOffset + global_idx_offset, pcmd->VtxOffset + global_vtx_offset, 0);
@@ -590,7 +591,7 @@
 		}
 
 		// Store our identifier
-		io.Fonts->TexID = (ImTextureID)(intptr_t)g_FontImage;
+		io.Fonts->TexID = (ImTextureID)g_DescriptorSet;
 
 		return true;
 	}
@@ -1312,5 +1313,46 @@
 		buffers->Index = 0;
 		buffers->Count = 0;
 	}
+
+
+	ImTextureID ImGui_ImplVulkan_AddTexture(VkSampler sampler, VkImageView image_view, VkImageLayout image_layout){
+		VkResult err;
+
+		ImGui_ImplVulkan_InitInfo* v = &g_VulkanInitInfo;
+		VkDescriptorSet descriptor_set;
+		// Create Descriptor Set:
+		{
+			VkDescriptorSetAllocateInfo alloc_info = {};
+			alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+			alloc_info.descriptorPool = v->DescriptorPool;
+			alloc_info.descriptorSetCount = 1;
+			alloc_info.pSetLayouts = &g_DescriptorSetLayout;
+			err = vkAllocateDescriptorSets(v->Device, &alloc_info, &descriptor_set);
+			check_vk_result(err);
+		}
+
+		// Update the Descriptor Set:
+		{
+			VkDescriptorImageInfo desc_image[1] = {};
+			desc_image[0].sampler = sampler;
+			desc_image[0].imageView = image_view;
+			desc_image[0].imageLayout = image_layout;
+			VkWriteDescriptorSet write_desc[1] = {};
+			write_desc[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			write_desc[0].dstSet = descriptor_set;
+			write_desc[0].descriptorCount = 1;
+			write_desc[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			write_desc[0].pImageInfo = desc_image;
+			vkUpdateDescriptorSets(v->Device, 1, write_desc, 0, NULL);
+		}
+
+		return (ImTextureID)descriptor_set;
+	}
 	
+	void ImGui_ImplVulkan_RemoveTexture(ImTextureID tex) {
+		ImGui_ImplVulkan_InitInfo* v = &g_VulkanInitInfo;
+		vkFreeDescriptorSets(v->Device, v->DescriptorPool, 1, (VkDescriptorSet*)&tex);
+	}
+
+
 #endif
