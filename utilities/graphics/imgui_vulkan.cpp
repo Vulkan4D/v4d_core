@@ -1316,6 +1316,8 @@
 
 
 	ImTextureID ImGui_ImplVulkan_AddTexture(VkSampler sampler, VkImageView image_view, VkImageLayout image_layout){
+		if (!g_DescriptorSetLayout) return nullptr;
+		
 		VkResult err;
 
 		ImGui_ImplVulkan_InitInfo* v = &g_VulkanInitInfo;
