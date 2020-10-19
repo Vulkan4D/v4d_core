@@ -43,7 +43,7 @@ namespace v4d::scene {
 	
 	struct GeometryRenderType {
 		RasterShaderPipeline* rasterShader = nullptr;
-		uint32_t sbtOffset = 0;
+		int32_t sbtOffset = -1;
 	};
 
 	struct ObjectInstance;
