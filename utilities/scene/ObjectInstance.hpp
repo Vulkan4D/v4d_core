@@ -180,11 +180,11 @@ namespace v4d::scene {
 			return geometry;
 		}
 		
-		std::shared_ptr<Geometry> AddGeometry(std::shared_ptr<Geometry> templaceGeometry, glm::dmat4 transform = glm::dmat4{1}) {
-			return AddGeometry("standard", templaceGeometry, transform);
+		std::shared_ptr<Geometry> AddGeometry(std::shared_ptr<Geometry> templateGeometry, glm::dmat4 transform = glm::dmat4{1}) {
+			return AddGeometry("standard", templateGeometry, transform);
 		}
-		std::shared_ptr<Geometry> AddGeometry(const std::string& type, std::shared_ptr<Geometry> templaceGeometry, glm::dmat4 transform = glm::dmat4{1}) {
-			return geometries.emplace_back(std::make_shared<Geometry>(templaceGeometry), -1, transform, type).geometry;
+		std::shared_ptr<Geometry> AddGeometry(const std::string& type, std::shared_ptr<Geometry> templateGeometry, glm::dmat4 transform = glm::dmat4{1}) {
+			return geometries.emplace_back(std::make_shared<Geometry>(templateGeometry), -1, transform, type).geometry;
 		}
 		
 		LightSource* AddLightSource(
