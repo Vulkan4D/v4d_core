@@ -234,12 +234,12 @@ namespace v4d::scene {
 			std::map<int, GeometryBufferAllocation> vertexAllocations {};
 			std::map<int, LightSource*> lightAllocations {};
 			
-			// 59 mb total
-			static const int nbInitialObjects = 4096; // 4k objects @ 128 bytes each = 512 kb
-			static const int nbInitialGeometries = nbInitialObjects * 2; // 8k geometries @ 256 bytes each = 2 mb
-			static const int nbInitialVertices = 1048576; // 1 million @ 32 bytes each = 32 mb
-			static const int nbInitialIndices = nbInitialVertices * 6; // 6 million @ 4 bytes each = 24 mb
+			// about 57 mb total
 			static const int nbInitialLights = 256; // 256 lights @ 32 bytes each = 8 kb
+			static const int nbInitialObjects = 1024; // 1k objects @ 128 bytes each = 128 kb
+			static const int nbInitialGeometries = nbInitialObjects * 2; // 2k geometries @ 256 bytes each = 512 kb
+			static const int nbInitialVertices = nbInitialGeometries * 512; // 1 million @ 32 bytes each = 32 mb
+			static const int nbInitialIndices = nbInitialVertices * 6; // 6 million @ 4 bytes each = 24 mb
 		
 		public:
 			
