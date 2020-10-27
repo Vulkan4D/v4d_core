@@ -22,7 +22,8 @@ namespace v4d::scene {
 		glm::dmat4 transform {1};
 		std::vector<GeometryInstance> geometries {};
 		std::vector<LightSource*> lightSources {};
-		void (*generateFunc)(ObjectInstance*) = nullptr;
+		typedef std::function<void(ObjectInstance*)> GeneratorFunc;
+		GeneratorFunc generateFunc = [](ObjectInstance*){};
 		
 	private: // Cached data
 	friend Geometry;
@@ -96,7 +97,7 @@ namespace v4d::scene {
 		
 		void GenerateGeometries() {
 			{
-				if (generateFunc && !generated) generateFunc(this);
+				if (!generated) generateFunc(this);
 				SetGenerated();
 			}
 			WriteGeometriesInformation();
@@ -144,11 +145,11 @@ namespace v4d::scene {
 			transform = glm::rotate(transform, glm::radians(angle), axis);
 		}
 		
-		void SetGenerateFunc(void (*genFunc)(ObjectInstance*)) {
+		void SetGenerateFunc(GeneratorFunc genFunc) {
 			generateFunc = genFunc;
 		}
 		
-		void Configure(void (*genFunc)(ObjectInstance*), const glm::dvec3 position = {0,0,0}, double angle = 0, const glm::dvec3 axis = {0,0,1}) {
+		void Configure(GeneratorFunc genFunc, const glm::dvec3 position = {0,0,0}, double angle = 0, const glm::dvec3 axis = {0,0,1}) {
 			transform = glm::rotate(glm::translate(glm::dmat4(1), position), glm::radians(angle), axis);
 			generateFunc = genFunc;
 		}

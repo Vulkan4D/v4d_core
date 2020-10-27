@@ -7,6 +7,8 @@ class V4DLIB V4D_Server {
 	V4D_MODULE_CLASS_HEADER(V4D_Server
 		,OrderIndex
 		,Init
+		,LoadScene
+		,UnloadScene
 		,SlowGameLoop
 		,IncomingClient
 		,EnqueueAction
@@ -17,6 +19,8 @@ class V4DLIB V4D_Server {
 	)
 	V4D_MODULE_FUNC_DECLARE(int, OrderIndex)
 	V4D_MODULE_FUNC_DECLARE(void, Init, std::shared_ptr<ListeningServer> server, v4d::scene::Scene*)
+	V4D_MODULE_FUNC_DECLARE(void, LoadScene)
+	V4D_MODULE_FUNC_DECLARE(void, UnloadScene)
 	V4D_MODULE_FUNC_DECLARE(void, SlowGameLoop)
 	V4D_MODULE_FUNC_DECLARE(void, IncomingClient, IncomingClientPtr client)
 	V4D_MODULE_FUNC_DECLARE(void, EnqueueAction, v4d::data::WriteOnlyStream& stream, IncomingClientPtr client)
