@@ -30,6 +30,11 @@ namespace v4d::scene {
 		// if (blas.use_count() == 1) LOG_VERBOSE("Destroyed Geometry with Acceleration Structure handle " << std::hex << blas->handle)
 	}
 	
+	void Geometry::Shrink(uint32_t newVertexCount, uint32_t newIndexCount) {
+		globalBuffers.ShrinkGeometryVertices(this, newVertexCount);
+		globalBuffers.ShrinkGeometryIndices(this, newIndexCount);
+	}
+	
 	void Geometry::MapStagingBuffers() {
 		
 		//TODO only allocate and map staging buffers if it is needed, and remove the fatal error
@@ -368,13 +373,6 @@ namespace v4d::scene {
 		return lightSource->lightOffset;
 	}
 	
-	void Geometry::GlobalGeometryBuffers::RemoveGeometry(Geometry* geometry) {
-		std::scoped_lock lock(geometryBufferMutex, vertexBufferMutex, indexBufferMutex);
-		geometryAllocations[geometry->geometryOffset] = nullptr;
-		if (geometry->indexCount > 0) indexAllocations[geometry->indexOffset].data = nullptr;
-		if (geometry->vertexCount > 0) vertexAllocations[geometry->vertexOffset].data = nullptr;
-	}
-
 	void Geometry::GlobalGeometryBuffers::RemoveObject(ObjectInstance* obj) {
 		std::scoped_lock lock(objectBufferMutex);
 		objectAllocations[obj->objectOffset] = nullptr;
@@ -385,6 +383,86 @@ namespace v4d::scene {
 		lightAllocations[lightSource->lightOffset] = nullptr;
 	}
 	
+	void Geometry::GlobalGeometryBuffers::RemoveGeometry(Geometry* geometry) {
+		// Vertex buffer
+		if (geometry->vertexCount > 0) {
+			std::lock_guard lock(vertexBufferMutex);
+			uint32_t count = vertexAllocations[geometry->vertexOffset].n;
+			uint32_t offset = geometry->vertexOffset;
+			vertexAllocations[offset].data = nullptr;
+			uint32_t nextOffset = offset + count;
+			// Merge next allocation if empty
+			try {
+				auto& next = vertexAllocations.at(nextOffset);
+				if (!next.data) {
+					vertexAllocations[offset].n += next.n;
+					vertexAllocations.erase(nextOffset);
+				}
+			} catch(...){} // not an error... just ignore it
+		}
+		// Index buffer
+		if (geometry->indexCount > 0) {
+			std::lock_guard lock(indexBufferMutex);
+			uint32_t count = indexAllocations[geometry->indexOffset].n;
+			uint32_t offset = geometry->indexOffset;
+			indexAllocations[offset].data = nullptr;
+			uint32_t nextOffset = offset + count;
+			// Merge next allocation if empty
+			try {
+				auto& next = indexAllocations.at(nextOffset);
+				if (!next.data) {
+					indexAllocations[offset].n += next.n;
+					vertexAllocations.erase(nextOffset);
+				}
+			} catch(...){} // not an error... just ignore it
+		}
+		// Geometry buffer
+		std::lock_guard lock(geometryBufferMutex);
+		geometryAllocations[geometry->geometryOffset] = nullptr;
+	}
+	
+	void Geometry::GlobalGeometryBuffers::ShrinkGeometryVertices(Geometry* geometry, uint32_t newVertexCount) {
+		assert(newVertexCount <= geometry->vertexCount);
+		if (newVertexCount < geometry->vertexCount) {
+			std::lock_guard lock(vertexBufferMutex);
+			uint32_t freeOffset = geometry->vertexOffset + newVertexCount;
+			uint32_t freeCount = geometry->vertexCount - newVertexCount;
+			uint32_t nextOffset = freeOffset + freeCount;
+			try {
+				auto& next = vertexAllocations.at(nextOffset);
+				if (!next.data) {
+					vertexAllocations[freeOffset].n = freeCount + next.n;
+					vertexAllocations.erase(nextOffset);
+				}
+			} catch(...){
+				vertexAllocations[freeOffset].data = nullptr;
+				vertexAllocations[freeOffset].n = freeCount;
+			}
+			geometry->vertexCount = newVertexCount;
+		}
+	}
+	
+	void Geometry::GlobalGeometryBuffers::ShrinkGeometryIndices(Geometry* geometry, uint32_t newIndexCount) {
+		assert(newIndexCount <= geometry->indexCount);
+		if (newIndexCount < geometry->indexCount) {
+			std::lock_guard lock(indexBufferMutex);
+			uint32_t freeOffset = geometry->indexOffset + newIndexCount;
+			uint32_t freeCount = geometry->indexCount - newIndexCount;
+			uint32_t nextOffset = freeOffset + freeCount;
+			try {
+				auto& next = indexAllocations.at(nextOffset);
+				if (!next.data) {
+					indexAllocations[freeOffset].n = freeCount + next.n;
+					indexAllocations.erase(nextOffset);
+				}
+			} catch(...) {
+				indexAllocations[freeOffset].data = nullptr;
+				indexAllocations[freeOffset].n = freeCount;
+			}
+			geometry->indexCount = newIndexCount;
+		}
+	}
+
 	void Geometry::GlobalGeometryBuffers::Allocate(Device* device, const std::vector<uint32_t>& queueFamilies) {
 		std::scoped_lock lock(objectBufferMutex, lightBufferMutex, geometryBufferMutex, vertexBufferMutex, indexBufferMutex);
 		objectBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, queueFamilies);

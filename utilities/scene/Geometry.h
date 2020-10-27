@@ -270,6 +270,9 @@ namespace v4d::scene {
 			void RemoveObject(ObjectInstance*);
 			void RemoveLight(LightSource*);
 			
+			void ShrinkGeometryIndices(Geometry*, uint32_t newIndexCount);
+			void ShrinkGeometryVertices(Geometry*, uint32_t newVertexCount);
+			
 			void Allocate(Device*, const std::vector<uint32_t>& queueFamilies = {});
 			void Free(Device*);
 			
@@ -318,6 +321,8 @@ namespace v4d::scene {
 		Geometry(std::shared_ptr<Geometry> duplicateFrom);
 		
 		~Geometry();
+		
+		void Shrink(uint32_t newVertexCount, uint32_t newIndexCount);
 		
 		void MapStagingBuffers();
 		
