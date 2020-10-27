@@ -259,9 +259,9 @@ namespace v4d::scene {
 		}
 		
 		void ClearGeometries() {
-			geometriesDirty = true;
 			RemoveGeometries();
 			RemoveLightSources();
+			geometriesDirty = true;
 		}
 		
 		#pragma endregion
