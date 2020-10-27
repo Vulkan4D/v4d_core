@@ -387,34 +387,44 @@ namespace v4d::scene {
 		// Vertex buffer
 		if (geometry->vertexCount > 0) {
 			std::lock_guard lock(vertexBufferMutex);
-			uint32_t count = vertexAllocations[geometry->vertexOffset].n;
 			uint32_t offset = geometry->vertexOffset;
 			vertexAllocations[offset].data = nullptr;
-			uint32_t nextOffset = offset + count;
+			uint32_t count = vertexAllocations[offset].n;
 			// Merge next allocation if empty
 			try {
+				uint32_t nextOffset = offset + count;
 				auto& next = vertexAllocations.at(nextOffset);
-				if (!next.data) {
-					vertexAllocations[offset].n += next.n;
+				if (!next.data && next.n > 0) {
+					count = vertexAllocations[offset].n += next.n;
 					vertexAllocations.erase(nextOffset);
 				}
 			} catch(...){} // not an error... just ignore it
+			// Shrink total allocation if we were at the tail of the global buffer
+			if (nbAllocatedVertices == count + offset) {
+				nbAllocatedVertices = offset;
+				vertexAllocations.erase(offset);
+			}
 		}
 		// Index buffer
 		if (geometry->indexCount > 0) {
 			std::lock_guard lock(indexBufferMutex);
-			uint32_t count = indexAllocations[geometry->indexOffset].n;
 			uint32_t offset = geometry->indexOffset;
 			indexAllocations[offset].data = nullptr;
-			uint32_t nextOffset = offset + count;
+			uint32_t count = indexAllocations[offset].n;
 			// Merge next allocation if empty
 			try {
+				uint32_t nextOffset = offset + count;
 				auto& next = indexAllocations.at(nextOffset);
-				if (!next.data) {
-					indexAllocations[offset].n += next.n;
-					vertexAllocations.erase(nextOffset);
+				if (!next.data && next.n > 0) {
+					count = indexAllocations[offset].n += next.n;
+					indexAllocations.erase(nextOffset);
 				}
 			} catch(...){} // not an error... just ignore it
+			// Shrink total allocation if we were at the tail of the global buffer
+			if (nbAllocatedIndices == count + offset) {
+				nbAllocatedIndices = offset;
+				indexAllocations.erase(offset);
+			}
 		}
 		// Geometry buffer
 		std::lock_guard lock(geometryBufferMutex);
@@ -423,42 +433,60 @@ namespace v4d::scene {
 	
 	void Geometry::GlobalGeometryBuffers::ShrinkGeometryVertices(Geometry* geometry, uint32_t newVertexCount) {
 		assert(newVertexCount <= geometry->vertexCount);
+		assert(newVertexCount > 0);
 		if (newVertexCount < geometry->vertexCount) {
 			std::lock_guard lock(vertexBufferMutex);
-			uint32_t freeOffset = geometry->vertexOffset + newVertexCount;
 			uint32_t freeCount = geometry->vertexCount - newVertexCount;
-			uint32_t nextOffset = freeOffset + freeCount;
+			uint32_t freeOffset = geometry->vertexOffset + newVertexCount;
+			// Merge next allocation if empty
 			try {
+				uint32_t nextOffset = freeOffset + freeCount;
 				auto& next = vertexAllocations.at(nextOffset);
-				if (!next.data) {
-					vertexAllocations[freeOffset].n = freeCount + next.n;
+				if (!next.data && next.n > 0) {
+					freeCount += next.n;
 					vertexAllocations.erase(nextOffset);
 				}
-			} catch(...){
-				vertexAllocations[freeOffset].data = nullptr;
-				vertexAllocations[freeOffset].n = freeCount;
+			} catch(...){} // not an error... just ignore it
+			// Assign free space
+			vertexAllocations[freeOffset].data = nullptr;
+			vertexAllocations[freeOffset].n = freeCount;
+			vertexAllocations[geometry->vertexOffset].n = newVertexCount;
+			// Shrink total allocation if we were at the tail of the global buffer
+			if (nbAllocatedVertices == freeCount) {
+				nbAllocatedVertices = geometry->vertexOffset + newVertexCount;
+				vertexAllocations.erase(freeOffset);
 			}
+			// Assign new count
 			geometry->vertexCount = newVertexCount;
 		}
 	}
 	
 	void Geometry::GlobalGeometryBuffers::ShrinkGeometryIndices(Geometry* geometry, uint32_t newIndexCount) {
 		assert(newIndexCount <= geometry->indexCount);
+		assert(newIndexCount > 0);
 		if (newIndexCount < geometry->indexCount) {
 			std::lock_guard lock(indexBufferMutex);
-			uint32_t freeOffset = geometry->indexOffset + newIndexCount;
 			uint32_t freeCount = geometry->indexCount - newIndexCount;
-			uint32_t nextOffset = freeOffset + freeCount;
+			uint32_t freeOffset = geometry->indexOffset + newIndexCount;
+			// Merge next allocation if empty
 			try {
+				uint32_t nextOffset = freeOffset + freeCount;
 				auto& next = indexAllocations.at(nextOffset);
-				if (!next.data) {
-					indexAllocations[freeOffset].n = freeCount + next.n;
+				if (!next.data && next.n > 0) {
+					freeCount += next.n;
 					indexAllocations.erase(nextOffset);
 				}
-			} catch(...) {
-				indexAllocations[freeOffset].data = nullptr;
-				indexAllocations[freeOffset].n = freeCount;
+			} catch(...) {} // not an error... just ignore it
+			// Assign free space
+			indexAllocations[freeOffset].data = nullptr;
+			indexAllocations[freeOffset].n = freeCount;
+			indexAllocations[geometry->indexOffset].n = newIndexCount;
+			// Shrink total allocation if we were at the tail of the global buffer
+			if (nbAllocatedIndices == freeCount) {
+				nbAllocatedIndices = geometry->indexOffset + newIndexCount;
+				indexAllocations.erase(freeOffset);
 			}
+			// Assign new count
 			geometry->indexCount = newIndexCount;
 		}
 	}
