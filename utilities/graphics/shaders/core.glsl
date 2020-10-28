@@ -1,6 +1,8 @@
 // #version 460 core (this is the default)
 #extension GL_ARB_enhanced_layouts : enable
 
+#include "v4d/core/utilities/scene/geometry_attributes.hh"
+
 precision highp int;
 precision highp float;
 precision highp sampler2D;

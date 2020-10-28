@@ -3,30 +3,7 @@
 	#extension GL_EXT_ray_tracing : enable
 	#extension GL_EXT_nonuniform_qualifier : enable
 	#extension GL_EXT_buffer_reference : enable
-
-	// Ray Tracing Payload
-	struct RayPayload_visibility {
-		uint geometryIndex;
-		vec3 viewSpacePosition;
-		vec3 viewSpaceNormal;
-		vec3 albedo;
-		float emit;
-		vec2 uv;
-		float metallic;
-		float roughness;
-		float distance;
-	};
-
-	// struct RayPayload_lighting {
-	// 	vec3 color;
-	// 	vec3 origin;
-	// 	vec3 direction;
-	// 	float distance;
-	// };
-
 #else
 	#define RAY_QUERY
 	#extension GL_EXT_ray_query : enable
 #endif
-
-#include "v4d/core/utilities/scene/geometry_attributes.hh"

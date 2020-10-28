@@ -107,7 +107,7 @@ namespace v4d::scene {
 		struct GeometryBuffer_T { // 256 bytes
 			glm::u32 indexOffset;
 			glm::u32 vertexOffset;
-			glm::u32 objectIndex;
+			glm::u32 objectIndex; //TODO could limit to 24 bits
 			glm::u32 material;
 			glm::mat4 modelTransform;
 			glm::mat4 modelViewTransform;
