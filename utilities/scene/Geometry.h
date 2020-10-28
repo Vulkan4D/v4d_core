@@ -8,39 +8,6 @@
 namespace v4d::scene {
 	using namespace v4d::graphics;
 	
-	#pragma region Pack Helpers
-	
-	/////////////////
-	// NOT WORKING
-			// static NormalBuffer_T PackNormal(glm::vec3 normal) {
-			// 	// // vec2
-			// 	// float f = glm::sqrt(8.0f * normal.z + 8.0f);
-			// 	// return glm::vec2(normal) / f + 0.5f;
-				
-			// 	// vec4
-			// 	return glm::vec4(normal, 0);
-			// }
-
-			// static glm::vec3 UnpackNormal(NormalBuffer_T norm) {
-			// 	// glm::vec2 fenc = norm * 4.0f - 2.0f;
-			// 	// float f = glm::dot(fenc, fenc);
-			// 	// float g = glm::sqrt(1.0f - f / 4.0f);
-			// 	// return glm::vec3(fenc * g, 1.0f - f / 2.0f);
-			// 	return norm;
-			// }
-	/////////////////
-
-	V4DLIB glm::f32 PackColorAsFloat(glm::vec4 color);
-	V4DLIB glm::u32 PackColorAsUint(glm::vec4 color);
-	V4DLIB glm::vec4 UnpackColorFromFloat(glm::f32 color);
-	V4DLIB glm::vec4 UnpackColorFromUint(glm::u32 color);
-	V4DLIB glm::f32 PackUVasFloat(glm::vec2 uv);
-	V4DLIB glm::u32 PackUVasUint(glm::vec2 uv);
-	V4DLIB glm::vec2 UnpackUVfromFloat(glm::f32 uv);
-	V4DLIB glm::vec2 UnpackUVfromUint(glm::u32 uv);
-
-	#pragma endregion
-	
 	struct GeometryRenderType {
 		RasterShaderPipeline* rasterShader = nullptr;
 		int32_t sbtOffset = -1;
@@ -120,7 +87,10 @@ namespace v4d::scene {
 			glm::vec3 pos;
 			glm::f32 _color;
 			glm::vec3 normal;
-			glm::f32 _uv;
+			union {
+				glm::f32 _uv;
+				uint32_t customData;
+			};
 			
 			void SetColor(const glm::vec4& rgba) {_color = PackColorAsFloat(rgba);}
 			glm::vec4 GetColor() const {return UnpackColorFromFloat(_color);}

@@ -4,6 +4,65 @@
 namespace v4d::graphics {
 	using namespace v4d::graphics::vulkan;
 
+	#pragma region Pack Helpers
+	
+	/////////////////
+	// NOT WORKING
+			// static NormalBuffer_T PackNormal(glm::vec3 normal) {
+			// 	// // vec2
+			// 	// float f = glm::sqrt(8.0f * normal.z + 8.0f);
+			// 	// return glm::vec2(normal) / f + 0.5f;
+				
+			// 	// vec4
+			// 	return glm::vec4(normal, 0);
+			// }
+
+			// static glm::vec3 UnpackNormal(NormalBuffer_T norm) {
+			// 	// glm::vec2 fenc = norm * 4.0f - 2.0f;
+			// 	// float f = glm::dot(fenc, fenc);
+			// 	// float g = glm::sqrt(1.0f - f / 4.0f);
+			// 	// return glm::vec3(fenc * g, 1.0f - f / 2.0f);
+			// 	return norm;
+			// }
+	/////////////////
+
+	V4DLIB glm::f32 PackColorAsFloat(glm::vec4 color);
+	V4DLIB glm::u32 PackColorAsUint(glm::vec4 color);
+	V4DLIB glm::vec4 UnpackColorFromFloat(glm::f32 color);
+	V4DLIB glm::vec4 UnpackColorFromUint(glm::u32 color);
+	V4DLIB glm::f32 PackUVasFloat(glm::vec2 uv);
+	V4DLIB glm::u32 PackUVasUint(glm::vec2 uv);
+	V4DLIB glm::vec2 UnpackUVfromFloat(glm::f32 uv);
+	V4DLIB glm::vec2 UnpackUVfromUint(glm::u32 uv);
+
+	#pragma endregion
+	
+	struct RayCast {
+		// from img_gBuffer_1
+		glm::vec3 normal;
+		union {
+			float _uv;
+			uint32_t customData0;
+		};
+		// from img_gBuffer_2
+		glm::vec3 position;
+		float distance;
+		// from img_gBuffer_4
+		uint32_t hit : 1;
+		uint32_t objectIndex : 23;
+		uint32_t customType : 8;
+		uint32_t : 0;
+		uint32_t flags;
+		uint32_t customData1;
+		uint32_t customData2;
+		
+		RayCast() : hit(0) { static_assert(sizeof(RayCast) == sizeof(glm::vec4) * 3); }
+		
+		glm::vec2 GetUV() {
+			return UnpackUVfromFloat(_uv);
+		}
+	};
+	
 	class V4DLIB Renderer : public Instance {
 	public: // class members
 
@@ -47,6 +106,8 @@ namespace v4d::graphics {
 		bool graphicsLoadedToDevice = false;
 		std::thread::id renderThreadId = std::this_thread::get_id();
 		std::recursive_mutex renderMutex1, renderMutex2;
+		
+		RayCast currentRayCast {};
 		
 	public: // Preferences
 

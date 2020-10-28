@@ -905,3 +905,102 @@ void Renderer::Update() {
 }
 
 #pragma endregion
+
+#pragma region Pack Helpers
+namespace v4d::graphics {
+	
+	/////////////////
+	// NOT WORKING
+			// static NormalBuffer_T PackNormal(glm::vec3 normal) {
+			// 	// // vec2
+			// 	// float f = glm::sqrt(8.0f * normal.z + 8.0f);
+			// 	// return glm::vec2(normal) / f + 0.5f;
+				
+			// 	// vec4
+			// 	return glm::vec4(normal, 0);
+			// }
+
+			// static glm::vec3 UnpackNormal(NormalBuffer_T norm) {
+			// 	// glm::vec2 fenc = norm * 4.0f - 2.0f;
+			// 	// float f = glm::dot(fenc, fenc);
+			// 	// float g = glm::sqrt(1.0f - f / 4.0f);
+			// 	// return glm::vec3(fenc * g, 1.0f - f / 2.0f);
+			// 	return norm;
+			// }
+	/////////////////
+
+	glm::f32 PackColorAsFloat(glm::vec4 color) {
+		color *= 255.0f;
+		glm::uvec4 pack {
+			glm::clamp(glm::u32(color.r), (glm::u32)0, (glm::u32)255),
+			glm::clamp(glm::u32(color.g), (glm::u32)0, (glm::u32)255),
+			glm::clamp(glm::u32(color.b), (glm::u32)0, (glm::u32)255),
+			glm::clamp(glm::u32(color.a), (glm::u32)0, (glm::u32)255),
+		};
+		return glm::uintBitsToFloat((pack.r << 24) | (pack.g << 16) | (pack.b << 8) | pack.a);
+	}
+
+	glm::u32 PackColorAsUint(glm::vec4 color) {
+		color *= 255.0f;
+		glm::uvec4 pack {
+			glm::clamp(glm::u32(color.r), (glm::u32)0, (glm::u32)255),
+			glm::clamp(glm::u32(color.g), (glm::u32)0, (glm::u32)255),
+			glm::clamp(glm::u32(color.b), (glm::u32)0, (glm::u32)255),
+			glm::clamp(glm::u32(color.a), (glm::u32)0, (glm::u32)255),
+		};
+		return (pack.r << 24) | (pack.g << 16) | (pack.b << 8) | pack.a;
+	}
+
+	glm::f32 PackUVasFloat(glm::vec2 uv) {
+		uv *= 65535.0f;
+		glm::uvec2 pack {
+			glm::clamp(glm::u32(uv.s), (glm::u32)0, (glm::u32)65535),
+			glm::clamp(glm::u32(uv.t), (glm::u32)0, (glm::u32)65535),
+		};
+		return glm::uintBitsToFloat((pack.s << 16) | pack.t);
+	}
+
+	glm::u32 PackUVasUint(glm::vec2 uv) {
+		uv *= 65535.0f;
+		glm::uvec2 pack {
+			glm::clamp(glm::u32(uv.s), (glm::u32)0, (glm::u32)65535),
+			glm::clamp(glm::u32(uv.t), (glm::u32)0, (glm::u32)65535),
+		};
+		return (pack.s << 16) | pack.t;
+	}
+
+	glm::vec4 UnpackColorFromFloat(glm::f32 color) {
+		glm::u32 packed = glm::floatBitsToUint(color);
+		return glm::vec4(
+			(packed & 0xff000000) >> 24,
+			(packed & 0x00ff0000) >> 16,
+			(packed & 0x0000ff00) >> 8,
+			(packed & 0x000000ff) >> 0
+		) / 255.0f;
+	}
+
+	glm::vec4 UnpackColorFromUint(glm::u32 color) {
+		return glm::vec4(
+			(color & 0xff000000) >> 24,
+			(color & 0x00ff0000) >> 16,
+			(color & 0x0000ff00) >> 8,
+			(color & 0x000000ff) >> 0
+		) / 255.0f;
+	}
+
+	glm::vec2 UnpackUVfromFloat(glm::f32 uv) {
+		glm::u32 packed = glm::floatBitsToUint(uv);
+		return glm::vec2(
+			(packed & 0xffff0000) >> 16,
+			(packed & 0x0000ffff) >> 0
+		) / 65535.0f;
+	}
+
+	glm::vec2 UnpackUVfromUint(glm::u32 uv) {
+		return glm::vec2(
+			(uv & 0xffff0000) >> 16,
+			(uv & 0x0000ffff) >> 0
+		) / 65535.0f;
+	}
+}
+#pragma endregion

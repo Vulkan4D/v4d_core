@@ -15,6 +15,7 @@ struct Fragment {
 	vec3 viewSpaceNormal;
 	vec2 uv;
 	vec4 color;
+	uint customData; // shared with the uv field
 };
 
 Fragment GetHitFragment(bool interpolateVertexData) {
@@ -30,6 +31,8 @@ Fragment GetHitFragment(bool interpolateVertexData) {
 	f.v0 = GetVertex(indices[f.indexOffset + (3 * gl_PrimitiveID) + 0] + f.vertexOffset);
 	f.v1 = GetVertex(indices[f.indexOffset + (3 * gl_PrimitiveID) + 1] + f.vertexOffset);
 	f.v2 = GetVertex(indices[f.indexOffset + (3 * gl_PrimitiveID) + 2] + f.vertexOffset);
+	
+	f.customData = f.v0.customData;
 	
 	f.barycentricCoords = vec3(1.0f - hitAttribs.x - hitAttribs.y, hitAttribs.x, hitAttribs.y);
 	f.hitPoint = gl_WorldRayOriginEXT + gl_WorldRayDirectionEXT * gl_HitTEXT;
