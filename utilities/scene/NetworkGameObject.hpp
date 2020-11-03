@@ -206,4 +206,5 @@ namespace v4d::scene {
 	};
 	
 	typedef std::shared_ptr<NetworkGameObject> NetworkGameObjectPtr;
+	typedef std::unordered_map<NetworkGameObject::Id, NetworkGameObjectPtr> NetworkGameObjects;
 }
