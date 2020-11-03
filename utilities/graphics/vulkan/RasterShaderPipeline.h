@@ -102,7 +102,7 @@ namespace v4d::graphics::vulkan {
 			VkColorComponentFlags colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
 		);
 		
-	protected:
+	public:
 		// these two methods are called automatically by Execute() from the parent class
 		virtual void Bind(Device* device, VkCommandBuffer cmdBuffer) override;
 		virtual void Render(Device* device, VkCommandBuffer cmdBuffer, uint32_t instanceCount = 1) override;

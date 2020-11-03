@@ -27,25 +27,25 @@ namespace v4d::scene {
 		uint32_t material;
 		bool isProcedural;
 		
-		uint32_t rayTracingMask = 	GEOMETRY_ATTR_PRIMARY_VISIBLE|
-									GEOMETRY_ATTR_CAST_SHADOWS|
-									GEOMETRY_ATTR_REFLECTION_VISIBLE|
-									GEOMETRY_ATTR_COLLIDER;
-									
-		VkGeometryInstanceFlagsKHR flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-		glm::vec3 custom3f = {0,0,0};
-		glm::mat4 custom4x4f = glm::mat4{0};
+		#pragma region Rendering
+			VkGeometryInstanceFlagsKHR flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+			glm::vec3 custom3f = {0,0,0};
+			glm::mat4 custom4x4f = glm::mat4{0};
+			bool renderWireframe = false;
+			glm::vec4 wireframeColor {1.0f,1.0f,1.0f,1.0f};
+			float wireframeThickness = 1.0f;
+			uint32_t rayTracingMask = 	GEOMETRY_ATTR_PRIMARY_VISIBLE|
+										GEOMETRY_ATTR_CAST_SHADOWS|
+										GEOMETRY_ATTR_REFLECTION_VISIBLE|
+										GEOMETRY_ATTR_COLLIDER;
+		#pragma endregion
 		
-		uint32_t geometryOffset = 0;
-		uint32_t vertexOffset = 0;
-		uint32_t indexOffset = 0;
-		
-		bool active = true;
-		bool isDirty = false;
-		
-		float boundingDistance = 0.0f;
-		glm::vec3 boundingBoxSize = {0,0,0};
-		
+		#pragma region State
+			bool active = true;
+			bool isDirty = false;
+			float boundingDistance = 0.0f;
+			glm::vec3 boundingBoxSize = {0,0,0};
+		#pragma endregion
 		
 		#pragma region Physics
 			
@@ -64,87 +64,98 @@ namespace v4d::scene {
 		
 		#pragma endregion
 	
-		
-		std::shared_ptr<v4d::graphics::vulkan::rtx::AccelerationStructure> blas = nullptr;
-		std::shared_ptr<Geometry> duplicateFrom = nullptr;
+		#pragma region Buffer offsets
+			uint32_t geometryOffset = 0;
+			uint32_t vertexOffset = 0;
+			uint32_t indexOffset = 0;
+		#pragma endregion
 
-		struct ObjectBuffer_T { // 128 bytes
-			glm::dmat4 modelTransform;
-		};
-		struct GeometryBuffer_T { // 256 bytes
-			glm::u32 indexOffset;
-			glm::u32 vertexOffset;
-			glm::u32 objectIndex; //TODO could limit to 24 bits
-			glm::u32 material;
-			glm::mat4 modelTransform;
-			glm::mat4 modelViewTransform;
-			glm::mat3 normalViewTransform;
-			glm::vec3 custom3f;
-			glm::mat4 custom4x4f;
-		};
-		using IndexBuffer_T = glm::u32; // 4 bytes
-		struct VertexBuffer_T { // 32 bytes (must be same as ProceduralVertexBuffer_T)
-			glm::vec3 pos;
-			glm::f32 _color;
-			glm::vec3 normal;
-			union {
-				glm::f32 _uv;
-				uint32_t customData;
+		#pragma region Smart Pointers
+			std::shared_ptr<v4d::graphics::vulkan::rtx::AccelerationStructure> blas = nullptr;
+			std::shared_ptr<Geometry> duplicateFrom = nullptr;
+		#pragma endregion
+		
+		#pragma region Buffer Definitions
+
+			struct ObjectBuffer_T { // 128 bytes
+				glm::dmat4 modelTransform;
+			};
+			struct GeometryBuffer_T { // 256 bytes
+				glm::u32 indexOffset;
+				glm::u32 vertexOffset;
+				glm::u32 objectIndex; //TODO could limit to 24 bits
+				glm::u32 material;
+				glm::mat4 modelTransform;
+				glm::mat4 modelViewTransform;
+				glm::mat3 normalViewTransform;
+				glm::vec3 custom3f;
+				glm::mat4 custom4x4f;
+			};
+			using IndexBuffer_T = glm::u32; // 4 bytes
+			struct VertexBuffer_T { // 32 bytes (must be same as ProceduralVertexBuffer_T)
+				glm::vec3 pos;
+				glm::f32 _color;
+				glm::vec3 normal;
+				union {
+					glm::f32 _uv;
+					uint32_t customData;
+				};
+				
+				void SetColor(const glm::vec4& rgba) {_color = PackColorAsFloat(rgba);}
+				glm::vec4 GetColor() const {return UnpackColorFromFloat(_color);}
+				void SetUV(const glm::vec2& st) {_uv = PackUVasFloat(st);}
+				glm::vec2 GetUV() const {return UnpackUVfromFloat(_uv);}
+				
+				static std::vector<VertexInputAttributeDescription> GetInputAttributes() {
+					return {
+						{0, offsetof(VertexBuffer_T, pos), VK_FORMAT_R32G32B32_SFLOAT},
+						{1, offsetof(VertexBuffer_T, _color), VK_FORMAT_R32_UINT},
+						{2, offsetof(VertexBuffer_T, normal), VK_FORMAT_R32G32B32_SFLOAT},
+						{3, offsetof(VertexBuffer_T, _uv), VK_FORMAT_R32_UINT},
+					};
+				}
+			};
+			struct ProceduralVertexBuffer_T { // 32 bytes (must be same as VertexBuffer_T)
+				glm::vec3 aabbMin;
+				glm::vec3 aabbMax;
+				glm::f32 _color;
+				glm::f32 custom1;
+				
+				void SetColor(const glm::vec4& rgba) {_color = PackColorAsFloat(rgba);}
+				glm::vec4 GetColor() const {return UnpackColorFromFloat(_color);}
+				
+				static std::vector<VertexInputAttributeDescription> GetInputAttributes() {
+					return {
+						{0, offsetof(ProceduralVertexBuffer_T, aabbMin), VK_FORMAT_R32G32B32_SFLOAT},
+						{1, offsetof(ProceduralVertexBuffer_T, aabbMax), VK_FORMAT_R32G32B32_SFLOAT},
+						{2, offsetof(ProceduralVertexBuffer_T, _color), VK_FORMAT_R32_UINT},
+						{3, offsetof(ProceduralVertexBuffer_T, custom1), VK_FORMAT_R32_SFLOAT},
+					};
+				}
+			};
+			struct LightBuffer_T { // 32 bytes
+				glm::vec3 position;
+				glm::f32 intensity;
+				glm::u32 _colorAndType;
+				glm::u32 attributes;
+				glm::f32 radius;
+				glm::f32 custom1;
+				
+				void SetColorAndType(glm::vec3 color, glm::u8 type) {
+					_colorAndType = PackColorAsUint(glm::vec4(color, 0));
+					_colorAndType |= type & 0x000000ff;
+				}
+				void GetColorAndType(glm::vec3* color = nullptr, glm::u8* type = nullptr) const {
+					if (color) *color = glm::vec3(UnpackColorFromUint(_colorAndType));
+					if (type) *type = _colorAndType & 0x000000ff;
+				}
+				void GetColorAndType(glm::vec3* color = nullptr, glm::u32* type = nullptr) const {
+					if (color) *color = glm::vec3(UnpackColorFromUint(_colorAndType));
+					if (type) *type = _colorAndType & 0x000000ff;
+				}
 			};
 			
-			void SetColor(const glm::vec4& rgba) {_color = PackColorAsFloat(rgba);}
-			glm::vec4 GetColor() const {return UnpackColorFromFloat(_color);}
-			void SetUV(const glm::vec2& st) {_uv = PackUVasFloat(st);}
-			glm::vec2 GetUV() const {return UnpackUVfromFloat(_uv);}
-			
-			static std::vector<VertexInputAttributeDescription> GetInputAttributes() {
-				return {
-					{0, offsetof(VertexBuffer_T, pos), VK_FORMAT_R32G32B32_SFLOAT},
-					{1, offsetof(VertexBuffer_T, _color), VK_FORMAT_R32_UINT},
-					{2, offsetof(VertexBuffer_T, normal), VK_FORMAT_R32G32B32_SFLOAT},
-					{3, offsetof(VertexBuffer_T, _uv), VK_FORMAT_R32_UINT},
-				};
-			}
-		};
-		struct ProceduralVertexBuffer_T { // 32 bytes (must be same as VertexBuffer_T)
-			glm::vec3 aabbMin;
-			glm::vec3 aabbMax;
-			glm::f32 _color;
-			glm::f32 custom1;
-			
-			void SetColor(const glm::vec4& rgba) {_color = PackColorAsFloat(rgba);}
-			glm::vec4 GetColor() const {return UnpackColorFromFloat(_color);}
-			
-			static std::vector<VertexInputAttributeDescription> GetInputAttributes() {
-				return {
-					{0, offsetof(ProceduralVertexBuffer_T, aabbMin), VK_FORMAT_R32G32B32_SFLOAT},
-					{1, offsetof(ProceduralVertexBuffer_T, aabbMax), VK_FORMAT_R32G32B32_SFLOAT},
-					{2, offsetof(ProceduralVertexBuffer_T, _color), VK_FORMAT_R32_UINT},
-					{3, offsetof(ProceduralVertexBuffer_T, custom1), VK_FORMAT_R32_SFLOAT},
-				};
-			}
-		};
-		struct LightBuffer_T { // 32 bytes
-			glm::vec3 position;
-			glm::f32 intensity;
-			glm::u32 _colorAndType;
-			glm::u32 attributes;
-			glm::f32 radius;
-			glm::f32 custom1;
-			
-			void SetColorAndType(glm::vec3 color, glm::u8 type) {
-				_colorAndType = PackColorAsUint(glm::vec4(color, 0));
-				_colorAndType |= type & 0x000000ff;
-			}
-			void GetColorAndType(glm::vec3* color = nullptr, glm::u8* type = nullptr) const {
-				if (color) *color = glm::vec3(UnpackColorFromUint(_colorAndType));
-				if (type) *type = _colorAndType & 0x000000ff;
-			}
-			void GetColorAndType(glm::vec3* color = nullptr, glm::u32* type = nullptr) const {
-				if (color) *color = glm::vec3(UnpackColorFromUint(_colorAndType));
-				if (type) *type = _colorAndType & 0x000000ff;
-			}
-		};
+		#pragma endregion
 		
 		static std::unordered_map<std::string, GeometryRenderType> geometryRenderTypes;
 
