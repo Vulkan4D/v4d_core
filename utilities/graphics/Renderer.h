@@ -37,30 +37,14 @@ namespace v4d::graphics {
 
 	#pragma endregion
 	
-	struct RayCast {
-		// from img_gBuffer_1
-		glm::vec3 normal;
-		union {
-			float _uv;
-			uint32_t customData0;
-		};
-		// from img_gBuffer_2
-		glm::vec3 position;
+	struct RenderRayCastHit {
 		float distance;
-		// from img_gBuffer_4
-		uint32_t hit : 1;
-		uint32_t objectIndex : 23;
-		uint32_t customType : 8;
-		uint32_t : 0;
+		uint32_t objId;
 		uint32_t flags;
+		uint8_t customType;
+		uint32_t customData0;
 		uint32_t customData1;
 		uint32_t customData2;
-		
-		RayCast() : hit(0) { static_assert(sizeof(RayCast) == sizeof(glm::vec4) * 3); }
-		
-		glm::vec2 GetUV() {
-			return UnpackUVfromFloat(_uv);
-		}
 	};
 	
 	class V4DLIB Renderer : public Instance {
@@ -106,8 +90,6 @@ namespace v4d::graphics {
 		bool graphicsLoadedToDevice = false;
 		std::thread::id renderThreadId = std::this_thread::get_id();
 		std::recursive_mutex renderMutex1, renderMutex2;
-		
-		RayCast currentRayCast {};
 		
 	public: // Preferences
 

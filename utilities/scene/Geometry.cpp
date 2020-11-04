@@ -29,6 +29,21 @@ namespace v4d::scene {
 		
 		// if (blas.use_count() == 1) LOG_VERBOSE("Destroyed Geometry with Acceleration Structure handle " << std::hex << blas->handle)
 	}
+
+	void Geometry::Reset(uint32_t vertexCount, uint32_t indexCount) {
+		active = true;
+		isDirty = false;
+		colliderDirty = true;
+		boundingDistance = 0.0;
+		boundingBoxSize = {0,0,0};
+		blas = nullptr;
+		duplicateFrom = nullptr;
+		UnmapStagingBuffers();
+		globalBuffers.RemoveGeometry(this);
+		this->vertexCount = vertexCount;
+		this->indexCount = indexCount;
+		globalBuffers.AddGeometry(this);
+	}
 	
 	void Geometry::Shrink(uint32_t newVertexCount, uint32_t newIndexCount) {
 		globalBuffers.ShrinkGeometryVertices(this, newVertexCount);
@@ -607,6 +622,9 @@ namespace v4d::scene {
 		ObjectBuffer_T* objData = &((ObjectBuffer_T*) (globalBuffers.objectBuffer.stagingBuffer.data)) [obj->objectOffset];
 		
 		objData->modelTransform = obj->transform;
+		objData->moduleVen = obj->moduleID.vendor;
+		objData->moduleId = obj->moduleID.module;
+		objData->objId = obj->objId;
 	}
 	
 	void Geometry::GlobalGeometryBuffers::ReadObject(ObjectInstance* obj) {

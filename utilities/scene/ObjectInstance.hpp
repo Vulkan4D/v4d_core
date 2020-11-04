@@ -35,6 +35,13 @@ namespace v4d::scene {
 		mutable std::recursive_mutex mu;
 		
 	public:
+		v4d::modular::ModuleID moduleID {0,0};
+		uint32_t objId = 0;
+		
+		void AssignToModule(v4d::modular::ModuleID moduleID, uint32_t objId) {
+			this->moduleID = moduleID;
+			this->objId = objId;
+		}
 	
 		#pragma region Physics
 		
@@ -87,7 +94,6 @@ namespace v4d::scene {
 		~ObjectInstance() {
 			Disable();
 			ClearGeometries();
-			RemoveLightSources();
 			Geometry::globalBuffers.RemoveObject(this);
 		}
 		
@@ -259,8 +265,17 @@ namespace v4d::scene {
 		}
 		
 		void ClearGeometries() {
+			std::lock_guard lock(mu);
+			for (auto& geom : geometries) {
+				geom.geometry->active = false;
+			}
 			RemoveGeometries();
 			RemoveLightSources();
+			geometriesDirty = true;
+		}
+		
+		void ResetGeometries() {
+			generated = false;
 			geometriesDirty = true;
 		}
 		

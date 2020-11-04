@@ -61,7 +61,7 @@ namespace v4d::scene {
 		sceneMutex.unlock();
 	}
 	
-	bool Scene::RayCastClosest(Scene::RayCastHit* hit, const glm::dvec3& origin, const glm::dvec3& target, uint32_t mask) const {
+	bool Scene::PhysicsRayCastClosest(Scene::RayCastHit* hit, const glm::dvec3& origin, const glm::dvec3& target, uint32_t mask) const {
 		static V4D_Physics* primaryPhysicsModule = V4D_Physics::GetPrimaryModule();
 		// if (!primaryPhysicsModule) primaryPhysicsModule = V4D_Physics::GetPrimaryModule();
 		if (primaryPhysicsModule && primaryPhysicsModule->RayCastClosest) {
@@ -73,15 +73,15 @@ namespace v4d::scene {
 	Scene::RayCastHit::RayCastHit() {}
 	Scene::RayCastHit::RayCastHit(v4d::scene::ObjectInstancePtr o, glm::dvec3 p, glm::dvec3 n) : obj(o), position(p), normal(n) {}
 	
-	bool Scene::RayCastClosest(Scene::RayCastHit* hit, double minDistance, double maxDistance, uint32_t mask) const {
-		return RayCastClosest(hit, camera.worldPosition + camera.lookDirection*minDistance, camera.lookDirection*(maxDistance<0? 1e16 : maxDistance), mask);
+	bool Scene::PhysicsRayCastClosest(Scene::RayCastHit* hit, double minDistance, double maxDistance, uint32_t mask) const {
+		return PhysicsRayCastClosest(hit, camera.worldPosition + camera.lookDirection*minDistance, camera.lookDirection*(maxDistance<0? 1e16 : maxDistance), mask);
 	}
 	
-	bool Scene::RayCastClosest(Scene::RayCastHit* hit, uint32_t mask) const {
-		return RayCastClosest(hit, 0, -1, mask);
+	bool Scene::PhysicsRayCastClosest(Scene::RayCastHit* hit, uint32_t mask) const {
+		return PhysicsRayCastClosest(hit, 0, -1, mask);
 	}
 	
-	int Scene::RayCastAll(std::vector<Scene::RayCastHit>* hits, const glm::dvec3& origin, const glm::dvec3& target, uint32_t mask) const {
+	int Scene::PhysicsRayCastAll(std::vector<Scene::RayCastHit>* hits, const glm::dvec3& origin, const glm::dvec3& target, uint32_t mask) const {
 		static V4D_Physics* primaryPhysicsModule = V4D_Physics::GetPrimaryModule();
 		// if (!primaryPhysicsModule) primaryPhysicsModule = V4D_Physics::GetPrimaryModule();
 		if (primaryPhysicsModule && primaryPhysicsModule->RayCastAll) {
@@ -90,12 +90,12 @@ namespace v4d::scene {
 		return 0;
 	}
 	
-	int Scene::RayCastAll(std::vector<Scene::RayCastHit>* hits, double minDistance, double maxDistance, uint32_t mask) const {
-		return RayCastAll(hits, camera.worldPosition + camera.lookDirection*minDistance, camera.lookDirection*(maxDistance<0? 1e16 : maxDistance), mask);
+	int Scene::PhysicsRayCastAll(std::vector<Scene::RayCastHit>* hits, double minDistance, double maxDistance, uint32_t mask) const {
+		return PhysicsRayCastAll(hits, camera.worldPosition + camera.lookDirection*minDistance, camera.lookDirection*(maxDistance<0? 1e16 : maxDistance), mask);
 	}
 	
-	int Scene::RayCastAll(std::vector<Scene::RayCastHit>* hits, uint32_t mask) const {
-		return RayCastAll(hits, 0, -1, mask);
+	int Scene::PhysicsRayCastAll(std::vector<Scene::RayCastHit>* hits, uint32_t mask) const {
+		return PhysicsRayCastAll(hits, 0, -1, mask);
 	}
 	
 }

@@ -104,7 +104,7 @@ namespace v4d::scene {
 		};
 		
 		ObjectInstancePtr objectInstance = nullptr;
-		Iteration iteration = 1;
+		std::atomic<Iteration> iteration = 1;
 		glm::dmat4 transform {1};
 		glm::dvec3 velocity {0};
 		
@@ -118,6 +118,12 @@ namespace v4d::scene {
 		Id GetNextID() const {
 			static std::atomic<Id> nextID = 1;
 			return nextID++;
+		}
+		Iteration Iterate() {
+			return (Iteration)++iteration;
+		}
+		Iteration GetIteration() {
+			return (Iteration)iteration;
 		}
 		
 		NetworkGameObjectTransform GetNetworkTransform() const {

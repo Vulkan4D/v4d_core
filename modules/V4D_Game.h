@@ -16,6 +16,7 @@ class V4DLIB V4D_Game {
 		,RendererFrameUpdate
 		,RendererFrameUpdate2
 		,RendererFrameCompute
+		,RendererRayCast
 	)
 	V4D_MODULE_FUNC_DECLARE(int, OrderIndex)
 	V4D_MODULE_FUNC_DECLARE(void, Init, v4d::scene::Scene*)
@@ -30,4 +31,5 @@ class V4DLIB V4D_Game {
 	V4D_MODULE_FUNC_DECLARE(void, RendererFrameUpdate)
 	V4D_MODULE_FUNC_DECLARE(void, RendererFrameUpdate2)
 	V4D_MODULE_FUNC_DECLARE(void, RendererFrameCompute, VkCommandBuffer)
+	V4D_MODULE_FUNC_DECLARE(void, RendererRayCast, v4d::graphics::RenderRayCastHit)
 };

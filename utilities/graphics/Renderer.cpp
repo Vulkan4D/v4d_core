@@ -724,12 +724,11 @@ void Renderer::UnloadRenderer() {
 }
 
 void Renderer::ReloadRenderer() {
-	std::scoped_lock lock(renderMutex1, renderMutex2);
-	
 	if (renderThreadId != std::this_thread::get_id()) {
 		mustReload = true;
 		return;
 	}
+	std::scoped_lock lock(renderMutex1, renderMutex2);
 	
 	mustReload = false;
 	

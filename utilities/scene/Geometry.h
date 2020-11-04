@@ -77,19 +77,29 @@ namespace v4d::scene {
 		
 		#pragma region Buffer Definitions
 
-			struct ObjectBuffer_T { // 128 bytes
+			struct ObjectBuffer_T { // 256 bytes
 				glm::dmat4 modelTransform;
+				glm::dvec4 custom4d_0;
+				glm::dvec4 custom4d_1;
+				glm::dvec4 custom4d_2;
+				uint64_t moduleVen;
+				uint64_t moduleId;
+				uint64_t objId : 32;
+				uint64_t flags : 32; // reserved for future use
+				uint64_t customUInt64;
+				ObjectBuffer_T() {static_assert(sizeof(ObjectBuffer_T) == 256);}
 			};
 			struct GeometryBuffer_T { // 256 bytes
 				glm::u32 indexOffset;
 				glm::u32 vertexOffset;
-				glm::u32 objectIndex; //TODO could limit to 24 bits
+				glm::u32 objectIndex; //TODO could limit to 23 bits
 				glm::u32 material;
 				glm::mat4 modelTransform;
 				glm::mat4 modelViewTransform;
 				glm::mat3 normalViewTransform;
 				glm::vec3 custom3f;
 				glm::mat4 custom4x4f;
+				GeometryBuffer_T() {static_assert(sizeof(GeometryBuffer_T) == 256);}
 			};
 			using IndexBuffer_T = glm::u32; // 4 bytes
 			struct VertexBuffer_T { // 32 bytes (must be same as ProceduralVertexBuffer_T)
@@ -100,6 +110,7 @@ namespace v4d::scene {
 					glm::f32 _uv;
 					uint32_t customData;
 				};
+				VertexBuffer_T() {static_assert(sizeof(VertexBuffer_T) == 32);}
 				
 				void SetColor(const glm::vec4& rgba) {_color = PackColorAsFloat(rgba);}
 				glm::vec4 GetColor() const {return UnpackColorFromFloat(_color);}
@@ -120,6 +131,7 @@ namespace v4d::scene {
 				glm::vec3 aabbMax;
 				glm::f32 _color;
 				glm::f32 custom1;
+				ProceduralVertexBuffer_T() {static_assert(sizeof(ProceduralVertexBuffer_T) == 32);}
 				
 				void SetColor(const glm::vec4& rgba) {_color = PackColorAsFloat(rgba);}
 				glm::vec4 GetColor() const {return UnpackColorFromFloat(_color);}
@@ -140,6 +152,7 @@ namespace v4d::scene {
 				glm::u32 attributes;
 				glm::f32 radius;
 				glm::f32 custom1;
+				LightBuffer_T() {static_assert(sizeof(LightBuffer_T) == 32);}
 				
 				void SetColorAndType(glm::vec3 color, glm::u8 type) {
 					_colorAndType = PackColorAsUint(glm::vec4(color, 0));
@@ -217,7 +230,7 @@ namespace v4d::scene {
 			
 			// about 57 mb total
 			static const int nbInitialLights = 256; // 256 lights @ 32 bytes each = 8 kb
-			static const int nbInitialObjects = 1024; // 1k objects @ 128 bytes each = 128 kb
+			static const int nbInitialObjects = 1024; // 1k objects @ 256 bytes each = 256 kb
 			static const int nbInitialGeometries = nbInitialObjects * 2; // 2k geometries @ 256 bytes each = 512 kb
 			static const int nbInitialVertices = nbInitialGeometries * 512; // 1 million @ 32 bytes each = 32 mb
 			static const int nbInitialIndices = nbInitialVertices * 6; // 6 million @ 4 bytes each = 24 mb
@@ -302,6 +315,8 @@ namespace v4d::scene {
 		Geometry(std::shared_ptr<Geometry> duplicateFrom);
 		
 		~Geometry();
+		
+		void Reset(uint32_t vertexCount, uint32_t indexCount);
 		
 		void Shrink(uint32_t newVertexCount, uint32_t newIndexCount);
 		

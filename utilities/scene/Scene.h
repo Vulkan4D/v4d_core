@@ -46,12 +46,12 @@ namespace v4d::scene {
 			RayCastHit(v4d::scene::ObjectInstancePtr o, glm::dvec3 p, glm::dvec3 n);
 		};
 		
-		bool RayCastClosest(RayCastHit* hit, const glm::dvec3& origin, const glm::dvec3& target, uint32_t mask = 0xffffffff) const;
-		bool RayCastClosest(RayCastHit* hit, double minDistance, double maxDistance = -1, uint32_t mask = 0xffffffff) const;
-		bool RayCastClosest(RayCastHit* hit, uint32_t mask = 0xffffffff) const;
+		bool PhysicsRayCastClosest(RayCastHit* hit, const glm::dvec3& origin, const glm::dvec3& target, uint32_t mask = 0xffffffff) const;
+		bool PhysicsRayCastClosest(RayCastHit* hit, double minDistance, double maxDistance = -1, uint32_t mask = 0xffffffff) const;
+		bool PhysicsRayCastClosest(RayCastHit* hit, uint32_t mask = 0xffffffff) const;
 		
-		int RayCastAll(std::vector<RayCastHit>* hits, const glm::dvec3& origin, const glm::dvec3& target, uint32_t mask = 0xffffffff) const;
-		int RayCastAll(std::vector<RayCastHit>* hits, double minDistance, double maxDistance = -1, uint32_t mask = 0xffffffff) const;
-		int RayCastAll(std::vector<RayCastHit>* hits, uint32_t mask = 0xffffffff) const;
+		int PhysicsRayCastAll(std::vector<RayCastHit>* hits, const glm::dvec3& origin, const glm::dvec3& target, uint32_t mask = 0xffffffff) const;
+		int PhysicsRayCastAll(std::vector<RayCastHit>* hits, double minDistance, double maxDistance = -1, uint32_t mask = 0xffffffff) const;
+		int PhysicsRayCastAll(std::vector<RayCastHit>* hits, uint32_t mask = 0xffffffff) const;
 	};
 }
