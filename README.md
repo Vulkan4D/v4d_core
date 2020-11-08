@@ -66,6 +66,14 @@ The core consists of the following structure :
         - Assigning a variable by reference : `int var2 = &var1;`
         - Assigning a value to a dereferenced pointer : `*ptr = 5;`
 
+### Rules and modern conventions
+- variables initialized using braces `{ }`
+- use `static_cast<>` instead of c-style casting
+- use verbose types like `uint32_t` instead of `unsigned int`
+- use `using` isntead of `typedef`
+- don't copy-paste code from stack-overflow
+- don't write code that you don't understand
+
 ### Naming conventions
 - namespaces are camelCase and follow directory names/hierarchy
 - class file names are PascalCase
@@ -202,6 +210,7 @@ The core consists of the following structure :
 #### Frame Update (main rendering)
     - Renderer:: `Update` ()
         - V4D_Renderer:: `Update` () PRIMARY
+            - V4D_Game:: `RendererRayCast` ()
             - V4D_Game:: `RendererFrameUpdate` ()
             - V4D_Renderer:: `Render` ()
 #### Input Loop
