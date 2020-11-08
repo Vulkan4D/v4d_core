@@ -38,6 +38,7 @@ namespace v4d::graphics {
 	#pragma endregion
 	
 	struct RenderRayCastHit {
+		glm::vec3 position; // relative to center of hit object
 		float distance;
 		uint32_t objId;
 		uint32_t flags;
