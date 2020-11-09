@@ -8,12 +8,11 @@ namespace v4d::scene {
 	
 	struct GeometryInstance {
 		std::shared_ptr<Geometry> geometry;
-		int rayTracingInstanceIndex;
 		glm::dmat4 transform;
 		std::string type;
 		
-		GeometryInstance(std::shared_ptr<Geometry> geometry, int rayTracingInstanceIndex = -1, glm::dmat4 transform = glm::dmat4 {1}, std::string type = "standard")
-		: geometry(geometry), rayTracingInstanceIndex(rayTracingInstanceIndex), transform(transform), type(type) {};
+		GeometryInstance(std::shared_ptr<Geometry> geometry, glm::dmat4 transform = glm::dmat4 {1}, std::string type = "standard")
+		: geometry(geometry), transform(transform), type(type) {};
 	};
 	
 	class V4DLIB ObjectInstance {
@@ -173,7 +172,7 @@ namespace v4d::scene {
 				LOG_ERROR("A sphere/procedural object cannot contain triangle geometries")
 				return nullptr;
 			}
-			return geometries.emplace_back(std::make_shared<Geometry>(vertexCount, indexCount, material), -1, transform, type).geometry;
+			return geometries.emplace_back(std::make_shared<Geometry>(vertexCount, indexCount, material), transform, type).geometry;
 		}
 		
 		std::shared_ptr<Geometry> AddProceduralGeometry(const std::string& type, uint32_t count, uint32_t material = 0, glm::dmat4 transform = glm::dmat4{1}) {
@@ -182,7 +181,7 @@ namespace v4d::scene {
 				LOG_ERROR("A procedural object cannot contain triangle geometries")
 				return nullptr;
 			}
-			auto geometry = geometries.emplace_back(std::make_shared<Geometry>(count, 0, material, true), -1, transform, type).geometry;
+			auto geometry = geometries.emplace_back(std::make_shared<Geometry>(count, 0, material, true), transform, type).geometry;
 			geometry->colliderType = Geometry::ColliderType::BOX;
 			return geometry;
 		}
@@ -191,7 +190,7 @@ namespace v4d::scene {
 			return AddGeometry("standard", templateGeometry, transform);
 		}
 		std::shared_ptr<Geometry> AddGeometry(const std::string& type, std::shared_ptr<Geometry> templateGeometry, glm::dmat4 transform = glm::dmat4{1}) {
-			return geometries.emplace_back(std::make_shared<Geometry>(templateGeometry), -1, transform, type).geometry;
+			return geometries.emplace_back(std::make_shared<Geometry>(templateGeometry), transform, type).geometry;
 		}
 		
 		LightSource* AddLightSource(
@@ -221,7 +220,7 @@ namespace v4d::scene {
 				return;
 			}
 			if (geometries.size() == 0) {
-				geometries.emplace_back(std::make_shared<Geometry>(1, 0, material, true), -1, glm::dmat4{1}, type);
+				geometries.emplace_back(std::make_shared<Geometry>(1, 0, material, true), glm::dmat4{1}, type);
 			}
 			geometries[0].geometry->SetProceduralVertex(0, glm::vec3(-radius), glm::vec3(+radius), color, custom1);
 			geometries[0].geometry->colliderType = Geometry::ColliderType::SPHERE;
