@@ -50,7 +50,7 @@ void Renderer::CreateDevices() {
 			++score;
 
 		// Modules
-		V4D_Renderer::ForEachModule([&score, physicalDevice](auto* mod){
+		V4D_Mod::ForEachModule([&score, physicalDevice](auto mod){
 			if (mod->ScorePhysicalDeviceSelection) mod->ScorePhysicalDeviceSelection(score, physicalDevice);
 		});
 		
@@ -119,30 +119,22 @@ void Renderer::CreateDevices() {
 }
 
 void Renderer::DestroyDevices() {
-	
 	delete renderingDevice;
 }
 
 void Renderer::CreateSyncObjects() {
-	
-	V4D_Renderer::ForEachSortedModule([this](auto* mod){
-		if (mod->CreateSyncObjects) mod->CreateSyncObjects();
+	V4D_Mod::ForEachSortedModule([this](auto mod){
+		if (mod->CreateVulkanSyncObjects) mod->CreateVulkanSyncObjects();
 	});
 }
 
 void Renderer::DestroySyncObjects() {
-	
-	V4D_Renderer::ForEachSortedModule([this](auto* mod){
-		if (mod->DestroySyncObjects) mod->DestroySyncObjects();
+	V4D_Mod::ForEachSortedModule([this](auto mod){
+		if (mod->DestroyVulkanSyncObjects) mod->DestroyVulkanSyncObjects();
 	});
 }
 
 void Renderer::CreateCommandPools() {
-	
-	// V4D_Renderer::ForEachSortedModule([this](auto* mod){
-	// 	if (mod->CreateCommandPools) mod->CreateCommandPools();
-	// });
-	
 	for (auto&[k, qs] : renderingDevice->GetQueues()) if (k != "present") {
 		for (auto& q : qs) {
 			if (!q.commandPool) {
@@ -153,11 +145,6 @@ void Renderer::CreateCommandPools() {
 }
 
 void Renderer::DestroyCommandPools() {
-	
-	// V4D_Renderer::ForEachSortedModule([this](auto* mod){
-	// 	if (mod->DestroyCommandPools) mod->DestroyCommandPools();
-	// });
-	
 	for (auto&[k, qs] : renderingDevice->GetQueues()) if (k != "present") {
 		for (auto& q : qs) {
 			if (q.commandPool) {
@@ -304,14 +291,14 @@ void Renderer::DestroySwapChain() {
 }
 
 void Renderer::CreateCommandBuffers() {
-	V4D_Renderer::ForEachSortedModule([this](auto* mod){
-		if (mod->CreateCommandBuffers) mod->CreateCommandBuffers();
+	V4D_Mod::ForEachSortedModule([this](auto mod){
+		if (mod->CreateVulkanCommandBuffers) mod->CreateVulkanCommandBuffers();
 	});
 }
 
 void Renderer::DestroyCommandBuffers() {
-	V4D_Renderer::ForEachSortedModule([this](auto* mod){
-		if (mod->DestroyCommandBuffers) mod->DestroyCommandBuffers();
+	V4D_Mod::ForEachSortedModule([this](auto mod){
+		if (mod->DestroyVulkanCommandBuffers) mod->DestroyVulkanCommandBuffers();
 	});
 }
 
@@ -377,21 +364,6 @@ void Renderer::AllocateBuffersStaged(const Queue& queue, std::vector<Buffer*>& b
 	}
 }
 
-// void Renderer::AllocateBufferStaged(Buffer& buffer) {
-// 	AllocateBufferStaged(renderingDevice->GetQueue("..."), buffer);
-// }
-// void Renderer::AllocateBuffersStaged(std::vector<Buffer>& buffers) {
-// 	AllocateBuffersStaged(renderingDevice->GetQueue("..."), buffers);
-// }
-// void Renderer::AllocateBuffersStaged(std::vector<Buffer*>& buffers) {
-// 	AllocateBuffersStaged(renderingDevice->GetQueue("..."), buffers);
-// }
-
-// void Renderer::TransitionImageLayout(Image image, VkImageLayout oldLayout, VkImageLayout newLayout) {
-// 	auto commandBuffer = BeginSingleTimeCommands(renderingDevice->GetQueue("..."));
-// 	TransitionImageLayout(commandBuffer, image, oldLayout, newLayout);
-// 	EndSingleTimeCommands(renderingDevice->GetQueue("..."), commandBuffer);
-// }
 void Renderer::TransitionImageLayout(VkCommandBuffer commandBuffer, Image image, VkImageLayout oldLayout, VkImageLayout newLayout) {
 	VkImageAspectFlags aspectMask = 0;
 	if (image.format == VK_FORMAT_D32_SFLOAT) aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -399,11 +371,6 @@ void Renderer::TransitionImageLayout(VkCommandBuffer commandBuffer, Image image,
 	if (!aspectMask && (image.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 	TransitionImageLayout(commandBuffer, image.image, oldLayout, newLayout, image.mipLevels, image.arrayLayers, aspectMask);
 }
-// void Renderer::TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint32_t layerCount, VkImageAspectFlags aspectMask) {
-// 	auto commandBuffer = BeginSingleTimeCommands(renderingDevice->GetQueue("..."));
-// 	TransitionImageLayout(commandBuffer, image, oldLayout, newLayout, mipLevels, layerCount, aspectMask);
-// 	EndSingleTimeCommands(renderingDevice->GetQueue("..."), commandBuffer);
-// }
 void Renderer::TransitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint32_t layerCount, VkImageAspectFlags aspectMask) {
 	VkImageMemoryBarrier barrier = {};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -552,35 +519,6 @@ void Renderer::TransitionImageLayout(VkCommandBuffer commandBuffer, VkImage imag
 		1, &barrier
 	);
 }
-
-// void Renderer::CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
-// 	auto commandBuffer = BeginSingleTimeCommands(renderingDevice->GetQueue("..."));
-// 	CopyBufferToImage(commandBuffer, buffer, image, width, height);
-// 	EndSingleTimeCommands(renderingDevice->GetQueue("..."), commandBuffer);
-// }
-// void Renderer::CopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
-// 	VkBufferImageCopy region = {};
-// 	region.bufferOffset = 0;
-// 	region.bufferRowLength = 0;
-// 	region.bufferImageHeight = 0;
-	
-// 	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-// 	region.imageSubresource.mipLevel = 0;
-// 	region.imageSubresource.baseArrayLayer = 0;
-// 	region.imageSubresource.layerCount = 1;
-
-// 	region.imageOffset = {0, 0, 0};
-// 	region.imageExtent = {width, height, 1};
-
-// 	renderingDevice->CmdCopyBufferToImage(
-// 		commandBuffer,
-// 		buffer,
-// 		image,
-// 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-// 		1,
-// 		&region
-// 	);
-// }
 
 // void Renderer::GenerateMipmaps(Texture2D* texture) {
 // 	GenerateMipmaps(texture->GetImage(), texture->GetFormat(), texture->GetWidth(), texture->GetHeight(), texture->GetMipLevels());
@@ -811,28 +749,28 @@ Renderer::~Renderer() {}
 
 void Renderer::InitDeviceFeatures() {
 	// Modules
-	V4D_Renderer::ForEachSortedModule([](auto* mod){
-		if (mod->InitDeviceFeatures) mod->InitDeviceFeatures();
+	V4D_Mod::ForEachSortedModule([](auto mod){
+		if (mod->InitVulkanDeviceFeatures) mod->InitVulkanDeviceFeatures();
 	});
 }
 
 void Renderer::ConfigureRenderer() {
 	// Modules
-	V4D_Renderer::ForEachSortedModule([this](auto* mod){
+	V4D_Mod::ForEachSortedModule([this](auto mod){
 		if (mod->ConfigureRenderer) mod->ConfigureRenderer();
 	});
 }
 
 void Renderer::InitLayouts() {
 	// Modules
-	V4D_Renderer::ForEachSortedModule([this](auto* mod){
-		if (mod->InitLayouts) mod->InitLayouts();
+	V4D_Mod::ForEachSortedModule([this](auto mod){
+		if (mod->InitVulkanLayouts) mod->InitVulkanLayouts();
 	});
 }
 
 void Renderer::ConfigureShaders() {
 	// Modules
-	V4D_Renderer::ForEachSortedModule([this](auto* mod){
+	V4D_Mod::ForEachSortedModule([this](auto mod){
 		if (mod->ConfigureShaders) mod->ConfigureShaders();
 	});
 }
@@ -840,7 +778,7 @@ void Renderer::ConfigureShaders() {
 // Scene
 void Renderer::ReadShaders() {
 	// Modules
-	V4D_Renderer::ForEachSortedModule([this](auto* mod){
+	V4D_Mod::ForEachSortedModule([this](auto mod){
 		if (mod->ReadShaders) mod->ReadShaders();
 	});
 }
@@ -848,44 +786,50 @@ void Renderer::ReadShaders() {
 // Resources
 void Renderer::CreateResources() {
 	// Modules
-	V4D_Renderer::ForEachSortedModule([this](auto* mod){
-		if (mod->CreateResources) mod->CreateResources();
+	V4D_Mod::ForEachSortedModule([this](auto mod){
+		if (mod->CreateVulkanResources) mod->CreateVulkanResources();
+	});
+	V4D_Mod::ForEachSortedModule([this](auto mod){
+		if (mod->CreateVulkanResources2) mod->CreateVulkanResources2(renderingDevice);
 	});
 }
 
 void Renderer::DestroyResources() {
 	// Modules
-	V4D_Renderer::ForEachSortedModule([this](auto* mod){
-		if (mod->DestroyResources) mod->DestroyResources();
+	V4D_Mod::ForEachSortedModule([this](auto mod){
+		if (mod->DestroyVulkanResources2) mod->DestroyVulkanResources2(renderingDevice);
+	});
+	V4D_Mod::ForEachSortedModule([this](auto mod){
+		if (mod->DestroyVulkanResources) mod->DestroyVulkanResources();
 	});
 }
 
 void Renderer::AllocateBuffers() {
 	// Modules
-	V4D_Renderer::ForEachSortedModule([this](auto* mod){
-		if (mod->AllocateBuffers) mod->AllocateBuffers();
+	V4D_Mod::ForEachSortedModule([this](auto mod){
+		if (mod->AllocateVulkanBuffers) mod->AllocateVulkanBuffers();
 	});
 }
 
 void Renderer::FreeBuffers() {
 	// Modules
-	V4D_Renderer::ForEachSortedModule([this](auto* mod){
-		if (mod->FreeBuffers) mod->FreeBuffers();
+	V4D_Mod::ForEachSortedModule([this](auto mod){
+		if (mod->FreeVulkanBuffers) mod->FreeVulkanBuffers();
 	});
 }
 
 // Pipelines
 void Renderer::CreatePipelines() {
 	// Modules
-	V4D_Renderer::ForEachSortedModule([this](auto* mod){
-		if (mod->CreatePipelines) mod->CreatePipelines();
+	V4D_Mod::ForEachSortedModule([this](auto mod){
+		if (mod->CreateVulkanPipelines) mod->CreateVulkanPipelines();
 	});
 }
 
 void Renderer::DestroyPipelines() {
 	// Modules
-	V4D_Renderer::ForEachSortedModule([this](auto* mod){
-		if (mod->DestroyPipelines) mod->DestroyPipelines();
+	V4D_Mod::ForEachSortedModule([this](auto mod){
+		if (mod->DestroyVulkanPipelines) mod->DestroyVulkanPipelines();
 	});
 }
 
@@ -898,8 +842,8 @@ void Renderer::Update() {
 		return;
 	}
 	
-	V4D_Renderer::ForEachSortedModule([this](auto* mod){
-		if (mod->Update) mod->Update();
+	V4D_Mod::ForEachSortedModule([this](auto mod){
+		if (mod->RenderUpdate) mod->RenderUpdate();
 	});
 }
 

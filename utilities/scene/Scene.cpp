@@ -62,12 +62,14 @@ namespace v4d::scene {
 	}
 	
 	bool Scene::PhysicsRayCastClosest(Scene::RayCastHit* hit, const glm::dvec3& origin, const glm::dvec3& target, uint32_t mask) const {
-		static V4D_Physics* primaryPhysicsModule = V4D_Physics::GetPrimaryModule();
-		// if (!primaryPhysicsModule) primaryPhysicsModule = V4D_Physics::GetPrimaryModule();
-		if (primaryPhysicsModule && primaryPhysicsModule->RayCastClosest) {
-			return primaryPhysicsModule->RayCastClosest(hit, origin, target, mask);
-		}
-		return false;
+		bool hasHit = false;
+		V4D_Mod::ForEachSortedModule([&](auto mod){
+			if (mod->PhysicsRayCastClosest) {
+				hasHit = mod->PhysicsRayCastClosest(hit, origin, target, mask);
+				if (hasHit) mod = nullptr;
+			}
+		});
+		return hasHit;
 	}
 	
 	Scene::RayCastHit::RayCastHit() {}
@@ -82,12 +84,13 @@ namespace v4d::scene {
 	}
 	
 	int Scene::PhysicsRayCastAll(std::vector<Scene::RayCastHit>* hits, const glm::dvec3& origin, const glm::dvec3& target, uint32_t mask) const {
-		static V4D_Physics* primaryPhysicsModule = V4D_Physics::GetPrimaryModule();
-		// if (!primaryPhysicsModule) primaryPhysicsModule = V4D_Physics::GetPrimaryModule();
-		if (primaryPhysicsModule && primaryPhysicsModule->RayCastAll) {
-			return primaryPhysicsModule->RayCastAll(hits, origin, target, mask);
-		}
-		return 0;
+		int nbHits = 0;
+		V4D_Mod::ForEachSortedModule([&](auto mod){
+			if (mod->PhysicsRayCastAll) {
+				nbHits = mod->PhysicsRayCastAll(hits, origin, target, mask);
+			}
+		});
+		return nbHits;
 	}
 	
 	int Scene::PhysicsRayCastAll(std::vector<Scene::RayCastHit>* hits, double minDistance, double maxDistance, uint32_t mask) const {
