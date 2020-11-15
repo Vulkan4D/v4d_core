@@ -36,8 +36,15 @@ uint ShaderPipeline::CompactVec4ToUint(float r, float g, float b, float a) {
 			| ((uint)std::round(std::clamp(a, 0.0f, 1.0f)*255.0f)		 );	// A
 }
 
-float ShaderPipeline::CompactVec3ToFloat(float r, float g, float b) {
-	return r + g * 256.0f + b * 256.0f * 256.0f;
+float ShaderPipeline::CompactVec3rgb10ToFloat(float x, float y, float z) {
+	union {
+		uint32_t packedUint = 0;
+		float packedFloat;
+	};
+	packedUint |= ((uint32_t)glm::round(x*1023.0f)) << 20;
+	packedUint |= ((uint32_t)glm::round(y*1023.0f)) << 10;
+	packedUint |= ((uint32_t)glm::round(z*1023.0f));
+	return packedFloat;
 }
 
 std::string ShaderPipeline::GetShaderPath(std::string type) const {

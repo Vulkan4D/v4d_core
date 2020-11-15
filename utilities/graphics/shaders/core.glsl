@@ -25,11 +25,13 @@ vec4 UnpackVec4FromUint(uint i) {
 	);
 }
 
-vec3 UnpackVec3FromFloat(float f) {
-	vec3 color;
-	color.b = floor(f / 256.0 / 256.0);
-	color.g = floor((f - color.b * 256.0 * 256.0) / 256.0);
-	color.r = floor(f - color.b * 256.0 * 256.0 - color.g * 256.0);
+vec3 UnpackVec3rgb10FromFloat(float f) {
+	uint packed = floatBitsToUint(f);
+	vec3 color = vec3(
+		float((packed >> 20) & 0x3ff) / 1023.0f,
+		float((packed >> 10) & 0x3ff) / 1023.0f,
+		float((packed) & 0x3ff) / 1023.0f
+	);
 	return color;
 }
 
