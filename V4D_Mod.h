@@ -70,13 +70,11 @@ class V4DLIB V4D_Mod {
 		,ClientSendBursts
 		,ClientReceiveAction
 		,ClientReceiveBurst
-		,ClientEnqueueAction
 		,ServerIncomingClient
 		,ServerSendActions
 		,ServerSendBursts
 		,ServerReceiveAction
 		,ServerReceiveBurst
-		,ServerEnqueueAction
 	)
 	
 // Init
@@ -163,7 +161,6 @@ class V4DLIB V4D_Mod {
 	V4D_MODULE_FUNC_DECLARE(void, ClientSendBursts, v4d::io::SocketPtr stream)
 	V4D_MODULE_FUNC_DECLARE(void, ClientReceiveAction, v4d::io::SocketPtr stream)
 	V4D_MODULE_FUNC_DECLARE(void, ClientReceiveBurst, v4d::io::SocketPtr stream)
-	V4D_MODULE_FUNC_DECLARE(void, ClientEnqueueAction, v4d::data::WriteOnlyStream& stream)
 
 // Server
 	V4D_MODULE_FUNC_DECLARE(void, ServerIncomingClient, v4d::networking::IncomingClientPtr client)
@@ -171,7 +168,6 @@ class V4DLIB V4D_Mod {
 	V4D_MODULE_FUNC_DECLARE(void, ServerSendBursts, v4d::io::SocketPtr stream, v4d::networking::IncomingClientPtr client)
 	V4D_MODULE_FUNC_DECLARE(void, ServerReceiveAction, v4d::io::SocketPtr stream, v4d::networking::IncomingClientPtr client)
 	V4D_MODULE_FUNC_DECLARE(void, ServerReceiveBurst, v4d::io::SocketPtr stream, v4d::networking::IncomingClientPtr client)
-	V4D_MODULE_FUNC_DECLARE(void, ServerEnqueueAction, v4d::data::WriteOnlyStream& stream, v4d::networking::IncomingClientPtr client)
 
 
 };
