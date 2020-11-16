@@ -36,9 +36,18 @@ namespace v4d::scene {
 		obj.GetTransformAndVelocity(transform, velocity);
 	}
 	
-	void NetworkGameObject::SetTransform(const glm::dvec3 position, double angle, const glm::dvec3 axis) {
+	void NetworkGameObject::SetTransform(const glm::dvec3& position, double angle, const glm::dvec3& axis) {
 		std::lock_guard lock(mu);
 		transform = glm::rotate(glm::translate(glm::dmat4(1), position), glm::radians(angle), axis);
+	}
+	
+	void NetworkGameObject::SetTransform(const glm::dmat4& t) {
+		std::lock_guard lock(mu);
+		transform = t;
+	}
+	
+	glm::dmat4 NetworkGameObject::GetTransform() const {
+		return transform;
 	}
 	
 	void NetworkGameObject::SetVelocity(const glm::dvec3& v) {

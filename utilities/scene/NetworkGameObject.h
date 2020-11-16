@@ -85,7 +85,9 @@ namespace v4d::scene {
 		NetworkGameObjectTransform GetNetworkTransform() const;
 		void SetTransformFromNetwork(const NetworkGameObjectTransform&);
 		
-		void SetTransform(const glm::dvec3 position = {0,0,0}, double angle = 0, const glm::dvec3 axis = {0,0,1});
+		void SetTransform(const glm::dvec3& position = {0,0,0}, double angle = 0, const glm::dvec3& axis = {0,0,1});
+		void SetTransform(const glm::dmat4&);
+		glm::dmat4 GetTransform() const;
 		void SetVelocity(const glm::dvec3&);
 		
 		glm::dvec3 GetLookDirection() const;

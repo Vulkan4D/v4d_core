@@ -18,6 +18,18 @@ namespace v4d::scene {
 		indexCount = duplicateFrom->indexCount;
 		vertexOffset = duplicateFrom->vertexOffset;
 		indexOffset = duplicateFrom->indexOffset;
+	
+		blas = duplicateFrom->blas;
+		flags = duplicateFrom->flags;
+		custom3f = duplicateFrom->custom3f;
+		custom4x4f = duplicateFrom->custom4x4f;
+		renderWireframe = duplicateFrom->renderWireframe;
+		wireframeColor = duplicateFrom->wireframeColor;
+		wireframeThickness = duplicateFrom->wireframeThickness;
+		rayTracingMask = duplicateFrom->rayTracingMask;
+		boundingDistance = duplicateFrom->boundingDistance;
+		boundingBoxSize = duplicateFrom->boundingBoxSize;
+		colliderType = duplicateFrom->colliderType;
 	}
 	
 	Geometry::~Geometry() {
