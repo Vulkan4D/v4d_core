@@ -369,18 +369,48 @@
 // CPU Affinity
 
 #ifdef _WINDOWS
-	#define SET_CPU_AFFINITY(n) {\
-		DWORD_PTR processAffinityMask = 1 << ((n) % std::thread::hardware_concurrency());\
+	#define ___CPU_AFFINITY_ADD___(n) processAffinityMask |= (1 << ((n) % std::thread::hardware_concurrency()));
+	#define SET_CPU_AFFINITY(...) {\
+		DWORD_PTR processAffinityMask = 0;\
+		FOR_EACH(___CPU_AFFINITY_ADD___, __VA_ARGS__)\
 		if (!SetThreadAffinityMask(GetCurrentThread(), processAffinityMask)) LOG_ERROR("Error calling SetThreadAffinityMask");\
 	}
+	#define ___CPU_AFFINITY_REMOVE___(n) processAffinityMask &= ~(1 << ((n) % std::thread::hardware_concurrency()));
+	#define UNSET_CPU_AFFINITY(...) {\
+		DWORD_PTR processAffinityMask = 0;\
+		for (int i = 0; i < std::thread::hardware_concurrency(); ++i) ___CPU_AFFINITY_ADD___(i)\
+		FOR_EACH(___CPU_AFFINITY_REMOVE___, __VA_ARGS__)\
+		if (!SetThreadAffinityMask(GetCurrentThread(), processAffinityMask)) LOG_ERROR("Error calling SetThreadAffinityMask");\
+	}
+	#define SET_THREAD_HIGHEST_PRIORITY() {\
+		SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);\
+	}
 #else
-	#define SET_CPU_AFFINITY(n) {\
+	#define ___CPU_AFFINITY_ADD___(n) CPU_SET((n) % std::thread::hardware_concurrency(), &cpuset);
+	#define SET_CPU_AFFINITY(...) {\
 		cpu_set_t cpuset;\
 		CPU_ZERO(&cpuset);\
-		CPU_SET((n) % std::thread::hardware_concurrency(), &cpuset);\
+		FOR_EACH(___CPU_AFFINITY_ADD___, __VA_ARGS__)\
 		int rc = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);\
-		if (rc != 0) LOG_ERROR("Error calling pthread_setaffinity_np: error " << rc)\
-		}
+		if (rc != 0) LOG_ERROR("Error calling pthread_setaffinity_np: error " << std::strerror(rc))\
+	}
+	#define ___CPU_AFFINITY_REMOVE___(n) CPU_CLR((n) % std::thread::hardware_concurrency(), &cpuset);
+	#define UNSET_CPU_AFFINITY(...) {\
+		cpu_set_t cpuset;\
+		for (int i = 0; i < std::thread::hardware_concurrency(); ++i) ___CPU_AFFINITY_ADD___(i)\
+		FOR_EACH(___CPU_AFFINITY_REMOVE___, __VA_ARGS__)\
+		int rc = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);\
+		if (rc != 0) LOG_ERROR("Error calling pthread_setaffinity_np: error " << std::strerror(rc))\
+	}
+	#define SET_THREAD_HIGHEST_PRIORITY() {\
+		pthread_attr_t thAttr;\
+		int policy = 0;\
+		pthread_attr_init(&thAttr);\
+		pthread_attr_getschedpolicy(&thAttr, &policy);\
+		int max_prio_for_policy = sched_get_priority_max(policy);\
+		pthread_setschedprio(pthread_self(), max_prio_for_policy);\
+		pthread_attr_destroy(&thAttr);\
+	}
 #endif
 
 
