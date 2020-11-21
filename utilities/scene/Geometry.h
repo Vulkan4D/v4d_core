@@ -125,6 +125,10 @@ namespace v4d::scene {
 						{3, offsetof(VertexBuffer_T, _uv), VK_FORMAT_R32_UINT},
 					};
 				}
+				
+				bool operator==(const VertexBuffer_T& other) const {
+					return pos == other.pos && normal == other.normal && _color == other._color && customData == other.customData;
+				}
 			};
 			struct ProceduralVertexBuffer_T { // 32 bytes (must be same as VertexBuffer_T)
 				glm::vec3 aabbMin;
@@ -328,18 +332,17 @@ namespace v4d::scene {
 		
 		void SetGeometryTransform(glm::dmat4 modelTransform, const glm::dmat4& viewMatrix);
 		
+		void SetVertex(uint32_t i, const VertexBuffer_T&);
+		void SetProceduralVertex(uint32_t i, const ProceduralVertexBuffer_T&);
 		void SetVertex(uint32_t i, const glm::vec3& pos, const glm::vec3& normal, const glm::vec2& uv, const glm::vec4& color);
-		
 		void SetProceduralVertex(uint32_t i, glm::vec3 aabbMin, glm::vec3 aabbMax, const glm::vec4& color, float custom1 = 0);
 		
 		void SetIndex(uint32_t i, IndexBuffer_T vertexIndex);
-		
 		void SetIndices(const std::vector<IndexBuffer_T>& vertexIndices, uint32_t count = 0, uint32_t startAt = 0);
+		void SetIndices(const IndexBuffer_T* vertexIndices, uint32_t count = 0, uint32_t startAt = 0);
 		
 		//TODO void SetTriangle(uint32_t i, IndexBuffer_T v0, IndexBuffer_T v1, IndexBuffer_T v2) {}
 		//TODO void GetTriangle(uint32_t i, IndexBuffer_T* v0, IndexBuffer_T* v1, IndexBuffer_T* v2) {}
-		
-		void SetIndices(const IndexBuffer_T* vertexIndices, uint32_t count = 0, uint32_t startAt = 0);
 		
 		void GetGeometryInfo(uint32_t* objectIndex = nullptr, uint32_t* material = nullptr);
 		
@@ -379,4 +382,14 @@ namespace v4d::scene {
 
 	};
 
+}
+
+namespace std {
+	template<> struct hash<v4d::scene::Geometry::VertexBuffer_T> {
+		size_t operator()(v4d::scene::Geometry::VertexBuffer_T const &vertex) const {
+			return ((hash<glm::vec3>()(vertex.pos) ^
+					(hash<glm::f32>()(vertex._color) << 1)) >> 1) ^
+					(hash<glm::vec3>()(vertex.normal) << 1);
+		}
+	};
 }

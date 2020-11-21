@@ -110,6 +110,30 @@ namespace v4d::scene {
 		geometryInfo->custom3f = custom3f;
 		geometryInfo->custom4x4f = custom4x4f;
 	}
+
+	void Geometry::SetVertex(uint32_t i, const VertexBuffer_T& v) {
+		if (!vertices) MapStagingBuffers();
+		DEBUG_ASSERT(i < vertexCount)
+		
+		vertices[i] = v;
+		
+		boundingDistance = glm::max(boundingDistance, glm::length(v.pos));
+		boundingBoxSize = glm::max(glm::abs(v.pos), boundingBoxSize);
+		
+		isDirty = true;
+	}
+	
+	void Geometry::SetProceduralVertex(uint32_t i, const ProceduralVertexBuffer_T& v) {
+		if (!vertices) MapStagingBuffers();
+		DEBUG_ASSERT(i < vertexCount)
+		
+		*GetProceduralVertexPtr(i) = v;
+		
+		boundingDistance = glm::max(boundingDistance, glm::max(glm::length(v.aabbMin), glm::length(v.aabbMax)));
+		boundingBoxSize = glm::max(boundingBoxSize, (v.aabbMax - v.aabbMin) / 2.0f);
+		
+		isDirty = true;
+	}
 	
 	void Geometry::SetVertex(uint32_t i, const glm::vec3& pos, const glm::vec3& normal, const glm::vec2& uv, const glm::vec4& color) {
 		if (!vertices) MapStagingBuffers();

@@ -55,6 +55,9 @@
 // Scene-related Objects
 #include "utilities/scene/Scene.h"
 #include "utilities/scene/NetworkGameObject.h"
+#include "utilities/scene/ModelLoader.hpp"
+#include "utilities/scene/ObjModelLoader.h"
+#include "utilities/scene/GltfModelLoader.h"
 
 // ImGui
 #ifdef _ENABLE_IMGUI
