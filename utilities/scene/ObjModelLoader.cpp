@@ -69,7 +69,7 @@
 				obj->AddGeometry(geom);
 			} else {
 				geom = obj->AddGeometry("basic", modelData->preloadedVertices.size(), modelData->preloadedIndices.size());
-				for (int i = 0; i < modelData->preloadedVertices.size(); ++i) {
+				for (size_t i = 0; i < modelData->preloadedVertices.size(); ++i) {
 					geom->SetVertex(i, modelData->preloadedVertices[i]);
 				}
 				geom->SetIndices(modelData->preloadedIndices.data());
