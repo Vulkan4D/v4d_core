@@ -56,7 +56,7 @@ using namespace v4d::graphics::vulkan;
 						#ifndef _WINDOWS
 							#ifdef VULKAN_VALIDATION_ABORT_ON_ERROR
 							// 	raise(SIGKILL);
-								std::abort();
+								// std::abort();
 							#endif
 						#endif
 					break;

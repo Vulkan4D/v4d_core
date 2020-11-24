@@ -17,7 +17,9 @@ namespace v4d::graphics::vulkan {
 		VkPhysicalDeviceFeatures deviceFeatures {};
 		VkPhysicalDeviceFeatures2 deviceFeatures2 {};
 		VkPhysicalDeviceVulkan12Features vulkan12DeviceFeatures {};
-		VkPhysicalDeviceRayTracingFeaturesKHR rayTracingDeviceFeatures {};
+		VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineDeviceFeatures {};
+		VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureDeviceFeatures {};
+		VkPhysicalDeviceRayQueryFeaturesKHR rayQueryDeviceFeatures {};
 		
 		std::vector<VkQueueFamilyProperties>* queueFamilies = nullptr;
 		std::vector<VkExtensionProperties>* supportedExtensions = nullptr;
@@ -37,7 +39,9 @@ namespace v4d::graphics::vulkan {
 		VkPhysicalDeviceFeatures GetFeatures() const;
 		VkPhysicalDeviceFeatures2 GetFeatures2() const;
 		VkPhysicalDeviceVulkan12Features GetVulkan12Features() const;
-		VkPhysicalDeviceRayTracingFeaturesKHR GetRayTracingFeatures() const;
+		VkPhysicalDeviceRayTracingPipelineFeaturesKHR GetRayTracingPipelineFeatures() const;
+		VkPhysicalDeviceAccelerationStructureFeaturesKHR GetAccelerationStructureFeatures() const;
+		VkPhysicalDeviceRayQueryFeaturesKHR GetRayQueryFeatures() const;
 		VkPhysicalDevice GetHandle() const;
 		xvk::Interface::InstanceInterface* GetVulkanInstance() const;
 		std::string GetDescription() const;

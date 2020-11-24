@@ -19,13 +19,41 @@ PhysicalDevice::PhysicalDevice(xvk::Interface::InstanceInterface* vulkanInstance
 	if (Loader::VULKAN_API_VERSION >= VK_API_VERSION_1_2) {
 		vulkan12DeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
 		deviceFeatures2.pNext = &vulkan12DeviceFeatures;
-		// Ray Tracing features
-		if (SupportsExtension(VK_KHR_RAY_TRACING_EXTENSION_NAME)) {
-			rayTracingDeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
-			vulkan12DeviceFeatures.pNext = &rayTracingDeviceFeatures;
+		// Acceleration structure supported?
+		if (SupportsExtension(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
+			accelerationStructureDeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+			vulkan12DeviceFeatures.pNext = &accelerationStructureDeviceFeatures;
+			// Ray tracing pipeline supported?
+			if (SupportsExtension(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)) {
+				rayTracingPipelineDeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+				accelerationStructureDeviceFeatures.pNext = &rayTracingPipelineDeviceFeatures;
+				// Ray query supported?
+				if (SupportsExtension(VK_KHR_RAY_QUERY_EXTENSION_NAME)) {
+					rayQueryDeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+					rayTracingPipelineDeviceFeatures.pNext = &rayQueryDeviceFeatures;
+				} else {
+					rayQueryDeviceFeatures = {};
+				}
+			}
+			else // Ray tracing pipeline NOT supported but Ray query supported?
+			if (SupportsExtension(VK_KHR_RAY_QUERY_EXTENSION_NAME)) {
+				rayTracingPipelineDeviceFeatures = {};
+				rayQueryDeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+				accelerationStructureDeviceFeatures.pNext = &rayQueryDeviceFeatures;
+			} else {
+				rayTracingPipelineDeviceFeatures = {};
+				rayQueryDeviceFeatures = {};
+			}
+		} else {
+			rayTracingPipelineDeviceFeatures = {};
+			accelerationStructureDeviceFeatures = {};
+			rayQueryDeviceFeatures = {};
 		}
 	} else {
-		rayTracingDeviceFeatures = {};
+		vulkan12DeviceFeatures = {};
+		rayTracingPipelineDeviceFeatures = {};
+		accelerationStructureDeviceFeatures = {};
+		rayQueryDeviceFeatures = {};
 	}
 	// Get supported Features
 	vulkanInstance->GetPhysicalDeviceFeatures(handle, &deviceFeatures);
@@ -109,8 +137,14 @@ VkPhysicalDeviceFeatures2 PhysicalDevice::GetFeatures2() const {
 VkPhysicalDeviceVulkan12Features PhysicalDevice::GetVulkan12Features() const {
 	return vulkan12DeviceFeatures;
 }
-VkPhysicalDeviceRayTracingFeaturesKHR PhysicalDevice::GetRayTracingFeatures() const {
-	return rayTracingDeviceFeatures;
+VkPhysicalDeviceRayTracingPipelineFeaturesKHR PhysicalDevice::GetRayTracingPipelineFeatures() const {
+	return rayTracingPipelineDeviceFeatures;
+}
+VkPhysicalDeviceAccelerationStructureFeaturesKHR PhysicalDevice::GetAccelerationStructureFeatures() const {
+	return accelerationStructureDeviceFeatures;
+}
+VkPhysicalDeviceRayQueryFeaturesKHR PhysicalDevice::GetRayQueryFeatures() const {
+	return rayQueryDeviceFeatures;
 }
 
 VkPhysicalDevice PhysicalDevice::GetHandle() const {

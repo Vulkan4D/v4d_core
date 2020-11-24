@@ -8,9 +8,17 @@ VkPhysicalDeviceVulkan12Features* Renderer::EnableVulkan12DeviceFeatures() {
 	vulkan12DeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
 	return &vulkan12DeviceFeatures;
 }
-VkPhysicalDeviceRayTracingFeaturesKHR* Renderer::EnableRayTracingFeatures() {
-	rayTracingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
-	return &rayTracingFeatures;
+VkPhysicalDeviceRayTracingPipelineFeaturesKHR* Renderer::EnableRayTracingPipelineFeatures() {
+	rayTracingPipelineFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+	return &rayTracingPipelineFeatures;
+}
+VkPhysicalDeviceAccelerationStructureFeaturesKHR* Renderer::EnableAccelerationStructureFeatures() {
+	accelerationStructureFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+	return &accelerationStructureFeatures;
+}
+VkPhysicalDeviceRayQueryFeaturesKHR* Renderer::EnableRayQueryFeatures() {
+	rayQueryFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+	return &rayQueryFeatures;
 }
 
 void Renderer::RequiredDeviceExtension(const char* ext) {
@@ -82,25 +90,59 @@ void Renderer::CreateDevices() {
 	FilterSupportedDeviceFeatures(&deviceFeatures, renderingPhysicalDevice->GetFeatures());
 	void* pNext = nullptr;
 	
+	// Vulkan 1.2 supported and enabled?
 	if (Loader::VULKAN_API_VERSION >= VK_API_VERSION_1_2) {
-		if (
-			rayTracingFeatures.sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR
-			&& renderingPhysicalDevice->SupportsExtension(VK_KHR_RAY_TRACING_EXTENSION_NAME)
-			&& IsDeviceExtensionEnabled(VK_KHR_RAY_TRACING_EXTENSION_NAME)
+		if (// Acceleration structure supported and enabled?
+			accelerationStructureFeatures.sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR
+			&& renderingPhysicalDevice->SupportsExtension(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)
+			&& IsDeviceExtensionEnabled(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)
 		) {
-			FilterSupportedDeviceFeatures(&rayTracingFeatures, renderingPhysicalDevice->GetRayTracingFeatures(), sizeof(VkStructureType)+sizeof(void*));
-			EnableVulkan12DeviceFeatures()->pNext = &rayTracingFeatures; //TODO improve feature chains structure for more flexibility
+			FilterSupportedDeviceFeatures(&accelerationStructureFeatures, renderingPhysicalDevice->GetAccelerationStructureFeatures(), sizeof(VkStructureType)+sizeof(void*));
+			EnableVulkan12DeviceFeatures()->pNext = &accelerationStructureFeatures; //TODO improve feature chains structure for more flexibility
+			if (// Ray tracing pipeline supported and enabled?
+				rayTracingPipelineFeatures.sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR
+				&& renderingPhysicalDevice->SupportsExtension(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)
+				&& IsDeviceExtensionEnabled(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)
+			) {
+				FilterSupportedDeviceFeatures(&rayTracingPipelineFeatures, renderingPhysicalDevice->GetRayTracingPipelineFeatures(), sizeof(VkStructureType)+sizeof(void*));
+				EnableAccelerationStructureFeatures()->pNext = &rayTracingPipelineFeatures;
+				if (// Ray query supported and enabled?
+					rayQueryFeatures.sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR
+					&& renderingPhysicalDevice->SupportsExtension(VK_KHR_RAY_QUERY_EXTENSION_NAME)
+					&& IsDeviceExtensionEnabled(VK_KHR_RAY_QUERY_EXTENSION_NAME)
+				) {
+					FilterSupportedDeviceFeatures(&rayQueryFeatures, renderingPhysicalDevice->GetRayQueryFeatures(), sizeof(VkStructureType)+sizeof(void*));
+					EnableRayTracingPipelineFeatures()->pNext = &rayQueryFeatures;
+				} else {
+					rayQueryFeatures = {};
+				}
+			} else if (// Ray tracing pipeline NOT supported/enabled but Ray query is?
+				rayQueryFeatures.sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR
+				&& renderingPhysicalDevice->SupportsExtension(VK_KHR_RAY_QUERY_EXTENSION_NAME)
+				&& IsDeviceExtensionEnabled(VK_KHR_RAY_QUERY_EXTENSION_NAME)
+			) {
+				rayTracingPipelineFeatures = {};
+				FilterSupportedDeviceFeatures(&rayQueryFeatures, renderingPhysicalDevice->GetRayQueryFeatures(), sizeof(VkStructureType)+sizeof(void*));
+				EnableAccelerationStructureFeatures()->pNext = &rayQueryFeatures;
+			} else {
+				rayTracingPipelineFeatures = {};
+				rayQueryFeatures = {};
+			}
 		} else {
-			rayTracingFeatures = {};
+			accelerationStructureFeatures = {};
+			rayTracingPipelineFeatures = {};
+			rayQueryFeatures = {};
 		}
-		// Vulkan 1.2 features
+		// Enable Vulkan 1.2 features
 		if (vulkan12DeviceFeatures.sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES) {
 			FilterSupportedDeviceFeatures(&vulkan12DeviceFeatures, renderingPhysicalDevice->GetVulkan12Features(), sizeof(VkStructureType)+sizeof(void*));
 			pNext = &vulkan12DeviceFeatures;
 		}
 	} else {
-		rayTracingFeatures = {};
 		vulkan12DeviceFeatures = {};
+		accelerationStructureFeatures = {};
+		rayTracingPipelineFeatures = {};
+		rayQueryFeatures = {};
 	}
 	
 	// Create Logical Device

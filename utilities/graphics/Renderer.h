@@ -128,10 +128,14 @@ namespace v4d::graphics {
 		// These objects will be modified to keep only the supported & enabled values
 		VkPhysicalDeviceFeatures deviceFeatures {};
 		VkPhysicalDeviceVulkan12Features vulkan12DeviceFeatures {};
-		VkPhysicalDeviceRayTracingFeaturesKHR rayTracingFeatures {};
+		VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures {};
+		VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures {};
+		VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures {};
 		
 		VkPhysicalDeviceVulkan12Features* EnableVulkan12DeviceFeatures();
-		VkPhysicalDeviceRayTracingFeaturesKHR* EnableRayTracingFeatures();
+		VkPhysicalDeviceRayTracingPipelineFeaturesKHR* EnableRayTracingPipelineFeatures();
+		VkPhysicalDeviceAccelerationStructureFeaturesKHR* EnableAccelerationStructureFeatures();
+		VkPhysicalDeviceRayQueryFeaturesKHR* EnableRayQueryFeatures();
 		
 		void RequiredDeviceExtension(const char* ext);
 		void OptionalDeviceExtension(const char* ext);

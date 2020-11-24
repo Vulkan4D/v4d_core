@@ -4,33 +4,15 @@ namespace v4d::graphics::vulkan::rtx {
 	
 	bool AccelerationStructure::useGlobalScratchBuffer = false;
 
-	VkDeviceSize AccelerationStructure::GetMemoryRequirementSizeForScratchBuffer(Device* device) const {
-		VkMemoryRequirements2 memoryRequirementsBuild {};
-			memoryRequirementsBuild.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
-		VkAccelerationStructureMemoryRequirementsInfoKHR memoryRequirementsInfo {};
-			memoryRequirementsInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_KHR;
-			memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR;
-			memoryRequirementsInfo.buildType = VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR;
-			memoryRequirementsInfo.accelerationStructure = accelerationStructure;
-		device->GetAccelerationStructureMemoryRequirementsKHR(&memoryRequirementsInfo, &memoryRequirementsBuild);
-		VkDeviceSize size;
-		if (allowUpdate) {
-			VkMemoryRequirements2 memoryRequirementsUpdate {};
-			memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_UPDATE_SCRATCH_KHR;
-			device->GetAccelerationStructureMemoryRequirementsKHR(&memoryRequirementsInfo, &memoryRequirementsUpdate);
-			size = std::max(memoryRequirementsBuild.memoryRequirements.size, memoryRequirementsUpdate.memoryRequirements.size);
-		} else {
-			size = memoryRequirementsBuild.memoryRequirements.size;
-		}
-		return size;
-	}
-	
 	void AccelerationStructure::AssignBottomLevel(Device* device, std::shared_ptr<v4d::scene::Geometry> geom) {
 		isTopLevel = false;
 		this->device = device;
 		
 		if (!geometry) geometry = new VkAccelerationStructureGeometryKHR {};
-		buildGeometryInfo.ppGeometries = &geometry;
+		buildGeometryInfo.pGeometries = geometry;
+		buildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+		buildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+		buildGeometryInfo.geometryCount = 1;
 		
 		geometry->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
 		geometry->flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
@@ -51,6 +33,7 @@ namespace v4d::graphics::vulkan::rtx {
 			geometry->geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
 			geometry->geometry.triangles.indexType = sizeof(v4d::scene::Geometry::IndexBuffer_T)==2? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
 			geometry->geometry.triangles.vertexData = vertexBufferAddr;
+			geometry->geometry.triangles.maxVertex = geom->vertexCount;
 			#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
 				geometry->geometry.triangles.indexData = device->GetBufferDeviceOrHostAddressConst(v4d::scene::Geometry::globalBuffers.indexBuffer.deviceLocalBuffer.buffer);
 			#else
@@ -60,64 +43,50 @@ namespace v4d::graphics::vulkan::rtx {
 				geometry->geometry.triangles.transformData = device->GetBufferDeviceOrHostAddressConst(geom->transformBuffer->buffer);
 			}
 		}
-		createGeometryTypeInfo = {
-			VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_GEOMETRY_TYPE_INFO_KHR,
-			nullptr,
-			geometry->geometryType,
-			geom->isProcedural? geom->vertexCount : (geom->indexCount/3),// maxPrimitiveCount
-			geom->isProcedural? VK_INDEX_TYPE_NONE_KHR : geometry->geometry.triangles.indexType, // indexType
-			geom->isProcedural? 0 : geom->vertexCount, // maxVertexCount
-			geom->isProcedural? VK_FORMAT_UNDEFINED : geometry->geometry.triangles.vertexFormat, // vertexFormat
-			(VkBool32)(geom->transformBuffer? VK_TRUE : VK_FALSE)
-		};
-		buildOffsetInfo = {
+		
+		buildRangeInfo = {
 			geom->isProcedural? geom->vertexCount : (geom->indexCount/3), // primitiveCount
 			(uint32_t)(geom->isProcedural? (geom->vertexOffset*sizeof(v4d::scene::Geometry::ProceduralVertexBuffer_T)) : (geom->indexOffset*sizeof(v4d::scene::Geometry::IndexBuffer_T))), // primitiveOffset
 			geom->isProcedural? 0 : geom->vertexOffset, // firstVertex
 			(uint32_t)geom->transformOffset // transformOffset
 		};
+		
+		maxPrimitiveCount = buildRangeInfo.primitiveCount;
 	}
 	
 	void AccelerationStructure::AssignTopLevel() {
 		isTopLevel = true;
 		
 		if (!geometry) geometry = new VkAccelerationStructureGeometryKHR {};
-		buildGeometryInfo.ppGeometries = &geometry;
+		buildGeometryInfo.pGeometries = geometry;
+		buildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+		buildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+		buildGeometryInfo.geometryCount = 1;
 		
 		geometry->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
 		geometry->geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
 		geometry->geometry.instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
 		geometry->geometry.instances.arrayOfPointers = VK_FALSE;
 		
-		createGeometryTypeInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_GEOMETRY_TYPE_INFO_KHR;
-		createGeometryTypeInfo.pNext = nullptr;
-		createGeometryTypeInfo.maxPrimitiveCount = RAY_TRACING_TLAS_MAX_INSTANCES;
-		createGeometryTypeInfo.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
-		
-		// unused
-			createGeometryTypeInfo.maxVertexCount = 0;
-			createGeometryTypeInfo.indexType = VK_INDEX_TYPE_NONE_KHR;
-			createGeometryTypeInfo.vertexFormat = VK_FORMAT_UNDEFINED;
-			createGeometryTypeInfo.allowsTransforms = VK_TRUE;
-			buildOffsetInfo.firstVertex = 0;
-			buildOffsetInfo.transformOffset = 0;
+		maxPrimitiveCount = RAY_TRACING_TLAS_MAX_INSTANCES;
 	}
+	
 	void AccelerationStructure::SetInstanceBuffer(Device* device, void* instanceArray, uint32_t instanceCount, uint32_t instanceOffset) {
 		this->device = device;
 		VkDeviceOrHostAddressConstKHR addr {};
 		addr.hostAddress = instanceArray;
 		geometry->geometry.instances.data = addr;
-		buildOffsetInfo.primitiveCount = instanceCount;
-		buildOffsetInfo.primitiveOffset = instanceOffset;
+		buildRangeInfo.primitiveCount = instanceCount;
+		buildRangeInfo.primitiveOffset = instanceOffset;
 	}
 	void AccelerationStructure::SetInstanceBuffer(Device* device, VkBuffer instanceBuffer, uint32_t instanceCount, uint32_t instanceOffset) {
 		this->device = device;
 		geometry->geometry.instances.data = device->GetBufferDeviceOrHostAddressConst(instanceBuffer);
-		buildOffsetInfo.primitiveCount = instanceCount;
-		buildOffsetInfo.primitiveOffset = instanceOffset;
+		buildRangeInfo.primitiveCount = instanceCount;
+		buildRangeInfo.primitiveOffset = instanceOffset;
 	}
 	void AccelerationStructure::SetInstanceCount(uint32_t count) {
-		buildOffsetInfo.primitiveCount = count;
+		buildRangeInfo.primitiveCount = count;
 	}
 	
 	void AccelerationStructure::SetGlobalScratchBuffer(Device* device, VkBuffer buffer) {
@@ -128,115 +97,109 @@ namespace v4d::graphics::vulkan::rtx {
 	AccelerationStructure::~AccelerationStructure() {
 		if (geometry) delete geometry;
 		if (device) {
-			Destroy(device);
-			Free(device);
+			FreeAndDestroy(device);
 		}
 	}
 	
-	void AccelerationStructure::Create(Device* device, bool topLevel) {
+	void AccelerationStructure::CreateAndAllocate(Device* device, bool topLevel) {
 		isTopLevel = topLevel;
 		this->device = device;
 		
-		uint32_t flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-		if (allowUpdate) flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+		{// Prep Build info
+			buildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+			if (allowUpdate) buildGeometryInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+			buildGeometryInfo.mode = (allowUpdate && built && update)? VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR : VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+		}
 		
-		createInfo = {
-			VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR,
-			nullptr,// pNext
-			0,// VkDeviceSize compactedSize
-			isTopLevel? VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR : VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR,
-			flags,
-			1, // maxGeometryCount
-			&createGeometryTypeInfo, // pGeometryInfos
-			0 // VkDeviceAddress deviceAddress
-		};
+		{// Get build sizes
+			accelerationStructureBuildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
+			device->GetAccelerationStructureBuildSizesKHR(
+				VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
+				&buildGeometryInfo,
+				&maxPrimitiveCount,
+				&accelerationStructureBuildSizesInfo);
+			accelerationStructureSize = accelerationStructureBuildSizesInfo.accelerationStructureSize;
+		}
 		
-		if (device->CreateAccelerationStructureKHR(&createInfo, nullptr, &accelerationStructure) != VK_SUCCESS)
-			throw std::runtime_error("Failed to create top level acceleration structure");
+		{// Create and Allocate Buffer
+			VkBufferCreateInfo bufferCreateInfo{};{
+				bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+				bufferCreateInfo.size = accelerationStructureSize;
+				bufferCreateInfo.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+				device->CreateBuffer(&bufferCreateInfo, nullptr, &accelerationStructureBuffer);
+			}
+			VkMemoryRequirements memoryRequirements{};{
+				device->GetBufferMemoryRequirements(accelerationStructureBuffer, &memoryRequirements);
+			}
+			VkMemoryAllocateFlagsInfo memoryAllocateFlagsInfo{};
+			VkMemoryAllocateInfo memoryAllocateInfo{};{
+				memoryAllocateFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
+				memoryAllocateFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
+				memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+				memoryAllocateInfo.pNext = &memoryAllocateFlagsInfo;
+				memoryAllocateInfo.allocationSize = memoryRequirements.size;
+				memoryAllocateInfo.memoryTypeIndex = device->GetPhysicalDevice()->FindMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+				device->AllocateMemory(&memoryAllocateInfo, nullptr, &accelerationStructureMemory);
+			}
+			device->BindBufferMemory(accelerationStructureBuffer, accelerationStructureMemory, 0);
+		}
 		
-		// Build info
-		buildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-		buildGeometryInfo.type = isTopLevel? VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR : VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-		buildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-		if (allowUpdate) buildGeometryInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
-		buildGeometryInfo.update = (allowUpdate && built && update)? VK_TRUE : VK_FALSE;
-		buildGeometryInfo.srcAccelerationStructure = accelerationStructure;
-		buildGeometryInfo.dstAccelerationStructure = accelerationStructure;
-		buildGeometryInfo.geometryCount = 1;
-		buildGeometryInfo.geometryArrayOfPointers = VK_FALSE;
+		{// Create acceleration structure
+			createInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+			createInfo.buffer = accelerationStructureBuffer;
+			createInfo.size = accelerationStructureSize;
+			createInfo.offset = accelerationStructureOffset;
+			createInfo.type = isTopLevel? VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR : VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+			if (device->CreateAccelerationStructureKHR(&createInfo, nullptr, &accelerationStructure) != VK_SUCCESS)
+				throw std::runtime_error("Failed to create top level acceleration structure");
+		}
+		
+		// Get acceleration structure handle/deviceAddress for use in instances
+		VkAccelerationStructureDeviceAddressInfoKHR devAddrInfo {};{
+			devAddrInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
+			devAddrInfo.accelerationStructure = accelerationStructure;
+			deviceAddress = device->GetAccelerationStructureDeviceAddressKHR(&devAddrInfo);
+		}
+		
+		// LOG_VERBOSE("Allocated Acceleration Structure " << accelerationStructure << "; deviceAddress " << std::hex << deviceAddress)
+		
+		// Scratch buffer
+		if (!useGlobalScratchBuffer && !scratchBufferAllocated) {
+			scratchBuffer.size = accelerationStructureBuildSizesInfo.buildScratchSize;
+			scratchBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, false);
+			scratchBufferAllocated = true;
+			buildGeometryInfo.scratchData = device->GetBufferDeviceOrHostAddress(scratchBuffer.buffer);
+		}
+		
+		{// Prep Build info
+			buildGeometryInfo.srcAccelerationStructure = accelerationStructure;
+			buildGeometryInfo.dstAccelerationStructure = accelerationStructure;
+		}
 		
 		// LOG_VERBOSE("Created Acceleration Structure " << accelerationStructure)
 	}
 	
-	void AccelerationStructure::Destroy(Device* device) {
+	void AccelerationStructure::FreeAndDestroy(Device* device) {
+		if (accelerationStructureMemory) {
+			device->FreeMemory(accelerationStructureMemory, nullptr);
+			// LOG_VERBOSE("Freed Acceleration Structure " << std::hex << handle)
+			accelerationStructureMemory = VK_NULL_HANDLE;
+		}
+		if (accelerationStructureBuffer) {
+			device->DestroyBuffer(accelerationStructureBuffer, nullptr);
+			accelerationStructureBuffer = VK_NULL_HANDLE;
+		}
+		if (!useGlobalScratchBuffer && scratchBufferAllocated) {
+			scratchBuffer.Free(device);
+			scratchBufferAllocated = false;
+		}
 		if (accelerationStructure) {
 			// LOG_VERBOSE("Destroyed Acceleration Structure " << accelerationStructure << "; handle " << std::hex << handle)
 			device->DestroyAccelerationStructureKHR(accelerationStructure, nullptr);
 			// LOG_VERBOSE("Destroyed Acceleration Structure " << accelerationStructure)
 			accelerationStructure = VK_NULL_HANDLE;
 		}
+		deviceAddress = 0;
 		built = false;
-	}
-	
-	void AccelerationStructure::Allocate(Device* device) {
-		// Allocate and bind memory for acceleration structure
-		VkMemoryRequirements2 memoryRequirementsAS {};
-		{
-			memoryRequirementsAS.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
-			VkAccelerationStructureMemoryRequirementsInfoKHR memoryRequirementsInfo {};
-				memoryRequirementsInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_KHR;
-				memoryRequirementsInfo.type = VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_KHR;
-				memoryRequirementsInfo.buildType = VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR;
-				memoryRequirementsInfo.accelerationStructure = accelerationStructure;
-			device->GetAccelerationStructureMemoryRequirementsKHR(&memoryRequirementsInfo, &memoryRequirementsAS);
-		}
-		VkMemoryAllocateInfo memoryAllocateInfo {
-			VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-			nullptr,// pNext
-			memoryRequirementsAS.memoryRequirements.size,// VkDeviceSize allocationSize
-			device->GetPhysicalDevice()->FindMemoryType(memoryRequirementsAS.memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)// memoryTypeIndex
-		};
-		if (device->AllocateMemory(&memoryAllocateInfo, nullptr, &memory) != VK_SUCCESS)
-			throw std::runtime_error("Failed to allocate memory for acceleration structure");
-		VkBindAccelerationStructureMemoryInfoKHR accelerationStructureMemoryInfo {
-			VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_KHR,
-			nullptr,// pNext
-			accelerationStructure,// accelerationStructure
-			memory,// memory
-			0,// VkDeviceSize memoryOffset
-			0,// uint32_t deviceIndexCount
-			nullptr// pDeviceIndices
-		};
-		if (device->BindAccelerationStructureMemoryKHR(1, &accelerationStructureMemoryInfo) != VK_SUCCESS)
-			throw std::runtime_error("Failed to bind acceleration structure memory");
-			
-		// Get acceleration structure handle for use in instances
-		VkAccelerationStructureDeviceAddressInfoKHR devAddrInfo {};
-			devAddrInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
-			devAddrInfo.accelerationStructure = accelerationStructure;
-		handle = device->GetAccelerationStructureDeviceAddressKHR(&devAddrInfo);
-		
-		// LOG_VERBOSE("Allocated Acceleration Structure " << accelerationStructure << "; handle " << std::hex << handle)
-		
-		// Scratch buffer
-		if (!useGlobalScratchBuffer && !scratchBufferAllocated) {
-			scratchBuffer.size = GetMemoryRequirementSizeForScratchBuffer(device);
-			scratchBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, false);
-			scratchBufferAllocated = true;
-			buildGeometryInfo.scratchData = device->GetBufferDeviceOrHostAddress(scratchBuffer.buffer);
-		}
-	}
-	
-	void AccelerationStructure::Free(Device* device) {
-		if (memory) {
-			device->FreeMemory(memory, nullptr);
-			// LOG_VERBOSE("Freed Acceleration Structure " << std::hex << handle)
-			memory = VK_NULL_HANDLE;
-		}
-		if (!useGlobalScratchBuffer && scratchBufferAllocated) {
-			scratchBuffer.Free(device);
-			scratchBufferAllocated = false;
-		}
-		handle = 0;
 	}
 }

@@ -29,10 +29,10 @@ namespace v4d::graphics::vulkan::rtx {
 		VkDeviceSize rayMissShaderRegionSize = 0;
 		VkDeviceSize rayHitShaderRegionOffset = 0;
 		VkDeviceSize rayHitShaderRegionSize = 0;
-		VkStridedBufferRegionKHR rayGenBufferRegion {};
-		VkStridedBufferRegionKHR rayMissBufferRegion {};
-		VkStridedBufferRegionKHR rayHitBufferRegion {};
-		VkStridedBufferRegionKHR rayCallableBufferRegion {};
+		VkStridedDeviceAddressRegionKHR rayGenDeviceAddressRegion {};
+		VkStridedDeviceAddressRegionKHR rayMissDeviceAddressRegion {};
+		VkStridedDeviceAddressRegionKHR rayHitDeviceAddressRegion {};
+		VkStridedDeviceAddressRegionKHR rayCallableDeviceAddressRegion {};
 		
 		PipelineLayout* pipelineLayout = nullptr;
 		VkPipeline pipeline = VK_NULL_HANDLE;
@@ -47,10 +47,10 @@ namespace v4d::graphics::vulkan::rtx {
 		// uint32_t GetHitGroupOffset() const;
 		// uint32_t GetMissGroupOffset() const;
 		
-		VkStridedBufferRegionKHR* GetRayGenBufferRegion();
-		VkStridedBufferRegionKHR* GetRayMissBufferRegion();
-		VkStridedBufferRegionKHR* GetRayHitBufferRegion();
-		VkStridedBufferRegionKHR* GetRayCallableBufferRegion();
+		VkStridedDeviceAddressRegionKHR* GetRayGenDeviceAddressRegion();
+		VkStridedDeviceAddressRegionKHR* GetRayMissDeviceAddressRegion();
+		VkStridedDeviceAddressRegionKHR* GetRayHitDeviceAddressRegion();
+		VkStridedDeviceAddressRegionKHR* GetRayCallableDeviceAddressRegion();
 
 		// Rules: 
 			// If type is VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR then generalShader must be a valid index into pStages referring to a shader of VK_SHADER_STAGE_RAYGEN_BIT_KHR, VK_SHADER_STAGE_MISS_BIT_KHR, or VK_SHADER_STAGE_CALLABLE_BIT_KHR
@@ -75,7 +75,7 @@ namespace v4d::graphics::vulkan::rtx {
 		VkPipeline CreateRayTracingPipeline(Device*);
 		void DestroyRayTracingPipeline(Device*);
 		
-		VkDeviceSize GetSbtBufferSize(const VkPhysicalDeviceRayTracingPropertiesKHR&);
-		void WriteShaderBindingTableToBuffer(Device*, Buffer*, VkDeviceSize offset, const VkPhysicalDeviceRayTracingPropertiesKHR&);
+		VkDeviceSize GetSbtBufferSize(const VkPhysicalDeviceRayTracingPipelinePropertiesKHR&);
+		void WriteShaderBindingTableToBuffer(Device*, Buffer*, VkDeviceSize offset, const VkPhysicalDeviceRayTracingPipelinePropertiesKHR&);
 	};
 }

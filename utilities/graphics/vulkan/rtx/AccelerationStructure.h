@@ -14,11 +14,11 @@ namespace v4d::graphics::vulkan::rtx {
 	
 	struct V4DLIB RayTracingBLASInstance { // VkAccelerationStructureInstanceKHR
 		glm::mat3x4 transform;
-		uint32_t customInstanceId : 24;
+		uint32_t instanceCustomIndex : 24;
 		uint32_t mask : 8;
-		uint32_t shaderInstanceOffset : 24;
+		uint32_t instanceShaderBindingTableRecordOffset : 24;
 		VkGeometryInstanceFlagsKHR flags : 8;
-		uint64_t accelerationStructureHandle;
+		VkDeviceAddress accelerationStructureReference;
 	};
 
 	struct V4DLIB AccelerationStructure {
@@ -28,31 +28,33 @@ namespace v4d::graphics::vulkan::rtx {
 		
 		// Handles
 		VkAccelerationStructureKHR accelerationStructure = VK_NULL_HANDLE;
-		VkDeviceMemory memory = VK_NULL_HANDLE;
-		uint64_t handle = 0;
+		VkDeviceMemory accelerationStructureMemory = VK_NULL_HANDLE;
+		VkBuffer accelerationStructureBuffer = VK_NULL_HANDLE; //TODO use a global buffer
+		VkDeviceSize accelerationStructureSize = 0;
+		VkDeviceSize accelerationStructureOffset = 0;
+		VkDeviceAddress deviceAddress = 0;
 		
 		// Structs
 		VkAccelerationStructureCreateInfoKHR createInfo {};
 		VkAccelerationStructureGeometryKHR* geometry = nullptr;
-		VkAccelerationStructureBuildOffsetInfoKHR buildOffsetInfo {};
-		VkAccelerationStructureCreateGeometryTypeInfoKHR createGeometryTypeInfo {};
+		VkAccelerationStructureBuildRangeInfoKHR buildRangeInfo {};
 		VkAccelerationStructureBuildGeometryInfoKHR buildGeometryInfo {};
+		VkAccelerationStructureBuildSizesInfoKHR accelerationStructureBuildSizesInfo {};
 		
 		// State
 		bool built = false;
 		bool update = false;
+		uint32_t maxPrimitiveCount = 0;
 		
 		Device* device = nullptr;
 		
 		// Individual Scratch Buffer
-		Buffer scratchBuffer {VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT};
+		Buffer scratchBuffer {VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT};
 		bool scratchBufferAllocated = false;
 		
 		// Global scratch buffer
 		static bool useGlobalScratchBuffer;
 		uint64_t globalScratchBufferOffset = 0;
-		
-		VkDeviceSize GetMemoryRequirementSizeForScratchBuffer(Device* device) const;
 		
 		void AssignBottomLevel(Device* device, std::shared_ptr<v4d::scene::Geometry> geom);
 		
@@ -64,10 +66,7 @@ namespace v4d::graphics::vulkan::rtx {
 		
 		~AccelerationStructure();
 		
-		void Create(Device* device, bool topLevel = false);
-		void Destroy(Device* device);
-		
-		void Allocate(Device* device);
-		void Free(Device* device);
+		void CreateAndAllocate(Device* device, bool topLevel = false);
+		void FreeAndDestroy(Device* device);
 	};
 }
