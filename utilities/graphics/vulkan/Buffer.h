@@ -26,11 +26,11 @@ namespace v4d::graphics::vulkan {
 		
 		// Additional fields
 		VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+		MemoryUsage memoryUsage = MEMORY_USAGE_GPU_ONLY;
 		
 		// Allocated handles
 		VkBuffer buffer = VK_NULL_HANDLE;
-		VkDeviceMemory memory = VK_NULL_HANDLE;
+		MemoryAllocation allocation = VK_NULL_HANDLE;
 		
 		// Mapped data (this is mapped to when calling MapMemory)
 		void* data = nullptr;
@@ -54,12 +54,12 @@ namespace v4d::graphics::vulkan {
 		
 		void ResetSrcData();
 		
-		void Allocate(Device* device, VkMemoryPropertyFlags properties, bool copySrcData = true, const std::vector<uint32_t>& queueFamilies = {});
+		void Allocate(Device* device, MemoryUsage memoryUsage, bool copySrcData = true, const std::vector<uint32_t>& queueFamilies = {}, bool weakAllocation = false);
 		void Free(Device* device);
 
 		void AllocateFromStaging(Device* device, VkCommandBuffer commandBuffer, Buffer& stagingBuffer, VkDeviceSize size = 0, VkDeviceSize offset = 0);
 
-		void MapMemory(Device* device, VkDeviceSize offset = 0, VkDeviceSize size = 0, VkMemoryMapFlags flags = 0);
+		void MapMemory(Device* device, VkDeviceSize offset = 0, VkDeviceSize size = 0);
 		void UnmapMemory(Device* device);
 		
 		void CopySrcData(Device* device, size_t maxCopySize = 0);
@@ -94,7 +94,7 @@ namespace v4d::graphics::vulkan {
 			AddSrcDataPtr(array->data(), S * sizeof(T));
 		}
 		
-		void Allocate(Device* device, VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, const std::vector<uint32_t>& queueFamilies = {});
+		void Allocate(Device* device, MemoryUsage memoryUsage = MEMORY_USAGE_GPU_ONLY, const std::vector<uint32_t>& queueFamilies = {}, bool weakAllocation = true);
 		void Free(Device* device);
 		
 		void Update(Device* device, VkCommandBuffer commandBuffer, size_t maxCopySize = 0);
@@ -139,7 +139,7 @@ namespace v4d::graphics::vulkan {
 		void AllocateStagingBuffer(Device* device) {
 			if (!stagingBufferAllocated) {
 				stagingBufferAllocated = true;
-				stagingBuffer.Allocate(device, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, false);
+				stagingBuffer.Allocate(device, MEMORY_USAGE_CPU_ONLY, false);
 				stagingBuffer.MapMemory(device);
 			}
 		}

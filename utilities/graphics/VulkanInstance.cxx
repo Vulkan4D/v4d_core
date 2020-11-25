@@ -11,7 +11,7 @@ namespace v4d::tests {
 		}
 		
 		try {
-			v4d::graphics::vulkan::Instance instance(&vulkanLoader, "Test", VK_MAKE_VERSION(1, 0, 0), false);
+			v4d::graphics::vulkan::Instance instance(&vulkanLoader, "Test", VK_MAKE_VERSION(1, 0, 0));
 		} catch(...) {
 			LOG_ERROR("Failed to create vulkan instance")
 			return -2;

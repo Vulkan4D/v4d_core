@@ -23,7 +23,7 @@ namespace v4d::graphics::vulkan {
 		#ifdef XVK_USE_QT_VULKAN_LOADER
 			Instance(vulkan::Loader* loader);
 		#else
-			Instance(vulkan::Loader* loader, const char* applicationName, uint applicationVersion, bool logging = false);
+			Instance(vulkan::Loader* loader, const char* applicationName, uint applicationVersion);
 		#endif
 
 		virtual ~Instance();

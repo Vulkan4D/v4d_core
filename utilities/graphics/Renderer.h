@@ -79,6 +79,7 @@ namespace v4d::graphics {
 		// Swap Chains
 		SwapChain* swapChain = nullptr;
 		size_t currentFrameInFlight = 0;
+		size_t nextFrameInFlight = 0;
 		const int NB_FRAMES_IN_FLIGHT = 2;
 		
 		// Descriptor sets
@@ -105,7 +106,12 @@ namespace v4d::graphics {
 		};
 
 	public: // Device Extensions and features
-		std::vector<const char*> requiredDeviceExtensions { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+		std::vector<const char*> requiredDeviceExtensions {
+			VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+			#ifdef V4D_VULKAN_USE_VMA
+				VK_KHR_BIND_MEMORY_2_EXTENSION_NAME,
+			#endif
+		};
 		std::vector<const char*> optionalDeviceExtensions {};
 		std::vector<const char*> deviceExtensions {};
 		std::unordered_map<std::string, bool> enabledDeviceExtensions {};

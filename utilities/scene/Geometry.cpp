@@ -544,18 +544,18 @@ namespace v4d::scene {
 
 	void Geometry::GlobalGeometryBuffers::Allocate(Device* device, const std::vector<uint32_t>& queueFamilies) {
 		std::scoped_lock lock(objectBufferMutex, lightBufferMutex, geometryBufferMutex, vertexBufferMutex, indexBufferMutex);
-		objectBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, queueFamilies);
-		geometryBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, queueFamilies);
+		objectBuffer.Allocate(device, MEMORY_USAGE_GPU_ONLY, queueFamilies);
+		geometryBuffer.Allocate(device, MEMORY_USAGE_GPU_ONLY, queueFamilies);
 		#ifdef V4D_RENDERER_RAYTRACING_USE_DEVICE_LOCAL_VERTEX_INDEX_BUFFERS
-			indexBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, queueFamilies);
-			vertexBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, queueFamilies);
+			indexBuffer.Allocate(device, MEMORY_USAGE_GPU_ONLY, queueFamilies);
+			vertexBuffer.Allocate(device, MEMORY_USAGE_GPU_ONLY, queueFamilies);
 		#else
 			indexBuffer.Allocate(device, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, false, queueFamilies);
 			indexBuffer.MapMemory(device);
 			vertexBuffer.Allocate(device, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, false, queueFamilies);
 			vertexBuffer.MapMemory(device);
 		#endif
-		lightBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, queueFamilies);
+		lightBuffer.Allocate(device, MEMORY_USAGE_GPU_ONLY, queueFamilies);
 	}
 	
 	void Geometry::GlobalGeometryBuffers::Free(Device* device) {

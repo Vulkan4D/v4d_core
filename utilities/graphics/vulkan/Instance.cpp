@@ -56,7 +56,7 @@ using namespace v4d::graphics::vulkan;
 						#ifndef _WINDOWS
 							#ifdef VULKAN_VALIDATION_ABORT_ON_ERROR
 							// 	raise(SIGKILL);
-								// std::abort();
+								std::abort();
 							#endif
 						#endif
 					break;
@@ -65,13 +65,12 @@ using namespace v4d::graphics::vulkan;
 		}
 	#endif
 
-	Instance::Instance(vulkan::Loader* loader, const char* applicationName, uint applicationVersion, bool logging) : vulkanLoader(loader) {
+	Instance::Instance(vulkan::Loader* loader, const char* applicationName, uint applicationVersion) : vulkanLoader(loader) {
 		this->loader = loader;
-		if (logging) LOG("Creating Vulkan instance...");
 		
 		// Check extensions and layers
-		loader->CheckLayers(logging);
-		loader->CheckExtensions(logging);
+		loader->CheckLayers();
+		loader->CheckExtensions();
 		loader->CheckVulkanVersion();
 
 		// Prepare appInfo for the Vulkan Instance
@@ -123,8 +122,8 @@ using namespace v4d::graphics::vulkan;
 
 		// Load Physical Devices
 		LoadAvailablePhysicalDevices();
-
-		if (logging) LOG("Vulkan instance created");
+		
+		LOG_VERBOSE("Vulkan instance created");
 	}
 #endif
 

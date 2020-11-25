@@ -158,9 +158,16 @@ void Renderer::CreateDevices() {
 	if (!renderingDevice->GetQueue("present").handle) {
 		throw std::runtime_error("Failed to get Presentation Queue for surface. At least one queue must be defined with a VkSurfaceKHR or you must manually specify a 'present' queue");
 	}
+	
+	V4D_Mod::ForEachSortedModule([this](auto mod){
+		if (mod->InitRenderingDevice) mod->InitRenderingDevice(renderingDevice);
+	});
+	renderingDevice->CreateAllocator();
 }
 
 void Renderer::DestroyDevices() {
+	renderingDevice->DeviceWaitIdle();
+	renderingDevice->DestroyAllocator();
 	delete renderingDevice;
 }
 
@@ -364,9 +371,9 @@ void Renderer::AllocateBufferStaged(const Queue& queue, Buffer& buffer) {
 	auto cmdBuffer = BeginSingleTimeCommands(queue);
 	Buffer stagingBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 	stagingBuffer.srcDataPointers = std::ref(buffer.srcDataPointers);
-	stagingBuffer.Allocate(renderingDevice, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, true);
+	stagingBuffer.Allocate(renderingDevice, MEMORY_USAGE_CPU_ONLY, true);
 	buffer.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-	buffer.Allocate(renderingDevice, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, false);
+	buffer.Allocate(renderingDevice, MEMORY_USAGE_GPU_ONLY, false);
 	Buffer::Copy(renderingDevice, cmdBuffer, stagingBuffer.buffer, buffer.buffer, buffer.size);
 	EndSingleTimeCommands(queue, cmdBuffer);
 	stagingBuffer.Free(renderingDevice);
@@ -378,9 +385,9 @@ void Renderer::AllocateBuffersStaged(const Queue& queue, std::vector<Buffer>& bu
 	for (auto& buffer : buffers) {
 		auto& stagingBuffer = stagingBuffers.emplace_back(VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 		stagingBuffer.srcDataPointers = std::ref(buffer.srcDataPointers);
-		stagingBuffer.Allocate(renderingDevice, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, true);
+		stagingBuffer.Allocate(renderingDevice, MEMORY_USAGE_CPU_ONLY, true);
 		buffer.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-		buffer.Allocate(renderingDevice, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, false);
+		buffer.Allocate(renderingDevice, MEMORY_USAGE_GPU_ONLY, false);
 		Buffer::Copy(renderingDevice, cmdBuffer, stagingBuffer.buffer, buffer.buffer, buffer.size);
 	}
 	EndSingleTimeCommands(queue, cmdBuffer);
@@ -395,9 +402,9 @@ void Renderer::AllocateBuffersStaged(const Queue& queue, std::vector<Buffer*>& b
 	for (auto& buffer : buffers) {
 		auto& stagingBuffer = stagingBuffers.emplace_back(VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
 		stagingBuffer.srcDataPointers = std::ref(buffer->srcDataPointers);
-		stagingBuffer.Allocate(renderingDevice, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, true);
+		stagingBuffer.Allocate(renderingDevice, MEMORY_USAGE_CPU_ONLY, true);
 		buffer->usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-		buffer->Allocate(renderingDevice, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, false);
+		buffer->Allocate(renderingDevice, MEMORY_USAGE_GPU_ONLY, false);
 		Buffer::Copy(renderingDevice, cmdBuffer, stagingBuffer.buffer, buffer->buffer, buffer->size);
 	}
 	EndSingleTimeCommands(queue, cmdBuffer);
@@ -720,6 +727,7 @@ void Renderer::ReloadRenderer() {
 	
 	DestroySwapChain();
 	DestroySyncObjects();
+	renderingDevice->DestroyAllocator();
 	DestroyDevices();
 	
 	v4d::graphics::renderer::event::Reload(this);
@@ -781,7 +789,7 @@ void Renderer::UnloadGraphicsFromDevice() {
 #pragma region Constructor & Destructor
 
 Renderer::Renderer(Loader* loader, const char* applicationName, uint applicationVersion)
-: Instance(loader, applicationName, applicationVersion, true) {}
+: Instance(loader, applicationName, applicationVersion) {}
 
 Renderer::~Renderer() {}
 
@@ -884,9 +892,15 @@ void Renderer::Update() {
 		return;
 	}
 	
+	renderingDevice->AllocatorSetCurrentFrameIndex(currentFrameInFlight);
+	
+	nextFrameInFlight = (currentFrameInFlight + 1) % NB_FRAMES_IN_FLIGHT;
+	
 	V4D_Mod::ForEachSortedModule([this](auto mod){
 		if (mod->RenderUpdate) mod->RenderUpdate();
 	});
+	
+	currentFrameInFlight = nextFrameInFlight;
 }
 
 #pragma endregion

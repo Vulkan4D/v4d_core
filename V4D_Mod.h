@@ -35,6 +35,7 @@ class V4DLIB V4D_Mod {
 		,InitVulkanDeviceFeatures
 		,ConfigureRenderer
 		,InitVulkanLayouts
+		,InitRenderingDevice
 		,ConfigureShaders
 		,ReadShaders
 		,CreateVulkanSyncObjects
@@ -119,6 +120,7 @@ class V4DLIB V4D_Mod {
 	V4D_MODULE_FUNC_DECLARE(void, InitVulkanDeviceFeatures)
 	V4D_MODULE_FUNC_DECLARE(void, ConfigureRenderer)
 	V4D_MODULE_FUNC_DECLARE(void, InitVulkanLayouts)
+	V4D_MODULE_FUNC_DECLARE(void, InitRenderingDevice, v4d::graphics::vulkan::Device*)
 	V4D_MODULE_FUNC_DECLARE(void, ConfigureShaders)
 	V4D_MODULE_FUNC_DECLARE(void, ReadShaders)
 	V4D_MODULE_FUNC_DECLARE(void, CreateVulkanSyncObjects)

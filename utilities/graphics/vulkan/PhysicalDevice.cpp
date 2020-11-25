@@ -13,6 +13,10 @@ PhysicalDevice::PhysicalDevice(xvk::Interface::InstanceInterface* vulkanInstance
 	supportedExtensions = new std::vector<VkExtensionProperties>(supportedExtensionsCount);
 	vulkanInstance->EnumerateDeviceExtensionProperties(handle, nullptr, &supportedExtensionsCount, supportedExtensions->data());
 	
+	std::for_each(supportedExtensions->begin(), supportedExtensions->end(), [](const auto& extension){
+		LOG_VERBOSE("Supported Device Extension: " << extension.extensionName);
+	});
+	
 	// Features
 	deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
 	// Vulkan 1.2 features

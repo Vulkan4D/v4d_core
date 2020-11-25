@@ -46,22 +46,7 @@ void Image::Create(Device* device, uint32_t width, uint32_t height, const std::v
 	imageInfo.format = format;
 	viewInfo.format = format;
 	
-	if (device->CreateImage(&imageInfo, nullptr, &image) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to create image");
-	}
-
-	VkMemoryRequirements memRequirements;
-	device->GetImageMemoryRequirements(image, &memRequirements);
-
-	VkMemoryAllocateInfo allocInfo = {};
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex = device->GetPhysicalDevice()->FindMemoryType(memRequirements.memoryTypeBits, memoryPropertyFlags);
-	if (device->AllocateMemory(&allocInfo, nullptr, &memory) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to allocate image memory");
-	}
-
-	device->BindImageMemory(image, memory, 0);
+	device->CreateAndAllocateImage(imageInfo, memoryUsage, image, &allocation);
 	
 	viewInfo.image = image;
 	if (device->CreateImageView(&viewInfo, nullptr, &view) != VK_SUCCESS)
@@ -83,12 +68,7 @@ void Image::Destroy(Device* device) {
 		view = VK_NULL_HANDLE;
 	}
 	if (image != VK_NULL_HANDLE) {
-		device->DestroyImage(image, nullptr);
-		image = VK_NULL_HANDLE;
-	}
-	if (memory != VK_NULL_HANDLE) {
-		device->FreeMemory(memory, nullptr);
-		memory = VK_NULL_HANDLE;
+		device->FreeAndDestroyImage(image, allocation);
 	}
 }
 

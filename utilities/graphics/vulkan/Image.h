@@ -27,7 +27,7 @@ namespace v4d::graphics::vulkan {
 		VkImage image = VK_NULL_HANDLE;
 		VkImageView view = VK_NULL_HANDLE;
 		VkSampler sampler = VK_NULL_HANDLE;
-		VkDeviceMemory memory = VK_NULL_HANDLE;
+		MemoryAllocation allocation = VK_NULL_HANDLE;
 		
 		Image(
 			VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
@@ -96,7 +96,8 @@ namespace v4d::graphics::vulkan {
 			VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK,// VkBorderColor borderColor
 			VK_FALSE// VkBool32 unnormalizedCoordinates
 		};
-		VkMemoryPropertyFlags memoryPropertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+		
+		MemoryUsage memoryUsage = MEMORY_USAGE_GPU_ONLY;
 		
 		void SetAccessQueues(const std::vector<uint32_t>& queues);
 		

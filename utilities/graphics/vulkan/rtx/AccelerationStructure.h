@@ -28,7 +28,7 @@ namespace v4d::graphics::vulkan::rtx {
 		
 		// Handles
 		VkAccelerationStructureKHR accelerationStructure = VK_NULL_HANDLE;
-		VkDeviceMemory accelerationStructureMemory = VK_NULL_HANDLE;
+		MemoryAllocation accelerationStructureAllocation = VK_NULL_HANDLE;
 		VkBuffer accelerationStructureBuffer = VK_NULL_HANDLE; //TODO use a global buffer
 		VkDeviceSize accelerationStructureSize = 0;
 		VkDeviceSize accelerationStructureOffset = 0;

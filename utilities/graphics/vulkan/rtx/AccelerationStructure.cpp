@@ -126,22 +126,8 @@ namespace v4d::graphics::vulkan::rtx {
 				bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 				bufferCreateInfo.size = accelerationStructureSize;
 				bufferCreateInfo.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-				device->CreateBuffer(&bufferCreateInfo, nullptr, &accelerationStructureBuffer);
 			}
-			VkMemoryRequirements memoryRequirements{};{
-				device->GetBufferMemoryRequirements(accelerationStructureBuffer, &memoryRequirements);
-			}
-			VkMemoryAllocateFlagsInfo memoryAllocateFlagsInfo{};
-			VkMemoryAllocateInfo memoryAllocateInfo{};{
-				memoryAllocateFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
-				memoryAllocateFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-				memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-				memoryAllocateInfo.pNext = &memoryAllocateFlagsInfo;
-				memoryAllocateInfo.allocationSize = memoryRequirements.size;
-				memoryAllocateInfo.memoryTypeIndex = device->GetPhysicalDevice()->FindMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-				device->AllocateMemory(&memoryAllocateInfo, nullptr, &accelerationStructureMemory);
-			}
-			device->BindBufferMemory(accelerationStructureBuffer, accelerationStructureMemory, 0);
+			device->CreateAndAllocateBuffer(bufferCreateInfo, MEMORY_USAGE_GPU_ONLY, accelerationStructureBuffer, &accelerationStructureAllocation, true);
 		}
 		
 		{// Create acceleration structure
@@ -166,7 +152,7 @@ namespace v4d::graphics::vulkan::rtx {
 		// Scratch buffer
 		if (!useGlobalScratchBuffer && !scratchBufferAllocated) {
 			scratchBuffer.size = accelerationStructureBuildSizesInfo.buildScratchSize;
-			scratchBuffer.Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, false);
+			scratchBuffer.Allocate(device, MEMORY_USAGE_GPU_ONLY, false);
 			scratchBufferAllocated = true;
 			buildGeometryInfo.scratchData = device->GetBufferDeviceOrHostAddress(scratchBuffer.buffer);
 		}
@@ -177,17 +163,15 @@ namespace v4d::graphics::vulkan::rtx {
 		}
 		
 		// LOG_VERBOSE("Created Acceleration Structure " << accelerationStructure)
+		
+		if (!device->TouchAllocation(accelerationStructureAllocation)) {
+			LOG_DEBUG("Acceleration Structure CreateAndAllocate ALLOCATION LOST")
+		}
 	}
 	
 	void AccelerationStructure::FreeAndDestroy(Device* device) {
-		if (accelerationStructureMemory) {
-			device->FreeMemory(accelerationStructureMemory, nullptr);
-			// LOG_VERBOSE("Freed Acceleration Structure " << std::hex << handle)
-			accelerationStructureMemory = VK_NULL_HANDLE;
-		}
-		if (accelerationStructureBuffer) {
-			device->DestroyBuffer(accelerationStructureBuffer, nullptr);
-			accelerationStructureBuffer = VK_NULL_HANDLE;
+		if (accelerationStructureAllocation) {
+			device->FreeAndDestroyBuffer(accelerationStructureBuffer, accelerationStructureAllocation);
 		}
 		if (!useGlobalScratchBuffer && scratchBufferAllocated) {
 			scratchBuffer.Free(device);

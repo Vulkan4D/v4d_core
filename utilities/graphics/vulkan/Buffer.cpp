@@ -5,7 +5,7 @@ using namespace v4d::graphics::vulkan;
 Buffer::Buffer(VkBufferUsageFlags usage, VkDeviceSize size, bool alignedUniformSize) : usage(usage), size(size), alignedUniformSize(alignedUniformSize) {}
 
 void Buffer::ExtendSize(VkDeviceSize additionalSize) {
-	if (memory != VK_NULL_HANDLE) {
+	if (allocation) {
 		throw std::runtime_error("Cannot extend buffer size because it has already been allocated");
 	}
 	size += additionalSize;
@@ -25,12 +25,12 @@ void Buffer::AllocateFromStaging(Device* device, VkCommandBuffer commandBuffer, 
 	if (size == 0 && offset == 0) size = stagingBuffer.size;
 	this->size = size;
 	usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-	Allocate(device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, false);
+	Allocate(device, MEMORY_USAGE_GPU_ONLY, false);
 	Copy(device, commandBuffer, stagingBuffer.buffer, buffer, size, offset);
 }
 
-void Buffer::Allocate(Device* device, VkMemoryPropertyFlags properties, bool copySrcData, const std::vector<uint32_t>& queueFamilies) {
-	this->properties = properties;
+void Buffer::Allocate(Device* device, MemoryUsage memoryUsage, bool copySrcData, const std::vector<uint32_t>& queueFamilies, bool weakAllocation) {
+	this->memoryUsage = memoryUsage;
 	if (queueFamilies.size() > 0) {
 		sharingMode = VK_SHARING_MODE_CONCURRENT;
 	}
@@ -39,53 +39,21 @@ void Buffer::Allocate(Device* device, VkMemoryPropertyFlags properties, bool cop
 			size += dataPointer.size;
 		}
 	}
-	VkBufferCreateInfo bufferInfo {};
-	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = alignedUniformSize? device->GetAlignedUniformSize(size) : size;
-	bufferInfo.usage = usage;
-	bufferInfo.sharingMode = sharingMode;
-	bufferInfo.queueFamilyIndexCount = queueFamilies.size();
-	bufferInfo.pQueueFamilyIndices = queueFamilies.data();
 	
-	if (device->CreateBuffer(&bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to create buffer");
-	}
-
-	VkMemoryRequirements memRequirements;
-	device->GetBufferMemoryRequirements(buffer, &memRequirements);
-	
-	VkDeviceSize allocSize = memRequirements.size;
-	if ((allocSize % memRequirements.alignment) > 0) {
-		allocSize += memRequirements.alignment - (allocSize % memRequirements.alignment);
+	VkBufferCreateInfo bufferInfo {};{
+		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		bufferInfo.size = alignedUniformSize? device->GetAlignedUniformSize(size) : size;
+		bufferInfo.usage = usage;
+		bufferInfo.sharingMode = sharingMode;
+		bufferInfo.queueFamilyIndexCount = queueFamilies.size();
+		bufferInfo.pQueueFamilyIndices = queueFamilies.data();
 	}
 	
-	VkMemoryAllocateFlagsInfo memoryAllocateFlagsInfo {};
-		memoryAllocateFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
-		if (Loader::VULKAN_API_VERSION >= VK_API_VERSION_1_2 && usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
-			memoryAllocateFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-		}
-
-	VkMemoryAllocateInfo allocInfo = {};
-		allocInfo.pNext = memoryAllocateFlagsInfo.flags > 0 ? &memoryAllocateFlagsInfo : nullptr;
-		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		allocInfo.allocationSize = allocSize;
-		allocInfo.memoryTypeIndex = device->GetPhysicalDevice()->FindMemoryType(memRequirements.memoryTypeBits, properties);
-
-	//TODO
-	// It should be noted that in a real world application, we're not supposed to actually call vkAllocateMemory for every individual buffer-> 
-	// The maximum number of simultaneous memory allocations is limited by the maxMemoryAllocationCount physical device limit, which may be as low as 4096 even with high end hardware like a GTX 1080.
-	// The right way to allocate memory for a large number of objects at the same time is to create a custom allocator that splits up a single allocation among many different objects by using the offset parameters that we've seen in many functions.
-	// We can either implement such an allocator ourselves, or use the VulkanMemoryAllocator library provided by the PhysicalDeviceOpen initiative.
-	
-	if (device->AllocateMemory(&allocInfo, nullptr, &memory) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to allocate buffer memory");
-	}
+	device->CreateAndAllocateBuffer(bufferInfo, memoryUsage, buffer, &allocation, weakAllocation);
 	
 	if (copySrcData && srcDataPointers.size() > 0) {
 		CopySrcData(device);
 	}
-
-	device->BindBufferMemory(buffer, memory, 0);
 }
 
 void Buffer::CopySrcData(Device* device, size_t maxCopySize) {
@@ -101,23 +69,15 @@ void Buffer::CopySrcData(Device* device, size_t maxCopySize) {
 		offset += copySize;
 		if (maxCopySize <= 0) break;
 	}
-	if ((properties & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) == 0) {
-		VkMappedMemoryRange mappedRange {};
-		mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-		mappedRange.memory = memory;
-		mappedRange.offset = 0;
-		mappedRange.size = std::min(size, maxCopySize);
-		device->FlushMappedMemoryRanges(1, &mappedRange);
+	if (memoryUsage != MEMORY_USAGE_CPU_ONLY) {
+		device->FlushMemoryAllocation(allocation, 0, std::min(size, maxCopySize));
 	}
 	if (autoMapMemory) UnmapMemory(device);
 }
 
 void Buffer::Free(Device* device) {
 	if (buffer != VK_NULL_HANDLE) {
-		device->DestroyBuffer(buffer, nullptr);
-		if (memory != VK_NULL_HANDLE) device->FreeMemory(memory, nullptr);
-		buffer = VK_NULL_HANDLE;
-		memory = VK_NULL_HANDLE;
+		device->FreeAndDestroyBuffer(buffer, allocation);
 		data = nullptr;
 	}
 	if (srcDataPointers.size() > 0) {
@@ -125,12 +85,12 @@ void Buffer::Free(Device* device) {
 	}
 }
 
-void Buffer::MapMemory(Device* device, VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags) {
-	device->MapMemory(memory, offset, size == 0 ? this->size : size, flags, &data);
+void Buffer::MapMemory(Device* device, VkDeviceSize offset, VkDeviceSize size) {
+	device->MapMemoryAllocation(allocation, &data, offset, size == 0 ? this->size : size);
 }
 
 void Buffer::UnmapMemory(Device* device) {
-	if (data) device->UnmapMemory(memory);
+	if (data) device->UnmapMemoryAllocation(allocation);
 	data = nullptr;
 }
 
@@ -181,10 +141,10 @@ void StagedBuffer::ResetSrcData() {
 	deviceLocalBuffer.ResetSrcData();
 }
 
-void StagedBuffer::Allocate(Device* device, VkMemoryPropertyFlags properties, const std::vector<uint32_t>& queueFamilies) {
-	stagingBuffer.Allocate(device, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, false, queueFamilies);
+void StagedBuffer::Allocate(Device* device, MemoryUsage memoryUsage, const std::vector<uint32_t>& queueFamilies, bool weakAllocation) {
+	stagingBuffer.Allocate(device, MEMORY_USAGE_CPU_ONLY, false, queueFamilies, false);
 	stagingBuffer.MapMemory(device);
-	deviceLocalBuffer.Allocate(device, properties, false, queueFamilies);
+	deviceLocalBuffer.Allocate(device, memoryUsage, false, queueFamilies, weakAllocation);
 }
 
 void StagedBuffer::Free(Device* device) {
@@ -195,5 +155,9 @@ void StagedBuffer::Free(Device* device) {
 
 void StagedBuffer::Update(Device* device, VkCommandBuffer commandBuffer, size_t maxCopySize) {
 	stagingBuffer.CopySrcData(device, maxCopySize);
+	if (!device->TouchAllocation(deviceLocalBuffer.allocation)) {
+		LOG_DEBUG("Staging Buffer Update() ALLOCATION LOST")
+		return;
+	}
 	Buffer::Copy(device, commandBuffer, stagingBuffer, deviceLocalBuffer, maxCopySize);
 }

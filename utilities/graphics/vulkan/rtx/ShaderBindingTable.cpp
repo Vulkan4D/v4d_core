@@ -217,7 +217,7 @@ void ShaderBindingTable::WriteShaderBindingTableToBuffer(Device* device, Buffer*
 	};
 	
 	uint8_t* data;
-	device->MapMemory(buffer->memory, offset, sbtSize, 0, (void**)&data);
+	device->MapMemoryAllocation(buffer->allocation, (void**)&data, offset, sbtSize);
 	const size_t shaderHandlerStorageSize = groups.size()*rayTracingPipelineProperties.shaderGroupHandleSize;
 	auto shaderHandleStorage = new uint8_t[shaderHandlerStorageSize];
 	if (device->GetRayTracingShaderGroupHandlesKHR(pipeline, 0, (uint)groups.size(), shaderHandlerStorageSize, shaderHandleStorage) != VK_SUCCESS)
@@ -239,6 +239,6 @@ void ShaderBindingTable::WriteShaderBindingTableToBuffer(Device* device, Buffer*
 	
 	//TODO add callables
 	
-	device->UnmapMemory(buffer->memory);
+	device->UnmapMemoryAllocation(buffer->allocation);
 	delete[] shaderHandleStorage;
 }
