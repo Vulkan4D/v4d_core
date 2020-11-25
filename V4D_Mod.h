@@ -52,6 +52,8 @@ class V4DLIB V4D_Mod {
 		,SecondaryRenderUpdate
 		,RenderUpdate2
 		,SecondaryRenderUpdate2
+		,RecordStaticGraphicsCommands
+		,RecordStaticGraphicsCommands2
 		,DrawOverlayLine
 		,DrawOverlayText
 		,DrawOverlayCircle
@@ -139,6 +141,8 @@ class V4DLIB V4D_Mod {
 	V4D_MODULE_FUNC_DECLARE(void, SecondaryRenderUpdate) // Main Renderer module must call V4D_Game::BeginSecondaryFrameUpdate and V4D_Game::SecondaryFrameCompute and V4D_Renderer::SecondaryRenderUpdate2
 	V4D_MODULE_FUNC_DECLARE(void, RenderUpdate2, VkCommandBuffer)
 	V4D_MODULE_FUNC_DECLARE(void, SecondaryRenderUpdate2, VkCommandBuffer)
+	V4D_MODULE_FUNC_DECLARE(void, RecordStaticGraphicsCommands, VkCommandBuffer, int imageIndex)
+	V4D_MODULE_FUNC_DECLARE(void, RecordStaticGraphicsCommands2, VkCommandBuffer, int imageIndex)
 	// Typically only implemented in primary module
 	V4D_MODULE_FUNC_DECLARE(void, DrawOverlayLine, float x1, float y1, float x2, float y2, glm::vec4 color, float lineWidth)
 	V4D_MODULE_FUNC_DECLARE(void, DrawOverlayText, const char* text, float x, float y, glm::vec4 color, float size)

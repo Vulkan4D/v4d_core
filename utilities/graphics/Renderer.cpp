@@ -727,7 +727,6 @@ void Renderer::ReloadRenderer() {
 	
 	DestroySwapChain();
 	DestroySyncObjects();
-	renderingDevice->DestroyAllocator();
 	DestroyDevices();
 	
 	v4d::graphics::renderer::event::Reload(this);
