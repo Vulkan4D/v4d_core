@@ -330,6 +330,7 @@ void Device::CreateAllocator() {
 }
 void Device::DestroyAllocator() {
 	#ifdef V4D_VULKAN_USE_VMA
+		std::lock_guard lock(allocatorDeleteMutex);
 		vmaDestroyAllocator(allocator);
 		allocator = VK_NULL_HANDLE;
 	#endif
@@ -436,6 +437,7 @@ VkResult Device::CreateAndAllocateImage(const VkImageCreateInfo& imageCreateInfo
 }
 void Device::FreeAndDestroyBuffer(VkBuffer& buffer, MemoryAllocation& allocation) {
 	#ifdef V4D_VULKAN_USE_VMA
+		std::lock_guard lock(allocatorDeleteMutex);
 		if (allocator) {
 			vmaDestroyBuffer(allocator, buffer, allocation);
 		} else {
@@ -450,6 +452,7 @@ void Device::FreeAndDestroyBuffer(VkBuffer& buffer, MemoryAllocation& allocation
 }
 void Device::FreeAndDestroyImage(VkImage& image, MemoryAllocation& allocation) {
 	#ifdef V4D_VULKAN_USE_VMA
+		std::lock_guard lock(allocatorDeleteMutex);
 		if (allocator) {
 			vmaDestroyImage(allocator, image, allocation);
 		} else {
@@ -475,7 +478,10 @@ VkResult Device::MapMemoryAllocation(MemoryAllocation& allocation, void** data, 
 }
 void Device::UnmapMemoryAllocation(MemoryAllocation& allocation) {
 	#ifdef V4D_VULKAN_USE_VMA
-		vmaUnmapMemory(allocator, allocation);
+		std::lock_guard lock(allocatorDeleteMutex);
+		if (allocator) {
+			vmaUnmapMemory(allocator, allocation);
+		}
 	#else
 		UnmapMemory(allocation);
 	#endif
@@ -500,6 +506,7 @@ void Device::AllocatorSetCurrentFrameIndex(uint32_t frameIndex) {
 }
 bool Device::TouchAllocation(MemoryAllocation& allocation) {
 	#ifdef V4D_VULKAN_USE_VMA
+		std::lock_guard lock(allocatorDeleteMutex);
 		if (!allocator || !allocation) return false;
 		return vmaTouchAllocation(allocator, allocation) == VK_TRUE;
 	#endif

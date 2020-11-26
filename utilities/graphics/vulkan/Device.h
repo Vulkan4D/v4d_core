@@ -100,6 +100,7 @@ namespace v4d::graphics::vulkan {
 		
 		#ifdef V4D_VULKAN_USE_VMA
 			VmaAllocator allocator;
+			std::mutex allocatorDeleteMutex;
 		#endif
 
 	public:
