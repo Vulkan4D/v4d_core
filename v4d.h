@@ -22,6 +22,9 @@
 #ifdef _V4D_PROJECT
 	#include "../../config.hh"
 #endif
+#ifdef _V4D_MODULE
+	#include "../../config.hh"
+#endif
 
 // Common includes (Mostly STL)
 #include "common/includes.hh"
