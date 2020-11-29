@@ -257,3 +257,11 @@ namespace v4d::modular {
 #define V4D_MODULE_ASSET_PATH(moduleName, assetRelativePath) (\
 	"modules/" moduleName "/assets/" assetRelativePath \
 )
+
+#define V4D_MODULE_DATA_PATH(moduleName, dataRelativePath) (\
+	"modules/" moduleName "/data/" dataRelativePath \
+)
+
+#define V4D_MODULE_CACHE_PATH(moduleName, cacheRelativePath) (\
+	"modules/" moduleName "/cache/" cacheRelativePath \
+)
