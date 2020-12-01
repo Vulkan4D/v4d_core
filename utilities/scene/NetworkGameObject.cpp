@@ -41,6 +41,11 @@ namespace v4d::scene {
 		transform = glm::rotate(glm::translate(glm::dmat4(1), position), glm::radians(angle), axis);
 	}
 	
+	void NetworkGameObject::SetTransform(const glm::dvec3& position, const glm::dvec3& forwardVector, const glm::dvec3& upVector) {
+		std::lock_guard lock(mu);
+		transform = glm::lookAt(position, forwardVector, upVector);
+	}
+	
 	void NetworkGameObject::SetTransform(const glm::dmat4& t) {
 		std::lock_guard lock(mu);
 		transform = t;
