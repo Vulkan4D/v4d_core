@@ -18,7 +18,7 @@
  * 
  * Usage:
 
- // MyEntity.h: define the entity class and its components
+ // MyEntity.h
  
 	struct SomeDataStruct {
 		int a;
@@ -68,7 +68,7 @@
 	// Also, make sure that all individual components have everything they need to correctly free the memory in their respective destructors
 	
 	// We can get the index of an entity like this:
-	int32_t index = entity->GetIndex();
+	uint32_t index = entity->GetIndex();
 	// This index can then be used to fetch that entity again like this:
 	auto entity = MyEntity::Get(index);
 	// Entity indices will not change for a given entity as long as you don't destroy it. Then their indices will be reused by new entities, hence invalidated.
@@ -135,7 +135,7 @@ friend EntityClass;
 	template<typename...Args>
 	int32_t Add(int32_t entityInstanceIndex, Args&&...args) { 
 		std::lock_guard lock(componentsMutex);
-		componentsList.push_back({entityInstanceIndex, ComponentType(std::forward<Args>(args)...)});
+		componentsList.push_back({entityInstanceIndex, std::forward<ComponentType>(ComponentType(std::forward<Args>(args)...))});
 		return componentsList.size() - 1;
 	}
 	int32_t Remove(int32_t componentIndex) {
