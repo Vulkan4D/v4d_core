@@ -3,6 +3,7 @@
 struct Test1 {
 	int a;
 	double b;
+	Test1() {}
 	Test1(int a, double b) : a(a), b(b) {}
 };
 
@@ -45,7 +46,7 @@ namespace v4d::tests {
 		
 		TestEntity::Create();
 		TestEntity::Create()->Add_test1(2, 7.9)->Add_test2("test");
-		TestEntity::Create();
+		TestEntity::Create()->Add_test1(1,2.2)->Add_test1()->Add_test1()->Remove_test1();
 		
 		result += 16;
 		
