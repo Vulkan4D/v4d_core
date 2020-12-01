@@ -75,9 +75,11 @@
 	
 	// add a 'firstName' component which is defined above as a std::string, and pass "Bob" in its constructor
 	entity->Add_firstName("Bob");
+	// If the component had already been added to that entity, it will be reconstructed and replaced with the given values
 	
 	// we may also remove the component. This actually removes the component, it doesn't just assign it to "".
 	entity->Remove_firstName();
+	// If the component was already not present, this does nothing
 	
 	// We can loop through all firstNames like this:
 	MyEntity::firstNameComponents.ForEach([](uint32_t entityInstanceIndex, auto& firstName){
