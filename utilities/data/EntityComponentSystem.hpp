@@ -84,7 +84,7 @@
 		std::cout << firstName << std::endl;
 	});
 	// This will only run for existing components, not for entities that don't have that component added to it
-	// All components of the same type are contiguous in memory for great CPU cache usage.
+	// All components of the same type are contiguous in memory for great CPU cache usage
 	// Hence it is preferable to not use pointers as component types because it will defeat the purpose
 	
 	// We can create lots of entities and assign them components like this:
@@ -94,7 +94,7 @@
 		->Add_transform({1})
 		->Add_someData(34,66);
 	
-	// All Add_* members will always return the shared pointer to the entity, not the component itself.
+	// All Add_* members will always return a pointer to the entity, not the component itself.
 	// This is obviously practical for writing chained code like above, but is also because we cannot guarantee that a reference to a component will not become invalidated.
 	// It is also important to note that only the initial Create() method will return a shared_ptr, any following Add_* method will return the raw pointer.
 	// Components will always be moving around in memory, hence it is not safe to get references or pointers to them, instead we use the safer functions 'Do' and 'ForEach' to modify them.
@@ -105,7 +105,8 @@
 		// this entity has a 'someData' component
 	}
 	
-	// We can quickly access a specific value from a component using the arrow operator but keep in mind that this is not thread safe:
+	// We can quickly access a specific value from a component using the arrow operator,
+	// but keep in mind that this is not thread safe so try to keep it atomic, and also this will segfault if that entity does not have that component.
 	entity->someData->a = 55;
 	
 	// To modify the values of a component from a specific entity in a thread-safe manner, we can do it like this: 
@@ -116,7 +117,7 @@
 		someData.a = 44;
 	});
 	// This also ensures that the component exists before running the code, so you may run this with any entity without worrying if the component is present.
-	// The 'Do' method also returns true if the component exists, false otherwise. 
+	// The 'Do' method also returns true if the entity has that component, false otherwise. 
 	
  */
 
