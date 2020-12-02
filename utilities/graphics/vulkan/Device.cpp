@@ -446,9 +446,9 @@ void Device::FreeAndDestroyBuffer(VkBuffer& buffer, MemoryAllocation& allocation
 	#else
 		DestroyBuffer(buffer, nullptr);
 		if (allocation) FreeMemory(allocation, nullptr);
-		buffer = VK_NULL_HANDLE;
-		allocation = VK_NULL_HANDLE;
 	#endif
+	buffer = VK_NULL_HANDLE;
+	allocation = VK_NULL_HANDLE;
 }
 void Device::FreeAndDestroyImage(VkImage& image, MemoryAllocation& allocation) {
 	#ifdef V4D_VULKAN_USE_VMA
@@ -461,9 +461,9 @@ void Device::FreeAndDestroyImage(VkImage& image, MemoryAllocation& allocation) {
 	#else
 		DestroyImage(image, nullptr);
 		if (allocation) FreeMemory(allocation, nullptr);
-		image = VK_NULL_HANDLE;
-		allocation = VK_NULL_HANDLE;
 	#endif
+	image = VK_NULL_HANDLE;
+	allocation = VK_NULL_HANDLE;
 }
 VkResult Device::MapMemoryAllocation(MemoryAllocation& allocation, void** data, VkDeviceSize offset, VkDeviceSize size) {
 	#ifdef V4D_VULKAN_USE_VMA
