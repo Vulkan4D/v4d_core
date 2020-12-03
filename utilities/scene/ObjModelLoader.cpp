@@ -36,9 +36,9 @@
 					materialId = shape.mesh.material_ids[j/3];
 					Geometry::VertexBuffer_T vertex = {};
 					vertex.pos = {
-						attrib.vertices[3 * index.vertex_index + 0],
+						attrib.vertices[3 * index.vertex_index + 0]*-1,
 						attrib.vertices[3 * index.vertex_index + 1],
-						attrib.vertices[3 * index.vertex_index + 2],
+						attrib.vertices[3 * index.vertex_index + 2]*-1,
 					};
 					// vertex.uv = {
 					// 	attrib.texcoords[2 * index.texcoord_index + 0],
@@ -51,9 +51,9 @@
 					auto color = materials[materialId].diffuse;
 					vertex.SetColor({color[0], color[1], color[2], 1});
 					vertex.normal = {
-						attrib.normals[3 * index.normal_index + 0],
+						attrib.normals[3 * index.normal_index + 0]*-1,
 						attrib.normals[3 * index.normal_index + 1],
-						attrib.normals[3 * index.normal_index + 2],
+						attrib.normals[3 * index.normal_index + 2]*-1,
 					};
 					if (modelData->preloadedUniqueVertices.count(vertex) == 0) {
 						modelData->preloadedUniqueVertices[vertex] = modelData->preloadedVertices.size();
@@ -66,7 +66,7 @@
 		void ObjModelLoader::Generate(ObjectInstance* obj) {
 			auto geom = modelData->modelGeometry.lock();
 			if (geom) {
-				obj->AddGeometry(geom);
+				obj->AddGeometry("basic", geom);
 			} else {
 				geom = obj->AddGeometry("basic", modelData->preloadedVertices.size(), modelData->preloadedIndices.size());
 				for (size_t i = 0; i < modelData->preloadedVertices.size(); ++i) {

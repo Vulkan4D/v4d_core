@@ -187,7 +187,7 @@ namespace v4d::data::EntityComponentSystem {
 		int32_t Remove(int32_t componentIndex) {
 			if (componentIndex != -1) {
 				std::lock_guard lock(componentsMutex);
-				if (componentIndex < componentsList.size()-1) {
+				if ((size_t)componentIndex < componentsList.size()-1) {
 					// Move the last element to the position we want to delete and return its instance index so that we can adjust it in the calling method
 					componentsList[componentIndex] = std::move(componentsList.back());
 					componentsList.pop_back();
@@ -200,7 +200,7 @@ namespace v4d::data::EntityComponentSystem {
 		ComponentType* Get(int32_t componentIndex) {
 			if (componentIndex == -1) return nullptr;
 			std::lock_guard lock(componentsMutex);
-			if (componentIndex < componentsList.size()) {
+			if ((size_t)componentIndex < componentsList.size()) {
 				return &componentsList[componentIndex].component;
 			}
 			return nullptr;
@@ -215,7 +215,7 @@ namespace v4d::data::EntityComponentSystem {
 		bool Do(int32_t componentIndex, std::function<void(ComponentType& data)>&& func){
 			if (componentIndex == -1) return false;
 			std::lock_guard lock(componentsMutex);
-			if (componentIndex < componentsList.size()) {
+			if ((size_t)componentIndex < componentsList.size()) {
 				func(componentsList[componentIndex].component);
 				return true;
 			}
@@ -255,7 +255,7 @@ namespace v4d::data::EntityComponentSystem {
 		};
 		ComponentReferenceLocked Lock(int32_t componentIndex) {
 			std::unique_lock lock(componentsMutex);
-			if (componentIndex == -1 || componentIndex >= componentsList.size()) return ComponentReferenceLocked{};
+			if (componentIndex == -1 || (size_t)componentIndex >= componentsList.size()) return ComponentReferenceLocked{};
 			return ComponentReferenceLocked{lock, &componentsList[componentIndex].component};
 		}
 	};
@@ -323,7 +323,7 @@ namespace v4d::data::EntityComponentSystem {
 	}\
 	std::shared_ptr<ClassName> ClassName::Get(uint32_t entityInstanceIndex) {\
 		std::lock_guard lock(entityInstancesMutex);\
-		if (entityInstanceIndex == -1 || entityInstanceIndex >= entityInstances.size()) return nullptr;\
+		if (entityInstanceIndex == -1 || (size_t)entityInstanceIndex >= entityInstances.size()) return nullptr;\
 		return entityInstances[entityInstanceIndex];\
 	}\
 	void ClassName::ClearAll() {\
