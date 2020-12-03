@@ -62,6 +62,8 @@ namespace v4d::graphics::vulkan::rtx {
 		buildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
 		buildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
 		buildGeometryInfo.geometryCount = 1;
+		buildGeometryInfo.srcAccelerationStructure = VK_NULL_HANDLE;
+		buildGeometryInfo.dstAccelerationStructure = accelerationStructure;
 		
 		geometry->sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
 		geometry->geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
