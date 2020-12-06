@@ -3,8 +3,8 @@
 
 namespace v4d::modular {
 	struct ModuleID {
-		uint64_t vendor = 0;
-		uint64_t module = 0;
+		uint64_t vendor;
+		uint64_t module;
 		ModuleID(uint64_t vendorID, uint64_t moduleID) : vendor(vendorID), module(moduleID) {}
 		ModuleID(const std::string& str) {
 			auto _ = str.find('_');

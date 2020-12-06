@@ -36,7 +36,7 @@ namespace v4d::graphics::vulkan::rtx {
 		
 		// Structs
 		VkAccelerationStructureCreateInfoKHR createInfo {};
-		VkAccelerationStructureGeometryKHR* geometry = nullptr;
+		VkAccelerationStructureGeometryKHR accelerationStructureGeometry {};
 		VkAccelerationStructureBuildRangeInfoKHR buildRangeInfo {};
 		VkAccelerationStructureBuildGeometryInfoKHR buildGeometryInfo {};
 		VkAccelerationStructureBuildSizesInfoKHR accelerationStructureBuildSizesInfo {};
@@ -56,9 +56,25 @@ namespace v4d::graphics::vulkan::rtx {
 		static bool useGlobalScratchBuffer;
 		uint64_t globalScratchBufferOffset = 0;
 		
+		struct GeometryData {
+			VkDeviceOrHostAddressConstKHR indexBuffer {};
+			size_t indexOffset = 0;
+			size_t indexCount = 0;
+			size_t indexSize = 0;
+			VkDeviceOrHostAddressConstKHR vertexBuffer {};
+			size_t vertexOffset = 0;
+			size_t vertexCount = 0;
+			size_t vertexSize = 0;
+			VkDeviceOrHostAddressConstKHR transformBuffer {};
+			size_t transformOffset = 0;
+		};
+		
 		void AssignBottomLevel(Device* device, std::shared_ptr<v4d::scene::Geometry> geom);
+		void AssignBottomLevelGeometry(Device* device, const GeometryData& geom);
+		void AssignBottomLevelProceduralVertex(Device* device, const GeometryData& geom);
 		
 		void AssignTopLevel();
+		
 		void SetGlobalScratchBuffer(Device* device, VkBuffer buffer);
 		void SetInstanceBuffer(Device* device, VkBuffer instanceBuffer, uint32_t instanceCount = 0, uint32_t instanceOffset = 0);
 		void SetInstanceBuffer(Device* device, void* instanceArray, uint32_t instanceCount = 0, uint32_t instanceOffset = 0);

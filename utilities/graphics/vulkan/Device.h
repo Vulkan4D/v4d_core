@@ -142,9 +142,9 @@ namespace v4d::graphics::vulkan {
 
 		// overloads native vulkan command with different arguments
 		using xvk::Interface::DeviceInterface::GetBufferDeviceAddress;
-		VkDeviceAddress GetBufferDeviceAddress(VkBuffer&);
-		VkDeviceOrHostAddressKHR GetBufferDeviceOrHostAddress(VkBuffer&);
-		VkDeviceOrHostAddressConstKHR GetBufferDeviceOrHostAddressConst(VkBuffer&);
+		VkDeviceAddress GetBufferDeviceAddress(const VkBuffer&);
+		VkDeviceOrHostAddressKHR GetBufferDeviceOrHostAddress(const VkBuffer&);
+		VkDeviceOrHostAddressConstKHR GetBufferDeviceOrHostAddressConst(const VkBuffer&);
 
 		// Helpers
 		size_t GetAlignedUniformSize(size_t size);

@@ -189,14 +189,14 @@ void Device::DestroyDescriptorPool(VkDescriptorPool &descriptorPool) {
 	DestroyDescriptorPool(descriptorPool, nullptr);
 }
 
-VkDeviceAddress Device::GetBufferDeviceAddress(VkBuffer& buffer) {
+VkDeviceAddress Device::GetBufferDeviceAddress(const VkBuffer& buffer) {
 	VkBufferDeviceAddressInfo bufferAddrInfo {};
 	bufferAddrInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
 	bufferAddrInfo.buffer = buffer;
 	return GetBufferDeviceAddress(&bufferAddrInfo);
 }
 
-VkDeviceOrHostAddressKHR Device::GetBufferDeviceOrHostAddress(VkBuffer& buffer) {
+VkDeviceOrHostAddressKHR Device::GetBufferDeviceOrHostAddress(const VkBuffer& buffer) {
 	VkBufferDeviceAddressInfo bufferAddrInfo {};
 	bufferAddrInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
 	bufferAddrInfo.buffer = buffer;
@@ -205,7 +205,7 @@ VkDeviceOrHostAddressKHR Device::GetBufferDeviceOrHostAddress(VkBuffer& buffer) 
 	return bufferAddr;
 }
 
-VkDeviceOrHostAddressConstKHR Device::GetBufferDeviceOrHostAddressConst(VkBuffer& buffer) {
+VkDeviceOrHostAddressConstKHR Device::GetBufferDeviceOrHostAddressConst(const VkBuffer& buffer) {
 	VkBufferDeviceAddressInfo bufferAddrInfo {};
 	bufferAddrInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
 	bufferAddrInfo.buffer = buffer;
