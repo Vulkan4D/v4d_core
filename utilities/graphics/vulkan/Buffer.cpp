@@ -154,7 +154,7 @@ void StagedBuffer::Free(Device* device) {
 }
 
 void StagedBuffer::Update(Device* device, VkCommandBuffer commandBuffer, size_t maxCopySize) {
-	stagingBuffer.CopySrcData(device, maxCopySize);
+	if (stagingBuffer.srcDataPointers.size() > 0) stagingBuffer.CopySrcData(device, maxCopySize);
 	if (!device->TouchAllocation(deviceLocalBuffer.allocation)) {
 		LOG_DEBUG("Staging Buffer Update() ALLOCATION LOST")
 		return;
