@@ -72,7 +72,7 @@ namespace v4d::tests {
 		
 		result += 16;
 		
-		TestEntity::ForEach([&result](auto& entity){
+		TestEntity::ForEach([&result](auto entity){
 			entity->test1.Do([&result](auto& v){
 				result -= v.a;
 			});
@@ -92,8 +92,8 @@ namespace v4d::tests {
 		
 		// Destroy everything
 		entity = nullptr;
-		TestEntity::ForEach([&result](auto& entity){
-			entity = nullptr;
+		TestEntity::ForEach([&result](auto entity){
+			entity->Destroy();
 		});
 		
 		// By now we should not have any components left so this should do nothing

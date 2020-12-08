@@ -50,10 +50,10 @@
 	
 	// The entity does not get destroyed when we leave the scope, it will live forever until we manually destroy them in one of three ways:
 		
-		// 1. Loop through each entity to determine which one to destroy and simply assign it to nullptr to destroy it
+		// 1. Loop through each entity to determine which one to destroy and simply call ->Destroy() on the entity
 		
-			MyEntity::ForEach([](auto& entity){
-				entity = nullptr;
+			MyEntity::ForEach([](auto entity){
+				entity->Destroy();
 			});
 			
 		// 2. the ClearAll static member
@@ -69,7 +69,7 @@
 	// Note: since they are shared pointers, if a reference exists somewhere else it will not get destroyed until all references are destroyed, but its index WILL be invalidated.
 	
 	// We can get the index of an entity like this:
-	uint32_t index = entity->GetIndex();
+	int32_t index = entity->GetIndex();
 	// This index can then be used to fetch that entity again like this:
 	auto entity = MyEntity::Get(index);
 	// Entity indices will not change for a given entity as long as you don't destroy it. Then their indices will be reused by new entities, hence invalidated.
@@ -103,7 +103,7 @@
 	// Entities also have static members *Components for every component defined in it, to access component lists.
 	
 	// We can loop through all firstNames like this:
-	MyEntity::firstNameComponents.ForEach([](uint32_t entityInstanceIndex, auto& firstName){
+	MyEntity::firstNameComponents.ForEach([](int32_t entityInstanceIndex, auto& firstName){
 		std::cout << firstName << std::endl;
 	});
 	// This will only run for existing components, not for entities that don't have that component added to it
@@ -273,8 +273,8 @@ namespace v4d::data::EntityComponentSystem {
 	private:\
 		static std::recursive_mutex entityInstancesMutex;\
 		static std::vector<std::shared_ptr<ClassName>> entityInstances;\
-		uint32_t index;\
-		ClassName(uint32_t index);\
+		int32_t index;\
+		ClassName(int32_t index);\
 	public:\
 		static std::shared_ptr<ClassName> Create();\
 		template<typename...Args>\
@@ -292,18 +292,19 @@ namespace v4d::data::EntityComponentSystem {
 			(*e)(std::forward<Args>(args)...);\
 			return entityInstances.emplace_back(e);\
 		}\
-		static void Destroy(uint32_t index);\
+		static void Destroy(int32_t index);\
+		void Destroy();\
 		static void ClearAll();\
 		static size_t Count();\
-		static void ForEach(std::function<void(std::shared_ptr<ClassName>&)>&& func);\
-		static std::shared_ptr<ClassName> Get(uint32_t entityInstanceIndex);\
-		inline uint32_t GetIndex() const {return index;};
+		static void ForEach(std::function<void(std::shared_ptr<ClassName>)>&& func);\
+		static std::shared_ptr<ClassName> Get(int32_t entityInstanceIndex);\
+		inline int32_t GetIndex() const {return index;};
 
 // Used in .cpp files
 #define V4D_ENTITY_DEFINE_CLASS(ClassName)\
 	std::recursive_mutex ClassName::entityInstancesMutex {};\
 	std::vector<std::shared_ptr<ClassName>> ClassName::entityInstances {};\
-	ClassName::ClassName(uint32_t index) : index(index) {}\
+	ClassName::ClassName(int32_t index) : index(index) {}\
 	std::shared_ptr<ClassName> ClassName::Create() {\
 		std::lock_guard lock(entityInstancesMutex);\
 		size_t nbEntityInstances = entityInstances.size();\
@@ -312,13 +313,24 @@ namespace v4d::data::EntityComponentSystem {
 		}\
 		return entityInstances.emplace_back(new ClassName(nbEntityInstances));\
 	}\
-	void ClassName::Destroy(uint32_t index) {\
+	void ClassName::Destroy(int32_t index) {\
 		std::lock_guard lock(entityInstancesMutex);\
-		if (index < entityInstances.size()) {\
-			entityInstances[index] = nullptr;\
+		if (index > -1 && index < entityInstances.size()) {\
+			entityInstances[index]->index = -1;\
+			entityInstances[index].reset();\
+			if (index == entityInstances.size()-1) {\
+				entityInstances.pop_back();\
+				while (!entityInstances[entityInstances.size()-1]) {\
+					entityInstances.pop_back();\
+				}\
+			}\
 		}\
 	}\
-	void ClassName::ForEach(std::function<void(std::shared_ptr<ClassName>&)>&& func) {\
+	void ClassName::Destroy() {\
+		std::lock_guard lock(entityInstancesMutex);\
+		Destroy(index);\
+	}\
+	void ClassName::ForEach(std::function<void(std::shared_ptr<ClassName>)>&& func) {\
 		std::lock_guard lock(entityInstancesMutex);\
 		for (auto& entity : entityInstances) {\
 			if (entity) {\
@@ -326,7 +338,7 @@ namespace v4d::data::EntityComponentSystem {
 			}\
 		}\
 	}\
-	std::shared_ptr<ClassName> ClassName::Get(uint32_t entityInstanceIndex) {\
+	std::shared_ptr<ClassName> ClassName::Get(int32_t entityInstanceIndex) {\
 		std::lock_guard lock(entityInstancesMutex);\
 		if (entityInstanceIndex == -1 || (size_t)entityInstanceIndex >= entityInstances.size()) return nullptr;\
 		return entityInstances[entityInstanceIndex];\

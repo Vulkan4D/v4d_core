@@ -79,6 +79,8 @@ namespace v4d::graphics::vulkan {
 			return *hostBufferMappedPointers[currentFrameIndex];
 		}
 		void Push(VkCommandBuffer cmbBuffer, uint32_t count = COUNT, VkDeviceSize offset = 0) {
+			if (count == 0) return;
+			assert(count <= COUNT);
 			if (device && deviceLocalBuffer && hostBuffers[currentFrameIndex]) {
 				VkBufferCopy region = {};{
 					region.srcOffset = offset;
@@ -89,6 +91,8 @@ namespace v4d::graphics::vulkan {
 			}
 		}
 		void Pull(VkCommandBuffer cmbBuffer, uint32_t count = COUNT, VkDeviceSize offset = 0) {
+			if (count == 0) return;
+			assert(count <= COUNT);
 			if (device && deviceLocalBuffer && hostBuffers[currentFrameIndex]) {
 				VkBufferCopy region = {};{
 					region.srcOffset = offset;

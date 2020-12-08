@@ -121,7 +121,7 @@ namespace v4d::scene {
 	}
 	void NetworkGameObject::RemoveGameObject() {
 		if (auto entity = renderableGeometryEntityInstance.lock(); entity) {
-			entity->deleted = true;
+			entity->Destroy();
 		}
 	}
 	

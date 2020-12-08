@@ -17,28 +17,30 @@ namespace v4d::graphics {
 	std::unordered_map<std::string, uint32_t> RenderableGeometryEntity::sbtOffsets {};
 
 	void RenderableGeometryEntity::FreeComponentsBuffers() {
-		transform.Do([this](auto& component){
-			initialTransform = component.data->worldTransform;
-			component.FreeBuffers(device);
-		});
-		meshVertexPosition.Do([this](auto& component){
-			component.FreeBuffers(device);
-		});
-		proceduralVertexAABB.Do([this](auto& component){
-			component.FreeBuffers(device);
-		});
-		meshVertexNormal.Do([this](auto& component){
-			component.FreeBuffers(device);
-		});
-		meshVertexColor.Do([this](auto& component){
-			component.FreeBuffers(device);
-		});
-		meshVertexUV.Do([this](auto& component){
-			component.FreeBuffers(device);
-		});
-		meshIndices.Do([this](auto& component){
-			component.FreeBuffers(device);
-		});
+		if (device) {
+			transform.Do([this](auto& component){
+				if (component.data) initialTransform = component.data->worldTransform;
+				component.FreeBuffers(device);
+			});
+			proceduralVertexAABB.Do([this](auto& component){
+				component.FreeBuffers(device);
+			});
+			meshVertexPosition.Do([this](auto& component){
+				component.FreeBuffers(device);
+			});
+			meshVertexNormal.Do([this](auto& component){
+				component.FreeBuffers(device);
+			});
+			meshVertexColor.Do([this](auto& component){
+				component.FreeBuffers(device);
+			});
+			meshVertexUV.Do([this](auto& component){
+				component.FreeBuffers(device);
+			});
+			meshIndices.Do([this](auto& component){
+				component.FreeBuffers(device);
+			});
+		}
 		generated = false;
 		blas = nullptr;
 	}
@@ -62,6 +64,7 @@ namespace v4d::graphics {
 	
 	RenderableGeometryEntity* RenderableGeometryEntity::SetInitialTransform(const glm::dmat4& t) {
 		initialTransform = t;
+		return this;
 	}
 	
 	RenderableGeometryEntity::~RenderableGeometryEntity() {

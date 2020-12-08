@@ -47,7 +47,6 @@ namespace v4d::graphics {
 		v4d::graphics::vulkan::rtx::AccelerationStructure::GeometryData geometryData;
 		std::shared_ptr<Blas> blas = nullptr;
 		bool generated = false;
-		bool deleted = false;
 		glm::dmat4 initialTransform = glm::dmat4{1};
 		std::function<void(RenderableGeometryEntity*)> generator = [](auto*){};
 		v4d::modular::ModuleID moduleId {0,0};
