@@ -50,6 +50,8 @@ namespace v4d::scene {
 		Parent parent;
 		Id id;
 		
+		std::weak_ptr<RenderableGeometryEntity> renderableGeometryEntityInstance;
+		
 		// Attributes
 		bool active = false;
 		bool isDynamic = false;
@@ -58,8 +60,6 @@ namespace v4d::scene {
 			&active,
 			&isDynamic,
 		};
-		
-		ObjectInstancePtr objectInstance = nullptr;
 		
 	private: 
 		std::atomic<Iteration> iteration = 1;
@@ -97,14 +97,14 @@ namespace v4d::scene {
 		void SetAttributes(Attributes attrs);
 		Attributes GetAttributes() const;
 		
-		// Constructors and Destructor
+		// Constructors
 		NetworkGameObject(v4d::modular::ModuleID, Type, Parent, Id);
 		NetworkGameObject(v4d::modular::ModuleID, Type, Parent = 0);
 		
-		void UpdateObjectInstance();
-		void UpdateObjectInstanceTransform();
-		void ReverseUpdateObjectInstanceTransform();
-		void RemoveObjectInstance(Scene*);
+		void UpdateGameObject();
+		void UpdateGameObjectTransform();
+		void ReverseUpdateGameObjectTransform();
+		void RemoveGameObject();
 	};
 	
 	typedef std::shared_ptr<NetworkGameObject> NetworkGameObjectPtr;

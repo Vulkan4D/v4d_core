@@ -80,7 +80,7 @@ namespace v4d::graphics {
 		SwapChain* swapChain = nullptr;
 		size_t currentFrameInFlight = 0;
 		size_t nextFrameInFlight = 0;
-		const int NB_FRAMES_IN_FLIGHT = 2;
+		static constexpr int NB_FRAMES_IN_FLIGHT = 2;
 		
 		// Descriptor sets
 		VkDescriptorPool descriptorPool;

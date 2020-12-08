@@ -16,11 +16,18 @@ namespace v4d::graphics::vulkan {
 		
 		BufferSrcDataPtr(void* dataPtr, size_t size);
 	};
+	
+	struct BufferDescriptor {
+		VkBuffer buffer;
+		VkDeviceSize size;
+	};
 
 	struct V4DLIB Buffer {
 		// Mandatory fields
-		VkBufferUsageFlags usage;
+		VkBuffer buffer = VK_NULL_HANDLE;
 		VkDeviceSize size;
+		
+		VkBufferUsageFlags usage;
 		
 		bool alignedUniformSize;
 		
@@ -29,7 +36,6 @@ namespace v4d::graphics::vulkan {
 		MemoryUsage memoryUsage = MEMORY_USAGE_GPU_ONLY;
 		
 		// Allocated handles
-		VkBuffer buffer = VK_NULL_HANDLE;
 		MemoryAllocation allocation = VK_NULL_HANDLE;
 		
 		// Mapped data (this is mapped to when calling MapMemory)
@@ -39,6 +45,10 @@ namespace v4d::graphics::vulkan {
 		std::vector<BufferSrcDataPtr> srcDataPointers {};
 		
 		Buffer(VkBufferUsageFlags usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VkDeviceSize size = 0, bool alignedUniformSize = false);
+		
+		operator BufferDescriptor*() {
+			return (BufferDescriptor*)this;
+		}
 		
 		void ExtendSize(VkDeviceSize);
 		

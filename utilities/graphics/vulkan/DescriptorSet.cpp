@@ -29,7 +29,7 @@ bool DescriptorBinding::IsWriteDescriptorSetValid() const {
 	switch (pointerType) {
 		case STORAGE_BUFFER:
 		case UNIFORM_BUFFER:
-			return ((Buffer*)data)->buffer != VK_NULL_HANDLE;
+			return ((BufferDescriptor*)data)->buffer != VK_NULL_HANDLE;
 		break;
 		case IMAGE_VIEW:
 		case INPUT_ATTACHMENT:
@@ -60,18 +60,18 @@ VkWriteDescriptorSet DescriptorBinding::GetWriteDescriptorSet(VkDescriptorSet de
 		case STORAGE_BUFFER:
 			writeInfo = new VkDescriptorBufferInfo[descriptorCount];
 			((VkDescriptorBufferInfo*)writeInfo)[0] = {
-				((Buffer*)data)[0].buffer,// VkBuffer buffer
+				((BufferDescriptor*)data)[0].buffer,// VkBuffer buffer
 				0,// VkDeviceSize offset
-				((Buffer*)data)[0].size,// VkDeviceSize range
+				((BufferDescriptor*)data)[0].size,// VkDeviceSize range
 			};
 			descriptorWrite.pBufferInfo = (VkDescriptorBufferInfo*)writeInfo;
 		break;
 		case UNIFORM_BUFFER:
 			writeInfo = new VkDescriptorBufferInfo[descriptorCount];
 			((VkDescriptorBufferInfo*)writeInfo)[0] = {
-				((Buffer*)data)[0].buffer,// VkBuffer buffer
+				((BufferDescriptor*)data)[0].buffer,// VkBuffer buffer
 				0,// VkDeviceSize offset
-				((Buffer*)data)[0].size,// VkDeviceSize range
+				((BufferDescriptor*)data)[0].size,// VkDeviceSize range
 			};
 			descriptorWrite.pBufferInfo = (VkDescriptorBufferInfo*)writeInfo;
 		break;

@@ -2,7 +2,7 @@
 
 using namespace v4d::graphics::vulkan;
 
-Buffer::Buffer(VkBufferUsageFlags usage, VkDeviceSize size, bool alignedUniformSize) : usage(usage), size(size), alignedUniformSize(alignedUniformSize) {}
+Buffer::Buffer(VkBufferUsageFlags usage, VkDeviceSize size, bool alignedUniformSize) : size(size), usage(usage), alignedUniformSize(alignedUniformSize) {}
 
 void Buffer::ExtendSize(VkDeviceSize additionalSize) {
 	if (allocation) {

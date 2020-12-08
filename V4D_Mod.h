@@ -28,8 +28,6 @@ class V4DLIB V4D_Mod {
 		,SecondaryFrameCompute
 		,OnRendererRayCastHit
 		,PhysicsUpdate
-		,PhysicsRayCastClosest
-		,PhysicsRayCastAll
 		,RenderOrderIndex
 		,ScorePhysicalDeviceSelection
 		,InitVulkanDeviceFeatures
@@ -111,8 +109,6 @@ class V4DLIB V4D_Mod {
 
 // Physics
 	V4D_MODULE_FUNC_DECLARE(void, PhysicsUpdate, double deltaTime)
-	V4D_MODULE_FUNC_DECLARE(bool, PhysicsRayCastClosest, v4d::scene::Scene::RayCastHit* hit, glm::dvec3 origin, glm::dvec3 target, uint32_t mask)
-	V4D_MODULE_FUNC_DECLARE(int, PhysicsRayCastAll, std::vector<v4d::scene::Scene::RayCastHit>* hits, glm::dvec3 origin, glm::dvec3 target, uint32_t mask)
 
 // Renderer
 	// Executed only once for configuration

@@ -35,6 +35,7 @@
 #include "utilities/graphics/vulkan/Image.h"
 #include "utilities/graphics/vulkan/SwapChain.h"
 #include "utilities/graphics/vulkan/Buffer.h"
+#include "utilities/graphics/vulkan/StagingBuffer.hpp"
 #include "utilities/graphics/vulkan/DescriptorSet.h"
 #include "utilities/graphics/vulkan/PipelineLayout.h"
 #include "utilities/graphics/vulkan/Shader.h"
@@ -52,6 +53,9 @@
 
 // Ray Tracing
 #include "utilities/graphics/vulkan/rtx/AccelerationStructure.h"
+#include "utilities/graphics/Mesh.hpp"
+#include "utilities/scene/PhysicsInfo.hpp"
+#include "utilities/graphics/RenderableGeometryEntity.h"
 
 // Scene-related Objects
 #include "utilities/scene/Scene.h"

@@ -2,12 +2,11 @@
 
 namespace v4d::scene {
 
-	// Constructors and Destructor
+	// Constructors
 	NetworkGameObject::NetworkGameObject(v4d::modular::ModuleID moduleID, Type type, Parent parent, Id id)
 		: moduleID(moduleID), type(type), parent(parent), id(id) {}
 	NetworkGameObject::NetworkGameObject(v4d::modular::ModuleID moduleID, Type type, Parent parent)
 		: moduleID(moduleID), type(type), parent(parent), id(GetNextID()) {}
-	// ~NetworkGameObject() {}
 	
 	NetworkGameObject::Id NetworkGameObject::GetNextID() const {
 		static std::atomic<Id> nextID = 1;
@@ -83,48 +82,46 @@ namespace v4d::scene {
 		return attrs;
 	}
 
-	void NetworkGameObject::UpdateObjectInstance() {
-		if (objectInstance) {
-			objectInstance->Lock();
-			if (objectInstance->rigidbodyType == ObjectInstance::RigidBodyType::DYNAMIC || objectInstance->rigidbodyType == ObjectInstance::RigidBodyType::KINEMATIC) {
-				if (isDynamic) {
-					objectInstance->rigidbodyType = physicsControl? ObjectInstance::RigidBodyType::DYNAMIC : ObjectInstance::RigidBodyType::KINEMATIC;
-				} else {
-					objectInstance->rigidbodyType = ObjectInstance::RigidBodyType::STATIC;
+	void NetworkGameObject::UpdateGameObject() {
+		if (auto entity = renderableGeometryEntityInstance.lock(); entity && entity->physics) {
+			if (auto physics = entity->physics.Lock(); physics) {
+				if (physics->rigidbodyType == PhysicsInfo::RigidBodyType::DYNAMIC || physics->rigidbodyType == PhysicsInfo::RigidBodyType::KINEMATIC) {
+					if (isDynamic) {
+						physics->rigidbodyType = physicsControl? PhysicsInfo::RigidBodyType::DYNAMIC : PhysicsInfo::RigidBodyType::KINEMATIC;
+					} else {
+						physics->rigidbodyType = PhysicsInfo::RigidBodyType::STATIC;
+					}
 				}
 			}
-			objectInstance->Unlock();
 		}
 	}
-	
-	void NetworkGameObject::UpdateObjectInstanceTransform() {
-		if (objectInstance) {
-			if (!posInit || !physicsControl) {
-				objectInstance->Lock();
-					if (!posInit && physicsControl) {
-						objectInstance->AddImpulse(velocity * objectInstance->mass);
+	void NetworkGameObject::UpdateGameObjectTransform() {
+		if (!posInit || !physicsControl) {
+			if (auto entity = renderableGeometryEntityInstance.lock(); entity && entity->physics) {
+				if (!posInit && physicsControl) {
+					if (auto physics = entity->physics.Lock(); physics) {
+						std::lock_guard lock(mu);
+						entity->SetInitialTransform(transform);
+						physics->AddImpulse(velocity * physics->mass);
+						posInit = true;
 					}
-					posInit = true;
-					{std::lock_guard lock(mu);
-						objectInstance->SetWorldTransform(transform); //TODO handle parent objects
-					}
-				objectInstance->Unlock();
+				}
 			}
 		}
 	}
-	
-	void NetworkGameObject::ReverseUpdateObjectInstanceTransform() {
-		objectInstance->Lock();
-			{std::lock_guard lock(mu);
-				transform = objectInstance->GetWorldTransform();
-			}
-		objectInstance->Unlock();
+	void NetworkGameObject::ReverseUpdateGameObjectTransform() {
+		if (auto entity = renderableGeometryEntityInstance.lock(); entity) {
+			entity->transform.Do([this](auto& t){
+				if (t.data) {
+					std::lock_guard lock(mu);
+					transform = t->worldTransform;
+				}
+			});
+		}
 	}
-	
-	void NetworkGameObject::RemoveObjectInstance(Scene* scene) {
-		if (objectInstance) {
-			scene->RemoveObjectInstance(objectInstance);
-			objectInstance = nullptr;
+	void NetworkGameObject::RemoveGameObject() {
+		if (auto entity = renderableGeometryEntityInstance.lock(); entity) {
+			entity->deleted = true;
 		}
 	}
 	

@@ -156,7 +156,7 @@ namespace v4d::data::EntityComponentSystem {
 	template<typename EntityClass, typename ComponentType>
 	class Component {
 	friend EntityClass;
-		std::mutex componentsMutex;
+		mutable std::recursive_mutex componentsMutex;
 		struct ComponentTuple {
 			int32_t entityInstanceIndex;
 			ComponentType component;
@@ -212,6 +212,10 @@ namespace v4d::data::EntityComponentSystem {
 				func(entityInstanceIndex, data);
 			}
 		}
+		size_t Count() const {
+			std::lock_guard lock(componentsMutex);
+			return componentsList.size();
+		}
 		bool Do(int32_t componentIndex, std::function<void(ComponentType& data)>&& func){
 			if (componentIndex == -1) return false;
 			std::lock_guard lock(componentsMutex);
@@ -240,10 +244,10 @@ namespace v4d::data::EntityComponentSystem {
 		}
 		class ComponentReferenceLocked {
 			friend Component;
-			std::unique_lock<std::mutex> lock;
+			std::unique_lock<std::recursive_mutex> lock;
 			ComponentType* ptr;
 			ComponentReferenceLocked() : lock(), ptr(nullptr) {}
-			ComponentReferenceLocked(std::unique_lock<std::mutex>& lock, ComponentType* ptr) : lock(std::move(lock)), ptr(ptr) {}
+			ComponentReferenceLocked(std::unique_lock<std::recursive_mutex>& lock, ComponentType* ptr) : lock(std::move(lock)), ptr(ptr) {}
 			DELETE_COPY_MOVE_CONSTRUCTORS(ComponentReferenceLocked)
 			public:
 			operator bool() {return !!ptr;}
@@ -290,6 +294,7 @@ namespace v4d::data::EntityComponentSystem {
 		}\
 		static void Destroy(uint32_t index);\
 		static void ClearAll();\
+		static size_t Count();\
 		static void ForEach(std::function<void(std::shared_ptr<ClassName>&)>&& func);\
 		static std::shared_ptr<ClassName> Get(uint32_t entityInstanceIndex);\
 		inline uint32_t GetIndex() const {return index;};
@@ -329,6 +334,10 @@ namespace v4d::data::EntityComponentSystem {
 	void ClassName::ClearAll() {\
 		std::lock_guard lock(entityInstancesMutex);\
 		entityInstances.clear();\
+	}\
+	size_t ClassName::Count() {\
+		std::lock_guard lock(entityInstancesMutex);\
+		return entityInstances.size();\
 	}
 
 
