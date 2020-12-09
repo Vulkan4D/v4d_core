@@ -4,7 +4,7 @@
 
 namespace v4d::graphics::vulkan {
 
-	template<class T, size_t COUNT = 1, size_t NB_FRAMES = 2, size_t SIZE = sizeof(T) * COUNT>
+	template<class T, size_t COUNT = 1, size_t NB_FRAMES = Renderer::NB_FRAMES_IN_FLIGHT, size_t SIZE = sizeof(T) * COUNT>
 	class StagingBuffer {
 		VkBuffer deviceLocalBuffer = VK_NULL_HANDLE;
 		const VkDeviceSize size = SIZE;

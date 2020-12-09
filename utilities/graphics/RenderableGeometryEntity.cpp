@@ -46,9 +46,10 @@ namespace v4d::graphics {
 	}
 	
 	void RenderableGeometryEntity::operator()(v4d::modular::ModuleID moduleId, int objId, int customData) {
-		this->moduleId = moduleId;
-		this->objId = objId;
-		this->customData = customData;
+		modelInfo.moduleVen = moduleId.vendor;
+		modelInfo.moduleId = moduleId.module;
+		modelInfo.objId = objId;
+		modelInfo.customData = customData;
 	}
 	
 	void RenderableGeometryEntity::Prepare(Device* renderingDevice, std::string sbtOffset) {

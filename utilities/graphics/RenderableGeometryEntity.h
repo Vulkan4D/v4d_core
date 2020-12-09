@@ -49,9 +49,7 @@ namespace v4d::graphics {
 		bool generated = false;
 		glm::dmat4 initialTransform = glm::dmat4{1};
 		std::function<void(RenderableGeometryEntity*)> generator = [](auto*){};
-		v4d::modular::ModuleID moduleId {0,0};
-		uint64_t objId;
-		uint64_t customData;
+		Mesh::ModelInfo modelInfo {};
 		uint32_t sbtOffset = 0;
 		uint32_t rayTracingMask = 0xff;
 		VkGeometryInstanceFlagsKHR rayTracingFlags = 0;

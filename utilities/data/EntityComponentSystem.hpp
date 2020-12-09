@@ -212,6 +212,13 @@ namespace v4d::data::EntityComponentSystem {
 				func(entityInstanceIndex, data);
 			}
 		}
+		void ForEach_LockEntities(std::function<void(int32_t& entityInstanceIndex, ComponentType& data)>&& func) {
+			auto entitiesLock = EntityClass::GetLock();
+			std::lock_guard lock(componentsMutex);
+			for (auto&[entityInstanceIndex, data] : componentsList) {
+				func(entityInstanceIndex, data);
+			}
+		}
 		size_t Count() const {
 			std::lock_guard lock(componentsMutex);
 			return componentsList.size();
@@ -296,6 +303,7 @@ namespace v4d::data::EntityComponentSystem {
 		void Destroy();\
 		static void ClearAll();\
 		static size_t Count();\
+		static std::unique_lock<std::recursive_mutex> GetLock();\
 		static void ForEach(std::function<void(std::shared_ptr<ClassName>)>&& func);\
 		static std::shared_ptr<ClassName> Get(int32_t entityInstanceIndex);\
 		inline int32_t GetIndex() const {return index;};
@@ -350,6 +358,9 @@ namespace v4d::data::EntityComponentSystem {
 	size_t ClassName::Count() {\
 		std::lock_guard lock(entityInstancesMutex);\
 		return entityInstances.size();\
+	}\
+	std::unique_lock<std::recursive_mutex> ClassName::GetLock() {\
+		return std::unique_lock<std::recursive_mutex>{entityInstancesMutex};\
 	}
 
 

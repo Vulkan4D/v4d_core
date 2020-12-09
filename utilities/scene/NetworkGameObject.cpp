@@ -83,6 +83,7 @@ namespace v4d::scene {
 	}
 
 	void NetworkGameObject::UpdateGameObject() {
+		std::lock_guard lock(mu);
 		if (auto entity = renderableGeometryEntityInstance.lock(); entity && entity->physics) {
 			if (auto physics = entity->physics.Lock(); physics) {
 				if (physics->rigidbodyType == PhysicsInfo::RigidBodyType::DYNAMIC || physics->rigidbodyType == PhysicsInfo::RigidBodyType::KINEMATIC) {
@@ -95,31 +96,44 @@ namespace v4d::scene {
 			}
 		}
 	}
+	
 	void NetworkGameObject::UpdateGameObjectTransform() {
+		std::lock_guard lock(mu);
 		if (!posInit || !physicsControl) {
-			if (auto entity = renderableGeometryEntityInstance.lock(); entity && entity->physics) {
-				if (!posInit && physicsControl) {
-					if (auto physics = entity->physics.Lock(); physics) {
-						std::lock_guard lock(mu);
-						entity->SetInitialTransform(transform);
-						physics->AddImpulse(velocity * physics->mass);
-						posInit = true;
+			if (auto entity = renderableGeometryEntityInstance.lock(); entity) {
+				if (auto t = entity->transform.Lock(); t && t->data) {
+					if (physicsControl) {
+						t->data->worldTransform = transform;
+					} else {
+						//TODO smoothly interpolate position and rotation over time instead of instantly setting the transform
+						t->data->worldTransform = transform;
 					}
+				} else {
+					entity->SetInitialTransform(transform);
+				}
+				if (!posInit) {
+					if (auto physics = entity->physics.Lock(); physics) {
+						physics->AddImpulse(velocity * physics->mass);
+					}
+					posInit = true;
 				}
 			}
 		}
 	}
+	
 	void NetworkGameObject::ReverseUpdateGameObjectTransform() {
+		std::lock_guard lock(mu);
 		if (auto entity = renderableGeometryEntityInstance.lock(); entity) {
 			entity->transform.Do([this](auto& t){
 				if (t.data) {
-					std::lock_guard lock(mu);
 					transform = t->worldTransform;
 				}
 			});
 		}
 	}
+	
 	void NetworkGameObject::RemoveGameObject() {
+		std::lock_guard lock(mu);
 		if (auto entity = renderableGeometryEntityInstance.lock(); entity) {
 			entity->Destroy();
 		}

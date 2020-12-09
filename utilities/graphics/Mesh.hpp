@@ -3,6 +3,23 @@
 #include <v4d.h>
 
 namespace v4d::graphics::Mesh {
+
+	struct GeometryBufferPointers {
+		VkDeviceOrHostAddressConstKHR indexBuffer {};
+		size_t indexOffset = 0;
+		size_t indexCount = 0;
+		size_t indexSize = 0;
+		VkDeviceOrHostAddressConstKHR vertexBuffer {};
+		size_t vertexOffset = 0;
+		size_t vertexCount = 0;
+		size_t vertexSize = 0;
+		VkDeviceOrHostAddressConstKHR transformBuffer {};
+		size_t transformOffset = 0;
+		
+		VkDeviceAddress vertexNormalsBuffer {};
+		VkDeviceAddress vertexColorsBuffer {};
+		VkDeviceAddress vertexUVsBuffer {};
+	};
 	
 	typedef uint32_t Index;
 	struct VertexPosition {
