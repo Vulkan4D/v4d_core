@@ -16,16 +16,20 @@
 			std::vector<tinyobj::material_t> materials;
 			std::string err, warn;
 			
-			// Load file
-			if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelData->objFilePath.data(), modelData->objFileBaseDir.data())) {
-				throw std::runtime_error(err);
+			{// Load file
+				if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelData->objFilePath.data(), modelData->objFileBaseDir.data())) {
+					throw std::runtime_error(err);
+				}
+				if (warn != "") LOG_WARN(warn);
 			}
-			if (warn != "") LOG_WARN(warn);
 			
-			// Reset data
-			modelData->preloadedUniqueVertices.clear();
-			modelData->preloadedVertices.clear();
-			modelData->preloadedIndices.clear();
+			{// Reset data
+				modelData->preloadedUniqueVertices.clear();
+				modelData->preloadedIndices.clear();
+				modelData->preloadedVertexPositions.clear();
+				modelData->preloadedVertexNormals.clear();
+				modelData->preloadedVertexColors.clear();
+			}
 			
 			// Fill data
 			for (size_t i = 0; i < shapes.size(); i++) {
@@ -34,7 +38,7 @@
 				for (size_t j = 0; j < shape.mesh.indices.size(); j++) {
 					auto& index = shape.mesh.indices[j];
 					materialId = shape.mesh.material_ids[j/3];
-					Geometry::VertexBuffer_T vertex = {};
+					v4d::scene::ObjModel::VertexData vertex = {};
 					vertex.pos = {
 						attrib.vertices[3 * index.vertex_index + 0]*-1,
 						attrib.vertices[3 * index.vertex_index + 1],
@@ -44,37 +48,36 @@
 					// 	attrib.texcoords[2 * index.texcoord_index + 0],
 					// 	1.0f - attrib.texcoords[2 * index.texcoord_index + 1], // flipped vertical component
 					// };
-					vertex.SetUV({
-						materials[materialId].metallic,
-						materials[materialId].roughness
-					});
+					// vertex.SetUV({
+					// 	materials[materialId].metallic,
+					// 	materials[materialId].roughness
+					// });
 					auto color = materials[materialId].diffuse;
-					vertex.SetColor({color[0], color[1], color[2], 1});
+					vertex.color = {color[0], color[1], color[2], 1};
 					vertex.normal = {
 						attrib.normals[3 * index.normal_index + 0]*-1,
 						attrib.normals[3 * index.normal_index + 1],
 						attrib.normals[3 * index.normal_index + 2]*-1,
 					};
 					if (modelData->preloadedUniqueVertices.count(vertex) == 0) {
-						modelData->preloadedUniqueVertices[vertex] = modelData->preloadedVertices.size();
-						modelData->preloadedVertices.push_back(vertex);
+						modelData->preloadedUniqueVertices[vertex] = modelData->preloadedVertexPositions.size();
+						modelData->preloadedVertexPositions.push_back(vertex.pos);
+						modelData->preloadedVertexNormals.push_back(vertex.normal);
+						modelData->preloadedVertexColors.push_back(vertex.color);
 					}
 					modelData->preloadedIndices.push_back(modelData->preloadedUniqueVertices[vertex]);
 				}
 			}
 		}
-		void ObjModelLoader::Generate(ObjectInstance* obj) {
-			auto geom = modelData->modelGeometry.lock();
-			if (geom) {
-				obj->AddGeometry("basic", geom);
-			} else {
-				geom = obj->AddGeometry("basic", modelData->preloadedVertices.size(), modelData->preloadedIndices.size());
-				for (size_t i = 0; i < modelData->preloadedVertices.size(); ++i) {
-					geom->SetVertex(i, modelData->preloadedVertices[i]);
-				}
-				geom->SetIndices(modelData->preloadedIndices.data());
-				modelData->modelGeometry = geom;
-			}
+		void ObjModelLoader::Generate (v4d::graphics::vulkan::Device* device, RenderableGeometryEntity* entity) {
+			entity->Add_meshIndices();
+			entity->Add_meshVertexPosition();
+			entity->Add_meshVertexNormal();
+			entity->Add_meshVertexColor();
+			entity->meshIndices->AllocateBuffers(device, modelData->preloadedIndices.data(), modelData->preloadedIndices.size());
+			entity->meshVertexPosition->AllocateBuffers(device, modelData->preloadedVertexPositions.data(), modelData->preloadedVertexPositions.size());
+			entity->meshVertexNormal->AllocateBuffers(device, modelData->preloadedVertexNormals.data(), modelData->preloadedVertexNormals.size());
+			entity->meshVertexColor->AllocateBuffers(device, modelData->preloadedVertexColors.data(), modelData->preloadedVertexColors.size());
 		}
 	}
 

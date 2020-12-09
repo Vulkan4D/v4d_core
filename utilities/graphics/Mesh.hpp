@@ -31,6 +31,9 @@ namespace v4d::graphics::Mesh {
 				{0, offsetof(VertexPosition, x), VK_FORMAT_R32G32B32_SFLOAT},
 			};
 		}
+		bool operator==(const VertexPosition& other) const {
+			return x == other.x && y == other.y && z == other.z;
+		}
 	};
 	struct VertexNormal {
 		float x;
@@ -38,6 +41,9 @@ namespace v4d::graphics::Mesh {
 		float z;
 		VertexNormal(float x, float y, float z) : x(x), y(y), z(z) {}
 		VertexNormal() {static_assert(sizeof(VertexNormal) == 12);}
+		bool operator==(const VertexNormal& other) const {
+			return x == other.x && y == other.y && z == other.z;
+		}
 	};
 	struct VertexColor {
 		float r;
@@ -46,12 +52,18 @@ namespace v4d::graphics::Mesh {
 		float a;
 		VertexColor(float r, float g, float b, float a) : r(r), g(g), b(b), a(a) {}
 		VertexColor() {static_assert(sizeof(VertexColor) == 16);}
+		bool operator==(const VertexColor& other) const {
+			return r == other.r && g == other.g && b == other.b && a == other.a;
+		}
 	};
 	struct VertexUV {
 		float s;
 		float t;
 		VertexUV(float s, float t) : s(s), t(t) {}
 		VertexUV() {static_assert(sizeof(VertexUV) == 8);}
+		bool operator==(const VertexUV& other) const {
+			return s == other.s && t == other.t;
+		}
 	};
 	struct ProceduralVertexAABB {
 		glm::vec3 aabbMin, aabbMax;
