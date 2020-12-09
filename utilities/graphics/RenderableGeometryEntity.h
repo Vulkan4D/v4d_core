@@ -54,6 +54,9 @@ namespace v4d::graphics {
 		uint32_t rayTracingMask = 0xff;
 		VkGeometryInstanceFlagsKHR rayTracingFlags = 0;
 		
+		bool raster_transparent = false;
+		bool raster_wireframe = false;
+		
 		static std::unordered_map<std::string, uint32_t> sbtOffsets;
 		
 		void FreeComponentsBuffers();

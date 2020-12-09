@@ -29,16 +29,16 @@ RasterShaderPipeline::RasterShaderPipeline(PipelineLayout& pipelineLayout, const
 
 RasterShaderPipeline::~RasterShaderPipeline() {} // dont delete anything here, we are copying/moving this object in some modules
 
-void RasterShaderPipeline::SetData(Buffer* vertexBuffer, Buffer* indexBuffer, uint32_t indexCount) {
+void RasterShaderPipeline::SetData(VkBuffer vertexBuffer, VkBuffer indexBuffer, uint32_t indexCount) {
 	this->vertexBuffer = vertexBuffer;
 	this->indexBuffer = indexBuffer;
 	this->vertexCount = 0;
 	this->vertexOffset = 0;
-	this->indexCount = indexCount > 0 ? indexCount : static_cast<uint32_t>(indexBuffer->size / sizeof(uint32_t));
+	this->indexCount = indexCount;
 	this->indexOffset = 0;
 }
 
-void RasterShaderPipeline::SetData(Buffer* vertexBuffer, VkDeviceSize vertexOffset, Buffer* indexBuffer, VkDeviceSize indexOffset, uint32_t indexCount) {
+void RasterShaderPipeline::SetData(VkBuffer vertexBuffer, VkDeviceSize vertexOffset, VkBuffer indexBuffer, VkDeviceSize indexOffset, uint32_t indexCount) {
 	this->vertexBuffer = vertexBuffer;
 	this->indexBuffer = indexBuffer;
 	this->vertexCount = 0;
@@ -47,7 +47,7 @@ void RasterShaderPipeline::SetData(Buffer* vertexBuffer, VkDeviceSize vertexOffs
 	this->indexOffset = indexOffset;
 }
 
-void RasterShaderPipeline::SetData(Buffer* vertexBuffer, uint32_t vertexCount) {
+void RasterShaderPipeline::SetData(VkBuffer vertexBuffer, uint32_t vertexCount) {
 	this->vertexBuffer = vertexBuffer;
 	this->indexBuffer = nullptr;
 	this->vertexCount = vertexCount;
@@ -185,7 +185,7 @@ void RasterShaderPipeline::Render(Device* device, VkCommandBuffer cmdBuffer, uin
 			0  // firstInstance (defines the lowest value of gl_InstanceIndex)
 		);
 	} else {
-		device->CmdBindVertexBuffers(cmdBuffer, 0, 1, &vertexBuffer->buffer, &vertexOffset);
+		device->CmdBindVertexBuffers(cmdBuffer, 0, 1, &vertexBuffer, &vertexOffset);
 		if (indexBuffer == nullptr) {
 			// Draw vertices
 			if (vertexCount > 0) {
@@ -198,7 +198,7 @@ void RasterShaderPipeline::Render(Device* device, VkCommandBuffer cmdBuffer, uin
 			}
 		} else if (indexCount > 0) {
 			// Draw indices
-			device->CmdBindIndexBuffer(cmdBuffer, indexBuffer->buffer, indexOffset, VK_INDEX_TYPE_UINT32);
+			device->CmdBindIndexBuffer(cmdBuffer, indexBuffer, indexOffset, VK_INDEX_TYPE_UINT32);
 			device->CmdDrawIndexed(cmdBuffer,
 				indexCount, // indexCount
 				instanceCount, // instanceCount
