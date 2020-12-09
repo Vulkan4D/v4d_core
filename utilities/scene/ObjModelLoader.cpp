@@ -69,7 +69,7 @@
 				}
 			}
 		}
-		void ObjModelLoader::Generate (v4d::graphics::vulkan::Device* device, RenderableGeometryEntity* entity) {
+		void ObjModelLoader::Generate (v4d::graphics::vulkan::Device* device, v4d::graphics::RenderableGeometryEntity* entity) {
 			entity->Add_meshIndices();
 			entity->Add_meshVertexPosition();
 			entity->Add_meshVertexNormal();

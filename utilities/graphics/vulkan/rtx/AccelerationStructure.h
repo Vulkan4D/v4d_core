@@ -69,7 +69,6 @@ namespace v4d::graphics::vulkan::rtx {
 			size_t transformOffset = 0;
 		};
 		
-		void AssignBottomLevel(Device* device, std::shared_ptr<v4d::scene::Geometry> geom);
 		void AssignBottomLevelGeometry(Device* device, const GeometryData& geom);
 		void AssignBottomLevelProceduralVertex(Device* device, const GeometryData& geom);
 		

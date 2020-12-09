@@ -6,10 +6,10 @@ namespace v4d::scene {
 	template<class ModelDataType>
 	class ModelLoader {
 	public:
-		virtual void Generate(RenderableGeometryEntity*) = 0;
+		virtual void Generate(v4d::graphics::RenderableGeometryEntity*) = 0;
 		std::shared_ptr<ModelDataType> modelData;
 		virtual void Load() = 0;
-		void operator()(RenderableGeometryEntity* entity) {
+		void operator()(v4d::graphics::RenderableGeometryEntity* entity) {
 			Generate(entity);
 		}
 		ModelLoader(const ModelLoader& original) : modelData(original.modelData) {}

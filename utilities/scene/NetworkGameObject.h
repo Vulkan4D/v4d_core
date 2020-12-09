@@ -50,7 +50,7 @@ namespace v4d::scene {
 		Parent parent;
 		Id id;
 		
-		std::weak_ptr<RenderableGeometryEntity> renderableGeometryEntityInstance;
+		std::weak_ptr<v4d::graphics::RenderableGeometryEntity> renderableGeometryEntityInstance;
 		
 		// Attributes
 		bool active = false;
