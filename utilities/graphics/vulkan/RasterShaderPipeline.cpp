@@ -177,7 +177,7 @@ void RasterShaderPipeline::Bind(Device* device, VkCommandBuffer cmdBuffer) {
 }
 
 void RasterShaderPipeline::Render(Device* device, VkCommandBuffer cmdBuffer, uint32_t instanceCount) {
-	if (vertexBuffer == nullptr) {
+	if (vertexBuffer == VK_NULL_HANDLE) {
 		device->CmdDraw(cmdBuffer,
 			vertexCount, // vertexCount
 			instanceCount, // instanceCount
@@ -186,7 +186,7 @@ void RasterShaderPipeline::Render(Device* device, VkCommandBuffer cmdBuffer, uin
 		);
 	} else {
 		device->CmdBindVertexBuffers(cmdBuffer, 0, 1, &vertexBuffer, &vertexOffset);
-		if (indexBuffer == nullptr) {
+		if (indexBuffer == VK_NULL_HANDLE) {
 			// Draw vertices
 			if (vertexCount > 0) {
 				device->CmdDraw(cmdBuffer,

@@ -11,22 +11,22 @@ namespace v4d::graphics {
 			glm::vec3 position;
 			float radius;
 			glm::vec3 color;
-			float reach;
+			float intensity;
 			LightSource() {
 				static_assert(sizeof(LightSource) == 32);
 				Reset();
 			}
-			LightSource(glm::vec3 position, glm::vec3 color, float radius, float reach) : 
+			LightSource(glm::vec3 position, glm::vec3 color, float radius, float intensity) : 
 				position(position),
 				radius(radius),
 				color(color),
-				reach(reach)
+				intensity(intensity)
 			{}
 			void Reset() {
 				position = glm::vec3(0);
 				radius = 0;
 				color = glm::vec3(0);
-				reach = 0;
+				intensity = 0;
 			}
 		};
 	private:
@@ -61,10 +61,12 @@ namespace v4d::graphics {
 		
 		void FreeComponentsBuffers();
 		
-		void operator()(v4d::modular::ModuleID moduleId, int objId, int customData);
+		void operator()(v4d::modular::ModuleID moduleId, int objId = 0, int customData = 0);
 		
 		void Prepare(Device* renderingDevice, std::string sbtOffset = "default");
 		RenderableGeometryEntity* SetInitialTransform(const glm::dmat4&);
+		
+		void Generate(Device* device);
 		
 		~RenderableGeometryEntity();
 		

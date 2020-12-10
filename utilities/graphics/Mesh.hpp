@@ -4,27 +4,14 @@
 
 namespace v4d::graphics::Mesh {
 
-	struct GeometryBufferPointers {
-		VkDeviceOrHostAddressConstKHR indexBuffer {};
-		size_t indexOffset = 0;
-		size_t indexCount = 0;
-		size_t indexSize = 0;
-		VkDeviceOrHostAddressConstKHR vertexBuffer {};
-		size_t vertexOffset = 0;
-		size_t vertexCount = 0;
-		size_t vertexSize = 0;
-		VkDeviceOrHostAddressConstKHR transformBuffer {};
-		size_t transformOffset = 0;
-		
-		VkDeviceAddress vertexNormalsBuffer {};
-		VkDeviceAddress vertexColorsBuffer {};
-		VkDeviceAddress vertexUVsBuffer {};
-	};
-	
 	typedef uint32_t Index;
 	struct VertexPosition {
-		float x, y, z;
+		glm::f32 x;
+		glm::f32 y;
+		glm::f32 z;
 		VertexPosition(float x, float y, float z) : x(x), y(y), z(z) {}
+		VertexPosition(const glm::vec3& v) : x(v.x), y(v.y), z(v.z) {}
+		operator glm::vec3() {return glm::vec3(x, y, z);}
 		VertexPosition() {static_assert(sizeof(VertexPosition) == 12);}
 		static std::vector<VertexInputAttributeDescription> GetInputAttributes() {
 			return {
@@ -36,37 +23,44 @@ namespace v4d::graphics::Mesh {
 		}
 	};
 	struct VertexNormal {
-		float x;
-		float y;
-		float z;
+		glm::f32 x;
+		glm::f32 y;
+		glm::f32 z;
 		VertexNormal(float x, float y, float z) : x(x), y(y), z(z) {}
+		VertexNormal(const glm::vec3& v) : x(v.x), y(v.y), z(v.z) {}
+		operator glm::vec3() {return glm::vec3(x, y, z);}
 		VertexNormal() {static_assert(sizeof(VertexNormal) == 12);}
 		bool operator==(const VertexNormal& other) const {
 			return x == other.x && y == other.y && z == other.z;
 		}
 	};
 	struct VertexColor {
-		float r;
-		float g;
-		float b;
-		float a;
+		glm::f32 r;
+		glm::f32 g;
+		glm::f32 b;
+		glm::f32 a;
 		VertexColor(float r, float g, float b, float a) : r(r), g(g), b(b), a(a) {}
+		VertexColor(const glm::vec4& v) : r(v.r), g(v.g), b(v.b), a(v.a) {}
+		operator glm::vec4() {return glm::vec4(r, g, b, a);}
 		VertexColor() {static_assert(sizeof(VertexColor) == 16);}
 		bool operator==(const VertexColor& other) const {
 			return r == other.r && g == other.g && b == other.b && a == other.a;
 		}
 	};
 	struct VertexUV {
-		float s;
-		float t;
+		glm::f32 s;
+		glm::f32 t;
 		VertexUV(float s, float t) : s(s), t(t) {}
+		VertexUV(const glm::vec2& v) : s(v.s), t(v.t) {}
+		operator glm::vec2() {return glm::vec2(s, t);}
 		VertexUV() {static_assert(sizeof(VertexUV) == 8);}
 		bool operator==(const VertexUV& other) const {
 			return s == other.s && t == other.t;
 		}
 	};
 	struct ProceduralVertexAABB {
-		glm::vec3 aabbMin, aabbMax;
+		glm::vec3 aabbMin;
+		glm::vec3 aabbMax;
 		ProceduralVertexAABB(glm::vec3 aabbMin, glm::vec3 aabbMax) : aabbMin(aabbMin), aabbMax(aabbMax) {}
 		ProceduralVertexAABB() {static_assert(sizeof(ProceduralVertexAABB) == 24);}
 		static std::vector<VertexInputAttributeDescription> GetInputAttributes() {
@@ -105,28 +99,39 @@ namespace v4d::graphics::Mesh {
 		VkBuffer deviceBuffer = VK_NULL_HANDLE;
 		MemoryAllocation hostBufferAllocation = VK_NULL_HANDLE;
 		MemoryAllocation deviceBufferAllocation = VK_NULL_HANDLE;
-		bool dirtyOnDevice = true;
+		bool dirtyOnDevice = false;
 		
 		DataBuffer() {}
 		
-		void AllocateBuffers(Device* device, const std::initializer_list<T>& list) {
-			AllocateBuffers(device, list.size());
+		void* AllocateBuffers(Device* device, const std::initializer_list<T>& list) {
+			AllocateBuffersCount(device, list.size());
 			memcpy(data, list.begin(), list.size() * sizeof(T));
+			dirtyOnDevice = true;
+			return data;
 		}
-		void AllocateBuffers(Device* device, const std::vector<T>& list) {
-			AllocateBuffers(device, list.size());
+		void* AllocateBuffers(Device* device, const std::vector<T>& list) {
+			AllocateBuffersCount(device, list.size());
 			memcpy(data, list.data(), list.size() * sizeof(T));
+			dirtyOnDevice = true;
+			return data;
 		}
-		void AllocateBuffers(Device* device, T* inputDataOrArray, size_t elementCount = 1) {
-			AllocateBuffers(device, elementCount);
+		void* AllocateBuffers(Device* device, T* inputDataOrArray, size_t elementCount = 1) {
+			AllocateBuffersCount(device, elementCount);
 			memcpy(data, inputDataOrArray, elementCount * sizeof(T));
+			dirtyOnDevice = true;
+			return data;
 		}
 		template<typename _T>
-		void AllocateBuffers(Device* device, _T&& value) {
-			AllocateBuffers(device, 1);
+		void* AllocateBuffers(Device* device, _T&& value) {
+			AllocateBuffersCount(device, 1);
 			*data = std::forward<_T>(value);
+			dirtyOnDevice = true;
+			return data;
 		}
-		void AllocateBuffers(Device* device, size_t elementCount = 1) {
+		void* AllocateBuffers(Device* device) {
+			return AllocateBuffersCount(device, 1);
+		}
+		void* AllocateBuffersCount(Device* device, uint32_t elementCount) {
 			count = elementCount;
 			
 			// Host buffer
@@ -156,6 +161,7 @@ namespace v4d::graphics::Mesh {
 				}
 				device->CreateAndAllocateBuffer(createInfo, MemoryUsage::MEMORY_USAGE_GPU_ONLY, deviceBuffer, &deviceBufferAllocation);
 			}
+			return data;
 		}
 		void Push(Device* device, VkCommandBuffer commandBuffer) {
 			if (deviceBuffer && dirtyOnDevice) {
@@ -187,7 +193,7 @@ namespace v4d::graphics::Mesh {
 			if (deviceBuffer && deviceBufferAllocation) {
 				device->FreeAndDestroyBuffer(deviceBuffer, deviceBufferAllocation);
 			}
-			dirtyOnDevice = true;
+			dirtyOnDevice = false;
 		}
 		T* operator->() {
 			return data;
@@ -201,6 +207,10 @@ namespace v4d::graphics::Mesh {
 		void Set(_T&& value) {
 			assert(data != nullptr && count > 0);
 			*data = std::forward<_T>(value);
+		}
+		T& Get(uint32_t index) {
+			assert(data != nullptr && index < count);
+			return data[index];
 		}
 	};
 

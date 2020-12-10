@@ -73,4 +73,59 @@ namespace v4d::graphics {
 		generator = [](auto*){};
 	}
 	
+	void RenderableGeometryEntity::Generate(Device* device) {
+		generated = true;
+		generator(this);
+		if (generated) {
+			// Indices
+			if (auto indexData = meshIndices.Lock(); indexData) {
+				indexData->dirtyOnDevice = true;
+				geometryData.indexBuffer = device->GetBufferDeviceOrHostAddressConst(indexData->deviceBuffer);
+				geometryData.indexOffset = 0;
+				geometryData.indexCount = indexData->count;
+				geometryData.indexSize = sizeof(Mesh::Index);
+
+				modelInfo.indices = geometryData.indexBuffer.deviceAddress;
+			}
+			// Vertex Positions
+			if (auto vertexData = meshVertexPosition.Lock(); vertexData) {
+				vertexData->dirtyOnDevice = true;
+				geometryData.vertexBuffer = device->GetBufferDeviceOrHostAddressConst(vertexData->deviceBuffer);
+				geometryData.vertexOffset = 0;
+				geometryData.vertexCount = vertexData->count;
+				geometryData.vertexSize = sizeof(Mesh::VertexPosition);
+				
+				modelInfo.vertexPositions = geometryData.vertexBuffer.deviceAddress;
+			} else if (auto proceduralVertexData = proceduralVertexAABB.Lock(); proceduralVertexData) {
+				proceduralVertexData->dirtyOnDevice = true;
+				geometryData.vertexBuffer = device->GetBufferDeviceOrHostAddressConst(proceduralVertexData->deviceBuffer);
+				geometryData.vertexOffset = 0;
+				geometryData.vertexCount = proceduralVertexData->count;
+				geometryData.vertexSize = sizeof(Mesh::ProceduralVertexAABB);
+				
+				modelInfo.vertexPositions = geometryData.vertexBuffer.deviceAddress;
+			}
+			// Vertex normals
+			if (auto vertexData = meshVertexNormal.Lock(); vertexData) {
+				vertexData->dirtyOnDevice = true;
+				modelInfo.vertexNormals = device->GetBufferDeviceAddress(vertexData->deviceBuffer);
+			}
+			// Vertex colors
+			if (auto vertexData = meshVertexColor.Lock(); vertexData) {
+				vertexData->dirtyOnDevice = true;
+				modelInfo.vertexColors = device->GetBufferDeviceAddress(vertexData->deviceBuffer);
+			}
+			// Vertex UVs
+			if (auto vertexData = meshVertexUV.Lock(); vertexData) {
+				vertexData->dirtyOnDevice = true;
+				modelInfo.vertexUVs = device->GetBufferDeviceAddress(vertexData->deviceBuffer);
+			}
+			// Transform
+			if (auto transformData = transform.Lock(); transformData) {
+				transformData->dirtyOnDevice = true;
+				modelInfo.transform = device->GetBufferDeviceAddress(transformData->deviceBuffer);
+			}
+		}
+	}
+	
 }
