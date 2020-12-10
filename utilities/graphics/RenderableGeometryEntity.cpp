@@ -54,13 +54,12 @@ namespace v4d::graphics {
 	
 	void RenderableGeometryEntity::Prepare(Device* renderingDevice, std::string sbtOffset) {
 		this->device = renderingDevice;
-		Add_transform();
-		transform->AllocateBuffers(renderingDevice);
 		this->sbtOffset = sbtOffsets[sbtOffset];
+		Add_transform();
 		auto t = transform.Lock();
-		if (t->data) {
-			t->data->worldTransform = initialTransform;
-		}
+		t->AllocateBuffers(renderingDevice);
+		t->data->worldTransform = initialTransform;
+		t->dirtyOnDevice = true;
 	}
 	
 	RenderableGeometryEntity* RenderableGeometryEntity::SetInitialTransform(const glm::dmat4& t) {
