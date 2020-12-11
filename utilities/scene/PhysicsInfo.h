@@ -33,7 +33,6 @@ namespace v4d::scene {
 		
 		// RigidBody
 		glm::dvec3 centerOfMass {0,0,0};
-		void* colliderShapeObject = nullptr;
 		bool colliderDirty = false;
 		bool physicsDirty = false;
 		

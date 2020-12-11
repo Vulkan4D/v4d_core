@@ -15,8 +15,28 @@ namespace v4d::graphics {
 	V4D_ENTITY_DEFINE_COMPONENT(RenderableGeometryEntity, v4d::scene::PhysicsInfo, physics)
 	
 	std::unordered_map<std::string, uint32_t> RenderableGeometryEntity::sbtOffsets {};
-
+	
+	// Buffer Write Lock
+	RenderableGeometryEntity::BufferWriteLock::BufferWriteLock() : lock({}), valid(false) {}
+	RenderableGeometryEntity::BufferWriteLock::BufferWriteLock(std::mutex mu, bool valid) : lock(mu), valid(valid) {}
+	RenderableGeometryEntity::BufferWriteLock::BufferWriteLock(std::unique_lock<std::mutex> lock, bool valid) : lock(std::move(lock)), valid(valid) {}
+	RenderableGeometryEntity::BufferWriteLock::operator bool() const {return valid;}
+	void RenderableGeometryEntity::BufferWriteLock::Unlock() {
+		if (valid) {
+			valid = false;
+			lock.unlock();
+		}
+	}
+	RenderableGeometryEntity::BufferWriteLock RenderableGeometryEntity::GetBuffersWriteLock() {
+		std::unique_lock<std::mutex> lock(writeMutex);
+		if (device) {
+			return BufferWriteLock(std::move(lock), true);
+		}
+		return BufferWriteLock();
+	}
+	
 	void RenderableGeometryEntity::FreeComponentsBuffers() {
+		std::unique_lock<std::mutex> lock(writeMutex);
 		if (device) {
 			transform.Do([this](auto& component){
 				if (component.data) initialTransform = component.data->worldTransform;
@@ -43,6 +63,7 @@ namespace v4d::graphics {
 		}
 		generated = false;
 		blas = nullptr;
+		device = nullptr;
 	}
 	
 	void RenderableGeometryEntity::operator()(v4d::modular::ModuleID moduleId, int objId, int customData) {

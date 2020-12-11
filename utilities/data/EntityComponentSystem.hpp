@@ -299,7 +299,7 @@ namespace v4d::data::EntityComponentSystem {
 			(*e)(std::forward<Args>(args)...);\
 			return entityInstances.emplace_back(e);\
 		}\
-		static void Destroy(int32_t index);\
+		static void Destroy(int32_t index, bool trim = true);\
 		void Destroy();\
 		static void ClearAll();\
 		static size_t Count();\
@@ -321,12 +321,12 @@ namespace v4d::data::EntityComponentSystem {
 		}\
 		return entityInstances.emplace_back(new ClassName(nbEntityInstances));\
 	}\
-	void ClassName::Destroy(int32_t index) {\
+	void ClassName::Destroy(int32_t index, bool trim) {\
 		std::lock_guard lock(entityInstancesMutex);\
 		if (index > -1 && index < entityInstances.size()) {\
 			entityInstances[index]->index = -1;\
 			entityInstances[index].reset();\
-			if (index == entityInstances.size()-1) {\
+			if (trim && index == entityInstances.size()-1) {\
 				entityInstances.pop_back();\
 				while (!entityInstances[entityInstances.size()-1]) {\
 					entityInstances.pop_back();\
@@ -336,7 +336,7 @@ namespace v4d::data::EntityComponentSystem {
 	}\
 	void ClassName::Destroy() {\
 		std::lock_guard lock(entityInstancesMutex);\
-		Destroy(index);\
+		Destroy(index, false);\
 	}\
 	void ClassName::ForEach(std::function<void(std::shared_ptr<ClassName>)>&& func) {\
 		std::lock_guard lock(entityInstancesMutex);\

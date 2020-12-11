@@ -53,11 +53,25 @@ namespace v4d::graphics {
 		uint32_t sbtOffset = 0;
 		uint32_t rayTracingMask = 0xff;
 		VkGeometryInstanceFlagsKHR rayTracingFlags = 0;
+		std::mutex writeMutex;
 		
 		bool raster_transparent = false;
 		bool raster_wireframe = false;
 		
 		static std::unordered_map<std::string, uint32_t> sbtOffsets;
+		
+		class V4DLIB BufferWriteLock {
+			std::unique_lock<std::mutex> lock;
+			bool valid;
+		public:
+			BufferWriteLock();
+			BufferWriteLock(std::mutex mu, bool valid);
+			BufferWriteLock(std::unique_lock<std::mutex> lock, bool valid);
+			operator bool() const;
+			void Unlock();
+		};
+		
+		BufferWriteLock GetBuffersWriteLock();
 		
 		void FreeComponentsBuffers();
 		

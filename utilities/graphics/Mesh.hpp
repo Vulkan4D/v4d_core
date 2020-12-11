@@ -103,35 +103,35 @@ namespace v4d::graphics::Mesh {
 		
 		DataBuffer() {}
 		
-		void* AllocateBuffers(Device* device, const std::initializer_list<T>& list) {
+		T* AllocateBuffers(Device* device, const std::initializer_list<T>& list) {
 			AllocateBuffersCount(device, list.size());
 			memcpy(data, list.begin(), list.size() * sizeof(T));
 			dirtyOnDevice = true;
 			return data;
 		}
-		void* AllocateBuffers(Device* device, const std::vector<T>& list) {
+		T* AllocateBuffers(Device* device, const std::vector<T>& list) {
 			AllocateBuffersCount(device, list.size());
 			memcpy(data, list.data(), list.size() * sizeof(T));
 			dirtyOnDevice = true;
 			return data;
 		}
-		void* AllocateBuffers(Device* device, T* inputDataOrArray, size_t elementCount = 1) {
+		T* AllocateBuffers(Device* device, T* inputDataOrArray, size_t elementCount = 1) {
 			AllocateBuffersCount(device, elementCount);
 			memcpy(data, inputDataOrArray, elementCount * sizeof(T));
 			dirtyOnDevice = true;
 			return data;
 		}
 		template<typename _T>
-		void* AllocateBuffers(Device* device, _T&& value) {
+		T* AllocateBuffers(Device* device, _T&& value) {
 			AllocateBuffersCount(device, 1);
 			*data = std::forward<_T>(value);
 			dirtyOnDevice = true;
 			return data;
 		}
-		void* AllocateBuffers(Device* device) {
+		T* AllocateBuffers(Device* device) {
 			return AllocateBuffersCount(device, 1);
 		}
-		void* AllocateBuffersCount(Device* device, uint32_t elementCount) {
+		T* AllocateBuffersCount(Device* device, uint32_t elementCount) {
 			count = elementCount;
 			
 			// Host buffer
