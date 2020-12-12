@@ -39,6 +39,7 @@ namespace v4d::graphics {
 		V4D_ENTITY_DECLARE_COMPONENT(RenderableGeometryEntity, Mesh::DataBuffer<Mesh::VertexColor>, meshVertexColor)
 		V4D_ENTITY_DECLARE_COMPONENT(RenderableGeometryEntity, Mesh::DataBuffer<Mesh::VertexUV>, meshVertexUV)
 		V4D_ENTITY_DECLARE_COMPONENT(RenderableGeometryEntity, Mesh::DataBuffer<Mesh::Index>, meshIndices)
+		V4D_ENTITY_DECLARE_COMPONENT(RenderableGeometryEntity, Mesh::DataBuffer<glm::f32>, customData)
 		V4D_ENTITY_DECLARE_COMPONENT(RenderableGeometryEntity, RenderableGeometryEntity::LightSource, lightSource)
 		V4D_ENTITY_DECLARE_COMPONENT(RenderableGeometryEntity, v4d::scene::PhysicsInfo, physics)
 		
@@ -53,7 +54,7 @@ namespace v4d::graphics {
 		uint32_t sbtOffset = 0;
 		uint32_t rayTracingMask = 0xff;
 		VkGeometryInstanceFlagsKHR rayTracingFlags = 0;
-		std::mutex writeMutex;
+		std::recursive_mutex writeMutex;
 		
 		bool raster_transparent = false;
 		bool raster_wireframe = false;
@@ -61,12 +62,12 @@ namespace v4d::graphics {
 		static std::unordered_map<std::string, uint32_t> sbtOffsets;
 		
 		class V4DLIB BufferWriteLock {
-			std::unique_lock<std::mutex> lock;
+			std::unique_lock<std::recursive_mutex> lock;
 			bool valid;
 		public:
 			BufferWriteLock();
-			BufferWriteLock(std::mutex mu, bool valid);
-			BufferWriteLock(std::unique_lock<std::mutex> lock, bool valid);
+			BufferWriteLock(std::recursive_mutex mu, bool valid);
+			BufferWriteLock(std::unique_lock<std::recursive_mutex> lock, bool valid);
 			operator bool() const;
 			void Unlock();
 		};
@@ -75,7 +76,7 @@ namespace v4d::graphics {
 		
 		void FreeComponentsBuffers();
 		
-		void operator()(v4d::modular::ModuleID moduleId, int objId = 0, int customData = 0);
+		void operator()(v4d::modular::ModuleID moduleId, uint64_t objId = 0);
 		
 		void Prepare(Device* renderingDevice, std::string sbtOffset = "default");
 		RenderableGeometryEntity* SetInitialTransform(const glm::dmat4&);

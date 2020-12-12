@@ -11,6 +11,7 @@ namespace v4d::graphics {
 	V4D_ENTITY_DEFINE_COMPONENT(RenderableGeometryEntity, Mesh::DataBuffer<Mesh::VertexColor>, meshVertexColor)
 	V4D_ENTITY_DEFINE_COMPONENT(RenderableGeometryEntity, Mesh::DataBuffer<Mesh::VertexUV>, meshVertexUV)
 	V4D_ENTITY_DEFINE_COMPONENT(RenderableGeometryEntity, Mesh::DataBuffer<Mesh::Index>, meshIndices)
+	V4D_ENTITY_DEFINE_COMPONENT(RenderableGeometryEntity, Mesh::DataBuffer<glm::f32>, customData)
 	V4D_ENTITY_DEFINE_COMPONENT(RenderableGeometryEntity, RenderableGeometryEntity::LightSource, lightSource)
 	V4D_ENTITY_DEFINE_COMPONENT(RenderableGeometryEntity, v4d::scene::PhysicsInfo, physics)
 	
@@ -18,8 +19,8 @@ namespace v4d::graphics {
 	
 	// Buffer Write Lock
 	RenderableGeometryEntity::BufferWriteLock::BufferWriteLock() : lock({}), valid(false) {}
-	RenderableGeometryEntity::BufferWriteLock::BufferWriteLock(std::mutex mu, bool valid) : lock(mu), valid(valid) {}
-	RenderableGeometryEntity::BufferWriteLock::BufferWriteLock(std::unique_lock<std::mutex> lock, bool valid) : lock(std::move(lock)), valid(valid) {}
+	RenderableGeometryEntity::BufferWriteLock::BufferWriteLock(std::recursive_mutex mu, bool valid) : lock(mu), valid(valid) {}
+	RenderableGeometryEntity::BufferWriteLock::BufferWriteLock(std::unique_lock<std::recursive_mutex> lock, bool valid) : lock(std::move(lock)), valid(valid) {}
 	RenderableGeometryEntity::BufferWriteLock::operator bool() const {return valid;}
 	void RenderableGeometryEntity::BufferWriteLock::Unlock() {
 		if (valid) {
@@ -28,7 +29,7 @@ namespace v4d::graphics {
 		}
 	}
 	RenderableGeometryEntity::BufferWriteLock RenderableGeometryEntity::GetBuffersWriteLock() {
-		std::unique_lock<std::mutex> lock(writeMutex);
+		std::unique_lock<std::recursive_mutex> lock(writeMutex);
 		if (device) {
 			return BufferWriteLock(std::move(lock), true);
 		}
@@ -36,10 +37,9 @@ namespace v4d::graphics {
 	}
 	
 	void RenderableGeometryEntity::FreeComponentsBuffers() {
-		std::unique_lock<std::mutex> lock(writeMutex);
+		std::unique_lock<std::recursive_mutex> lock(writeMutex);
 		if (device) {
-			transform.Do([this](auto& component){
-				if (component.data) initialTransform = component.data->worldTransform;
+			meshIndices.Do([this](auto& component){
 				component.FreeBuffers(device);
 			});
 			proceduralVertexAABB.Do([this](auto& component){
@@ -57,7 +57,11 @@ namespace v4d::graphics {
 			meshVertexUV.Do([this](auto& component){
 				component.FreeBuffers(device);
 			});
-			meshIndices.Do([this](auto& component){
+			transform.Do([this](auto& component){
+				if (component.data) initialTransform = component.data->worldTransform;
+				component.FreeBuffers(device);
+			});
+			customData.Do([this](auto& component){
 				component.FreeBuffers(device);
 			});
 		}
@@ -66,14 +70,14 @@ namespace v4d::graphics {
 		device = nullptr;
 	}
 	
-	void RenderableGeometryEntity::operator()(v4d::modular::ModuleID moduleId, int objId, int customData) {
+	void RenderableGeometryEntity::operator()(v4d::modular::ModuleID moduleId, uint64_t objId) {
 		modelInfo.moduleVen = moduleId.vendor;
 		modelInfo.moduleId = moduleId.module;
 		modelInfo.objId = objId;
-		modelInfo.customData = customData;
 	}
 	
 	void RenderableGeometryEntity::Prepare(Device* renderingDevice, std::string sbtOffset) {
+		std::unique_lock<std::recursive_mutex> lock(writeMutex);
 		this->device = renderingDevice;
 		this->sbtOffset = sbtOffsets[sbtOffset];
 		Add_transform();
@@ -98,7 +102,7 @@ namespace v4d::graphics {
 		generator(this);
 		if (generated) {
 			// Indices
-			if (auto indexData = meshIndices.Lock(); indexData) {
+			if (auto indexData = meshIndices.Lock(); indexData && indexData->data) {
 				indexData->dirtyOnDevice = true;
 				geometryData.indexBuffer = device->GetBufferDeviceOrHostAddressConst(indexData->deviceBuffer);
 				geometryData.indexOffset = 0;
@@ -108,7 +112,7 @@ namespace v4d::graphics {
 				modelInfo.indices = geometryData.indexBuffer.deviceAddress;
 			}
 			// Vertex Positions
-			if (auto vertexData = meshVertexPosition.Lock(); vertexData) {
+			if (auto vertexData = meshVertexPosition.Lock(); vertexData && vertexData->data) {
 				vertexData->dirtyOnDevice = true;
 				geometryData.vertexBuffer = device->GetBufferDeviceOrHostAddressConst(vertexData->deviceBuffer);
 				geometryData.vertexOffset = 0;
@@ -116,7 +120,7 @@ namespace v4d::graphics {
 				geometryData.vertexSize = sizeof(Mesh::VertexPosition);
 				
 				modelInfo.vertexPositions = geometryData.vertexBuffer.deviceAddress;
-			} else if (auto proceduralVertexData = proceduralVertexAABB.Lock(); proceduralVertexData) {
+			} else if (auto proceduralVertexData = proceduralVertexAABB.Lock(); proceduralVertexData && proceduralVertexData->data) {
 				proceduralVertexData->dirtyOnDevice = true;
 				geometryData.vertexBuffer = device->GetBufferDeviceOrHostAddressConst(proceduralVertexData->deviceBuffer);
 				geometryData.vertexOffset = 0;
@@ -126,24 +130,29 @@ namespace v4d::graphics {
 				modelInfo.vertexPositions = geometryData.vertexBuffer.deviceAddress;
 			}
 			// Vertex normals
-			if (auto vertexData = meshVertexNormal.Lock(); vertexData) {
+			if (auto vertexData = meshVertexNormal.Lock(); vertexData && vertexData->data) {
 				vertexData->dirtyOnDevice = true;
 				modelInfo.vertexNormals = device->GetBufferDeviceAddress(vertexData->deviceBuffer);
 			}
 			// Vertex colors
-			if (auto vertexData = meshVertexColor.Lock(); vertexData) {
+			if (auto vertexData = meshVertexColor.Lock(); vertexData && vertexData->data) {
 				vertexData->dirtyOnDevice = true;
 				modelInfo.vertexColors = device->GetBufferDeviceAddress(vertexData->deviceBuffer);
 			}
 			// Vertex UVs
-			if (auto vertexData = meshVertexUV.Lock(); vertexData) {
+			if (auto vertexData = meshVertexUV.Lock(); vertexData && vertexData->data) {
 				vertexData->dirtyOnDevice = true;
 				modelInfo.vertexUVs = device->GetBufferDeviceAddress(vertexData->deviceBuffer);
 			}
 			// Transform
-			if (auto transformData = transform.Lock(); transformData) {
+			if (auto transformData = transform.Lock(); transformData && transformData->data) {
 				transformData->dirtyOnDevice = true;
 				modelInfo.transform = device->GetBufferDeviceAddress(transformData->deviceBuffer);
+			}
+			// Custom Data
+			if (auto data = customData.Lock(); data && data->data) {
+				data->dirtyOnDevice = true;
+				modelInfo.customData = device->GetBufferDeviceAddress(data->deviceBuffer);
 			}
 		}
 	}
