@@ -105,15 +105,17 @@ namespace v4d::scene {
 					if (physicsControl) {
 						t->data->worldTransform = transform;
 					} else {
-						//TODO smoothly interpolate position and rotation over time instead of instantly setting the transform
+						//TODO smoothly interpolate position and rotation over time instead of instantly setting the target transform
 						t->data->worldTransform = transform;
 					}
 				} else {
 					entity->SetInitialTransform(transform);
 				}
 				if (!posInit) {
-					if (auto physics = entity->physics.Lock(); physics) {
-						physics->AddImpulse(velocity * physics->mass);
+					if (velocity.length() > 0) {
+						if (auto physics = entity->physics.Lock(); physics) {
+							physics->AddImpulse(velocity * physics->mass);
+						}
 					}
 					posInit = true;
 				}

@@ -47,6 +47,7 @@ namespace v4d::scene {
 		// Set Colliders
 		void SetMeshCollider(v4d::graphics::Mesh::VertexPosition* vertices, uint32_t vertexCount, v4d::graphics::Mesh::Index* indices, uint32_t indexCount);
 		void SetMeshCollider(v4d::graphics::Mesh::Index* indices, uint32_t indexCount);
+		void SetMeshCollider();
 		void SetSphereCollider(float radius);
 		void SetBoxCollider(glm::vec3 size);
 	};

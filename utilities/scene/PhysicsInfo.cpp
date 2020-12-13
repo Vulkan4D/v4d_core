@@ -35,6 +35,13 @@ namespace v4d::scene {
 		colliderDirty = true;
 		physicsDirty = true;
 	}
+	void PhysicsInfo::SetMeshCollider() {
+		colliderMeshVertices.resize(0);
+		colliderMeshIndices.resize(0);
+		colliderType = PhysicsInfo::ColliderType::MESH;
+		colliderDirty = true;
+		physicsDirty = true;
+	}
 	void PhysicsInfo::SetSphereCollider(float radius) {
 		boundingDistance = radius;
 		colliderType = PhysicsInfo::ColliderType::SPHERE;

@@ -49,7 +49,7 @@ namespace v4d::graphics {
 		std::shared_ptr<Blas> blas = nullptr;
 		bool generated = false;
 		glm::dmat4 initialTransform = glm::dmat4{1};
-		std::function<void(RenderableGeometryEntity*)> generator = [](auto*){};
+		std::function<void(RenderableGeometryEntity*, Device*)> generator = [](RenderableGeometryEntity*, Device*){};
 		Mesh::ModelInfo modelInfo {};
 		uint32_t sbtOffset = 0;
 		uint32_t rayTracingMask = 0xff;
@@ -57,7 +57,8 @@ namespace v4d::graphics {
 		std::recursive_mutex writeMutex;
 		
 		bool raster_transparent = false;
-		bool raster_wireframe = false;
+		float raster_wireframe = 0;
+		glm::vec4 raster_wireframe_color {0.7f};
 		
 		static std::unordered_map<std::string, uint32_t> sbtOffsets;
 		
@@ -79,7 +80,10 @@ namespace v4d::graphics {
 		void operator()(v4d::modular::ModuleID moduleId, uint64_t objId = 0);
 		
 		void Prepare(Device* renderingDevice, std::string sbtOffset = "default");
+		
 		RenderableGeometryEntity* SetInitialTransform(const glm::dmat4&);
+		void SetWorldTransform(glm::dmat4);
+		glm::dmat4 GetWorldTransform();
 		
 		void Generate(Device* device);
 		

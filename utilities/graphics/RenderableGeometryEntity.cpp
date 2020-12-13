@@ -92,14 +92,30 @@ namespace v4d::graphics {
 		return this;
 	}
 	
+	void RenderableGeometryEntity::SetWorldTransform(glm::dmat4 t) {
+		if (auto tr = transform.Lock(); tr && tr->data) {
+			tr->data->worldTransform = t;
+		} else {
+			initialTransform = t;
+		}
+	}
+	
+	glm::dmat4 RenderableGeometryEntity::GetWorldTransform() {
+		if (auto tr = transform.Lock(); tr && tr->data) {
+			return tr->data->worldTransform;
+		} else {
+			return initialTransform;
+		}
+	}
+	
 	RenderableGeometryEntity::~RenderableGeometryEntity() {
 		FreeComponentsBuffers();
-		generator = [](auto*){};
+		generator = [](auto*,Device*){};
 	}
 	
 	void RenderableGeometryEntity::Generate(Device* device) {
 		generated = true;
-		generator(this);
+		generator(this, device);
 		if (generated) {
 			// Indices
 			if (auto indexData = meshIndices.Lock(); indexData && indexData->data) {
