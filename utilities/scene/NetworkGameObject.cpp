@@ -99,39 +99,39 @@ namespace v4d::scene {
 	
 	void NetworkGameObject::UpdateGameObjectTransform() {
 		std::lock_guard lock(mu);
-		if (!posInit || !physicsControl) {
+		if (!posInit) {
 			if (auto entity = renderableGeometryEntityInstance.lock(); entity) {
-				if (auto t = entity->transform.Lock(); t && t->data) {
-					if (physicsControl) {
-						t->data->worldTransform = transform;
-					} else {
-						//TODO smoothly interpolate position and rotation over time instead of instantly setting the target transform
-						t->data->worldTransform = transform;
+				entity->SetWorldTransform(transform);
+				if (velocity != glm::dvec3(0)) {
+					if (auto physics = entity->physics.Lock(); physics) {
+						physics->AddImpulse(velocity * physics->mass);
 					}
-				} else {
-					entity->SetInitialTransform(transform);
 				}
-				if (!posInit) {
-					if (velocity != glm::dvec3(0)) {
-						if (auto physics = entity->physics.Lock(); physics) {
-							physics->AddImpulse(velocity * physics->mass);
-						}
-					}
-					posInit = true;
-				}
+			}
+			posInit = true;
+		}
+	}
+	
+	void NetworkGameObject::SmoothlyInterpolateGameObjectTransform(double delta) {
+		if (auto entity = renderableGeometryEntityInstance.lock(); entity) {
+			if (delta > 0) {
+				entity->SetWorldTransform(glm::interpolate(entity->GetWorldTransform(), transform, delta));
+			} else {
+				entity->SetWorldTransform(transform);
 			}
 		}
 	}
 	
-	void NetworkGameObject::ReverseUpdateGameObjectTransform() {
+	bool NetworkGameObject::ReverseUpdateGameObjectTransform() {
 		std::lock_guard lock(mu);
 		if (auto entity = renderableGeometryEntityInstance.lock(); entity) {
-			entity->transform.Do([this](auto& t){
-				if (t.data) {
-					transform = t->worldTransform;
-				}
-			});
+			auto t = entity->GetWorldTransform();
+			if (transform != t) {
+				transform = t;
+				return true;
+			}
 		}
+		return false;
 	}
 	
 	void NetworkGameObject::RemoveGameObject() {

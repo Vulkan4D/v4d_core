@@ -84,6 +84,7 @@ namespace v4d::scene {
 		
 		NetworkGameObjectTransform GetNetworkTransform() const;
 		void SetTransformFromNetwork(const NetworkGameObjectTransform&);
+		void SmoothlyInterpolateGameObjectTransform(double delta);
 		
 		void SetTransform(const glm::dvec3& position = {0,0,0}, double angle = 0, const glm::dvec3& axis = {0,0,1});
 		void SetTransform(const glm::dvec3& position, const glm::dvec3& forwardVector, const glm::dvec3& upVector);
@@ -103,7 +104,7 @@ namespace v4d::scene {
 		
 		void UpdateGameObject();
 		void UpdateGameObjectTransform();
-		void ReverseUpdateGameObjectTransform();
+		bool ReverseUpdateGameObjectTransform();
 		void RemoveGameObject();
 	};
 	

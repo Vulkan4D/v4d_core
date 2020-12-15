@@ -58,7 +58,6 @@ namespace v4d::graphics {
 				component.FreeBuffers(device);
 			});
 			transform.Do([this](auto& component){
-				if (component.data) initialTransform = component.data->worldTransform;
 				component.FreeBuffers(device);
 			});
 			customData.Do([this](auto& component){
@@ -123,33 +122,20 @@ namespace v4d::graphics {
 		std::unique_lock<std::recursive_mutex> lock(writeMutex);
 		this->device = renderingDevice;
 		this->sbtOffset = sbtOffsets[sbtOffset];
-		Add_transform();
-		auto t = transform.Lock();
-		assert(t);
-		t->AllocateBuffers(renderingDevice);
-		t->data->worldTransform = initialTransform;
-		t->dirtyOnDevice = true;
+		Add_transform()->AllocateBuffers(renderingDevice);
 	}
 	
 	RenderableGeometryEntity* RenderableGeometryEntity::SetInitialTransform(const glm::dmat4& t) {
-		initialTransform = t;
+		worldTransform = t;
 		return this;
 	}
 	
 	void RenderableGeometryEntity::SetWorldTransform(glm::dmat4 t) {
-		if (auto tr = transform.Lock(); tr && tr->data) {
-			tr->data->worldTransform = t;
-		} else {
-			initialTransform = t;
-		}
+		worldTransform = t;
 	}
 	
 	glm::dmat4 RenderableGeometryEntity::GetWorldTransform() {
-		if (auto tr = transform.Lock(); tr && tr->data) {
-			return tr->data->worldTransform;
-		} else {
-			return initialTransform;
-		}
+		return worldTransform;
 	}
 	
 	RenderableGeometryEntity::~RenderableGeometryEntity() {

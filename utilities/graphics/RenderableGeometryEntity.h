@@ -48,7 +48,7 @@ namespace v4d::graphics {
 		v4d::graphics::vulkan::rtx::AccelerationStructure::GeometryData geometryData;
 		std::shared_ptr<Blas> blas = nullptr;
 		bool generated = false;
-		glm::dmat4 initialTransform = glm::dmat4{1};
+		glm::dmat4 worldTransform = glm::dmat4{1};
 		std::function<void(RenderableGeometryEntity*, Device*)> generator = [](RenderableGeometryEntity*, Device*){};
 		Mesh::ModelInfo modelInfo {};
 		uint32_t sbtOffset = 0;
