@@ -17,6 +17,9 @@ namespace v4d::graphics::vulkan {
 		size_t currentFrameIndex = 0;
 	public:
 		StagingBuffer(VkBufferUsageFlags usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT) : usage(usage) {}
+		~StagingBuffer() {
+			Free();
+		}
 		operator BufferDescriptor*() {
 			return (BufferDescriptor*)this;
 		}
@@ -75,8 +78,24 @@ namespace v4d::graphics::vulkan {
 			}
 			return data;
 		}
+		operator T () const {
+			T data;
+			memcpy(&data, hostBufferMappedPointers[currentFrameIndex], sizeof(T));
+			return data;
+		}
+		template<typename _T>
+		void Init(const _T& data) {
+			if constexpr(sizeof(_T) <= SIZE) {
+				for (int i = 0; i < NB_FRAMES; ++i) {
+					memcpy(hostBufferMappedPointers[i], &data, sizeof(_T));
+				}
+			}
+		}
 		T* operator->() {
-			return *hostBufferMappedPointers[currentFrameIndex];
+			return (T*)hostBufferMappedPointers[currentFrameIndex];
+		}
+		T& operator*() {
+			return *(T*)hostBufferMappedPointers[currentFrameIndex];
 		}
 		void Push(VkCommandBuffer cmbBuffer, uint32_t count = COUNT, VkDeviceSize offset = 0) {
 			if (count == 0) return;

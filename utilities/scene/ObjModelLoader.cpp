@@ -70,14 +70,10 @@
 			}
 		}
 		void ObjModelLoader::Generate (v4d::graphics::vulkan::Device* device, v4d::graphics::RenderableGeometryEntity* entity) {
-			entity->Add_meshIndices();
-			entity->Add_meshVertexPosition();
-			entity->Add_meshVertexNormal();
-			entity->Add_meshVertexColor();
-			entity->meshIndices->AllocateBuffers(device, modelData->preloadedIndices.data(), modelData->preloadedIndices.size());
-			entity->meshVertexPosition->AllocateBuffers(device, modelData->preloadedVertexPositions.data(), modelData->preloadedVertexPositions.size());
-			entity->meshVertexNormal->AllocateBuffers(device, modelData->preloadedVertexNormals.data(), modelData->preloadedVertexNormals.size());
-			entity->meshVertexColor->AllocateBuffers(device, modelData->preloadedVertexColors.data(), modelData->preloadedVertexColors.size());
+			entity->Add_meshIndices()->AllocateBuffers(device, modelData->preloadedIndices.data(), modelData->preloadedIndices.size());
+			entity->Add_meshVertexPosition()->AllocateBuffers(device, modelData->preloadedVertexPositions.data(), modelData->preloadedVertexPositions.size());
+			entity->Add_meshVertexNormal()->AllocateBuffers(device, modelData->preloadedVertexNormals.data(), modelData->preloadedVertexNormals.size());
+			entity->Add_meshVertexColor()->AllocateBuffers(device, modelData->preloadedVertexColors.data(), modelData->preloadedVertexColors.size());
 		}
 	}
 

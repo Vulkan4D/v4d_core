@@ -899,6 +899,7 @@ void Renderer::Update() {
 		if (mod->RenderUpdate) mod->RenderUpdate();
 	});
 	
+	previousFrameInFlight = currentFrameInFlight;
 	currentFrameInFlight = nextFrameInFlight;
 }
 

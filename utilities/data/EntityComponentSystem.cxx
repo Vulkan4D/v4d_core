@@ -16,6 +16,22 @@ struct Test2 {
 	Test2(std::string s) : str(s) {}
 };
 
+struct SpecialClass {
+	static int count;
+	bool allocated = false;
+	void Allocate() {
+		allocated = true;
+		++count;
+	}
+	void Free() {
+		if (allocated) {
+			allocated = false;
+			--count;
+		}
+	}
+};
+int SpecialClass::count = 0;
+
 // TestEntity.h
 class TestEntity {
 	V4D_ENTITY_DECLARE_CLASS(TestEntity)
@@ -24,6 +40,23 @@ class TestEntity {
 	V4D_ENTITY_DECLARE_COMPONENT(TestEntity, std::vector<int>, test3)
 	V4D_ENTITY_DECLARE_COMPONENT(TestEntity, std::string, test4)
 	V4D_ENTITY_DECLARE_COMPONENT(TestEntity, int, test5)
+	V4D_ENTITY_DECLARE_COMPONENT(TestEntity, SpecialClass, test6)
+	
+	void Allocate() {
+		test6.Do([](auto& test){
+			test.Allocate();
+		});
+	}
+	
+	void Free() {
+		test6.Do([](auto& test){
+			test.Free();
+		});
+	}
+	
+	~TestEntity() {
+		Free();
+	}
 };
 
 // TestEntity.cpp
@@ -33,6 +66,7 @@ V4D_ENTITY_DEFINE_COMPONENT(TestEntity, Test2, test2);
 V4D_ENTITY_DEFINE_COMPONENT(TestEntity, std::vector<int>, test3)
 V4D_ENTITY_DEFINE_COMPONENT(TestEntity, std::string, test4)
 V4D_ENTITY_DEFINE_COMPONENT(TestEntity, int, test5)
+V4D_ENTITY_DEFINE_COMPONENT(TestEntity, SpecialClass, test6)
 
 //
 namespace v4d::tests {
@@ -45,11 +79,15 @@ namespace v4d::tests {
 		
 		auto entity = TestEntity::Create();
 		entity->Add_test1(14, 2.5);
-		if (entity->test1->a != 14) ++result;
+		{auto test1 = entity->test1.Lock();
+			if (test1->a != 14) ++result;
+		}
 		
 		entity->Add_test2();
-		entity->test2->b = 10.4;
-		if (entity->test2->b != 10.4) ++result;
+		{auto test2 = entity->test2.Lock();
+			test2->b = 10.4;
+			if (test2->b != 10.4) ++result;
+		}
 		
 		{
 			auto e = TestEntity::Create();
@@ -59,8 +97,22 @@ namespace v4d::tests {
 				if (v != "world") ++result;
 			});
 		}
-		TestEntity::Create()->Add_test1(2, 7.9)->Add_test2("test")->Add_test4()->Add_test5();
-		TestEntity::Create()->Add_test1(1,2.2)->Add_test1()->Add_test1()->Add_test4("texte")->Add_test5(4)->Remove_test1();
+		{
+			auto e = TestEntity::Create();
+			e->Add_test1(2, 7.9);
+			e->Add_test2("test");
+			e->Add_test4();
+			e->Add_test5();
+		}
+		{
+			auto e = TestEntity::Create();
+			e->Add_test1(1,2.2);
+			e->Add_test1();
+			e->Add_test1();
+			e->Add_test4("texte");
+			e->Add_test5(4);
+			e->Remove_test1();
+		}
 		
 		{
 			auto test1 = entity->test1.Lock();
@@ -80,13 +132,14 @@ namespace v4d::tests {
 		
 		result += 11;
 		
-		TestEntity::test1Components.ForEach([&result](int entityInstanceIndex, auto& v){
+		TestEntity::test1Components.ForEach([&result](auto entityInstanceIndex, auto& v){
 			if (entityInstanceIndex != 3 && entityInstanceIndex != 5) ++result;
 			result -= (int)v.b;
 			if (entityInstanceIndex == 5) {
 				auto& test2 = TestEntity::Get(entityInstanceIndex)->test2;
 				if (!test2.Do([&result](auto& t){if (t.str != "test") ++result;})) ++result;
-				if (test2->str != "test") ++result;
+				auto t2 = test2.Lock();
+				if (t2->str != "test") ++result;
 			}
 		});
 		
@@ -97,7 +150,7 @@ namespace v4d::tests {
 		});
 		
 		// By now we should not have any components left so this should do nothing
-		TestEntity::test1Components.ForEach([&result](int, auto& v){
+		TestEntity::test1Components.ForEach([&result](auto, auto& v){
 			result += v.a;
 		});
 		
@@ -110,9 +163,62 @@ namespace v4d::tests {
 		TestEntity::ClearAll();
 		
 		// By now we should not have any components left so this should do nothing
-		TestEntity::test1Components.ForEach([&result](int, auto& v){
+		TestEntity::test1Components.ForEach([&result](auto, auto& v){
 			result += v.a;
 		});
+		
+		{// Weird stuff with destructors and multithreading
+			auto e1 = TestEntity::Create();
+				e1->Add_test6()->Allocate();
+			auto e2 = TestEntity::Create();
+				e2->Add_test6()->Allocate();
+			auto e3 = TestEntity::Create();
+				e3->Add_test6()->Allocate();
+			auto e4 = TestEntity::Create();
+				e4->Add_test6()->Allocate();
+			auto e5 = TestEntity::Create();
+				e5->Add_test6()->Allocate();
+			auto e6 = TestEntity::Create();
+				e6->Add_test6()->Allocate();
+				
+			result += SpecialClass::count;
+			if (result != 6) return -1;
+			if (TestEntity::Count() != 6) return -2;
+		
+			auto f1 = std::async([=](){
+				e6->Destroy();
+			});
+			e5->Destroy();
+			auto f2 = std::async([&](){
+				e3->Destroy();
+			});
+			e4->Destroy();
+			auto f3 = std::async([=](){
+				e1->Destroy();
+				e2->Destroy();
+			});
+			
+			f1.get();
+			f2.get();
+			f3.get();
+			
+			result -= SpecialClass::count;
+			if (result != 0) return -3;
+			
+			e2.reset();
+			e1.reset();
+			e3.reset();
+			e4.reset();
+			e5.reset();
+			e6.reset();
+			
+			result += SpecialClass::count;
+			if (result != 0) return -4;
+		}
+		
+		result += TestEntity::CountActive();
+		TestEntity::Trim();
+		result += TestEntity::Count();
 		
 		return result;
 	}

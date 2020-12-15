@@ -27,6 +27,7 @@ class V4DLIB V4D_Mod {
 		,BeginSecondaryFrameUpdate
 		,SecondaryFrameCompute
 		,OnRendererRayCastHit
+		,OnRendererRayCastOut
 		,PhysicsUpdate
 		,RenderOrderIndex
 		,ScorePhysicalDeviceSelection
@@ -105,7 +106,8 @@ class V4DLIB V4D_Mod {
 	V4D_MODULE_FUNC_DECLARE(void, BeginFrameUpdate)
 	V4D_MODULE_FUNC_DECLARE(void, BeginSecondaryFrameUpdate)
 	V4D_MODULE_FUNC_DECLARE(void, SecondaryFrameCompute, VkCommandBuffer)
-	V4D_MODULE_FUNC_DECLARE(void, OnRendererRayCastHit, v4d::graphics::RenderRayCastHit)
+	V4D_MODULE_FUNC_DECLARE(void, OnRendererRayCastHit, v4d::graphics::RayCast)
+	V4D_MODULE_FUNC_DECLARE(void, OnRendererRayCastOut, v4d::graphics::RayCast)
 
 // Physics
 	V4D_MODULE_FUNC_DECLARE(void, PhysicsUpdate, double deltaTime)

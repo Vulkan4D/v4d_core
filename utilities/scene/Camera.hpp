@@ -17,6 +17,7 @@ namespace v4d::scene {
 		alignas(32) glm::dvec3 viewUp = {0,0,1};
 		alignas(8) double zfar = 1.e19; // 1e19 = 1000 light-years
 		alignas(128) glm::dmat4 viewMatrix {1};
+		alignas(128) glm::dmat4 rawProjectionMatrix {1};
 		alignas(128) glm::dmat4 projectionMatrix {1};
 		alignas(128) glm::dmat4 historyViewMatrix {1};
 		alignas(64) glm::mat4 reprojectionMatrix {1};
@@ -46,6 +47,7 @@ namespace v4d::scene {
 			// this technique while also reversing the normal depth test operation will make the depth buffer linear again, giving it a better depth precision on the entire range. 
 			projectionMatrix = glm::perspective(glm::radians(fov), (double) width / height, zfar, znear);
 			projectionMatrix[1].y *= -1;
+			rawProjectionMatrix = projectionMatrix;
 		}
 		
 		void MakeViewMatrix(glm::dvec3 worldPosition, glm::dvec3 lookDirection, glm::dvec3 viewUp) {

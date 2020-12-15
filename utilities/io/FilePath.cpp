@@ -16,6 +16,10 @@ bool FilePath::operator==(const v4d::io::FilePath &other) const {
 	return (std::string)*this == (std::string)other;
 }
 
+bool FilePath::operator!=(const v4d::io::FilePath &other) const {
+	return !(*this == other);
+}
+
 FilePath& FilePath::AutoCreateFile() {
 	if (CreateDirectory(filePath.parent_path().string())) {
 		CreateFile(filePath.string());

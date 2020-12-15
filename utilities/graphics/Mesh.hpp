@@ -21,6 +21,7 @@ namespace v4d::graphics::Mesh {
 		bool operator==(const VertexPosition& other) const {
 			return x == other.x && y == other.y && z == other.z;
 		}
+		bool operator!=(const VertexPosition& other) const {return !(*this == other);}
 	};
 	struct VertexNormal {
 		glm::f32 x;
@@ -33,6 +34,7 @@ namespace v4d::graphics::Mesh {
 		bool operator==(const VertexNormal& other) const {
 			return x == other.x && y == other.y && z == other.z;
 		}
+		bool operator!=(const VertexNormal& other) const {return !(*this == other);}
 	};
 	struct VertexColor {
 		glm::f32 r;
@@ -46,6 +48,7 @@ namespace v4d::graphics::Mesh {
 		bool operator==(const VertexColor& other) const {
 			return r == other.r && g == other.g && b == other.b && a == other.a;
 		}
+		bool operator!=(const VertexColor& other) const {return !(*this == other);}
 	};
 	struct VertexUV {
 		glm::f32 s;
@@ -57,6 +60,7 @@ namespace v4d::graphics::Mesh {
 		bool operator==(const VertexUV& other) const {
 			return s == other.s && t == other.t;
 		}
+		bool operator!=(const VertexUV& other) const {return !(*this == other);}
 	};
 	struct ProceduralVertexAABB {
 		glm::vec3 aabbMin;
@@ -101,8 +105,6 @@ namespace v4d::graphics::Mesh {
 		MemoryAllocation deviceBufferAllocation = VK_NULL_HANDLE;
 		bool dirtyOnDevice = false;
 		
-		DataBuffer() {}
-		
 		T* AllocateBuffers(Device* device, const std::initializer_list<T>& list) {
 			AllocateBuffersCount(device, list.size());
 			memcpy(data, list.begin(), list.size() * sizeof(T));
@@ -132,7 +134,13 @@ namespace v4d::graphics::Mesh {
 			return AllocateBuffersCount(device, 1);
 		}
 		T* AllocateBuffersCount(Device* device, uint32_t elementCount) {
+			assert(elementCount > 0);
+			
 			count = elementCount;
+			
+			assert(!data);
+			assert(!hostBuffer && !deviceBuffer);
+			assert(!hostBufferAllocation && !deviceBufferAllocation);
 			
 			// Host buffer
 			{VkBufferCreateInfo createInfo {};
@@ -164,7 +172,8 @@ namespace v4d::graphics::Mesh {
 			return data;
 		}
 		void Push(Device* device, VkCommandBuffer commandBuffer) {
-			if (deviceBuffer && dirtyOnDevice) {
+			if (dirtyOnDevice) {
+				assert(data && deviceBuffer && hostBuffer);
 				VkBufferCopy region = {};{
 					region.srcOffset = 0;
 					region.dstOffset = 0;
@@ -175,6 +184,7 @@ namespace v4d::graphics::Mesh {
 			}
 		}
 		void Pull(Device* device, VkCommandBuffer commandBuffer) {
+			assert(deviceBuffer && hostBuffer);
 			VkBufferCopy region = {};{
 				region.srcOffset = 0;
 				region.dstOffset = 0;
@@ -184,32 +194,30 @@ namespace v4d::graphics::Mesh {
 		}
 		void FreeBuffers(Device* device) {
 			if (data) {
+				assert(hostBuffer && hostBufferAllocation && deviceBuffer && deviceBufferAllocation); 
 				device->UnmapMemoryAllocation(hostBufferAllocation);
 				data = nullptr;
-			}
-			if (hostBuffer && hostBufferAllocation) {
 				device->FreeAndDestroyBuffer(hostBuffer, hostBufferAllocation);
-			}
-			if (deviceBuffer && deviceBufferAllocation) {
 				device->FreeAndDestroyBuffer(deviceBuffer, deviceBufferAllocation);
 			}
 			dirtyOnDevice = false;
 		}
 		T* operator->() {
+			assert(data);
 			return data;
 		}
 		template<typename _T>
 		void Set(uint32_t index, _T&& value) {
-			assert(data != nullptr && index < count);
+			assert(data && index < count);
 			data[index] = std::forward<_T>(value);
 		}
 		template<typename _T>
 		void Set(_T&& value) {
-			assert(data != nullptr && count > 0);
+			assert(data && count > 0);
 			*data = std::forward<_T>(value);
 		}
 		T& Get(uint32_t index) {
-			assert(data != nullptr && index < count);
+			assert(data && index < count);
 			return data[index];
 		}
 	};

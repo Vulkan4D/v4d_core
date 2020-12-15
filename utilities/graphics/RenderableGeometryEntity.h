@@ -77,9 +77,11 @@ namespace v4d::graphics {
 		
 		void FreeComponentsBuffers();
 		
+		static void PushComponents(Device*, VkCommandBuffer);
+		
 		void operator()(v4d::modular::ModuleID moduleId, uint64_t objId = 0);
 		
-		void Prepare(Device* renderingDevice, std::string sbtOffset = "default");
+		void Allocate(Device* renderingDevice, std::string sbtOffset = "default");
 		
 		RenderableGeometryEntity* SetInitialTransform(const glm::dmat4&);
 		void SetWorldTransform(glm::dmat4);

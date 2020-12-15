@@ -37,15 +37,24 @@ namespace v4d::graphics {
 
 	#pragma endregion
 	
-	struct RenderRayCastHit {
-		glm::vec3 position; // relative to center of hit object
-		float distance;
-		uint32_t objId;
-		uint32_t flags;
-		uint8_t customType;
-		uint32_t customData0;
-		uint32_t customData1;
-		uint32_t customData2;
+	struct RayCast {
+		uint64_t moduleVen = 0;
+		uint64_t moduleId = 0;
+		uint64_t objId = 0;
+		uint64_t raycastCustomData = 0;
+		glm::vec3 localSpaceHitPosition;
+		glm::f32 distance;
+		glm::vec4 localSpaceHitSurfaceNormal; // w component is unused
+		
+		bool operator==(const RayCast& other) const {
+			return moduleVen == other.moduleVen && moduleId == other.moduleId && objId == other.objId;
+		}
+		bool operator!=(const RayCast& other) const {
+			return !(*this == other);
+		}
+		operator bool () const {
+			return moduleVen && moduleId;
+		}
 	};
 	
 	class V4DLIB Renderer : public Instance {
@@ -79,7 +88,8 @@ namespace v4d::graphics {
 		// Swap Chains
 		SwapChain* swapChain = nullptr;
 		size_t currentFrameInFlight = 0;
-		size_t nextFrameInFlight = 0;
+		size_t nextFrameInFlight = 1;
+		size_t previousFrameInFlight = 1;
 		static constexpr int NB_FRAMES_IN_FLIGHT = 2;
 		
 		// Descriptor sets

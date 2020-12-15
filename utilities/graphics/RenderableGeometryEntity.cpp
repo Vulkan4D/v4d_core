@@ -70,18 +70,62 @@ namespace v4d::graphics {
 		device = nullptr;
 	}
 	
+	void RenderableGeometryEntity::PushComponents(Device* device, VkCommandBuffer commandBuffer) {
+		meshIndicesComponents.ForEach([device, commandBuffer](auto entityInstanceIndex, auto& data){
+			if (entityInstanceIndex != -1) {
+				data.Push(device, commandBuffer);
+			} else LOG_ERROR("trying to push component of a destroyed entity")
+		});
+		meshVertexPositionComponents.ForEach([device, commandBuffer](auto entityInstanceIndex, auto& data){
+			if (entityInstanceIndex != -1) {
+				data.Push(device, commandBuffer);
+			} else LOG_ERROR("trying to push component of a destroyed entity")
+		});
+		proceduralVertexAABBComponents.ForEach([device, commandBuffer](auto entityInstanceIndex, auto& data){
+			if (entityInstanceIndex != -1) {
+				data.Push(device, commandBuffer);
+			} else LOG_ERROR("trying to push component of a destroyed entity")
+		});
+		meshVertexNormalComponents.ForEach([device, commandBuffer](auto entityInstanceIndex, auto& data){
+			if (entityInstanceIndex != -1) {
+				data.Push(device, commandBuffer);
+			} else LOG_ERROR("trying to push component of a destroyed entity")
+		});
+		meshVertexColorComponents.ForEach([device, commandBuffer](auto entityInstanceIndex, auto& data){
+			if (entityInstanceIndex != -1) {
+				data.Push(device, commandBuffer);
+			} else LOG_ERROR("trying to push component of a destroyed entity")
+		});
+		meshVertexUVComponents.ForEach([device, commandBuffer](auto entityInstanceIndex, auto& data){
+			if (entityInstanceIndex != -1) {
+				data.Push(device, commandBuffer);
+			} else LOG_ERROR("trying to push component of a destroyed entity")
+		});
+		transformComponents.ForEach([device, commandBuffer](auto entityInstanceIndex, auto& transform){
+			if (entityInstanceIndex != -1) {
+				transform.Push(device, commandBuffer);
+			} else LOG_ERROR("trying to push component of a destroyed entity")
+		});
+		customDataComponents.ForEach([device, commandBuffer](auto entityInstanceIndex, auto& data){
+			if (entityInstanceIndex != -1) {
+				data.Push(device, commandBuffer);
+			} else LOG_ERROR("trying to push component of a destroyed entity")
+		});
+	}
+	
 	void RenderableGeometryEntity::operator()(v4d::modular::ModuleID moduleId, uint64_t objId) {
 		modelInfo.moduleVen = moduleId.vendor;
 		modelInfo.moduleId = moduleId.module;
 		modelInfo.objId = objId;
 	}
 	
-	void RenderableGeometryEntity::Prepare(Device* renderingDevice, std::string sbtOffset) {
+	void RenderableGeometryEntity::Allocate(Device* renderingDevice, std::string sbtOffset) {
 		std::unique_lock<std::recursive_mutex> lock(writeMutex);
 		this->device = renderingDevice;
 		this->sbtOffset = sbtOffsets[sbtOffset];
 		Add_transform();
 		auto t = transform.Lock();
+		assert(t);
 		t->AllocateBuffers(renderingDevice);
 		t->data->worldTransform = initialTransform;
 		t->dirtyOnDevice = true;
@@ -109,11 +153,12 @@ namespace v4d::graphics {
 	}
 	
 	RenderableGeometryEntity::~RenderableGeometryEntity() {
-		FreeComponentsBuffers();
 		generator = [](auto*,Device*){};
+		FreeComponentsBuffers();
 	}
 	
 	void RenderableGeometryEntity::Generate(Device* device) {
+		assert(!generated);
 		generated = true;
 		generator(this, device);
 		if (generated) {

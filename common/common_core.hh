@@ -2,6 +2,7 @@
 #include <vector>
 #include <condition_variable>
 #include <math.h>
+#include <cassert>
 
 // OpenSSL
 #include <openssl/sha.h>

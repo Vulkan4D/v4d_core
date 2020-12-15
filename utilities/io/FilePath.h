@@ -18,6 +18,7 @@ namespace v4d::io {
 		operator std::string () const;
 		
 		bool operator==(const v4d::io::FilePath &other) const;
+		bool operator!=(const v4d::io::FilePath &other) const;
 
 		FilePath& AutoCreateFile();
 

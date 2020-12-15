@@ -66,13 +66,14 @@
 			
 		// All three ways are equivalent
 		
-	// Note: since they are shared pointers, if a reference exists somewhere else it will not get destroyed until all references are destroyed, but its index WILL be invalidated.
+	// Note: since they are shared pointers, if a reference exists somewhere else it will not get destroyed until all references are destroyed, but its index WILL be invalidated and set to -1.
 	
 	// We can get the index of an entity like this:
-	int32_t index = entity->GetIndex();
+	auto index = entity->GetIndex();
 	// This index can then be used to fetch that entity again like this:
 	auto entity = MyEntity::Get(index);
 	// Entity indices will not change for a given entity as long as you don't destroy it. Then their indices will be reused by new entities, hence invalidated.
+	// To verify if an entity has been destroyed, you may compare GetIndex() with -1.
 	
 	// Entities may have any number of Components. 
 	// Each component is referenced through an opaque pointer in the entity but exposes a few practical features for indirect access.
@@ -83,61 +84,50 @@
 	entity->Add_firstName("Bob");
 	// The component is constructed in-place with the given arguments. 
 	// If the component had already been added to that entity, this will do nothing and ignore the given arguments.
-	// You may also pass initializer lists if the component supports it
+	// You may also pass initializer lists if the component supports it in its constructor.
+	// This function also returns a locked reference to the component.
 	
-	// You may assign the value of the component using its reference directly like this and it will effectively use the = operator on the component type:
-	entity->firstName = "Bob";
-	// however, if the component has not been added first, this will do nothing. Same goes for removing the component, setting it to "" will NOT remove it.
-	
-	// We may get a locked reference on a component like this:
+	// We can also get a locked reference on a component like this:
 	auto someFirstNameRef = entity->someData.Lock();
-	// This effectively locks the entire list of components until it is destroyed by going out of scope. Must not try to lock two components of the same type without destroying the previous one.
+	// This effectively locks the entire list of components until it is unlocked by going out of scope. You must not try to lock two components of the same type without unlocking the previous one.
 	// Must also check if it is valid by using its boolean explicit cast operator, then you may access its values using the arrow operator like this: 
 	if (someFirstNameRef) someFirstNameRef->a = 5;
-	// May force the unlock by calling someFirstNameRef.Unlock();
+	// If the locked reference was retrieved using the Add_* function, you do not need to verify if it is valid (Added) since it is explicitly guaranteed to be already.
+	// You may force the unlock by calling someFirstNameRef.Unlock() then the reference is invalidated.
 	
 	// we may remove the component like this. This actually removes the component, it doesn't just assign it to "".
 	entity->Remove_firstName();
 	// If the component was already not present, this does nothing
 	
+	// You may assign the value of the component using its reference directly like this and it will safely lock and use the = operator on the component while perfectly forwarding the value:
+	entity->firstName = "Bob";
+	// however, if the component has not been added first, this will do nothing. Same goes for removing the component, setting it to "" (or equivalent empty value for other types) will NOT remove the component.
+	
+	// Components will always be moving around in memory, hence it is not safe to get references or pointers to them, instead we use the safer functions 'Lock', 'Do' and 'ForEach' to lock them while we read and/or write to them.
+	// Component indices are thus completely opaque and should not be used.
+	// Also, it is preferable to use trivially constructible/destructible components that can be moved around easily without having their constructor/destructor doing heavy lifting stuff many times
+	
 	// Entities also have static members *Components for every component defined in it, to access component lists.
 	
 	// We can loop through all firstNames like this:
-	MyEntity::firstNameComponents.ForEach([](int32_t entityInstanceIndex, auto& firstName){
+	MyEntity::firstNameComponents.ForEach([](auto entityInstanceIndex, auto& firstName){
 		std::cout << firstName << std::endl;
 	});
 	// This will only run for existing components, not for entities that don't have that component added to it
 	// All components of the same type are contiguous in memory for great CPU cache usage
 	// Hence it is preferable to not use pointers as component types because it will defeat the purpose
 	
-	// We can create lots of entities and assign them components like this:
-	MyEntity::Create()->Add_firstName("Jane")->Add_transform({1});
-	MyEntity::Create()
-		->Add_firstName("Joe")
-		->Add_transform({1})
-		->Add_someData(34,66);
-	
-	// All Add_* members will always return a pointer to the entity, not the component itself.
-	// This is obviously practical for writing chained code like above, but is also because we cannot guarantee that a reference to a component will not become invalidated.
-	// It is also important to note that only the initial Create() method will return a shared_ptr, any following Add_* method will return the raw pointer.
-	// Components will always be moving around in memory, hence it is not safe to get references or pointers to them, instead we use the safer functions 'Do' and 'ForEach' to modify them.
-	// Component indices are thus completely opaque and should not be used.
-	// Also, it is preferable to use trivially constructible/destructible components that can be moved around easily without having their constructor/destructor doing heavy lifting stuff many times
-	
 	// Direct component member access will cast to boolean so that we can check if an entity has a specific component:
 	if (entity->someData) {
 		// this entity has a 'someData' component
+		// However, it may already be invalidated if it has been removed in another thread
 	}
 	
-	// We can quickly access a specific value from a component using the arrow operator,
-	// but keep in mind that this is not thread safe so try to keep it atomic, and also this will segfault if that entity does not have that component.
-	entity->someData->a = 55;
-	
 	// To modify the values of a component from a specific entity in a thread-safe manner, we can do it like this: 
-	entity->firstName->Do([](auto& firstName){
+	entity->firstName.Do([](auto& firstName){
 		firstName = "Paul";
 	});
-	entity->someData->Do([](auto& someData){
+	entity->someData.Do([](auto& someData){
 		someData.a = 44;
 	});
 	// This also ensures that the component exists before running the code, so you may run this with any entity without worrying if the component is present.
@@ -159,47 +149,50 @@ namespace v4d::data::EntityComponentSystem {
 		mutable std::recursive_mutex componentsMutex;
 		struct ComponentTuple {
 			int32_t entityInstanceIndex;
+			uint32_t* componentIndexPtrInEntity;
 			ComponentType component;
 			template<typename...Args>
-			ComponentTuple(int32_t i, Args&&...args) : entityInstanceIndex(i), component(std::forward<Args>(args)...) {}
+			ComponentTuple(int32_t i, uint32_t* cmpIdxPtr, Args&&...args) : entityInstanceIndex(i), componentIndexPtrInEntity(cmpIdxPtr), component(std::forward<Args>(args)...) {}
 			template<typename T, int N>
-			ComponentTuple(int32_t i, const T (&arr)[N]) : entityInstanceIndex(i), component(arr) {}
+			ComponentTuple(int32_t i, uint32_t* cmpIdxPtr, const T (&arr)[N]) : entityInstanceIndex(i), componentIndexPtrInEntity(cmpIdxPtr), component(arr) {}
 		};
 		std::vector<ComponentTuple> componentsList;
 		template<typename...Args>
-		int32_t Add(int32_t entityInstanceIndex, Args&&...args) {
-			std::lock_guard lock(componentsMutex);
-			componentsList.emplace_back(entityInstanceIndex, std::forward<Args>(args)...);
+		int32_t __Add__(int32_t entityInstanceIndex, void* componentIndexPtrInEntity, Args&&...args) {
+			// std::lock_guard lock(componentsMutex); // always already locked in caller, and also locks Entities
+			componentsList.emplace_back(entityInstanceIndex, (uint32_t*)componentIndexPtrInEntity, std::forward<Args>(args)...);
 			return componentsList.size() - 1;
 		}
 		template<typename List_T>
-		int32_t Add(int32_t entityInstanceIndex, std::initializer_list<List_T>&& list) {
-			std::lock_guard lock(componentsMutex);
-			componentsList.emplace_back(entityInstanceIndex, std::forward<std::initializer_list<List_T>>(list));
+		int32_t __Add__(int32_t entityInstanceIndex, void* componentIndexPtrInEntity, std::initializer_list<List_T>&& list) {
+			// std::lock_guard lock(componentsMutex); // always already locked in caller, and also locks Entities
+			componentsList.emplace_back(entityInstanceIndex, (uint32_t*)componentIndexPtrInEntity, std::forward<std::initializer_list<List_T>>(list));
 			return componentsList.size() - 1;
 		}
 		template<typename ArrayRef, int ArrayN>
-		int32_t Add(int32_t entityInstanceIndex, const ArrayRef (&val)[ArrayN]) {
-			std::lock_guard lock(componentsMutex);
-			componentsList.emplace_back(entityInstanceIndex, val);
+		int32_t __Add__(int32_t entityInstanceIndex, void* componentIndexPtrInEntity, const ArrayRef (&val)[ArrayN]) {
+			// std::lock_guard lock(componentsMutex); // always already locked in caller, and also locks Entities
+			componentsList.emplace_back(entityInstanceIndex, (uint32_t*)componentIndexPtrInEntity, val);
 			return componentsList.size() - 1;
 		}
-		int32_t Remove(int32_t componentIndex) {
+		void __Remove__(int32_t componentIndex) {
+			// std::lock_guard lock(componentsMutex); // always already locked in caller, and also locks Entities
 			if (componentIndex != -1) {
-				std::lock_guard lock(componentsMutex);
 				if ((size_t)componentIndex < componentsList.size()-1) {
 					// Move the last element to the position we want to delete and return its instance index so that we can adjust it in the calling method
 					componentsList[componentIndex] = std::move(componentsList.back());
-					componentsList.pop_back();
-					return componentsList[componentIndex].entityInstanceIndex;
+					if (componentsList[componentIndex].entityInstanceIndex != -1) {
+						*componentsList[componentIndex].componentIndexPtrInEntity = componentIndex;
+					} else {
+						LOG_ERROR("component __Remove__ last component entity index is -1")
+					}
 				}
 				if (componentsList.size() > 0) componentsList.pop_back();
 			}
-			return -1;
 		}
-		ComponentType* Get(int32_t componentIndex) {
+		ComponentType* __Get__(int32_t componentIndex) {
+			// std::lock_guard lock(componentsMutex); // always already locked in caller, and also locks Entities
 			if (componentIndex == -1) return nullptr;
-			std::lock_guard lock(componentsMutex);
 			if ((size_t)componentIndex < componentsList.size()) {
 				return &componentsList[componentIndex].component;
 			}
@@ -208,14 +201,14 @@ namespace v4d::data::EntityComponentSystem {
 	public:
 		void ForEach(std::function<void(int32_t& entityInstanceIndex, ComponentType& data)>&& func) {
 			std::lock_guard lock(componentsMutex);
-			for (auto&[entityInstanceIndex, data] : componentsList) {
+			for (auto&[entityInstanceIndex, cmpIdxPtr, data] : componentsList) {
 				func(entityInstanceIndex, data);
 			}
 		}
 		void ForEach_LockEntities(std::function<void(int32_t& entityInstanceIndex, ComponentType& data)>&& func) {
 			auto entitiesLock = EntityClass::GetLock();
 			std::lock_guard lock(componentsMutex);
-			for (auto&[entityInstanceIndex, data] : componentsList) {
+			for (auto&[entityInstanceIndex, cmpIdxPtr, data] : componentsList) {
 				func(entityInstanceIndex, data);
 			}
 		}
@@ -224,40 +217,28 @@ namespace v4d::data::EntityComponentSystem {
 			return componentsList.size();
 		}
 		bool Do(int32_t componentIndex, std::function<void(ComponentType& data)>&& func){
-			if (componentIndex == -1) return false;
 			std::lock_guard lock(componentsMutex);
+			if (componentIndex == -1) return false;
 			if ((size_t)componentIndex < componentsList.size()) {
 				func(componentsList[componentIndex].component);
 				return true;
 			}
 			return false;
 		}
-		
-		template<typename T>
-		void Set(int32_t componentIndex, const T& val){
-			if (componentIndex == -1) return;
-			std::lock_guard lock(componentsMutex);
-			if (componentIndex < componentsList.size()) {
-				componentsList[componentIndex].component = val;
-			}
-		}
-		template<typename T>
-		void Set(int32_t componentIndex, T&& val){
-			if (componentIndex == -1) return;
-			std::lock_guard lock(componentsMutex);
-			if (componentIndex < componentsList.size()) {
-				componentsList[componentIndex].component = std::move(val);
-			}
-		}
 		class ComponentReferenceLocked {
-			friend Component;
+		private: friend Component;
 			std::unique_lock<std::recursive_mutex> lock;
 			ComponentType* ptr;
+			DELETE_COPY_MOVE_CONSTRUCTORS(ComponentReferenceLocked)
+		public:
 			ComponentReferenceLocked() : lock(), ptr(nullptr) {}
 			ComponentReferenceLocked(std::unique_lock<std::recursive_mutex>& lock, ComponentType* ptr) : lock(std::move(lock)), ptr(ptr) {}
-			DELETE_COPY_MOVE_CONSTRUCTORS(ComponentReferenceLocked)
-			public:
 			operator bool() {return !!ptr;}
+			template<typename T>
+			auto operator = (T&& val) {
+				*ptr = std::forward<T>(val);
+				return std::forward<T>(val);
+			}
 			ComponentType* operator->() {return ptr;}
 			void Unlock() {
 				ptr = nullptr;
@@ -265,7 +246,7 @@ namespace v4d::data::EntityComponentSystem {
 			}
 		};
 		ComponentReferenceLocked Lock(int32_t componentIndex) {
-			std::unique_lock lock(componentsMutex);
+			std::unique_lock<std::recursive_mutex> lock(componentsMutex);
 			if (componentIndex == -1 || (size_t)componentIndex >= componentsList.size()) return ComponentReferenceLocked{};
 			return ComponentReferenceLocked{lock, &componentsList[componentIndex].component};
 		}
@@ -280,8 +261,14 @@ namespace v4d::data::EntityComponentSystem {
 	private:\
 		static std::recursive_mutex entityInstancesMutex;\
 		static std::vector<std::shared_ptr<ClassName>> entityInstances;\
-		int32_t index;\
-		ClassName(int32_t index);\
+		using EntityIndex_T = int32_t;\
+		using ComponentIndex_T = int32_t;\
+	private:\
+		static std::optional<std::thread::id> destroyThreadId;\
+		EntityIndex_T index;\
+		bool active = true;\
+		bool markedForDestruction = false;\
+		ClassName(EntityIndex_T index);\
 	public:\
 		static std::shared_ptr<ClassName> Create();\
 		template<typename...Args>\
@@ -299,20 +286,24 @@ namespace v4d::data::EntityComponentSystem {
 			(*e)(std::forward<Args>(args)...);\
 			return entityInstances.emplace_back(e);\
 		}\
-		static void Destroy(int32_t index, bool trim = true);\
+		static void CleanupOnThisThread();\
+		static void Destroy(EntityIndex_T index);\
+		static void Trim();\
 		void Destroy();\
 		static void ClearAll();\
 		static size_t Count();\
+		static size_t CountActive();\
 		static std::unique_lock<std::recursive_mutex> GetLock();\
 		static void ForEach(std::function<void(std::shared_ptr<ClassName>)>&& func);\
-		static std::shared_ptr<ClassName> Get(int32_t entityInstanceIndex);\
-		inline int32_t GetIndex() const {return index;};
+		static std::shared_ptr<ClassName> Get(EntityIndex_T entityInstanceIndex);\
+		inline EntityIndex_T GetIndex() const {return index;};
 
 // Used in .cpp files
 #define V4D_ENTITY_DEFINE_CLASS(ClassName)\
 	std::recursive_mutex ClassName::entityInstancesMutex {};\
 	std::vector<std::shared_ptr<ClassName>> ClassName::entityInstances {};\
-	ClassName::ClassName(int32_t index) : index(index) {}\
+	std::optional<std::thread::id> ClassName::destroyThreadId = std::nullopt;\
+	ClassName::ClassName(EntityIndex_T index) : index(index) {}\
 	std::shared_ptr<ClassName> ClassName::Create() {\
 		std::lock_guard lock(entityInstancesMutex);\
 		size_t nbEntityInstances = entityInstances.size();\
@@ -321,22 +312,37 @@ namespace v4d::data::EntityComponentSystem {
 		}\
 		return entityInstances.emplace_back(new ClassName(nbEntityInstances));\
 	}\
-	void ClassName::Destroy(int32_t index, bool trim) {\
+	void ClassName::CleanupOnThisThread(){\
 		std::lock_guard lock(entityInstancesMutex);\
-		if (index > -1 && index < entityInstances.size()) {\
-			entityInstances[index]->index = -1;\
-			entityInstances[index].reset();\
-			if (trim && index == entityInstances.size()-1) {\
-				entityInstances.pop_back();\
-				while (!entityInstances[entityInstances.size()-1]) {\
-					entityInstances.pop_back();\
-				}\
+		destroyThreadId = std::this_thread::get_id();\
+		for (auto& entity : entityInstances) {\
+			if (entity && entity->markedForDestruction) {\
+				entity->index = -1;\
+				entity.reset();\
+			}\
+		}\
+		Trim();\
+	}\
+	void ClassName::Trim() {\
+		std::lock_guard lock(entityInstancesMutex);\
+		while (entityInstances.size() > 0 && !entityInstances[entityInstances.size()-1]) {\
+			entityInstances.pop_back();\
+		}\
+	}\
+	void ClassName::Destroy(EntityIndex_T index) {\
+		std::lock_guard lock(entityInstancesMutex);\
+		if (index != -1 && (size_t)index < entityInstances.size()) {\
+			if (destroyThreadId.has_value() && destroyThreadId.value() != std::this_thread::get_id()) {\
+				entityInstances[index]->markedForDestruction = true;\
+			} else {\
+				entityInstances[index]->index = -1;\
+				entityInstances[index].reset();\
 			}\
 		}\
 	}\
 	void ClassName::Destroy() {\
 		std::lock_guard lock(entityInstancesMutex);\
-		Destroy(index, false);\
+		Destroy(index);\
 	}\
 	void ClassName::ForEach(std::function<void(std::shared_ptr<ClassName>)>&& func) {\
 		std::lock_guard lock(entityInstancesMutex);\
@@ -346,18 +352,29 @@ namespace v4d::data::EntityComponentSystem {
 			}\
 		}\
 	}\
-	std::shared_ptr<ClassName> ClassName::Get(int32_t entityInstanceIndex) {\
+	std::shared_ptr<ClassName> ClassName::Get(EntityIndex_T entityInstanceIndex) {\
 		std::lock_guard lock(entityInstancesMutex);\
 		if (entityInstanceIndex == -1 || (size_t)entityInstanceIndex >= entityInstances.size()) return nullptr;\
 		return entityInstances[entityInstanceIndex];\
 	}\
 	void ClassName::ClearAll() {\
 		std::lock_guard lock(entityInstancesMutex);\
+		for (auto& entity : entityInstances) {\
+			if (entity) entity->index = -1;\
+		}\
 		entityInstances.clear();\
 	}\
 	size_t ClassName::Count() {\
 		std::lock_guard lock(entityInstancesMutex);\
 		return entityInstances.size();\
+	}\
+	size_t ClassName::CountActive() {\
+		size_t count = 0;\
+		std::lock_guard lock(entityInstancesMutex);\
+		for (auto& entity : entityInstances) {\
+			if (entity && entity->index != -1) ++count;\
+		}\
+		return count;\
 	}\
 	std::unique_lock<std::recursive_mutex> ClassName::GetLock() {\
 		return std::unique_lock<std::recursive_mutex>{entityInstancesMutex};\
@@ -371,29 +388,23 @@ namespace v4d::data::EntityComponentSystem {
 #define V4D_ENTITY_DECLARE_COMPONENT(ClassName, ComponentType, MemberName) \
 	class ComponentReference_ ## MemberName {\
 		friend ClassName;\
-		int32_t index;\
+		ClassName::ComponentIndex_T index;\
 		ComponentReference_ ## MemberName () : index(-1) {}\
-		ComponentReference_ ## MemberName (int32_t componentIndex) : index(componentIndex) {}\
+		ComponentReference_ ## MemberName (ClassName::ComponentIndex_T componentIndex) : index(componentIndex) {}\
 		~ComponentReference_ ## MemberName () {\
+			std::lock_guard entitiesLock(ClassName::entityInstancesMutex);\
+			std::lock_guard componentsLock(MemberName ## Components.componentsMutex);\
 			if (index != -1) {\
-				std::lock_guard lock(ClassName::entityInstancesMutex);\
-				int32_t replacementInstanceIndex = MemberName ## Components .Remove(index);\
-				if (replacementInstanceIndex != -1 && ClassName::entityInstances[replacementInstanceIndex]) {\
-					ClassName::entityInstances[replacementInstanceIndex]-> MemberName.index = index ;\
-				}\
+				MemberName ## Components .__Remove__(index);\
 			}\
 		}\
-		ComponentType* Get() {\
-			if (index == -1) return nullptr;\
-			return MemberName ## Components .Get(index);\
-		}\
 		public:\
-		operator bool() {return index != -1 && !!Get();}\
+		operator bool() {return index != -1;}\
 		template<typename T>\
-		void operator = (T&& val) {\
-			if (index != -1) MemberName ## Components .Set<ComponentType>(index, std::forward<T>(val));\
+		auto operator = (T&& val) {\
+			if (index != -1) return MemberName ## Components .Lock(index).operator=(std::forward<T>(val));\
+			return std::forward<T>(val);\
 		}\
-		ComponentType* operator -> () {return Get();}\
 		bool Do(std::function<void(ComponentType&)>&& func){\
 			if (index == -1) return false;\
 			return MemberName ## Components .Do(index, std::forward<std::function<void(ComponentType&)>>(func));\
@@ -404,22 +415,25 @@ namespace v4d::data::EntityComponentSystem {
 	} MemberName;\
 	static v4d::data::EntityComponentSystem::Component<ClassName, ComponentType> MemberName ## Components ;\
 	template<typename...Args>\
-	ClassName* Add_ ## MemberName (Args&&...args) {\
-		std::lock_guard lock(ClassName::entityInstancesMutex);\
-		if (MemberName.index == -1) MemberName.index = MemberName ## Components .Add<Args...>(index, std::forward<Args>(args)...);\
-		return this;\
+	v4d::data::EntityComponentSystem::Component<ClassName, ComponentType>::ComponentReferenceLocked Add_ ## MemberName (Args&&...args) {\
+		std::lock_guard entitiesLock(ClassName::entityInstancesMutex);\
+		std::unique_lock<std::recursive_mutex> componentsLock(MemberName ## Components.componentsMutex);\
+		if (MemberName.index == -1) MemberName.index = MemberName ## Components .__Add__<Args...>(index, &MemberName.index, std::forward<Args>(args)...);\
+		return {componentsLock, MemberName ## Components .__Get__(MemberName.index)};\
 	}\
 	template<typename List_T>\
-	ClassName* Add_ ## MemberName (std::initializer_list<List_T>&& list) {\
-		std::lock_guard lock(ClassName::entityInstancesMutex);\
-		if (MemberName.index == -1) MemberName.index = MemberName ## Components .Add<List_T>(index, std::forward<std::initializer_list<List_T>>(list));\
-		return this;\
+	v4d::data::EntityComponentSystem::Component<ClassName, ComponentType>::ComponentReferenceLocked Add_ ## MemberName (std::initializer_list<List_T>&& list) {\
+		std::lock_guard entitiesLock(ClassName::entityInstancesMutex);\
+		std::unique_lock<std::recursive_mutex> componentsLock(MemberName ## Components.componentsMutex);\
+		if (MemberName.index == -1) MemberName.index = MemberName ## Components .__Add__<List_T>(index, &MemberName.index, std::forward<std::initializer_list<List_T>>(list));\
+		return {componentsLock, MemberName ## Components .__Get__(MemberName.index)};\
 	}\
 	template<typename ArrayRef, int ArrayN>\
-	ClassName* Add_ ## MemberName (const ArrayRef (&val)[ArrayN]) {\
-		std::lock_guard lock(ClassName::entityInstancesMutex);\
-		if (MemberName.index == -1) MemberName.index = MemberName ## Components .Add<ArrayRef, ArrayN>(index, val);\
-		return this;\
+	v4d::data::EntityComponentSystem::Component<ClassName, ComponentType>::ComponentReferenceLocked Add_ ## MemberName (const ArrayRef (&val)[ArrayN]) {\
+		std::lock_guard entitiesLock(ClassName::entityInstancesMutex);\
+		std::unique_lock<std::recursive_mutex> componentsLock(MemberName ## Components.componentsMutex);\
+		if (MemberName.index == -1) MemberName.index = MemberName ## Components .__Add__<ArrayRef, ArrayN>(index, &MemberName.index, val);\
+		return {componentsLock, MemberName ## Components .__Get__(MemberName.index)};\
 	}\
 	void Remove_ ## MemberName ();
 
@@ -427,12 +441,10 @@ namespace v4d::data::EntityComponentSystem {
 #define V4D_ENTITY_DEFINE_COMPONENT(ClassName, ComponentType, MemberName) \
 	v4d::data::EntityComponentSystem::Component<ClassName, ComponentType> ClassName::MemberName ## Components  {};\
 	void ClassName::Remove_ ## MemberName () {\
+		std::lock_guard entitiesLock(ClassName::entityInstancesMutex);\
+		std::lock_guard componentsLock(MemberName ## Components.componentsMutex);\
 		if (MemberName.index != -1) {\
-			std::lock_guard lock(ClassName::entityInstancesMutex);\
-			auto replacementInstanceIndex = MemberName ## Components .Remove(MemberName.index);\
-			if (replacementInstanceIndex != -1 && ClassName::entityInstances[replacementInstanceIndex]) {\
-				ClassName::entityInstances[replacementInstanceIndex]-> MemberName.index = MemberName.index ;\
-			}\
+			MemberName ## Components .__Remove__(MemberName.index);\
 			MemberName.index = -1;\
 		}\
 	}
