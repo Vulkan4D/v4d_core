@@ -28,6 +28,9 @@ namespace v4d::scene {
 		alignas(4) float gamma = 2.2f;
 		alignas(4) float time = 0;
 		
+		alignas(4) uint32_t renderMode = 1;
+		alignas(4) float renderDebugScaling = 1.0f;
+		
 		// alignas(16) glm::vec2 historyTxaaOffset {0};
 		
 		static constexpr float txaaKernelSize = 1.0f;
