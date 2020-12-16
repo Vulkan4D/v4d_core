@@ -31,6 +31,7 @@ namespace v4d::scene {
 		alignas(4) uint32_t renderMode = 1;
 		alignas(4) float renderDebugScaling = 1.0f;
 		alignas(4) int32_t maxBounces = 10; // -1 = infinite bounces
+		alignas(4) uint32_t frameCount = 0;
 		
 		// alignas(16) glm::vec2 historyTxaaOffset {0};
 		
