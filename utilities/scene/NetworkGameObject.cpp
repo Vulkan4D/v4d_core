@@ -115,7 +115,14 @@ namespace v4d::scene {
 	void NetworkGameObject::SmoothlyInterpolateGameObjectTransform(double delta) {
 		if (auto entity = renderableGeometryEntityInstance.lock(); entity) {
 			if (delta > 0) {
-				entity->SetWorldTransform(glm::interpolate(entity->GetWorldTransform(), transform, delta));
+				glm::dmat4 matrix1 = entity->GetWorldTransform();
+				glm::dmat4 matrix2 = transform;
+				glm::dquat rotation1 = glm::quat_cast(matrix1);
+				glm::dquat rotation2= glm::quat_cast(matrix2);
+				glm::dquat finalRotation = glm::slerp(rotation1, rotation2, delta);
+				glm::dmat4 finalMatrix = glm::mat4_cast(finalRotation);
+				finalMatrix[3] = matrix1[3] * (1 - delta) + matrix2[3] * delta;
+				entity->SetWorldTransform(finalMatrix);
 			} else {
 				entity->SetWorldTransform(transform);
 			}
