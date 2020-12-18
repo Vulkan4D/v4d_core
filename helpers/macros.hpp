@@ -25,10 +25,12 @@
 			LOG_ERROR(msg)\
 		}\
 	}
+	#define ASSERT_OR_RETURN_FALSE(expression) if (!(expression)) {LOG_ERROR("ASSERTION FAILED: " #expression) return false;}
 #else
 	#define DEBUG_ASSERT(expression)
 	#define DEBUG_ASSERT_WARN(expression, msg)
 	#define DEBUG_ASSERT_ERROR(expression, msg)
+	#define ASSERT_OR_RETURN_FALSE(expression) if (!(expression)) {return false;}
 #endif
 
 

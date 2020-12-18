@@ -6,10 +6,6 @@
 	#define RAY_TRACING_TLAS_MAX_INSTANCES 65536
 #endif
 
-namespace v4d::scene {
-	class Geometry;
-}
-
 namespace v4d::graphics::vulkan::rtx {
 	
 	struct V4DLIB RayTracingBLASInstance { // VkAccelerationStructureInstanceKHR

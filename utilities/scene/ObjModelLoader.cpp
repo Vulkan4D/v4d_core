@@ -10,7 +10,7 @@
 			modelData->objFilePath = filePath;
 			modelData->objFileBaseDir = baseDir;
 		}
-		void ObjModelLoader::Load() {
+		bool ObjModelLoader::Load() {
 			tinyobj::attrib_t attrib;
 			std::vector<tinyobj::shape_t> shapes;
 			std::vector<tinyobj::material_t> materials;
@@ -18,7 +18,8 @@
 			
 			{// Load file
 				if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelData->objFilePath.data(), modelData->objFileBaseDir.data())) {
-					throw std::runtime_error(err);
+					LOG_ERROR(err);
+					return false;
 				}
 				if (warn != "") LOG_WARN(warn);
 			}
@@ -38,7 +39,7 @@
 				for (size_t j = 0; j < shape.mesh.indices.size(); j++) {
 					auto& index = shape.mesh.indices[j];
 					materialId = shape.mesh.material_ids[j/3];
-					v4d::scene::ObjModel::VertexData vertex = {};
+					v4d::scene::Geometry::VertexData vertex = {};
 					vertex.pos = {
 						attrib.vertices[3 * index.vertex_index + 0]*-1,
 						attrib.vertices[3 * index.vertex_index + 1],
@@ -68,8 +69,11 @@
 					modelData->preloadedIndices.push_back(modelData->preloadedUniqueVertices[vertex]);
 				}
 			}
+			
+			return true;
 		}
-		void ObjModelLoader::Generate (v4d::graphics::vulkan::Device* device, v4d::graphics::RenderableGeometryEntity* entity) {
+		void ObjModelLoader::Generate(v4d::graphics::RenderableGeometryEntity* entity, v4d::graphics::vulkan::Device* device) {
+			entity->Allocate(device, "default");
 			entity->Add_meshIndices()->AllocateBuffers(device, modelData->preloadedIndices.data(), modelData->preloadedIndices.size());
 			entity->Add_meshVertexPosition()->AllocateBuffers(device, modelData->preloadedVertexPositions.data(), modelData->preloadedVertexPositions.size());
 			entity->Add_meshVertexNormal()->AllocateBuffers(device, modelData->preloadedVertexNormals.data(), modelData->preloadedVertexNormals.size());
