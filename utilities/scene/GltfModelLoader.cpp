@@ -33,7 +33,6 @@
 			auto& model = modelData->gltfModel;
 			
 			for (auto& mesh : model.meshes) {
-				LOG_DEBUG("Loading mesh '" << mesh.name << "'")
 				
 				if (mesh.name == "collider") {
 					// The Collider mesh
@@ -83,13 +82,6 @@
 					for (auto& p : mesh.primitives) {
 						ASSERT_OR_RETURN_FALSE(p.mode == TINYGLTF_MODE_TRIANGLES);
 						auto* geometryData = &modelData->geometries[mesh.name].emplace_back();
-						
-						// Material
-						auto& material = model.materials[p.material];
-						// material.pbrMetallicRoughness.baseColorFactor[0]
-						// material.pbrMetallicRoughness.metallicFactor
-						// material.pbrMetallicRoughness.roughnessFactor
-						// geometryData->material = ....
 						
 						// Indices
 						auto& primitiveIndices = model.accessors[p.indices];
@@ -181,10 +173,34 @@
 									break;}
 									default: throw std::runtime_error("Vertex Color attributes only supports 8 or 16 bit unsigned integer or 32-bit float components");
 								}
-								ASSERT_OR_RETURN_FALSE(geometryData->vertexColorU8Buffer || geometryData->vertexColorU16Buffer || geometryData->vertexColorF32Buffer);
 							}
 						}
 						ASSERT_OR_RETURN_FALSE(geometryData->vertexCount > 0);
+						
+						// Material
+						union {
+							uint64_t packed;
+							struct {
+								uint64_t metallic : 8;
+								uint64_t roughness : 8;
+								uint64_t albedo_r : 8;
+								uint64_t albedo_g : 8;
+								uint64_t albedo_b : 8;
+								uint64_t emission_r : 8;
+								uint64_t emission_g : 8;
+								uint64_t emission_b : 8;
+							};
+						} mat;
+						auto& material = model.materials[p.material];
+						mat.metallic = (uint8_t)glm::clamp(material.pbrMetallicRoughness.metallicFactor * 255.0f, 0.0, 255.0);
+						mat.roughness = (uint8_t)glm::clamp(material.pbrMetallicRoughness.roughnessFactor * 255.0f, 0.0, 255.0);
+						mat.albedo_r = (uint8_t)glm::clamp(material.pbrMetallicRoughness.baseColorFactor[0] * 255.0, 0.0, 255.0);
+						mat.albedo_g = (uint8_t)glm::clamp(material.pbrMetallicRoughness.baseColorFactor[1] * 255.0, 0.0, 255.0);
+						mat.albedo_b = (uint8_t)glm::clamp(material.pbrMetallicRoughness.baseColorFactor[2] * 255.0, 0.0, 255.0);
+						mat.emission_r = (uint8_t)glm::clamp(material.emissiveFactor[0] * 255.0, 0.0, 255.0);
+						mat.emission_g = (uint8_t)glm::clamp(material.emissiveFactor[1] * 255.0, 0.0, 255.0);
+						mat.emission_b = (uint8_t)glm::clamp(material.emissiveFactor[2] * 255.0, 0.0, 255.0);
+						geometryData->material = mat.packed;
 						
 						modelData->geometriesCount++;
 					}
@@ -195,65 +211,77 @@
 		}
 		
 		void GltfModelLoader::Generate(v4d::graphics::RenderableGeometryEntity* entity, v4d::graphics::vulkan::Device* device) {
-			if (modelData->geometriesCount == 0) return;
-			entity->Allocate(device, "default", modelData->geometriesCount);
+			auto sharedGeometryData = modelData->commonGeometryData.lock();
+			if (sharedGeometryData) {
+				entity->sharedGeometryData = sharedGeometryData;
+				entity->Allocate(device, "default", 0);
+			} else {
+				entity->sharedGeometryData = std::make_shared<v4d::graphics::RenderableGeometryEntity::SharedGeometryData>();
+				modelData->commonGeometryData = entity->sharedGeometryData;
 			
-			if (modelData->index16Count)
-				entity->Add_meshIndices16()->AllocateBuffersCount(device, modelData->index16Count);
-			if (modelData->index32Count)
-				entity->Add_meshIndices32()->AllocateBuffersCount(device, modelData->index32Count);
-			if (modelData->vertexPositionCount)
-				entity->Add_meshVertexPosition()->AllocateBuffersCount(device, modelData->vertexPositionCount);
-			if (modelData->vertexNormalCount)
-				entity->Add_meshVertexNormal()->AllocateBuffersCount(device, modelData->vertexNormalCount);
-			if (modelData->vertexColorU8Count)
-				entity->Add_meshVertexColorU8()->AllocateBuffersCount(device, modelData->vertexColorU8Count);
-			if (modelData->vertexColorU16Count)
-				entity->Add_meshVertexColorU16()->AllocateBuffersCount(device, modelData->vertexColorU16Count);
-			if (modelData->vertexColorF32Count)
-				entity->Add_meshVertexColorF32()->AllocateBuffersCount(device, modelData->vertexColorF32Count);
-			if (modelData->vertexUVCount)
-				entity->Add_meshVertexUV()->AllocateBuffersCount(device, modelData->vertexUVCount);
-			
-			for (auto&[name, geometries] : modelData->geometries) {
-				for (auto& geometry : geometries) {
-					auto& geom = entity->geometries.emplace_back();
-					geom.transform = geometry.transform;
-					geom.material = geometry.material;
-					geom.indexCount = geometry.indexCount;
-					geom.vertexCount = geometry.vertexCount;
-					
-					if (geometry.index16Buffer && entity->meshIndices16) {
-						memcpy(&entity->meshIndices16.Lock()->data[geometry.indexStart], geometry.index16Buffer, geometry.indexCount * sizeof(Index16));
-						geom.firstIndex = geometry.indexStart;
-					}
-					if (geometry.index32Buffer && entity->meshIndices32) {
-						memcpy(&entity->meshIndices32.Lock()->data[geometry.indexStart], geometry.index32Buffer, geometry.indexCount * sizeof(Index32));
-						geom.firstIndex = geometry.indexStart;
-					}
-					if (geometry.vertexPositionBuffer && entity->meshVertexPosition) {
-						memcpy(&entity->meshVertexPosition.Lock()->data[geometry.vertexPositionStart], geometry.vertexPositionBuffer, geometry.vertexCount * sizeof(VertexPosition));
-						geom.firstVertexPosition = geometry.vertexPositionStart;
-					}
-					if (geometry.vertexNormalBuffer && entity->meshVertexNormal) {
-						memcpy(&entity->meshVertexNormal.Lock()->data[geometry.vertexNormalStart], geometry.vertexNormalBuffer, geometry.vertexCount * sizeof(VertexNormal));
-						geom.firstVertexNormal = geometry.vertexNormalStart;
-					}
-					if (geometry.vertexColorU8Buffer && entity->meshVertexColorU8) {
-						memcpy(&entity->meshVertexColorU8.Lock()->data[geometry.vertexColorU8Start], geometry.vertexColorU8Buffer, geometry.vertexCount * sizeof(VertexColorU8));
-						geom.firstVertexColorU8 = geometry.vertexColorU8Start;
-					}
-					if (geometry.vertexColorU16Buffer && entity->meshVertexColorU16) {
-						memcpy(&entity->meshVertexColorU16.Lock()->data[geometry.vertexColorU16Start], geometry.vertexColorU16Buffer, geometry.vertexCount * sizeof(VertexColorU16));
-						geom.firstVertexColorU16 = geometry.vertexColorU16Start;
-					}
-					if (geometry.vertexColorF32Buffer && entity->meshVertexColorF32) {
-						memcpy(&entity->meshVertexColorF32.Lock()->data[geometry.vertexColorF32Start], geometry.vertexColorF32Buffer, geometry.vertexCount * sizeof(VertexColorF32));
-						geom.firstVertexColorF32 = geometry.vertexColorF32Start;
-					}
-					if (geometry.vertexUVBuffer && entity->meshVertexUV) {
-						memcpy(&entity->meshVertexUV.Lock()->data[geometry.vertexUVStart], geometry.vertexUVBuffer, geometry.vertexCount * sizeof(VertexUV));
-						geom.firstVertexUV = geometry.vertexUVStart;
+				if (modelData->geometriesCount == 0) return;
+				entity->Allocate(device, "default", modelData->geometriesCount);
+				
+				if (modelData->index16Count)
+					entity->Add_meshIndices16()->AllocateBuffersCount(device, modelData->index16Count);
+				if (modelData->index32Count)
+					entity->Add_meshIndices32()->AllocateBuffersCount(device, modelData->index32Count);
+				if (modelData->vertexPositionCount)
+					entity->Add_meshVertexPosition()->AllocateBuffersCount(device, modelData->vertexPositionCount);
+				if (modelData->vertexNormalCount)
+					entity->Add_meshVertexNormal()->AllocateBuffersCount(device, modelData->vertexNormalCount);
+				if (modelData->vertexColorU8Count)
+					entity->Add_meshVertexColorU8()->AllocateBuffersCount(device, modelData->vertexColorU8Count);
+				if (modelData->vertexColorU16Count)
+					entity->Add_meshVertexColorU16()->AllocateBuffersCount(device, modelData->vertexColorU16Count);
+				if (modelData->vertexColorF32Count)
+					entity->Add_meshVertexColorF32()->AllocateBuffersCount(device, modelData->vertexColorF32Count);
+				if (modelData->vertexUVCount)
+					entity->Add_meshVertexUV()->AllocateBuffersCount(device, modelData->vertexUVCount);
+				
+				entity->sharedGeometryData->geometries.clear();
+				entity->sharedGeometryData->geometries.reserve(modelData->geometries.size());
+				
+				for (auto&[name, geometries] : modelData->geometries) {
+					for (auto& geometry : geometries) {
+						auto& geom = entity->sharedGeometryData->geometries.emplace_back();
+						geom.transform = glm::rotate(glm::mat4(1), glm::radians(180.0f), {0,1,0}) * geometry.transform;
+						geom.material = geometry.material;
+						geom.indexCount = geometry.indexCount;
+						geom.vertexCount = geometry.vertexCount;
+						
+						if (geometry.index16Buffer && entity->meshIndices16) {
+							memcpy(&entity->meshIndices16.Lock()->data[geometry.indexStart], geometry.index16Buffer, geometry.indexCount * sizeof(Index16));
+							geom.firstIndex = geometry.indexStart;
+						}
+						if (geometry.index32Buffer && entity->meshIndices32) {
+							memcpy(&entity->meshIndices32.Lock()->data[geometry.indexStart], geometry.index32Buffer, geometry.indexCount * sizeof(Index32));
+							geom.firstIndex = geometry.indexStart;
+						}
+						if (geometry.vertexPositionBuffer && entity->meshVertexPosition) {
+							memcpy(&entity->meshVertexPosition.Lock()->data[geometry.vertexPositionStart], geometry.vertexPositionBuffer, geometry.vertexCount * sizeof(VertexPosition));
+							geom.firstVertexPosition = geometry.vertexPositionStart;
+						}
+						if (geometry.vertexNormalBuffer && entity->meshVertexNormal) {
+							memcpy(&entity->meshVertexNormal.Lock()->data[geometry.vertexNormalStart], geometry.vertexNormalBuffer, geometry.vertexCount * sizeof(VertexNormal));
+							geom.firstVertexNormal = geometry.vertexNormalStart;
+						}
+						if (geometry.vertexColorU8Buffer && entity->meshVertexColorU8) {
+							memcpy(&entity->meshVertexColorU8.Lock()->data[geometry.vertexColorU8Start], geometry.vertexColorU8Buffer, geometry.vertexCount * sizeof(VertexColorU8));
+							geom.firstVertexColorU8 = geometry.vertexColorU8Start;
+						}
+						if (geometry.vertexColorU16Buffer && entity->meshVertexColorU16) {
+							memcpy(&entity->meshVertexColorU16.Lock()->data[geometry.vertexColorU16Start], geometry.vertexColorU16Buffer, geometry.vertexCount * sizeof(VertexColorU16));
+							geom.firstVertexColorU16 = geometry.vertexColorU16Start;
+						}
+						if (geometry.vertexColorF32Buffer && entity->meshVertexColorF32) {
+							memcpy(&entity->meshVertexColorF32.Lock()->data[geometry.vertexColorF32Start], geometry.vertexColorF32Buffer, geometry.vertexCount * sizeof(VertexColorF32));
+							geom.firstVertexColorF32 = geometry.vertexColorF32Start;
+						}
+						if (geometry.vertexUVBuffer && entity->meshVertexUV) {
+							memcpy(&entity->meshVertexUV.Lock()->data[geometry.vertexUVStart], geometry.vertexUVBuffer, geometry.vertexCount * sizeof(VertexUV));
+							geom.firstVertexUV = geometry.vertexUVStart;
+						}
 					}
 				}
 			}
@@ -262,7 +290,7 @@
 			if (modelData->colliderGeometry.vertexCount && modelData->colliderGeometry.indexCount) {
 				auto physics = entity->Add_physics();
 				physics->mass = 10;
-				physics->rigidbodyType = PhysicsInfo::RigidBodyType::DYNAMIC;
+				physics->rigidbodyType = PhysicsInfo::RigidBodyType::STATIC;
 				if (modelData->colliderGeometry.index16Buffer) {
 					physics->SetMeshCollider(modelData->colliderGeometry.vertexPositionBuffer, modelData->colliderGeometry.vertexCount, modelData->colliderGeometry.index16Buffer, modelData->colliderGeometry.indexCount);
 				} else if (modelData->colliderGeometry.index32Buffer) {

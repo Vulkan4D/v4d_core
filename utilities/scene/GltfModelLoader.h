@@ -42,6 +42,7 @@
 		struct GltfModelData {
 			std::string_view filePath;
 			tinygltf::Model gltfModel {};
+			std::weak_ptr<v4d::graphics::RenderableGeometryEntity::SharedGeometryData> commonGeometryData;
 			std::unordered_map<std::string, std::vector<GltfGeometryData>> geometries {};
 			GltfColliderData colliderGeometry {};
 			uint32_t geometriesCount = 0;

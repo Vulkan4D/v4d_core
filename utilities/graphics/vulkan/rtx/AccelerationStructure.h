@@ -40,7 +40,7 @@ namespace v4d::graphics::vulkan::rtx {
 		// State
 		bool built = false;
 		bool update = false;
-		uint32_t maxPrimitiveCount = 0;
+		std::vector<uint32_t> maxPrimitiveCounts {};
 		
 		Device* device = nullptr;
 		

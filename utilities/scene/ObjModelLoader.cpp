@@ -73,24 +73,20 @@
 			return true;
 		}
 		void ObjModelLoader::Generate(v4d::graphics::RenderableGeometryEntity* entity, v4d::graphics::vulkan::Device* device) {
-			{
-				auto sharedGeometryData = modelData->commonGeometryData.lock();
-				if (sharedGeometryData) {
-					LOG("Using existing Geometry Data")
-					entity->sharedGeometryData = sharedGeometryData;
-					entity->Allocate(device, "default", 0);
-					return;
-				}
-				LOG("Creating new Geometry Data")
-				entity->sharedGeometryData = std::make_shared<v4d::graphics::RenderableGeometryEntity::SharedGeometryData>();
-				modelData->commonGeometryData = entity->sharedGeometryData;
-				
-				entity->Allocate(device, "default");
-				entity->Add_meshIndices32()->AllocateBuffers(device, modelData->preloadedIndices.data(), modelData->preloadedIndices.size());
-				entity->Add_meshVertexPosition()->AllocateBuffers(device, modelData->preloadedVertexPositions.data(), modelData->preloadedVertexPositions.size());
-				entity->Add_meshVertexNormal()->AllocateBuffers(device, modelData->preloadedVertexNormals.data(), modelData->preloadedVertexNormals.size());
-				entity->Add_meshVertexColorU8()->AllocateBuffers(device, modelData->preloadedVertexColors.data(), modelData->preloadedVertexColors.size());
+			auto sharedGeometryData = modelData->commonGeometryData.lock();
+			if (sharedGeometryData) {
+				entity->sharedGeometryData = sharedGeometryData;
+				entity->Allocate(device, "default", 0);
+				return;
 			}
+			entity->sharedGeometryData = std::make_shared<v4d::graphics::RenderableGeometryEntity::SharedGeometryData>();
+			modelData->commonGeometryData = entity->sharedGeometryData;
+			
+			entity->Allocate(device, "default");
+			entity->Add_meshIndices32()->AllocateBuffers(device, modelData->preloadedIndices.data(), modelData->preloadedIndices.size());
+			entity->Add_meshVertexPosition()->AllocateBuffers(device, modelData->preloadedVertexPositions.data(), modelData->preloadedVertexPositions.size());
+			entity->Add_meshVertexNormal()->AllocateBuffers(device, modelData->preloadedVertexNormals.data(), modelData->preloadedVertexNormals.size());
+			entity->Add_meshVertexColorU8()->AllocateBuffers(device, modelData->preloadedVertexColors.data(), modelData->preloadedVertexColors.size());
 		}
 	}
 

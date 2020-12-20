@@ -12,7 +12,8 @@ namespace v4d::graphics::vulkan::rtx {
 		accelerationStructureGeometries.reserve(geometries.size());
 		buildRangeInfo.clear();
 		buildRangeInfo.reserve(geometries.size());
-		maxPrimitiveCount = 0;
+		maxPrimitiveCounts.clear();
+		maxPrimitiveCounts.reserve(geometries.size());
 		
 		for (const auto& geom : geometries) {
 			auto& accelerationStructureGeometry = accelerationStructureGeometries.emplace_back();
@@ -56,7 +57,7 @@ namespace v4d::graphics::vulkan::rtx {
 				range.firstVertex = 0;
 			}
 			
-			maxPrimitiveCount += range.primitiveCount;
+			maxPrimitiveCounts.emplace_back(range.primitiveCount);
 		}
 		
 		buildGeometryInfo.pGeometries = accelerationStructureGeometries.data();
@@ -73,7 +74,8 @@ namespace v4d::graphics::vulkan::rtx {
 		accelerationStructureGeometries.reserve(geometries.size());
 		buildRangeInfo.clear();
 		buildRangeInfo.reserve(geometries.size());
-		maxPrimitiveCount = 0;
+		maxPrimitiveCounts.clear();
+		maxPrimitiveCounts.reserve(geometries.size());
 		
 		for (const auto& geom : geometries) {
 			auto& accelerationStructureGeometry = accelerationStructureGeometries.emplace_back();
@@ -91,7 +93,7 @@ namespace v4d::graphics::vulkan::rtx {
 			range.firstVertex = 0;
 			range.transformOffset = (uint32_t)geom.transformOffset;
 			
-			maxPrimitiveCount += range.primitiveCount;
+			maxPrimitiveCounts.emplace_back(range.primitiveCount);
 		}
 		
 		buildGeometryInfo.pGeometries = accelerationStructureGeometries.data();
@@ -107,6 +109,7 @@ namespace v4d::graphics::vulkan::rtx {
 		accelerationStructureGeometries.resize(1);
 		buildRangeInfo.clear();
 		buildRangeInfo.resize(1);
+		maxPrimitiveCounts.resize(1);
 		
 		buildGeometryInfo.pGeometries = accelerationStructureGeometries.data();
 		buildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
@@ -120,7 +123,7 @@ namespace v4d::graphics::vulkan::rtx {
 		accelerationStructureGeometries[0].geometry.instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
 		accelerationStructureGeometries[0].geometry.instances.arrayOfPointers = VK_FALSE;
 		
-		maxPrimitiveCount = RAY_TRACING_TLAS_MAX_INSTANCES;
+		maxPrimitiveCounts[0] = RAY_TRACING_TLAS_MAX_INSTANCES;
 	}
 	
 	void AccelerationStructure::SetInstanceBuffer(Device* device, void* instanceArray, uint32_t instanceCount, uint32_t instanceOffset) {
@@ -167,7 +170,7 @@ namespace v4d::graphics::vulkan::rtx {
 			device->GetAccelerationStructureBuildSizesKHR(
 				VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR,
 				&buildGeometryInfo,
-				&maxPrimitiveCount,
+				maxPrimitiveCounts.data(),
 				&accelerationStructureBuildSizesInfo);
 			accelerationStructureSize = accelerationStructureBuildSizesInfo.accelerationStructureSize;
 		}
