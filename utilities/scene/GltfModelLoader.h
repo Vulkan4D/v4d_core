@@ -57,10 +57,10 @@
 		};
 
 		class V4DLIB GltfModelLoader : public ModelLoader<GltfModelData> {
-		public:
-			GltfModelLoader(std::string_view filePath);
 			bool Load() override;
 			void Generate(v4d::graphics::RenderableGeometryEntity*, v4d::graphics::vulkan::Device*) override;
+		public:
+			GltfModelLoader(std::string_view filePath);
 		};
 	}
 

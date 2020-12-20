@@ -46,6 +46,13 @@ namespace v4d::graphics {
 			uint32_t firstCustomData = 0;
 		};
 		
+		struct SharedGeometryData {
+			Blas blas {};
+			uint64_t geometriesBuffer = 0;
+			std::vector<Geometry> geometries {};
+			std::vector<v4d::graphics::vulkan::rtx::AccelerationStructure::GeometryAccelerationStructureInfo> geometriesAccelerationStructureInfo;
+		};
+		
 	private:
 		V4D_ENTITY_DECLARE_CLASS(RenderableGeometryEntity)
 		
@@ -65,17 +72,15 @@ namespace v4d::graphics {
 		
 	public:
 		Device* device = nullptr;
-		std::vector<v4d::graphics::vulkan::rtx::AccelerationStructure::GeometryAccelerationStructureInfo> geometriesAccelerationStructureInfo;
-		std::shared_ptr<Blas> blas = nullptr;
 		bool generated = false;
 		glm::dmat4 worldTransform = glm::dmat4{1};
 		std::function<void(RenderableGeometryEntity*, Device*)> generator = [](RenderableGeometryEntity*, Device*){};
 		Mesh::RenderableEntityInstance entityInstanceInfo {};
+		std::recursive_mutex writeMutex;
+		std::shared_ptr<SharedGeometryData> sharedGeometryData = nullptr;
 		uint32_t sbtOffset = 0;
 		uint32_t rayTracingMask = 0xff;
 		VkGeometryInstanceFlagsKHR rayTracingFlags = 0;
-		std::recursive_mutex writeMutex;
-		std::vector<Geometry> geometries {};
 		
 		bool raster_transparent = false;
 		float raster_wireframe = 0;

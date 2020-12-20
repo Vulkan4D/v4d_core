@@ -9,18 +9,18 @@ namespace v4d::scene {
 		virtual void Generate(v4d::graphics::RenderableGeometryEntity*, v4d::graphics::vulkan::Device*) = 0;
 	public:
 		std::shared_ptr<ModelDataType> modelData;
-		bool loaded = false;
+		std::shared_ptr<bool> loaded;
 		void operator()(v4d::graphics::RenderableGeometryEntity* entity = nullptr, v4d::graphics::vulkan::Device* device = nullptr) {
-			if (!loaded) {
-				if (Load()) loaded = true;
+			if (!*loaded) {
+				if (Load()) *loaded = true;
 			}
-			if (loaded && entity && device) {
+			if (*loaded && entity && device) {
 				Generate(entity, device);
 			}
 		}
-		ModelLoader(const ModelLoader& original) : modelData(original.modelData) {}
-		ModelLoader(ModelLoader&& original) : modelData(original.modelData) {}
-		ModelLoader() : modelData(std::make_shared<ModelDataType>()) {}
+		ModelLoader(const ModelLoader& original) : modelData(original.modelData), loaded(original.loaded) {}
+		ModelLoader(ModelLoader&& original) : modelData(original.modelData), loaded(original.loaded) {}
+		ModelLoader() : modelData(std::make_shared<ModelDataType>()), loaded(std::make_shared<bool>(false)) {}
 		virtual ~ModelLoader(){}
 	};
 }

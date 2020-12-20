@@ -53,6 +53,7 @@
 		struct ObjModelData {
 			std::string_view objFilePath;
 			std::string_view objFileBaseDir;
+			std::weak_ptr<v4d::graphics::RenderableGeometryEntity::SharedGeometryData> commonGeometryData;
 			std::vector<v4d::graphics::Mesh::VertexPosition> preloadedVertexPositions {};
 			std::vector<v4d::graphics::Mesh::VertexNormal> preloadedVertexNormals {};
 			std::vector<v4d::graphics::Mesh::VertexColorU8> preloadedVertexColors {};
@@ -61,10 +62,10 @@
 		};
 
 		class V4DLIB ObjModelLoader : public ModelLoader<ObjModelData> {
-		public:
-			ObjModelLoader(std::string_view filePath, std::string_view baseDir);
 			bool Load() override;
 			void Generate(v4d::graphics::RenderableGeometryEntity*, v4d::graphics::vulkan::Device*) override;
+		public:
+			ObjModelLoader(std::string_view filePath, std::string_view baseDir);
 		};
 	}
 

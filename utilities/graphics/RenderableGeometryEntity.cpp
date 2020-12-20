@@ -75,9 +75,9 @@ namespace v4d::graphics {
 			meshCustomData.Do([this](auto& component){
 				component.FreeBuffers(device);
 			});
+			sharedGeometryData.reset();
 		}
 		generated = false;
-		blas = nullptr;
 		device = nullptr;
 	}
 	
@@ -147,13 +147,10 @@ namespace v4d::graphics {
 	
 	void RenderableGeometryEntity::Allocate(Device* renderingDevice, std::string sbtOffset, int geometriesCount) {
 		std::unique_lock<std::recursive_mutex> lock(writeMutex);
-		this->device = renderingDevice;
+		device = renderingDevice;
 		this->sbtOffset = sbtOffsets[sbtOffset];
-		geometriesAccelerationStructureInfo.clear();
 		if (geometriesCount > 0) {
 			Add_meshGeometries()->AllocateBuffersCount(renderingDevice, geometriesCount);
-			geometriesAccelerationStructureInfo.resize(geometriesCount);
-			geometries.reserve(geometriesCount);
 		}
 	}
 	
@@ -178,130 +175,136 @@ namespace v4d::graphics {
 	void RenderableGeometryEntity::Generate(Device* device) {
 		assert(!generated);
 		generated = true;
-		geometries.clear();
 		generator(this, device);
-		if (generated && geometriesAccelerationStructureInfo.size() > 0) {
-			// Geometries
-			if (auto geometriesData = meshGeometries.Lock(); geometriesData && geometriesData->data) {
-				geometriesData->dirtyOnDevice = true;
-				
-				// handle default single-geometry entities
-				if (geometries.size() == 0 && geometriesAccelerationStructureInfo.size() == 1) {
-					auto& geometry = geometries.emplace_back();
-					// Indices 16
-					if (auto indexData = meshIndices16.Lock(); indexData && indexData->data) {
-						geometry.indexCount = indexData->count;
-					} // Indices 32
-					else if (auto indexData = meshIndices32.Lock(); indexData && indexData->data) {
-						geometry.indexCount = indexData->count;
-					}
-					// Vertex Positions
-					if (auto vertexData = meshVertexPosition.Lock(); vertexData && vertexData->data) {
-						geometry.vertexCount = vertexData->count;
-					} else if (auto proceduralVertexData = proceduralVertexAABB.Lock(); proceduralVertexData && proceduralVertexData->data) {
-						geometry.vertexCount = proceduralVertexData->count;
-					} else {
-						LOG_ERROR("Geometry has no vertex positions or AABB")
-						return;
-					}
-				}
-				
-				assert(geometries.size() == geometriesAccelerationStructureInfo.size());
-				
-				entityInstanceInfo.geometries = device->GetBufferDeviceAddress(geometriesData->deviceBuffer);
-				
-				size_t i = 0;
-				for (auto& geometry : geometries) {
-					geometriesData->data[i] = {};
+		
+		if (generated) {
+			if (sharedGeometryData && sharedGeometryData->geometriesBuffer) {
+				entityInstanceInfo.geometries = sharedGeometryData->geometriesBuffer;
+			} else {
+				// Geometries
+				if (auto geometriesData = meshGeometries.Lock(); geometriesData && geometriesData->data && geometriesData->count > 0) {
+					if (!sharedGeometryData) sharedGeometryData = std::make_shared<SharedGeometryData>();
+					sharedGeometryData->geometriesAccelerationStructureInfo.resize(geometriesData->count);
+					geometriesData->dirtyOnDevice = true;
 					
-					// Transform & Material
-					geometriesData->data[i].transform = glm::mat3x4(glm::transpose(geometry.transform));
-					geometriesData->data[i].material = geometry.material;
-					if (geometry.transform != glm::mat4{1}) {
-						geometriesAccelerationStructureInfo[i].transformBuffer = device->GetBufferDeviceOrHostAddressConst(geometriesData->deviceBuffer);
-						geometriesAccelerationStructureInfo[i].transformOffset = geometriesData->TypeSize() * i;
+					// handle default single-geometry entities
+					if (sharedGeometryData->geometries.size() == 0 && sharedGeometryData->geometriesAccelerationStructureInfo.size() == 1) {
+						auto& geometry = sharedGeometryData->geometries.emplace_back();
+						// Indices 16
+						if (auto indexData = meshIndices16.Lock(); indexData && indexData->data) {
+							geometry.indexCount = indexData->count;
+						} // Indices 32
+						else if (auto indexData = meshIndices32.Lock(); indexData && indexData->data) {
+							geometry.indexCount = indexData->count;
+						}
+						// Vertex Positions
+						if (auto vertexData = meshVertexPosition.Lock(); vertexData && vertexData->data) {
+							geometry.vertexCount = vertexData->count;
+						} else if (auto proceduralVertexData = proceduralVertexAABB.Lock(); proceduralVertexData && proceduralVertexData->data) {
+							geometry.vertexCount = proceduralVertexData->count;
+						} else {
+							LOG_ERROR("Geometry has no vertex positions or AABB")
+							return;
+						}
 					}
 					
-					// Indices 16
-					if (auto indexData = meshIndices16.Lock(); indexData && indexData->data) {
-						indexData->dirtyOnDevice = true;
-						geometriesAccelerationStructureInfo[i].indexBuffer = device->GetBufferDeviceOrHostAddressConst(indexData->deviceBuffer);
-						geometriesAccelerationStructureInfo[i].indexOffset = geometry.firstIndex * indexData->TypeSize();
-						geometriesAccelerationStructureInfo[i].indexCount = geometry.indexCount;
-						geometriesAccelerationStructureInfo[i].indexStride = indexData->TypeSize();
-
-						geometriesData->data[i].indices16 = (uint64_t)geometriesAccelerationStructureInfo[i].indexBuffer.deviceAddress + (uint64_t)geometry.firstIndex * indexData->TypeSize();
-					}
-					// Indices 32
-					else if (auto indexData = meshIndices32.Lock(); indexData && indexData->data) {
-						indexData->dirtyOnDevice = true;
-						geometriesAccelerationStructureInfo[i].indexBuffer = device->GetBufferDeviceOrHostAddressConst(indexData->deviceBuffer);
-						geometriesAccelerationStructureInfo[i].indexOffset = geometry.firstIndex * indexData->TypeSize();
-						geometriesAccelerationStructureInfo[i].indexCount = geometry.indexCount;
-						geometriesAccelerationStructureInfo[i].indexStride = indexData->TypeSize();
-
-						geometriesData->data[i].indices32 = (uint64_t)geometriesAccelerationStructureInfo[i].indexBuffer.deviceAddress + (uint64_t)geometry.firstIndex * indexData->TypeSize();
-					}
+					assert(sharedGeometryData->geometries.size() == sharedGeometryData->geometriesAccelerationStructureInfo.size());
 					
-					// Vertex Positions
-					if (auto vertexData = meshVertexPosition.Lock(); vertexData && vertexData->data) {
-						vertexData->dirtyOnDevice = true;
-						geometriesAccelerationStructureInfo[i].vertexBuffer = device->GetBufferDeviceOrHostAddressConst(vertexData->deviceBuffer);
-						geometriesAccelerationStructureInfo[i].vertexOffset = geometry.firstVertexPosition * vertexData->TypeSize();
-						geometriesAccelerationStructureInfo[i].vertexCount = geometry.vertexCount;
-						geometriesAccelerationStructureInfo[i].vertexStride = vertexData->TypeSize();
+					sharedGeometryData->geometriesBuffer = entityInstanceInfo.geometries = device->GetBufferDeviceAddress(geometriesData->deviceBuffer);
+					
+					size_t i = 0;
+					for (auto& geometry : sharedGeometryData->geometries) {
+						geometriesData->data[i] = {};
 						
-						geometriesData->data[i].vertexPositions = (uint64_t)geometriesAccelerationStructureInfo[i].vertexBuffer.deviceAddress + (uint64_t)geometry.firstVertexAABB * vertexData->TypeSize();
-					}
-					// Procedural vertices AABB
-					else if (auto proceduralVertexData = proceduralVertexAABB.Lock(); proceduralVertexData && proceduralVertexData->data) {
-						proceduralVertexData->dirtyOnDevice = true;
-						geometriesAccelerationStructureInfo[i].vertexBuffer = device->GetBufferDeviceOrHostAddressConst(proceduralVertexData->deviceBuffer);
-						geometriesAccelerationStructureInfo[i].vertexOffset = geometry.firstVertexAABB * proceduralVertexData->TypeSize();
-						geometriesAccelerationStructureInfo[i].vertexCount = geometry.vertexCount;
-						geometriesAccelerationStructureInfo[i].vertexStride = proceduralVertexData->TypeSize();
+						// Transform & Material
+						geometriesData->data[i].transform = glm::mat3x4(glm::transpose(geometry.transform));
+						geometriesData->data[i].material = geometry.material;
+						if (geometry.transform != glm::mat4{1}) {
+							sharedGeometryData->geometriesAccelerationStructureInfo[i].transformBuffer = device->GetBufferDeviceOrHostAddressConst(geometriesData->deviceBuffer);
+							sharedGeometryData->geometriesAccelerationStructureInfo[i].transformOffset = geometriesData->TypeSize() * i;
+						}
 						
-						geometriesData->data[i].vertexPositions = (uint64_t)geometriesAccelerationStructureInfo[i].vertexBuffer.deviceAddress + (uint64_t)geometry.firstVertexAABB * proceduralVertexData->TypeSize();
-					} else {
-						LOG_ERROR("Geometry has no vertex positions or AABB")
-						return;
+						// Indices 16
+						if (auto indexData = meshIndices16.Lock(); indexData && indexData->data) {
+							indexData->dirtyOnDevice = true;
+							sharedGeometryData->geometriesAccelerationStructureInfo[i].indexBuffer = device->GetBufferDeviceOrHostAddressConst(indexData->deviceBuffer);
+							sharedGeometryData->geometriesAccelerationStructureInfo[i].indexOffset = geometry.firstIndex * indexData->TypeSize();
+							sharedGeometryData->geometriesAccelerationStructureInfo[i].indexCount = geometry.indexCount;
+							sharedGeometryData->geometriesAccelerationStructureInfo[i].indexStride = indexData->TypeSize();
+
+							geometriesData->data[i].indices16 = (uint64_t)sharedGeometryData->geometriesAccelerationStructureInfo[i].indexBuffer.deviceAddress + (uint64_t)geometry.firstIndex * indexData->TypeSize();
+						}
+						// Indices 32
+						else if (auto indexData = meshIndices32.Lock(); indexData && indexData->data) {
+							indexData->dirtyOnDevice = true;
+							sharedGeometryData->geometriesAccelerationStructureInfo[i].indexBuffer = device->GetBufferDeviceOrHostAddressConst(indexData->deviceBuffer);
+							sharedGeometryData->geometriesAccelerationStructureInfo[i].indexOffset = geometry.firstIndex * indexData->TypeSize();
+							sharedGeometryData->geometriesAccelerationStructureInfo[i].indexCount = geometry.indexCount;
+							sharedGeometryData->geometriesAccelerationStructureInfo[i].indexStride = indexData->TypeSize();
+
+							geometriesData->data[i].indices32 = (uint64_t)sharedGeometryData->geometriesAccelerationStructureInfo[i].indexBuffer.deviceAddress + (uint64_t)geometry.firstIndex * indexData->TypeSize();
+						}
+						
+						// Vertex Positions
+						if (auto vertexData = meshVertexPosition.Lock(); vertexData && vertexData->data) {
+							vertexData->dirtyOnDevice = true;
+							sharedGeometryData->geometriesAccelerationStructureInfo[i].vertexBuffer = device->GetBufferDeviceOrHostAddressConst(vertexData->deviceBuffer);
+							sharedGeometryData->geometriesAccelerationStructureInfo[i].vertexOffset = geometry.firstVertexPosition * vertexData->TypeSize();
+							sharedGeometryData->geometriesAccelerationStructureInfo[i].vertexCount = geometry.vertexCount;
+							sharedGeometryData->geometriesAccelerationStructureInfo[i].vertexStride = vertexData->TypeSize();
+							
+							geometriesData->data[i].vertexPositions = (uint64_t)sharedGeometryData->geometriesAccelerationStructureInfo[i].vertexBuffer.deviceAddress + (uint64_t)geometry.firstVertexAABB * vertexData->TypeSize();
+						}
+						// Procedural vertices AABB
+						else if (auto proceduralVertexData = proceduralVertexAABB.Lock(); proceduralVertexData && proceduralVertexData->data) {
+							proceduralVertexData->dirtyOnDevice = true;
+							sharedGeometryData->geometriesAccelerationStructureInfo[i].vertexBuffer = device->GetBufferDeviceOrHostAddressConst(proceduralVertexData->deviceBuffer);
+							sharedGeometryData->geometriesAccelerationStructureInfo[i].vertexOffset = geometry.firstVertexAABB * proceduralVertexData->TypeSize();
+							sharedGeometryData->geometriesAccelerationStructureInfo[i].vertexCount = geometry.vertexCount;
+							sharedGeometryData->geometriesAccelerationStructureInfo[i].vertexStride = proceduralVertexData->TypeSize();
+							
+							geometriesData->data[i].vertexPositions = (uint64_t)sharedGeometryData->geometriesAccelerationStructureInfo[i].vertexBuffer.deviceAddress + (uint64_t)geometry.firstVertexAABB * proceduralVertexData->TypeSize();
+						} else {
+							LOG_ERROR("Geometry has no vertex positions or AABB")
+							return;
+						}
+						
+						// Vertex normals
+						if (auto vertexData = meshVertexNormal.Lock(); vertexData && vertexData->data) {
+							vertexData->dirtyOnDevice = true;
+							geometriesData->data[i].vertexNormals = (uint64_t)device->GetBufferDeviceAddress(vertexData->deviceBuffer) + (uint64_t)geometry.firstVertexNormal * vertexData->TypeSize();
+						}
+						
+						// Vertex colors uint 8
+						if (auto vertexData = meshVertexColorU8.Lock(); vertexData && vertexData->data) {
+							vertexData->dirtyOnDevice = true;
+							geometriesData->data[i].vertexColorsU8 = (uint64_t)device->GetBufferDeviceAddress(vertexData->deviceBuffer) + (uint64_t)geometry.firstVertexColorU8 * vertexData->TypeSize();
+						}
+						// Vertex colors uint 16
+						if (auto vertexData = meshVertexColorU16.Lock(); vertexData && vertexData->data) {
+							vertexData->dirtyOnDevice = true;
+							geometriesData->data[i].vertexColorsU16 = (uint64_t)device->GetBufferDeviceAddress(vertexData->deviceBuffer) + (uint64_t)geometry.firstVertexColorU16 * vertexData->TypeSize();
+						}
+						// Vertex colors float 32
+						if (auto vertexData = meshVertexColorF32.Lock(); vertexData && vertexData->data) {
+							vertexData->dirtyOnDevice = true;
+							geometriesData->data[i].vertexColorsF32 = (uint64_t)device->GetBufferDeviceAddress(vertexData->deviceBuffer) + (uint64_t)geometry.firstVertexColorF32 * vertexData->TypeSize();
+						}
+						
+						// Vertex UVs
+						if (auto vertexData = meshVertexUV.Lock(); vertexData && vertexData->data) {
+							vertexData->dirtyOnDevice = true;
+							geometriesData->data[i].vertexUVs = (uint64_t)device->GetBufferDeviceAddress(vertexData->deviceBuffer) + (uint64_t)geometry.firstVertexUV * vertexData->TypeSize();
+						}
+						
+						// Custom Data
+						if (auto data = meshCustomData.Lock(); data && data->data) {
+							data->dirtyOnDevice = true;
+							geometriesData->data[i].customData = (uint64_t)device->GetBufferDeviceAddress(data->deviceBuffer) + (uint64_t)geometry.firstCustomData * data->TypeSize();
+						}
+						
+						++i;
 					}
-					
-					// Vertex normals
-					if (auto vertexData = meshVertexNormal.Lock(); vertexData && vertexData->data) {
-						vertexData->dirtyOnDevice = true;
-						geometriesData->data[i].vertexNormals = (uint64_t)device->GetBufferDeviceAddress(vertexData->deviceBuffer) + (uint64_t)geometry.firstVertexNormal * vertexData->TypeSize();
-					}
-					
-					// Vertex colors uint 8
-					if (auto vertexData = meshVertexColorU8.Lock(); vertexData && vertexData->data) {
-						vertexData->dirtyOnDevice = true;
-						geometriesData->data[i].vertexColorsU8 = (uint64_t)device->GetBufferDeviceAddress(vertexData->deviceBuffer) + (uint64_t)geometry.firstVertexColorU8 * vertexData->TypeSize();
-					}
-					// Vertex colors uint 16
-					if (auto vertexData = meshVertexColorU16.Lock(); vertexData && vertexData->data) {
-						vertexData->dirtyOnDevice = true;
-						geometriesData->data[i].vertexColorsU16 = (uint64_t)device->GetBufferDeviceAddress(vertexData->deviceBuffer) + (uint64_t)geometry.firstVertexColorU16 * vertexData->TypeSize();
-					}
-					// Vertex colors float 32
-					if (auto vertexData = meshVertexColorF32.Lock(); vertexData && vertexData->data) {
-						vertexData->dirtyOnDevice = true;
-						geometriesData->data[i].vertexColorsF32 = (uint64_t)device->GetBufferDeviceAddress(vertexData->deviceBuffer) + (uint64_t)geometry.firstVertexColorF32 * vertexData->TypeSize();
-					}
-					
-					// Vertex UVs
-					if (auto vertexData = meshVertexUV.Lock(); vertexData && vertexData->data) {
-						vertexData->dirtyOnDevice = true;
-						geometriesData->data[i].vertexUVs = (uint64_t)device->GetBufferDeviceAddress(vertexData->deviceBuffer) + (uint64_t)geometry.firstVertexUV * vertexData->TypeSize();
-					}
-					
-					// Custom Data
-					if (auto data = meshCustomData.Lock(); data && data->data) {
-						data->dirtyOnDevice = true;
-						geometriesData->data[i].customData = (uint64_t)device->GetBufferDeviceAddress(data->deviceBuffer) + (uint64_t)geometry.firstCustomData * data->TypeSize();
-					}
-					
-					++i;
 				}
 			}
 		}
