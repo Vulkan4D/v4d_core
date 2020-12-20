@@ -8,9 +8,9 @@
 		struct VertexData {
 			v4d::graphics::Mesh::VertexPosition pos;
 			v4d::graphics::Mesh::VertexNormal normal;
-			v4d::graphics::Mesh::VertexColor color;
+			v4d::graphics::Mesh::VertexColorU8 color;
 			VertexData(){}
-			VertexData(v4d::graphics::Mesh::VertexPosition pos, v4d::graphics::Mesh::VertexNormal normal, v4d::graphics::Mesh::VertexColor color) : pos(pos), normal(normal), color(color) {}
+			VertexData(v4d::graphics::Mesh::VertexPosition pos, v4d::graphics::Mesh::VertexNormal normal, v4d::graphics::Mesh::VertexColorU8 color) : pos(pos), normal(normal), color(color) {}
 			bool operator == (const VertexData& other) const {
 				return pos == other.pos && normal == other.normal && color == other.color;
 			}
@@ -32,8 +32,8 @@
 						(hash<glm::f32>()(vertex.z) << 1);
 			}
 		};
-		template<> struct hash<v4d::graphics::Mesh::VertexColor> {
-			size_t operator()(v4d::graphics::Mesh::VertexColor const &vertex) const {
+		template<> struct hash<v4d::graphics::Mesh::VertexColorU8> {
+			size_t operator()(v4d::graphics::Mesh::VertexColorU8 const &vertex) const {
 				return ((hash<glm::f32>()(vertex.r) ^
 						(hash<glm::f32>()(vertex.g) << 1)) >> 1) ^
 						(hash<glm::f32>()(vertex.b) << 1);
@@ -43,7 +43,7 @@
 			size_t operator()(v4d::scene::Geometry::VertexData const &vertex) const {
 				return ((hash<v4d::graphics::Mesh::VertexPosition>()(vertex.pos) ^
 						(hash<v4d::graphics::Mesh::VertexNormal>()(vertex.normal) << 1)) >> 1) ^
-						(hash<v4d::graphics::Mesh::VertexColor>()(vertex.color) << 1);
+						(hash<v4d::graphics::Mesh::VertexColorU8>()(vertex.color) << 1);
 			}
 		};
 	}
@@ -55,9 +55,9 @@
 			std::string_view objFileBaseDir;
 			std::vector<v4d::graphics::Mesh::VertexPosition> preloadedVertexPositions {};
 			std::vector<v4d::graphics::Mesh::VertexNormal> preloadedVertexNormals {};
-			std::vector<v4d::graphics::Mesh::VertexColor> preloadedVertexColors {};
-			std::vector<uint32_t> preloadedIndices {};
-			std::unordered_map<v4d::scene::Geometry::VertexData, uint32_t> preloadedUniqueVertices {};
+			std::vector<v4d::graphics::Mesh::VertexColorU8> preloadedVertexColors {};
+			std::vector<v4d::graphics::Mesh::Index32> preloadedIndices {};
+			std::unordered_map<v4d::scene::Geometry::VertexData, v4d::graphics::Mesh::Index32> preloadedUniqueVertices {};
 		};
 
 		class V4DLIB ObjModelLoader : public ModelLoader<ObjModelData> {

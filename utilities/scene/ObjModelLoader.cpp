@@ -54,7 +54,7 @@
 					// 	materials[materialId].roughness
 					// });
 					auto color = materials[materialId].diffuse;
-					vertex.color = {color[0], color[1], color[2], 1};
+					vertex.color = glm::u8vec4(glm::vec4{color[0], color[1], color[2], 1} * 255.0f);
 					vertex.normal = {
 						attrib.normals[3 * index.normal_index + 0]*-1,
 						attrib.normals[3 * index.normal_index + 1],
@@ -74,10 +74,10 @@
 		}
 		void ObjModelLoader::Generate(v4d::graphics::RenderableGeometryEntity* entity, v4d::graphics::vulkan::Device* device) {
 			entity->Allocate(device, "default");
-			entity->Add_meshIndices()->AllocateBuffers(device, modelData->preloadedIndices.data(), modelData->preloadedIndices.size());
+			entity->Add_meshIndices32()->AllocateBuffers(device, modelData->preloadedIndices.data(), modelData->preloadedIndices.size());
 			entity->Add_meshVertexPosition()->AllocateBuffers(device, modelData->preloadedVertexPositions.data(), modelData->preloadedVertexPositions.size());
 			entity->Add_meshVertexNormal()->AllocateBuffers(device, modelData->preloadedVertexNormals.data(), modelData->preloadedVertexNormals.size());
-			entity->Add_meshVertexColor()->AllocateBuffers(device, modelData->preloadedVertexColors.data(), modelData->preloadedVertexColors.size());
+			entity->Add_meshVertexColorU8()->AllocateBuffers(device, modelData->preloadedVertexColors.data(), modelData->preloadedVertexColors.size());
 		}
 	}
 

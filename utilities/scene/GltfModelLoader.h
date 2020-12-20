@@ -6,23 +6,54 @@
 	#include "tinygltf/tiny_gltf.h"
 
 	namespace v4d::scene {
+		using namespace v4d::graphics::Mesh;
 		
 		struct GltfGeometryData {
+			glm::mat4 transform {1};
+			uint64_t material = 0;
 			uint32_t indexCount = 0;
 			uint32_t vertexCount = 0;
-			uint16_t* indexBuffer16 = nullptr;
-			uint32_t* indexBuffer32 = nullptr;
-			float* vertexPositionBuffer = nullptr;
-			float* vertexNormalBuffer = nullptr;
-			float* vertexUVBuffer = nullptr;
-			float* vertexColorBuffer = nullptr;
-			uint16_t* vertexColorBufferUint16 = nullptr;
+			uint32_t indexStart = 0;
+			Index16* index16Buffer = nullptr;
+			Index32* index32Buffer = nullptr;
+			VertexPosition* vertexPositionBuffer = nullptr;
+			uint32_t vertexPositionStart = 0;
+			VertexNormal* vertexNormalBuffer = nullptr;
+			uint32_t vertexNormalStart = 0;
+			VertexColorU8* vertexColorU8Buffer = nullptr;
+			uint32_t vertexColorU8Start = 0;
+			VertexColorU16* vertexColorU16Buffer = nullptr;
+			uint32_t vertexColorU16Start = 0;
+			VertexColorF32* vertexColorF32Buffer = nullptr;
+			uint32_t vertexColorF32Start = 0;
+			VertexUV* vertexUVBuffer = nullptr;
+			uint32_t vertexUVStart = 0;
+		};
+		
+		struct GltfColliderData {
+			glm::mat4 transform {1};
+			uint32_t indexCount = 0;
+			uint32_t vertexCount = 0;
+			Index16* index16Buffer = nullptr;
+			Index32* index32Buffer = nullptr;
+			VertexPosition* vertexPositionBuffer = nullptr;
 		};
 
 		struct GltfModelData {
 			std::string_view filePath;
-			tinygltf::Model gltfModel;
-			std::unordered_map<std::string, std::vector<GltfGeometryData>> geometries;
+			tinygltf::Model gltfModel {};
+			std::unordered_map<std::string, std::vector<GltfGeometryData>> geometries {};
+			GltfColliderData colliderGeometry {};
+			uint32_t geometriesCount = 0;
+			
+			uint32_t index16Count = 0;
+			uint32_t index32Count = 0;
+			uint32_t vertexPositionCount = 0;
+			uint32_t vertexNormalCount = 0;
+			uint32_t vertexColorU8Count = 0;
+			uint32_t vertexColorU16Count = 0;
+			uint32_t vertexColorF32Count = 0;
+			uint32_t vertexUVCount = 0;
 		};
 
 		class V4DLIB GltfModelLoader : public ModelLoader<GltfModelData> {

@@ -153,6 +153,7 @@ namespace v4d::graphics {
 		if (geometriesCount > 0) {
 			Add_meshGeometries()->AllocateBuffersCount(renderingDevice, geometriesCount);
 			geometriesAccelerationStructureInfo.resize(geometriesCount);
+			geometries.reserve(geometriesCount);
 		}
 	}
 	
@@ -225,21 +226,21 @@ namespace v4d::graphics {
 					if (auto indexData = meshIndices16.Lock(); indexData && indexData->data) {
 						indexData->dirtyOnDevice = true;
 						geometriesAccelerationStructureInfo[i].indexBuffer = device->GetBufferDeviceOrHostAddressConst(indexData->deviceBuffer);
-						geometriesAccelerationStructureInfo[i].indexOffset = geometry.firstIndex16 * indexData->TypeSize();
+						geometriesAccelerationStructureInfo[i].indexOffset = geometry.firstIndex * indexData->TypeSize();
 						geometriesAccelerationStructureInfo[i].indexCount = geometry.indexCount;
 						geometriesAccelerationStructureInfo[i].indexStride = indexData->TypeSize();
 
-						geometriesData->data[i].indices16 = (uint64_t)geometriesAccelerationStructureInfo[i].indexBuffer.deviceAddress + (uint64_t)geometry.firstIndex16 * indexData->TypeSize();
+						geometriesData->data[i].indices16 = (uint64_t)geometriesAccelerationStructureInfo[i].indexBuffer.deviceAddress + (uint64_t)geometry.firstIndex * indexData->TypeSize();
 					}
 					// Indices 32
 					else if (auto indexData = meshIndices32.Lock(); indexData && indexData->data) {
 						indexData->dirtyOnDevice = true;
 						geometriesAccelerationStructureInfo[i].indexBuffer = device->GetBufferDeviceOrHostAddressConst(indexData->deviceBuffer);
-						geometriesAccelerationStructureInfo[i].indexOffset = geometry.firstIndex32 * indexData->TypeSize();
+						geometriesAccelerationStructureInfo[i].indexOffset = geometry.firstIndex * indexData->TypeSize();
 						geometriesAccelerationStructureInfo[i].indexCount = geometry.indexCount;
 						geometriesAccelerationStructureInfo[i].indexStride = indexData->TypeSize();
 
-						geometriesData->data[i].indices32 = (uint64_t)geometriesAccelerationStructureInfo[i].indexBuffer.deviceAddress + (uint64_t)geometry.firstIndex32 * indexData->TypeSize();
+						geometriesData->data[i].indices32 = (uint64_t)geometriesAccelerationStructureInfo[i].indexBuffer.deviceAddress + (uint64_t)geometry.firstIndex * indexData->TypeSize();
 					}
 					
 					// Vertex Positions

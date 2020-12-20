@@ -35,8 +35,7 @@ namespace v4d::graphics {
 			uint64_t material = 0;
 			uint32_t indexCount = 0;
 			uint32_t vertexCount = 0;
-			uint32_t firstIndex16 = 0;
-			uint32_t firstIndex32 = 0;
+			uint32_t firstIndex = 0;
 			uint32_t firstVertexPosition = 0;
 			uint32_t firstVertexAABB = 0;
 			uint32_t firstVertexNormal = 0;
