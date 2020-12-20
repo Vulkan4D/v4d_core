@@ -4,80 +4,121 @@ namespace v4d::graphics::vulkan::rtx {
 	
 	bool AccelerationStructure::useGlobalScratchBuffer = false;
 	
-	void AccelerationStructure::AssignBottomLevelGeometry(Device* device, const GeometryData& geom) {
+	void AccelerationStructure::AssignBottomLevelGeometry(Device* device, const std::vector<GeometryAccelerationStructureInfo>& geometries) {
 		isTopLevel = false;
 		this->device = device;
 		
-		buildGeometryInfo.pGeometries = &accelerationStructureGeometry;
-		buildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-		buildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-		buildGeometryInfo.geometryCount = 1;
+		accelerationStructureGeometries.clear();
+		accelerationStructureGeometries.reserve(geometries.size());
+		buildRangeInfo.clear();
+		buildRangeInfo.reserve(geometries.size());
+		maxPrimitiveCount = 0;
 		
-		accelerationStructureGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-		accelerationStructureGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+		for (const auto& geom : geometries) {
+			auto& accelerationStructureGeometry = accelerationStructureGeometries.emplace_back();
+			auto& range = buildRangeInfo.emplace_back();
+			
+			accelerationStructureGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+			accelerationStructureGeometry.flags = geom.flags;
 
-		accelerationStructureGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-		accelerationStructureGeometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-		accelerationStructureGeometry.geometry.triangles.vertexStride = geom.vertexSize;
-		accelerationStructureGeometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-		accelerationStructureGeometry.geometry.triangles.indexType = geom.indexSize==2? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
-		accelerationStructureGeometry.geometry.triangles.vertexData = geom.vertexBuffer;
-		accelerationStructureGeometry.geometry.triangles.maxVertex = geom.vertexCount;
-		accelerationStructureGeometry.geometry.triangles.indexData = geom.indexBuffer;
-		if (geom.transformBuffer.deviceAddress) {
-			accelerationStructureGeometry.geometry.triangles.transformData = geom.transformBuffer;
+			accelerationStructureGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+			accelerationStructureGeometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
+			accelerationStructureGeometry.geometry.triangles.vertexStride = geom.vertexStride;
+			accelerationStructureGeometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
+			accelerationStructureGeometry.geometry.triangles.vertexData = geom.vertexBuffer;
+			accelerationStructureGeometry.geometry.triangles.maxVertex = geom.vertexCount;
+			if (geom.transformBuffer.deviceAddress) {
+				accelerationStructureGeometry.geometry.triangles.transformData = geom.transformBuffer;
+			}
+			range.transformOffset = (uint32_t)geom.transformOffset;
+			
+			// Indices
+			switch (geom.indexStride) {
+				case 0:
+					accelerationStructureGeometry.geometry.triangles.indexType = VK_INDEX_TYPE_NONE_KHR;
+				break;
+				case 2:
+					accelerationStructureGeometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT16;
+				break;
+				case 4:
+					accelerationStructureGeometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
+				break;
+				default: throw std::runtime_error("Unsupported index type");
+			}
+			if (geom.indexStride > 0) {
+				accelerationStructureGeometry.geometry.triangles.indexData = geom.indexBuffer;
+				range.primitiveCount = (uint32_t)geom.indexCount / 3;
+				range.primitiveOffset = (uint32_t)geom.indexOffset;
+				range.firstVertex = (uint32_t)(geom.vertexOffset / geom.vertexStride);
+			} else {
+				range.primitiveCount = (uint32_t)geom.vertexCount / 3;
+				range.primitiveOffset = (uint32_t)geom.vertexOffset;
+				range.firstVertex = 0;
+			}
+			
+			maxPrimitiveCount += range.primitiveCount;
 		}
 		
-		buildRangeInfo = {
-			(uint32_t)geom.indexCount / 3, // primitiveCount
-			(uint32_t)(geom.indexOffset * geom.vertexSize), // primitiveOffset
-			(uint32_t)geom.vertexOffset, // firstVertex
-			(uint32_t)geom.transformOffset // transformOffset
-		};
-		
-		maxPrimitiveCount = buildRangeInfo.primitiveCount;
+		buildGeometryInfo.pGeometries = accelerationStructureGeometries.data();
+		buildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+		buildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+		buildGeometryInfo.geometryCount = geometries.size();
 	}
 	
-	void AccelerationStructure::AssignBottomLevelProceduralVertex(Device* device, const GeometryData& geom) {
+	void AccelerationStructure::AssignBottomLevelProceduralVertex(Device* device, const std::vector<GeometryAccelerationStructureInfo>& geometries) {
 		isTopLevel = false;
 		this->device = device;
 		
-		buildGeometryInfo.pGeometries = &accelerationStructureGeometry;
+		accelerationStructureGeometries.clear();
+		accelerationStructureGeometries.reserve(geometries.size());
+		buildRangeInfo.clear();
+		buildRangeInfo.reserve(geometries.size());
+		maxPrimitiveCount = 0;
+		
+		for (const auto& geom : geometries) {
+			auto& accelerationStructureGeometry = accelerationStructureGeometries.emplace_back();
+			auto& range = buildRangeInfo.emplace_back();
+			
+			accelerationStructureGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+			accelerationStructureGeometry.flags = geom.flags;
+			accelerationStructureGeometry.geometryType = VK_GEOMETRY_TYPE_AABBS_KHR;
+			accelerationStructureGeometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR;
+			accelerationStructureGeometry.geometry.aabbs.stride = geom.vertexStride;
+			accelerationStructureGeometry.geometry.aabbs.data = geom.vertexBuffer;
+			
+			range.primitiveCount = (uint32_t)geom.vertexCount;
+			range.primitiveOffset = (uint32_t)(geom.vertexOffset * geom.vertexStride);
+			range.firstVertex = 0;
+			range.transformOffset = (uint32_t)geom.transformOffset;
+			
+			maxPrimitiveCount += range.primitiveCount;
+		}
+		
+		buildGeometryInfo.pGeometries = accelerationStructureGeometries.data();
 		buildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
 		buildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-		buildGeometryInfo.geometryCount = 1;
-		
-		accelerationStructureGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-		accelerationStructureGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
-		accelerationStructureGeometry.geometryType = VK_GEOMETRY_TYPE_AABBS_KHR;
-		accelerationStructureGeometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR;
-		accelerationStructureGeometry.geometry.aabbs.stride = geom.vertexSize;
-		accelerationStructureGeometry.geometry.aabbs.data = geom.vertexBuffer;
-		
-		buildRangeInfo = {
-			(uint32_t)geom.vertexCount, // primitiveCount
-			(uint32_t)(geom.vertexOffset * geom.vertexSize), // primitiveOffset
-			0, // firstVertex
-			(uint32_t)geom.transformOffset // transformOffset
-		};
-		
-		maxPrimitiveCount = buildRangeInfo.primitiveCount;
+		buildGeometryInfo.geometryCount = geometries.size();
 	}
 	
 	void AccelerationStructure::AssignTopLevel() {
 		isTopLevel = true;
 		
-		buildGeometryInfo.pGeometries = &accelerationStructureGeometry;
+		accelerationStructureGeometries.clear();
+		accelerationStructureGeometries.resize(1);
+		buildRangeInfo.clear();
+		buildRangeInfo.resize(1);
+		
+		buildGeometryInfo.pGeometries = accelerationStructureGeometries.data();
 		buildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
 		buildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
 		buildGeometryInfo.geometryCount = 1;
 		buildGeometryInfo.srcAccelerationStructure = VK_NULL_HANDLE;
 		buildGeometryInfo.dstAccelerationStructure = accelerationStructure;
 		
-		accelerationStructureGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-		accelerationStructureGeometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
-		accelerationStructureGeometry.geometry.instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
-		accelerationStructureGeometry.geometry.instances.arrayOfPointers = VK_FALSE;
+		accelerationStructureGeometries[0].sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+		accelerationStructureGeometries[0].geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+		accelerationStructureGeometries[0].geometry.instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+		accelerationStructureGeometries[0].geometry.instances.arrayOfPointers = VK_FALSE;
 		
 		maxPrimitiveCount = RAY_TRACING_TLAS_MAX_INSTANCES;
 	}
@@ -86,18 +127,18 @@ namespace v4d::graphics::vulkan::rtx {
 		this->device = device;
 		VkDeviceOrHostAddressConstKHR addr {};
 		addr.hostAddress = instanceArray;
-		accelerationStructureGeometry.geometry.instances.data = addr;
-		buildRangeInfo.primitiveCount = instanceCount;
-		buildRangeInfo.primitiveOffset = instanceOffset;
+		accelerationStructureGeometries[0].geometry.instances.data = addr;
+		buildRangeInfo[0].primitiveCount = instanceCount;
+		buildRangeInfo[0].primitiveOffset = instanceOffset;
 	}
 	void AccelerationStructure::SetInstanceBuffer(Device* device, VkBuffer instanceBuffer, uint32_t instanceCount, uint32_t instanceOffset) {
 		this->device = device;
-		accelerationStructureGeometry.geometry.instances.data = device->GetBufferDeviceOrHostAddressConst(instanceBuffer);
-		buildRangeInfo.primitiveCount = instanceCount;
-		buildRangeInfo.primitiveOffset = instanceOffset;
+		accelerationStructureGeometries[0].geometry.instances.data = device->GetBufferDeviceOrHostAddressConst(instanceBuffer);
+		buildRangeInfo[0].primitiveCount = instanceCount;
+		buildRangeInfo[0].primitiveOffset = instanceOffset;
 	}
 	void AccelerationStructure::SetInstanceCount(uint32_t count) {
-		buildRangeInfo.primitiveCount = count;
+		buildRangeInfo[0].primitiveCount = count;
 	}
 	
 	void AccelerationStructure::SetGlobalScratchBuffer(Device* device, VkBuffer buffer) {

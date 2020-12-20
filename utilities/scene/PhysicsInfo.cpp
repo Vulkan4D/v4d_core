@@ -18,26 +18,44 @@ namespace v4d::scene {
 	}
 	
 	// Set Colliders
-	void PhysicsInfo::SetMeshCollider(v4d::graphics::Mesh::VertexPosition* vertices, uint32_t vertexCount, v4d::graphics::Mesh::Index* indices, uint32_t indexCount) {
+	void PhysicsInfo::SetMeshCollider(v4d::graphics::Mesh::VertexPosition* vertices, uint32_t vertexCount, v4d::graphics::Mesh::Index16* indices, uint32_t indexCount) {
 		colliderMeshVertices.resize(vertexCount);
-		colliderMeshIndices.resize(indexCount);
+		colliderMeshIndices16.resize(indexCount);
 		memcpy(colliderMeshVertices.data(), vertices, vertexCount*sizeof(v4d::graphics::Mesh::VertexPosition));
-		memcpy(colliderMeshIndices.data(), indices, indexCount*sizeof(v4d::graphics::Mesh::Index));
+		memcpy(colliderMeshIndices16.data(), indices, indexCount*sizeof(v4d::graphics::Mesh::Index16));
 		colliderType = PhysicsInfo::ColliderType::MESH;
 		colliderDirty = true;
 		physicsDirty = true;
 	}
-	void PhysicsInfo::SetMeshCollider(v4d::graphics::Mesh::Index* indices, uint32_t indexCount) {
+	void PhysicsInfo::SetMeshCollider(v4d::graphics::Mesh::Index16* indices, uint32_t indexCount) {
 		colliderMeshVertices.resize(0);
-		colliderMeshIndices.resize(indexCount);
-		memcpy(colliderMeshIndices.data(), indices, indexCount*sizeof(v4d::graphics::Mesh::Index));
+		colliderMeshIndices16.resize(indexCount);
+		memcpy(colliderMeshIndices16.data(), indices, indexCount*sizeof(v4d::graphics::Mesh::Index16));
+		colliderType = PhysicsInfo::ColliderType::MESH;
+		colliderDirty = true;
+		physicsDirty = true;
+	}
+	void PhysicsInfo::SetMeshCollider(v4d::graphics::Mesh::VertexPosition* vertices, uint32_t vertexCount, v4d::graphics::Mesh::Index32* indices, uint32_t indexCount) {
+		colliderMeshVertices.resize(vertexCount);
+		colliderMeshIndices32.resize(indexCount);
+		memcpy(colliderMeshVertices.data(), vertices, vertexCount*sizeof(v4d::graphics::Mesh::VertexPosition));
+		memcpy(colliderMeshIndices32.data(), indices, indexCount*sizeof(v4d::graphics::Mesh::Index32));
+		colliderType = PhysicsInfo::ColliderType::MESH;
+		colliderDirty = true;
+		physicsDirty = true;
+	}
+	void PhysicsInfo::SetMeshCollider(v4d::graphics::Mesh::Index32* indices, uint32_t indexCount) {
+		colliderMeshVertices.resize(0);
+		colliderMeshIndices32.resize(indexCount);
+		memcpy(colliderMeshIndices32.data(), indices, indexCount*sizeof(v4d::graphics::Mesh::Index32));
 		colliderType = PhysicsInfo::ColliderType::MESH;
 		colliderDirty = true;
 		physicsDirty = true;
 	}
 	void PhysicsInfo::SetMeshCollider() {
 		colliderMeshVertices.resize(0);
-		colliderMeshIndices.resize(0);
+		colliderMeshIndices16.resize(0);
+		colliderMeshIndices32.resize(0);
 		colliderType = PhysicsInfo::ColliderType::MESH;
 		colliderDirty = true;
 		physicsDirty = true;

@@ -121,7 +121,6 @@
 								// default: throw std::runtime_error("Index buffer only supports 16 or 32 bits unsigned integer components");
 							}
 							ASSERT_OR_RETURN_FALSE(geometryData->vertexColorBufferUint16 || geometryData->vertexColorBuffer);
-							geometryData->vertexColorBuffer = reinterpret_cast<float*>(&model.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
 						}
 					}
 					ASSERT_OR_RETURN_FALSE(geometryData->vertexCount > 0);

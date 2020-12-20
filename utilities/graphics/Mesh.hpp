@@ -4,7 +4,9 @@
 
 namespace v4d::graphics::Mesh {
 
-	typedef uint32_t Index;
+	typedef uint16_t Index16;
+	typedef uint32_t Index32;
+	
 	struct VertexPosition {
 		glm::f32 x;
 		glm::f32 y;
@@ -23,6 +25,7 @@ namespace v4d::graphics::Mesh {
 		}
 		bool operator!=(const VertexPosition& other) const {return !(*this == other);}
 	};
+	
 	struct VertexNormal {
 		glm::f32 x;
 		glm::f32 y;
@@ -36,20 +39,26 @@ namespace v4d::graphics::Mesh {
 		}
 		bool operator!=(const VertexNormal& other) const {return !(*this == other);}
 	};
+	
+	template<typename T>
 	struct VertexColor {
-		glm::f32 r;
-		glm::f32 g;
-		glm::f32 b;
-		glm::f32 a;
-		VertexColor(float r, float g, float b, float a) : r(r), g(g), b(b), a(a) {}
-		VertexColor(const glm::vec4& v) : r(v.r), g(v.g), b(v.b), a(v.a) {}
-		operator glm::vec4() {return glm::vec4(r, g, b, a);}
-		VertexColor() {static_assert(sizeof(VertexColor) == 16);}
+		T r;
+		T g;
+		T b;
+		T a;
+		VertexColor() : r(0), g(0), b(0), a(0) {}
+		VertexColor(T r, T g, T b, T a) : r(r), g(g), b(b), a(a) {}
+		VertexColor(const glm::vec<4, T>& v) : r(v.r), g(v.g), b(v.b), a(v.a) {}
+		operator glm::vec<4, T>() {return glm::vec<4, T>(r, g, b, a);}
 		bool operator==(const VertexColor& other) const {
 			return r == other.r && g == other.g && b == other.b && a == other.a;
 		}
 		bool operator!=(const VertexColor& other) const {return !(*this == other);}
 	};
+	using VertexColorU8 = VertexColor<uint8_t>;
+	using VertexColorU16 = VertexColor<uint16_t>;
+	using VertexColorF32 = VertexColor<glm::f32>;
+	
 	struct VertexUV {
 		glm::f32 s;
 		glm::f32 t;
@@ -62,6 +71,7 @@ namespace v4d::graphics::Mesh {
 		}
 		bool operator!=(const VertexUV& other) const {return !(*this == other);}
 	};
+	
 	struct ProceduralVertexAABB {
 		glm::vec3 aabbMin;
 		glm::vec3 aabbMax;
@@ -74,25 +84,30 @@ namespace v4d::graphics::Mesh {
 			};
 		}
 	};
-	struct ModelInfo {
-		uint64_t moduleVen;
-		uint64_t moduleId;
-		uint64_t objId;
-		uint64_t customData;
-		VkDeviceAddress indices {};
-		VkDeviceAddress vertexPositions {};
-		VkDeviceAddress vertexNormals {};
-		VkDeviceAddress vertexColors {};
-		VkDeviceAddress vertexUVs {};
-		VkDeviceAddress transform;
-		ModelInfo() {static_assert(sizeof(ModelInfo) == 80);}
+	
+	struct GeometryInfo {
+		glm::mat4 transform {1};
+		uint64_t indices16 {};
+		uint64_t indices32 {};
+		uint64_t vertexPositions {};
+		uint64_t vertexNormals {};
+		uint64_t vertexColorsU8 {};
+		uint64_t vertexColorsU16 {};
+		uint64_t vertexColorsF32 {};
+		uint64_t vertexUVs {};
+		uint64_t customData = 0;
+		uint64_t material = 0;
+		GeometryInfo() {static_assert(sizeof(GeometryInfo) == 144 && (sizeof(GeometryInfo) % 16) == 0);}
 	};
-	struct ModelTransform {
-		alignas(128) glm::dmat4 worldTransform;
-		alignas(64) glm::mat4 modelView;
-		alignas(64) glm::mat4 normalView;
-		ModelTransform(const glm::dmat4& m) : worldTransform(m) {}
-		ModelTransform() {static_assert(sizeof(ModelTransform) == 256);}
+	
+	struct RenderableEntityInstance {
+		glm::mat4 modelViewTransform {1};
+		uint64_t moduleVen {0};
+		uint64_t moduleId {0};
+		uint64_t objId {0};
+		uint64_t geometries {0};
+		// for 128 bytes, we're missing two vec4 (velocity vectors ?)
+		RenderableEntityInstance() {static_assert(sizeof(RenderableEntityInstance) == 96);}
 	};
 	
 	template<typename T>
@@ -104,6 +119,8 @@ namespace v4d::graphics::Mesh {
 		MemoryAllocation hostBufferAllocation = VK_NULL_HANDLE;
 		MemoryAllocation deviceBufferAllocation = VK_NULL_HANDLE;
 		bool dirtyOnDevice = false;
+		
+		size_t TypeSize() const {return sizeof(T);}
 		
 		T* AllocateBuffers(Device* device, const std::initializer_list<T>& list) {
 			AllocateBuffersCount(device, list.size());
@@ -161,7 +178,7 @@ namespace v4d::graphics::Mesh {
 				if constexpr (std::is_same_v<T, Mesh::VertexPosition>) {
 					createInfo.usage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 				}
-				if constexpr (std::is_same_v<T, Mesh::Index>) {
+				if constexpr (std::is_same_v<T, Mesh::Index16> || std::is_same_v<T, Mesh::Index32>) {
 					createInfo.usage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
 				}
 				if constexpr (std::is_same_v<T, Mesh::ProceduralVertexAABB>) {

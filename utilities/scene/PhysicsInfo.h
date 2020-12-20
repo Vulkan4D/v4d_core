@@ -27,7 +27,8 @@ namespace v4d::scene {
 		// Collider
 		ColliderType colliderType = ColliderType::NONE;
 		std::vector<v4d::graphics::Mesh::VertexPosition> colliderMeshVertices {};
-		std::vector<v4d::graphics::Mesh::Index> colliderMeshIndices {};
+		std::vector<v4d::graphics::Mesh::Index16> colliderMeshIndices16 {};
+		std::vector<v4d::graphics::Mesh::Index32> colliderMeshIndices32 {};
 		float boundingDistance = 0;
 		glm::vec3 boundingBoxSize {0};
 		
@@ -45,8 +46,10 @@ namespace v4d::scene {
 		void AddImpulse(glm::dvec3 impulseDir, glm::dvec3 atPoint = {0,0,0});
 		
 		// Set Colliders
-		void SetMeshCollider(v4d::graphics::Mesh::VertexPosition* vertices, uint32_t vertexCount, v4d::graphics::Mesh::Index* indices, uint32_t indexCount);
-		void SetMeshCollider(v4d::graphics::Mesh::Index* indices, uint32_t indexCount);
+		void SetMeshCollider(v4d::graphics::Mesh::VertexPosition* vertices, uint32_t vertexCount, v4d::graphics::Mesh::Index16* indices, uint32_t indexCount);
+		void SetMeshCollider(v4d::graphics::Mesh::Index16* indices, uint32_t indexCount);
+		void SetMeshCollider(v4d::graphics::Mesh::VertexPosition* vertices, uint32_t vertexCount, v4d::graphics::Mesh::Index32* indices, uint32_t indexCount);
+		void SetMeshCollider(v4d::graphics::Mesh::Index32* indices, uint32_t indexCount);
 		void SetMeshCollider();
 		void SetSphereCollider(float radius);
 		void SetBoxCollider(glm::vec3 size);

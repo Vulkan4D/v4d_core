@@ -32,8 +32,8 @@ namespace v4d::graphics::vulkan::rtx {
 		
 		// Structs
 		VkAccelerationStructureCreateInfoKHR createInfo {};
-		VkAccelerationStructureGeometryKHR accelerationStructureGeometry {};
-		VkAccelerationStructureBuildRangeInfoKHR buildRangeInfo {};
+		std::vector<VkAccelerationStructureGeometryKHR> accelerationStructureGeometries {};
+		std::vector<VkAccelerationStructureBuildRangeInfoKHR> buildRangeInfo {};
 		VkAccelerationStructureBuildGeometryInfoKHR buildGeometryInfo {};
 		VkAccelerationStructureBuildSizesInfoKHR accelerationStructureBuildSizesInfo {};
 		
@@ -52,21 +52,22 @@ namespace v4d::graphics::vulkan::rtx {
 		static bool useGlobalScratchBuffer;
 		uint64_t globalScratchBufferOffset = 0;
 		
-		struct GeometryData {
+		struct GeometryAccelerationStructureInfo {
+			VkGeometryFlagsKHR flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
 			VkDeviceOrHostAddressConstKHR indexBuffer {};
 			size_t indexOffset = 0;
 			size_t indexCount = 0;
-			size_t indexSize = 0;
+			size_t indexStride = 0;
 			VkDeviceOrHostAddressConstKHR vertexBuffer {};
 			size_t vertexOffset = 0;
 			size_t vertexCount = 0;
-			size_t vertexSize = 0;
+			size_t vertexStride = 0;
 			VkDeviceOrHostAddressConstKHR transformBuffer {};
 			size_t transformOffset = 0;
 		};
 		
-		void AssignBottomLevelGeometry(Device* device, const GeometryData& geom);
-		void AssignBottomLevelProceduralVertex(Device* device, const GeometryData& geom);
+		void AssignBottomLevelGeometry(Device* device, const std::vector<GeometryAccelerationStructureInfo>& geometries);
+		void AssignBottomLevelProceduralVertex(Device* device, const std::vector<GeometryAccelerationStructureInfo>& geometries);
 		
 		void AssignTopLevel();
 		
