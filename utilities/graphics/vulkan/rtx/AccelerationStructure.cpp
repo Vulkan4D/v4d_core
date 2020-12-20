@@ -23,6 +23,10 @@ namespace v4d::graphics::vulkan::rtx {
 			accelerationStructureGeometry.flags = geom.flags;
 
 			accelerationStructureGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+			accelerationStructureGeometry.geometry = {};
+			accelerationStructureGeometry.geometry.aabbs = {};
+			accelerationStructureGeometry.geometry.instances = {};
+			accelerationStructureGeometry.geometry.triangles = {};
 			accelerationStructureGeometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
 			accelerationStructureGeometry.geometry.triangles.vertexStride = geom.vertexStride;
 			accelerationStructureGeometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
@@ -84,6 +88,10 @@ namespace v4d::graphics::vulkan::rtx {
 			accelerationStructureGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
 			accelerationStructureGeometry.flags = geom.flags;
 			accelerationStructureGeometry.geometryType = VK_GEOMETRY_TYPE_AABBS_KHR;
+			accelerationStructureGeometry.geometry = {};
+			accelerationStructureGeometry.geometry.aabbs = {};
+			accelerationStructureGeometry.geometry.instances = {};
+			accelerationStructureGeometry.geometry.triangles = {};
 			accelerationStructureGeometry.geometry.aabbs.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_AABBS_DATA_KHR;
 			accelerationStructureGeometry.geometry.aabbs.stride = geom.vertexStride;
 			accelerationStructureGeometry.geometry.aabbs.data = geom.vertexBuffer;
@@ -120,6 +128,10 @@ namespace v4d::graphics::vulkan::rtx {
 		
 		accelerationStructureGeometries[0].sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
 		accelerationStructureGeometries[0].geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+		accelerationStructureGeometries[0].geometry = {};
+		accelerationStructureGeometries[0].geometry.aabbs = {};
+		accelerationStructureGeometries[0].geometry.instances = {};
+		accelerationStructureGeometries[0].geometry.triangles = {};
 		accelerationStructureGeometries[0].geometry.instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
 		accelerationStructureGeometries[0].geometry.instances.arrayOfPointers = VK_FALSE;
 		
