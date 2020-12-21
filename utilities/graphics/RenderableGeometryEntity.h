@@ -49,6 +49,8 @@ namespace v4d::graphics {
 		struct SharedGeometryData {
 			Blas blas {};
 			uint64_t geometriesBuffer = 0;
+			bool isRayTracedTriangles = false;
+			bool isRayTracedProceduralAABB = false;
 			std::vector<Geometry> geometries {};
 			std::vector<v4d::graphics::vulkan::rtx::AccelerationStructure::GeometryAccelerationStructureInfo> geometriesAccelerationStructureInfo;
 		};

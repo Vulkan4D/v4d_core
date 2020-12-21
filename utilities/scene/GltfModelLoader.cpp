@@ -245,7 +245,7 @@
 				for (auto&[name, geometries] : modelData->geometries) {
 					for (auto& geometry : geometries) {
 						auto& geom = entity->sharedGeometryData->geometries.emplace_back();
-						geom.transform = glm::rotate(glm::mat4(1), glm::radians(180.0f), {0,1,0}) * geometry.transform;
+						geom.transform = geometry.transform;
 						geom.material = geometry.material;
 						geom.indexCount = geometry.indexCount;
 						geom.vertexCount = geometry.vertexCount;

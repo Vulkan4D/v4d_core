@@ -248,6 +248,8 @@ namespace v4d::graphics {
 						// Vertex Positions
 						if (auto vertexData = meshVertexPosition.Lock(); vertexData && vertexData->data) {
 							vertexData->dirtyOnDevice = true;
+							sharedGeometryData->isRayTracedTriangles = true;
+							sharedGeometryData->isRayTracedProceduralAABB = false;
 							sharedGeometryData->geometriesAccelerationStructureInfo[i].vertexBuffer = device->GetBufferDeviceOrHostAddressConst(vertexData->deviceBuffer);
 							sharedGeometryData->geometriesAccelerationStructureInfo[i].vertexOffset = geometry.firstVertexPosition * vertexData->TypeSize();
 							sharedGeometryData->geometriesAccelerationStructureInfo[i].vertexCount = geometry.vertexCount;
@@ -258,6 +260,8 @@ namespace v4d::graphics {
 						// Procedural vertices AABB
 						else if (auto proceduralVertexData = proceduralVertexAABB.Lock(); proceduralVertexData && proceduralVertexData->data) {
 							proceduralVertexData->dirtyOnDevice = true;
+							sharedGeometryData->isRayTracedTriangles = false;
+							sharedGeometryData->isRayTracedProceduralAABB = true;
 							sharedGeometryData->geometriesAccelerationStructureInfo[i].vertexBuffer = device->GetBufferDeviceOrHostAddressConst(proceduralVertexData->deviceBuffer);
 							sharedGeometryData->geometriesAccelerationStructureInfo[i].vertexOffset = geometry.firstVertexAABB * proceduralVertexData->TypeSize();
 							sharedGeometryData->geometriesAccelerationStructureInfo[i].vertexCount = geometry.vertexCount;

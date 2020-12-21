@@ -154,14 +154,10 @@ bool ProceduralSphereIntersection(vec3 centerPos, float sphereRadius, inout vec3
 }
 
 
-// float linearstep(float a, float b, float x) {
-// 	if (b == a) return (x >= a ? 1 : 0);
-// 	return (x - a) / (b - a);
+// Ease Functions	https://chicounity3d.wordpress.com/2014/05/23/how-to-lerp-like-a-pro/
+// float smooth(float t) {
+// 	return t * t * (3 - 2 * t);
 // }
-// // Ease Functions	https://chicounity3d.wordpress.com/2014/05/23/how-to-lerp-like-a-pro/
-// // float smooth(float t) {
-// // 	return t * t * (3 - 2 * t);
-// // }
 // float smoother(float t) {
 // 	return t * t * t * (t * (t * 6 - 15) + 10);
 // }
@@ -172,3 +168,32 @@ bool ProceduralSphereIntersection(vec3 centerPos, float sphereRadius, inout vec3
 // 	return sin(t * 3.141592654 * 0.5);
 // }
 
+float linearStep(float low, float high, float value) {
+	if (high == low) return (value >= low ? 1 : 0);
+	return (value - low) / (high - low);
+}
+
+float fade(float low, float high, float value){
+	float mid = (low+high)*0.5;
+	float range = (high-low)*0.5;
+	float x = 1.0 - clamp(abs(mid-value)/range, 0.0, 1.0);
+	return smoothstep(0.0, 1.0, x);
+}
+
+vec3 getHeatMap(float intensity){
+	if (intensity <= 0) return vec3(0);
+	if (intensity >= 1) return vec3(1);
+	vec3 blue = vec3(0.0, 0.0, 1.0);
+	vec3 cyan = vec3(0.0, 1.0, 1.0);
+	vec3 green = vec3(0.0, 1.0, 0.0);
+	vec3 yellow = vec3(1.0, 1.0, 0.0);
+	vec3 red = vec3(1.0, 0.0, 0.0);
+	vec3 color = (
+		fade(-0.25, 0.25, intensity)*blue +
+		fade(0.0, 0.5, intensity)*cyan +
+		fade(0.25, 0.75, intensity)*green +
+		fade(0.5, 1.0, intensity)*yellow +
+		smoothstep(0.75, 1.0, intensity)*red
+	);
+	return color;
+}
