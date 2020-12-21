@@ -178,29 +178,22 @@
 						ASSERT_OR_RETURN_FALSE(geometryData->vertexCount > 0);
 						
 						// Material
-						union {
-							uint64_t packed;
-							struct {
-								uint64_t metallic : 8;
-								uint64_t roughness : 8;
-								uint64_t albedo_r : 8;
-								uint64_t albedo_g : 8;
-								uint64_t albedo_b : 8;
-								uint64_t emission_r : 8;
-								uint64_t emission_g : 8;
-								uint64_t emission_b : 8;
-							};
-						} mat;
+						v4d::graphics::RenderableGeometryEntity::Material mat {};
 						auto& material = model.materials[p.material];
 						mat.metallic = (uint8_t)glm::clamp(material.pbrMetallicRoughness.metallicFactor * 255.0f, 0.0, 255.0);
 						mat.roughness = (uint8_t)glm::clamp(material.pbrMetallicRoughness.roughnessFactor * 255.0f, 0.0, 255.0);
-						mat.albedo_r = (uint8_t)glm::clamp(material.pbrMetallicRoughness.baseColorFactor[0] * 255.0, 0.0, 255.0);
-						mat.albedo_g = (uint8_t)glm::clamp(material.pbrMetallicRoughness.baseColorFactor[1] * 255.0, 0.0, 255.0);
-						mat.albedo_b = (uint8_t)glm::clamp(material.pbrMetallicRoughness.baseColorFactor[2] * 255.0, 0.0, 255.0);
-						mat.emission_r = (uint8_t)glm::clamp(material.emissiveFactor[0] * 255.0, 0.0, 255.0);
-						mat.emission_g = (uint8_t)glm::clamp(material.emissiveFactor[1] * 255.0, 0.0, 255.0);
-						mat.emission_b = (uint8_t)glm::clamp(material.emissiveFactor[2] * 255.0, 0.0, 255.0);
-						geometryData->material = mat.packed;
+						if (material.emissiveFactor[0] > 0 || material.emissiveFactor[1] > 0 || material.emissiveFactor[2] > 0) {
+							mat.baseColor.r = (uint8_t)glm::clamp(material.emissiveFactor[0] * 255.0, 0.0, 255.0);
+							mat.baseColor.g = (uint8_t)glm::clamp(material.emissiveFactor[1] * 255.0, 0.0, 255.0);
+							mat.baseColor.b = (uint8_t)glm::clamp(material.emissiveFactor[2] * 255.0, 0.0, 255.0);
+							mat.emission = 10;
+						} else {
+							mat.baseColor.r = (uint8_t)glm::clamp(material.pbrMetallicRoughness.baseColorFactor[0] * 255.0, 0.0, 255.0);
+							mat.baseColor.g = (uint8_t)glm::clamp(material.pbrMetallicRoughness.baseColorFactor[1] * 255.0, 0.0, 255.0);
+							mat.baseColor.b = (uint8_t)glm::clamp(material.pbrMetallicRoughness.baseColorFactor[2] * 255.0, 0.0, 255.0);
+							mat.emission = 0;
+						}
+						geometryData->material = mat;
 						
 						modelData->geometriesCount++;
 					}

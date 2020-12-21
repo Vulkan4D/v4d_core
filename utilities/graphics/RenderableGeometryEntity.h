@@ -30,9 +30,23 @@ namespace v4d::graphics {
 			}
 		};
 		
+		struct Material {
+			uint8_t type = 0;
+			uint8_t metallic = 0;
+			uint8_t roughness = 255;
+			uint8_t indexOfRefraction = (uint8_t)(1.45 * 50);
+			glm::u8vec4 baseColor {255,255,255,255};
+			glm::u8vec4 rim {0,0,0,0};
+			float emission = 0;
+			uint8_t normalMap = 0;
+			uint8_t albedoMap = 0;
+			uint8_t metallicMap = 0;
+			uint8_t roughnessMap = 0;
+		};
+		
 		struct Geometry {
 			glm::mat4 transform {1};
-			uint64_t material = 0;
+			Material material {};
 			uint32_t indexCount = 0;
 			uint32_t vertexCount = 0;
 			uint32_t firstIndex = 0;
@@ -44,6 +58,32 @@ namespace v4d::graphics {
 			uint32_t firstVertexColorF32 = 0;
 			uint32_t firstVertexUV = 0;
 			uint32_t firstCustomData = 0;
+		};
+		
+		struct GeometryInfo {
+			glm::mat4 transform {1};
+			uint64_t indices16 {};
+			uint64_t indices32 {};
+			uint64_t vertexPositions {};
+			uint64_t vertexNormals {};
+			uint64_t vertexColorsU8 {};
+			uint64_t vertexColorsU16 {};
+			uint64_t vertexColorsF32 {};
+			uint64_t vertexUVs {};
+			uint64_t customData = 0;
+			uint32_t _extra = 0;
+			Material material {};
+			GeometryInfo() {static_assert(sizeof(GeometryInfo) == 160 && (sizeof(GeometryInfo) % 16) == 0);}
+		};
+		
+		struct RenderableEntityInstance {
+			glm::mat4 modelViewTransform {1};
+			uint64_t moduleVen {0};
+			uint64_t moduleId {0};
+			uint64_t objId {0};
+			uint64_t geometries {0};
+			// for 128 bytes, we're missing two vec4 (velocity vectors ?)
+			RenderableEntityInstance() {static_assert(sizeof(RenderableEntityInstance) == 96);}
 		};
 		
 		struct SharedGeometryData {
@@ -58,7 +98,7 @@ namespace v4d::graphics {
 	private:
 		V4D_ENTITY_DECLARE_CLASS(RenderableGeometryEntity)
 		
-		V4D_ENTITY_DECLARE_COMPONENT(RenderableGeometryEntity, Mesh::DataBuffer<Mesh::GeometryInfo>, meshGeometries)
+		V4D_ENTITY_DECLARE_COMPONENT(RenderableGeometryEntity, Mesh::DataBuffer<GeometryInfo>, meshGeometries)
 		V4D_ENTITY_DECLARE_COMPONENT(RenderableGeometryEntity, Mesh::DataBuffer<Mesh::Index16>, meshIndices16)
 		V4D_ENTITY_DECLARE_COMPONENT(RenderableGeometryEntity, Mesh::DataBuffer<Mesh::Index32>, meshIndices32)
 		V4D_ENTITY_DECLARE_COMPONENT(RenderableGeometryEntity, Mesh::DataBuffer<Mesh::ProceduralVertexAABB>, proceduralVertexAABB)
@@ -77,7 +117,7 @@ namespace v4d::graphics {
 		bool generated = false;
 		glm::dmat4 worldTransform = glm::dmat4{1};
 		std::function<void(RenderableGeometryEntity*, Device*)> generator = [](RenderableGeometryEntity*, Device*){};
-		Mesh::RenderableEntityInstance entityInstanceInfo {};
+		RenderableEntityInstance entityInstanceInfo {};
 		std::recursive_mutex writeMutex;
 		std::shared_ptr<SharedGeometryData> sharedGeometryData = nullptr;
 		uint32_t sbtOffset = 0;

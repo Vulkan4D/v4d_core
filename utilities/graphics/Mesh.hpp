@@ -85,31 +85,6 @@ namespace v4d::graphics::Mesh {
 		}
 	};
 	
-	struct GeometryInfo {
-		glm::mat4 transform {1};
-		uint64_t indices16 {};
-		uint64_t indices32 {};
-		uint64_t vertexPositions {};
-		uint64_t vertexNormals {};
-		uint64_t vertexColorsU8 {};
-		uint64_t vertexColorsU16 {};
-		uint64_t vertexColorsF32 {};
-		uint64_t vertexUVs {};
-		uint64_t customData = 0;
-		uint64_t material = 0;
-		GeometryInfo() {static_assert(sizeof(GeometryInfo) == 144 && (sizeof(GeometryInfo) % 16) == 0);}
-	};
-	
-	struct RenderableEntityInstance {
-		glm::mat4 modelViewTransform {1};
-		uint64_t moduleVen {0};
-		uint64_t moduleId {0};
-		uint64_t objId {0};
-		uint64_t geometries {0};
-		// for 128 bytes, we're missing two vec4 (velocity vectors ?)
-		RenderableEntityInstance() {static_assert(sizeof(RenderableEntityInstance) == 96);}
-	};
-	
 	template<typename T>
 	struct DataBuffer {
 		T* data = nullptr;
@@ -239,8 +214,4 @@ namespace v4d::graphics::Mesh {
 		}
 	};
 
-	namespace Material {
-		
-	}
-	
 }
