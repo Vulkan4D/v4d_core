@@ -11,15 +11,14 @@ namespace v4d::graphics::vulkan::rtx {
 		std::vector<VkRayTracingShaderGroupCreateInfoKHR> rayGenGroups;
 		std::vector<VkRayTracingShaderGroupCreateInfoKHR> rayMissGroups;
 		std::vector<VkRayTracingShaderGroupCreateInfoKHR> rayHitGroups;
+		std::vector<VkRayTracingShaderGroupCreateInfoKHR> rayCallableGroups;
 		std::vector<VkRayTracingShaderGroupCreateInfoKHR> groups;
 		std::vector<Shader> shaderObjects;
 		std::vector<VkPipelineShaderStageCreateInfo> stages;
 		
-		// uint32_t hitGroupOffset = 0;
-		// uint32_t missGroupOffset = 0;
-		
 		uint32_t nextHitShaderOffset = 0;
 		uint32_t nextMissShaderOffset = 0;
+		uint32_t nextCallableShaderOffset = 0;
 		
 		VkDeviceSize bufferOffset = 0;
 		VkDeviceSize bufferSize = 0;
@@ -29,6 +28,8 @@ namespace v4d::graphics::vulkan::rtx {
 		VkDeviceSize rayMissShaderRegionSize = 0;
 		VkDeviceSize rayHitShaderRegionOffset = 0;
 		VkDeviceSize rayHitShaderRegionSize = 0;
+		VkDeviceSize rayCallableShaderRegionOffset = 0;
+		VkDeviceSize rayCallableShaderRegionSize = 0;
 		VkStridedDeviceAddressRegionKHR rayGenDeviceAddressRegion {};
 		VkStridedDeviceAddressRegionKHR rayMissDeviceAddressRegion {};
 		VkStridedDeviceAddressRegionKHR rayHitDeviceAddressRegion {};
@@ -41,11 +42,7 @@ namespace v4d::graphics::vulkan::rtx {
 
 		VkPipeline GetPipeline() const;
 		PipelineLayout* GetPipelineLayout() const;
-		// std::vector<VkRayTracingShaderGroupCreateInfoKHR> GetGroups() const;
 		std::vector<VkPipelineShaderStageCreateInfo> GetStages() const;
-		
-		// uint32_t GetHitGroupOffset() const;
-		// uint32_t GetMissGroupOffset() const;
 		
 		VkStridedDeviceAddressRegionKHR* GetRayGenDeviceAddressRegion();
 		VkStridedDeviceAddressRegionKHR* GetRayMissDeviceAddressRegion();
@@ -66,6 +63,7 @@ namespace v4d::graphics::vulkan::rtx {
 		
 		uint32_t AddMissShader(ShaderInfo rmiss);
 		uint32_t AddHitShader(ShaderInfo rchit, ShaderInfo rahit = "", ShaderInfo rint = "");
+		uint32_t AddCallableShader(ShaderInfo rcall);
 		
 		void ReadShaders();
 		

@@ -24,21 +24,9 @@ PipelineLayout* ShaderBindingTable::GetPipelineLayout() const {
 	return pipelineLayout;
 }
 
-// std::vector<VkRayTracingShaderGroupCreateInfoKHR> ShaderBindingTable::GetGroups() const {
-// 	return groups;
-// }
-
 std::vector<VkPipelineShaderStageCreateInfo> ShaderBindingTable::GetStages() const {
 	return stages;
 }
-
-// uint32_t ShaderBindingTable::GetMissGroupOffset() const {
-// 	return rayGenGroups.size();
-// }
-
-// uint32_t ShaderBindingTable::GetHitGroupOffset() const {
-// 	return rayGenGroups.size() + rayMissGroups.size();
-// }
 
 // Rules: 
 	// If type is VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR then generalShader must be a valid index into pStages referring to a shader of VK_SHADER_STAGE_RAYGEN_BIT_KHR, VK_SHADER_STAGE_MISS_BIT_KHR, or VK_SHADER_STAGE_CALLABLE_BIT_KHR
@@ -90,6 +78,20 @@ uint32_t ShaderBindingTable::AddHitShader(ShaderInfo rchit, ShaderInfo rahit, Sh
 	return nextHitShaderOffset++;
 }
 
+uint32_t ShaderBindingTable::AddCallableShader(ShaderInfo rcall) {
+	rayCallableGroups.push_back({
+		VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR,
+		nullptr, // pNext
+		VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR,
+		GetOrAddShaderFileIndex(std::move(rcall)), // generalShader
+		VK_SHADER_UNUSED_KHR, // closestHitShader;
+		VK_SHADER_UNUSED_KHR, // anyHitShader;
+		VK_SHADER_UNUSED_KHR, // intersectionShader;
+		nullptr // pShaderGroupCaptureReplayHandle
+	});
+	return nextCallableShaderOffset++;
+}
+
 void ShaderBindingTable::ReadShaders() {
 	shaderObjects.clear();
 	for (auto&[i, shader] : shaderFiles) {
@@ -122,7 +124,7 @@ VkPipeline ShaderBindingTable::CreateRayTracingPipeline(Device* device) {
 	for (auto& group : rayGenGroups) groups.push_back(group);
 	for (auto& group : rayMissGroups) groups.push_back(group);
 	for (auto& group : rayHitGroups) groups.push_back(group);
-	//TODO add callables
+	for (auto& group : rayCallableGroups) groups.push_back(group);
 	
 	VkRayTracingPipelineCreateInfoKHR rayTracingPipelineInfo {};
 		rayTracingPipelineInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
@@ -178,7 +180,7 @@ VkDeviceSize ShaderBindingTable::GetSbtBufferSize(const VkPhysicalDeviceRayTraci
 	addAlignedShaderRegion(rayGenShaderRegionOffset, rayGenShaderRegionSize, rayGenGroups.size());
 	addAlignedShaderRegion(rayMissShaderRegionOffset, rayMissShaderRegionSize, rayMissGroups.size());
 	addAlignedShaderRegion(rayHitShaderRegionOffset, rayHitShaderRegionSize, rayHitGroups.size());
-	//TODO add callables
+	addAlignedShaderRegion(rayCallableShaderRegionOffset, rayCallableShaderRegionSize, rayCallableGroups.size());
 	
 	return bufferSize;
 }
@@ -210,10 +212,10 @@ void ShaderBindingTable::WriteShaderBindingTableToBuffer(Device* device, Buffer*
 	};
 	
 	// Ray Callable
-	rayCallableDeviceAddressRegion = { //TODO implement callables
-		VK_NULL_HANDLE,
+	rayCallableDeviceAddressRegion = {
+		device->GetBufferDeviceAddress(buffer->buffer) + offset + rayCallableShaderRegionOffset,
 		bindingStride,
-		0
+		rayCallableShaderRegionSize
 	};
 	
 	uint8_t* data;
@@ -237,7 +239,9 @@ void ShaderBindingTable::WriteShaderBindingTableToBuffer(Device* device, Buffer*
 	memcpy(data + rayHitShaderRegionOffset, shaderHandleStorage + shaderHandlerStorageOffset, rayTracingPipelineProperties.shaderGroupHandleSize * rayHitGroups.size());
 	shaderHandlerStorageOffset += rayTracingPipelineProperties.shaderGroupHandleSize * rayHitGroups.size();
 	
-	//TODO add callables
+	// Ray Callable
+	memcpy(data + rayCallableShaderRegionOffset, shaderHandleStorage + shaderHandlerStorageOffset, rayTracingPipelineProperties.shaderGroupHandleSize * rayCallableGroups.size());
+	shaderHandlerStorageOffset += rayTracingPipelineProperties.shaderGroupHandleSize * rayCallableGroups.size();
 	
 	device->UnmapMemoryAllocation(buffer->allocation);
 	delete[] shaderHandleStorage;

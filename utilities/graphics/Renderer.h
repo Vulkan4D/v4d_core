@@ -97,6 +97,9 @@ namespace v4d::graphics {
 		std::map<std::string, DescriptorSet*> descriptorSets {};
 		std::vector<VkDescriptorSet> vkDescriptorSets {};
 		
+		// Ray-Tracing Shaders
+		static std::unordered_map<std::string, uint32_t> sbtOffsets;
+		
 	public: // States
 		bool mustReload = false;
 		bool graphicsLoadedToDevice = false;

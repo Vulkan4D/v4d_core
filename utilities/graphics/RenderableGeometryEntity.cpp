@@ -18,8 +18,6 @@ namespace v4d::graphics {
 	V4D_ENTITY_DEFINE_COMPONENT(RenderableGeometryEntity, RenderableGeometryEntity::LightSource, lightSource)
 	V4D_ENTITY_DEFINE_COMPONENT(RenderableGeometryEntity, v4d::scene::PhysicsInfo, physics)
 	
-	std::unordered_map<std::string, uint32_t> RenderableGeometryEntity::sbtOffsets {};
-	
 	// Buffer Write Lock
 	RenderableGeometryEntity::BufferWriteLock::BufferWriteLock() : lock({}), valid(false) {}
 	RenderableGeometryEntity::BufferWriteLock::BufferWriteLock(std::recursive_mutex mu, bool valid) : lock(mu), valid(valid) {}
@@ -148,7 +146,7 @@ namespace v4d::graphics {
 	void RenderableGeometryEntity::Allocate(Device* renderingDevice, std::string sbtOffset, int geometriesCount) {
 		std::unique_lock<std::recursive_mutex> lock(writeMutex);
 		device = renderingDevice;
-		this->sbtOffset = sbtOffsets[sbtOffset];
+		this->sbtOffset = Renderer::sbtOffsets[std::string("hit:")+sbtOffset];
 		if (geometriesCount > 0) {
 			Add_meshGeometries()->AllocateBuffersCount(renderingDevice, geometriesCount);
 		}
@@ -172,7 +170,7 @@ namespace v4d::graphics {
 		FreeComponentsBuffers();
 	}
 	
-	void RenderableGeometryEntity::Generate(Device* device) {
+	bool RenderableGeometryEntity::Generate(Device* device) {
 		assert(!generated);
 		generated = true;
 		generator(this, device);
@@ -180,6 +178,7 @@ namespace v4d::graphics {
 		if (generated) {
 			if (sharedGeometryData && sharedGeometryData->geometriesBuffer) {
 				entityInstanceInfo.geometries = sharedGeometryData->geometriesBuffer;
+				return false;
 			} else {
 				// Geometries
 				if (auto geometriesData = meshGeometries.Lock(); geometriesData && geometriesData->data && geometriesData->count > 0) {
@@ -204,7 +203,7 @@ namespace v4d::graphics {
 							geometry.vertexCount = proceduralVertexData->count;
 						} else {
 							LOG_ERROR("Geometry has no vertex positions or AABB")
-							return;
+							return false;
 						}
 					}
 					
@@ -270,7 +269,7 @@ namespace v4d::graphics {
 							geometriesData->data[i].vertexPositions = (uint64_t)sharedGeometryData->geometriesAccelerationStructureInfo[i].vertexBuffer.deviceAddress + (uint64_t)geometry.firstVertexAABB * proceduralVertexData->TypeSize();
 						} else {
 							LOG_ERROR("Geometry has no vertex positions or AABB")
-							return;
+							return false;
 						}
 						
 						// Vertex normals
@@ -309,9 +308,11 @@ namespace v4d::graphics {
 						
 						++i;
 					}
+					return sharedGeometryData->geometries.size() > 0;
 				}
 			}
 		}
+		return false;
 	}
 	
 }

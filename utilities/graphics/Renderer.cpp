@@ -2,6 +2,13 @@
 
 using namespace v4d::graphics;
 
+#pragma region Static maps
+
+	// Ray-Tracing Shaders
+	std::unordered_map<std::string, uint32_t> Renderer::sbtOffsets {};
+
+#pragma endregion
+
 #pragma region Configuration Methods
 
 VkPhysicalDeviceVulkan12Features* Renderer::EnableVulkan12DeviceFeatures() {

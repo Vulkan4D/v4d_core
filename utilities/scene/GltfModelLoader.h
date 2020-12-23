@@ -10,6 +10,7 @@
 		
 		struct GltfGeometryData {
 			glm::mat4 transform {1};
+			std::string_view materialName {""};
 			v4d::graphics::RenderableGeometryEntity::Material material {};
 			uint32_t indexCount = 0;
 			uint32_t vertexCount = 0;

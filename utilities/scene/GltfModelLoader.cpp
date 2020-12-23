@@ -180,6 +180,7 @@
 						// Material
 						v4d::graphics::RenderableGeometryEntity::Material mat {};
 						auto& material = model.materials[p.material];
+
 						mat.metallic = (uint8_t)glm::clamp(material.pbrMetallicRoughness.metallicFactor * 255.0f, 0.0, 255.0);
 						mat.roughness = (uint8_t)glm::clamp(material.pbrMetallicRoughness.roughnessFactor * 255.0f, 0.0, 255.0);
 						if (material.emissiveFactor[0] > 0 || material.emissiveFactor[1] > 0 || material.emissiveFactor[2] > 0) {
@@ -193,8 +194,10 @@
 							mat.baseColor.b = (uint8_t)glm::clamp(material.pbrMetallicRoughness.baseColorFactor[2] * 255.0, 0.0, 255.0);
 							mat.emission = 0;
 						}
-						geometryData->material = mat;
 						
+						
+						geometryData->materialName = material.name;
+						geometryData->material = mat;
 						modelData->geometriesCount++;
 					}
 				}
@@ -240,6 +243,7 @@
 						auto& geom = entity->sharedGeometryData->geometries.emplace_back();
 						geom.transform = geometry.transform;
 						geom.material = geometry.material;
+						geom.materialName = geometry.materialName;
 						geom.indexCount = geometry.indexCount;
 						geom.vertexCount = geometry.vertexCount;
 						

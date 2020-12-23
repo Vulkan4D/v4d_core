@@ -38,15 +38,16 @@ namespace v4d::graphics {
 			glm::u8vec4 baseColor {255,255,255,255};
 			glm::u8vec4 rim {0,0,0,0};
 			float emission = 0;
-			uint8_t normalMap = 0;
-			uint8_t albedoMap = 0;
-			uint8_t metallicMap = 0;
-			uint8_t roughnessMap = 0;
+			uint8_t textures[8] {0};
+			uint8_t texFactors[8] {0};
+			
+			Material() {static_assert(sizeof(Material) == 32);}
 		};
 		
 		struct Geometry {
 			glm::mat4 transform {1};
 			Material material {};
+			std::string_view materialName {""};
 			uint32_t indexCount = 0;
 			uint32_t vertexCount = 0;
 			uint32_t firstIndex = 0;
@@ -71,9 +72,9 @@ namespace v4d::graphics {
 			uint64_t vertexColorsF32 {};
 			uint64_t vertexUVs {};
 			uint64_t customData = 0;
-			uint32_t _extra = 0;
+			uint64_t extra = 0;
 			Material material {};
-			GeometryInfo() {static_assert(sizeof(GeometryInfo) == 160 && (sizeof(GeometryInfo) % 16) == 0);}
+			GeometryInfo() {static_assert(sizeof(GeometryInfo) == 176 && (sizeof(GeometryInfo) % 16) == 0);}
 		};
 		
 		struct RenderableEntityInstance {
@@ -128,8 +129,6 @@ namespace v4d::graphics {
 		float raster_wireframe = 0;
 		glm::vec4 raster_wireframe_color {0.7f};
 		
-		static std::unordered_map<std::string, uint32_t> sbtOffsets;
-		
 		class V4DLIB BufferWriteLock {
 			std::unique_lock<std::recursive_mutex> lock;
 			bool valid;
@@ -155,7 +154,7 @@ namespace v4d::graphics {
 		void SetWorldTransform(glm::dmat4);
 		glm::dmat4 GetWorldTransform();
 		
-		void Generate(Device* device);
+		bool Generate(Device* device); // returns true if generated correctly with at least one shared geometry, false if either error or using existing geometry (we can use this return value to generate something only once per shared geometry and only if something was generated)
 		
 		~RenderableGeometryEntity();
 		
