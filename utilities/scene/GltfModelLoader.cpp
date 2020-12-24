@@ -1,17 +1,7 @@
+#define TINYGLTF_IMPLEMENTATION
 #include <v4d.h>
 
-// WORK IN PROGRESS....
-
 #ifdef V4D_INCLUDE_TINYGLTFLOADER
-
-	#define TINYGLTF_USE_CPP14
-	#define TINYGLTF_IMPLEMENTATION
-	#define STB_IMAGE_IMPLEMENTATION
-	#define STB_IMAGE_WRITE_IMPLEMENTATION
-	#define TINYGLTF_NO_EXTERNAL_IMAGE
-	#define TINYGLTF_NO_INCLUDE_JSON
-	#include "json.hpp"
-	#include "tinygltf/tiny_gltf.h"
 
 	namespace v4d::scene {
 		GltfModelLoader::GltfModelLoader(std::string_view filePath) {
@@ -32,172 +22,246 @@
 
 			auto& model = modelData->gltfModel;
 			
-			for (auto& mesh : model.meshes) {
+			for (int meshIndex = 0; meshIndex < model.meshes.size(); ++meshIndex) {
+				auto& mesh = model.meshes[meshIndex];
 				
 				if (mesh.name == "collider") {
 					// The Collider mesh
 					for (auto& p : mesh.primitives) {
 						ASSERT_OR_RETURN_FALSE(p.mode == TINYGLTF_MODE_TRIANGLES);
-						auto* geometryData = &modelData->colliderGeometry;
+						auto* primitiveData = &modelData->colliderGeometry;
 						
 						// Indices
 						auto& primitiveIndices = model.accessors[p.indices];
 						auto& indexBufferView = model.bufferViews[primitiveIndices.bufferView];
 						ASSERT_OR_RETURN_FALSE(indexBufferView.byteStride == 0); // Only supports tightly packed buffers
 						ASSERT_OR_RETURN_FALSE(indexBufferView.byteLength > 0);
-						geometryData->indexCount = primitiveIndices.count;
+						primitiveData->indexCount = primitiveIndices.count;
 						switch (primitiveIndices.componentType) {
 							case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT : {
 								ASSERT_OR_RETURN_FALSE(indexBufferView.byteLength == primitiveIndices.count * sizeof(Index16));
-								geometryData->index16Buffer = reinterpret_cast<Index16*>(&model.buffers[indexBufferView.buffer].data.data()[indexBufferView.byteOffset]);
+								primitiveData->index16Buffer = reinterpret_cast<Index16*>(&model.buffers[indexBufferView.buffer].data.data()[indexBufferView.byteOffset]);
 							break;}
 							case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT: {
 								ASSERT_OR_RETURN_FALSE(indexBufferView.byteLength == primitiveIndices.count * sizeof(Index32));
-								geometryData->index32Buffer = reinterpret_cast<Index32*>(&model.buffers[indexBufferView.buffer].data.data()[indexBufferView.byteOffset]);
+								primitiveData->index32Buffer = reinterpret_cast<Index32*>(&model.buffers[indexBufferView.buffer].data.data()[indexBufferView.byteOffset]);
 							break;}
 							default: throw std::runtime_error("Index buffer only supports 16 or 32 bits unsigned integer components");
 						}
-						ASSERT_OR_RETURN_FALSE(geometryData->indexCount > 0);
-						ASSERT_OR_RETURN_FALSE(geometryData->index16Buffer || geometryData->index32Buffer);
+						ASSERT_OR_RETURN_FALSE(primitiveData->indexCount > 0);
+						ASSERT_OR_RETURN_FALSE(primitiveData->index16Buffer || primitiveData->index32Buffer);
 						
 						// Vertex data
 						for (auto&[name,accessorIndex] : p.attributes) {
 							if (name == "POSITION") {
 								auto& vertices = model.accessors[accessorIndex];
-								ASSERT_OR_RETURN_FALSE(geometryData->vertexCount == 0 || geometryData->vertexCount == vertices.count);
-								geometryData->vertexCount = vertices.count;
+								ASSERT_OR_RETURN_FALSE(primitiveData->vertexCount == 0 || primitiveData->vertexCount == vertices.count);
+								primitiveData->vertexCount = vertices.count;
 								auto& vertexBufferView = model.bufferViews[vertices.bufferView];
 								ASSERT_OR_RETURN_FALSE(vertices.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
 								ASSERT_OR_RETURN_FALSE(vertexBufferView.byteStride == 0); // Only supports tightly packed buffers
 								ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength > 0);
 								ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength == vertices.count * sizeof(float) * 3);
-								geometryData->vertexPositionBuffer = reinterpret_cast<VertexPosition*>(&model.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
+								primitiveData->vertexPositionBuffer = reinterpret_cast<VertexPosition*>(&model.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
 							}
 						}
-						ASSERT_OR_RETURN_FALSE(geometryData->vertexCount > 0);
+						ASSERT_OR_RETURN_FALSE(primitiveData->vertexCount > 0);
 					}
 				} else {
+					auto& geometryPrimitives = modelData->geometries[mesh.name];
+					geometryPrimitives.reserve(mesh.primitives.size());
+					
+					// Rigging and skins
+					for (auto& node : model.nodes) if (node.skin != -1 && node.mesh == meshIndex) {
+						auto& skin = model.skins[node.skin];
+						auto& inverseBindMatricesAccessor = model.accessors[skin.inverseBindMatrices];
+						assert(inverseBindMatricesAccessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+						auto& inverseBindMatricesCount = inverseBindMatricesAccessor.count;
+						assert(inverseBindMatricesCount == skin.joints.size());
+						auto& inverseBindMatricesBufferView = model.bufferViews[inverseBindMatricesAccessor.bufferView];
+						assert(inverseBindMatricesBufferView.byteLength == inverseBindMatricesCount * sizeof(glm::mat4));
+						glm::mat4* inverseBindMatrices = reinterpret_cast<glm::mat4*>(&model.buffers[inverseBindMatricesBufferView.buffer].data.data()[inverseBindMatricesBufferView.byteOffset]);
+						for (auto& j : skin.joints) {
+							auto& jointNode = model.nodes[j];
+							auto& joint = modelData->joints[mesh.name][j];
+							joint.name = jointNode.name;
+							joint.inverseBindMatrix = inverseBindMatrices[j];
+							joint.nodeMatrix = glm::mat4(1);
+							if (jointNode.translation.size() == 3) joint.nodeMatrix = glm::translate(joint.nodeMatrix, glm::vec3(jointNode.translation[0], jointNode.translation[1], jointNode.translation[2]));
+							if (jointNode.rotation.size() == 4) joint.nodeMatrix *= glm::mat4_cast(glm::quat((float)jointNode.rotation[0], (float)jointNode.rotation[1], (float)jointNode.rotation[2], (float)jointNode.rotation[3]));
+							if (jointNode.scale.size() == 3) joint.nodeMatrix = glm::scale(joint.nodeMatrix, glm::vec3(jointNode.scale[0], jointNode.scale[1], jointNode.scale[2]));
+							joint.childJoints = jointNode.children;
+							joint.affectedVertices.clear();
+						}
+						break;// only one skin per mesh
+					}
+					
 					// The Actual model high-poly geometry
-					modelData->geometries[mesh.name].reserve(mesh.primitives.size());
 					for (auto& p : mesh.primitives) {
 						ASSERT_OR_RETURN_FALSE(p.mode == TINYGLTF_MODE_TRIANGLES);
-						auto* geometryData = &modelData->geometries[mesh.name].emplace_back();
+						uint32_t primitiveIndex = geometryPrimitives.size();
+						auto* primitiveData = &geometryPrimitives.emplace_back();
 						
-						// Indices
-						auto& primitiveIndices = model.accessors[p.indices];
-						auto& indexBufferView = model.bufferViews[primitiveIndices.bufferView];
-						ASSERT_OR_RETURN_FALSE(indexBufferView.byteStride == 0); // Only supports tightly packed buffers
-						ASSERT_OR_RETURN_FALSE(indexBufferView.byteLength > 0);
-						geometryData->indexCount = primitiveIndices.count;
-						switch (primitiveIndices.componentType) {
-							case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT : {
-								ASSERT_OR_RETURN_FALSE(indexBufferView.byteLength == primitiveIndices.count * sizeof(Index16));
-								geometryData->index16Buffer = reinterpret_cast<Index16*>(&model.buffers[indexBufferView.buffer].data.data()[indexBufferView.byteOffset]);
-								geometryData->indexStart = modelData->index16Count;
-								modelData->index16Count += primitiveIndices.count;
-							break;}
-							case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT: {
-								ASSERT_OR_RETURN_FALSE(indexBufferView.byteLength == primitiveIndices.count * sizeof(Index32));
-								geometryData->index32Buffer = reinterpret_cast<Index32*>(&model.buffers[indexBufferView.buffer].data.data()[indexBufferView.byteOffset]);
-								geometryData->indexStart = modelData->index32Count;
-								modelData->index32Count += primitiveIndices.count;
-							break;}
-							default: throw std::runtime_error("Index buffer only supports 16 or 32 bits unsigned integer components");
+						// Joints
+						uint8_t* joints = nullptr;
+						float* weights = nullptr;
+						
+						{// Indices
+							auto& primitiveIndices = model.accessors[p.indices];
+							auto& indexBufferView = model.bufferViews[primitiveIndices.bufferView];
+							ASSERT_OR_RETURN_FALSE(indexBufferView.byteStride == 0); // Only supports tightly packed buffers
+							ASSERT_OR_RETURN_FALSE(indexBufferView.byteLength > 0);
+							primitiveData->indexCount = primitiveIndices.count;
+							switch (primitiveIndices.componentType) {
+								case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT : {
+									ASSERT_OR_RETURN_FALSE(indexBufferView.byteLength == primitiveIndices.count * sizeof(Index16));
+									primitiveData->index16Buffer = reinterpret_cast<Index16*>(&model.buffers[indexBufferView.buffer].data.data()[indexBufferView.byteOffset]);
+									primitiveData->indexStart = modelData->index16Count;
+									modelData->index16Count += primitiveIndices.count;
+								break;}
+								case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT: {
+									ASSERT_OR_RETURN_FALSE(indexBufferView.byteLength == primitiveIndices.count * sizeof(Index32));
+									primitiveData->index32Buffer = reinterpret_cast<Index32*>(&model.buffers[indexBufferView.buffer].data.data()[indexBufferView.byteOffset]);
+									primitiveData->indexStart = modelData->index32Count;
+									modelData->index32Count += primitiveIndices.count;
+								break;}
+								default: throw std::runtime_error("Index buffer only supports 16 or 32 bits unsigned integer components");
+							}
+							ASSERT_OR_RETURN_FALSE(primitiveData->indexCount > 0);
+							ASSERT_OR_RETURN_FALSE(primitiveData->index16Buffer || primitiveData->index32Buffer);
 						}
-						ASSERT_OR_RETURN_FALSE(geometryData->indexCount > 0);
-						ASSERT_OR_RETURN_FALSE(geometryData->index16Buffer || geometryData->index32Buffer);
 						
-						// Vertex data
-						for (auto&[name,accessorIndex] : p.attributes) {
-							if (name == "POSITION") {
-								auto& vertices = model.accessors[accessorIndex];
-								ASSERT_OR_RETURN_FALSE(geometryData->vertexCount == 0 || geometryData->vertexCount == vertices.count);
-								geometryData->vertexCount = vertices.count;
-								auto& vertexBufferView = model.bufferViews[vertices.bufferView];
-								ASSERT_OR_RETURN_FALSE(vertices.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
-								ASSERT_OR_RETURN_FALSE(vertexBufferView.byteStride == 0); // Only supports tightly packed buffers
-								ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength > 0);
-								ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength == vertices.count * sizeof(VertexPosition));
-								geometryData->vertexPositionBuffer = reinterpret_cast<VertexPosition*>(&model.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
-								geometryData->vertexPositionStart = modelData->vertexPositionCount;
-								modelData->vertexPositionCount += vertices.count;
-							} else if (name == "NORMAL") {
-								auto& vertices = model.accessors[accessorIndex];
-								ASSERT_OR_RETURN_FALSE(geometryData->vertexCount == 0 || geometryData->vertexCount == vertices.count);
-								geometryData->vertexCount = vertices.count;
-								auto& vertexBufferView = model.bufferViews[vertices.bufferView];
-								ASSERT_OR_RETURN_FALSE(vertices.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
-								ASSERT_OR_RETURN_FALSE(vertexBufferView.byteStride == 0); // Only supports tightly packed buffers
-								ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength > 0);
-								ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength == vertices.count * sizeof(VertexNormal));
-								geometryData->vertexNormalBuffer = reinterpret_cast<VertexNormal*>(&model.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
-								geometryData->vertexNormalStart = modelData->vertexNormalCount;
-								modelData->vertexNormalCount += vertices.count;
-							} else if (name == "TEXCOORD_0") {
-								auto& vertices = model.accessors[accessorIndex];
-								ASSERT_OR_RETURN_FALSE(geometryData->vertexCount == 0 || geometryData->vertexCount == vertices.count);
-								geometryData->vertexCount = vertices.count;
-								auto& vertexBufferView = model.bufferViews[vertices.bufferView];
-								ASSERT_OR_RETURN_FALSE(vertices.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
-								ASSERT_OR_RETURN_FALSE(vertexBufferView.byteStride == 0); // Only supports tightly packed buffers
-								ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength > 0);
-								ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength == vertices.count * sizeof(VertexUV));
-								geometryData->vertexUVBuffer = reinterpret_cast<VertexUV*>(&model.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
-								geometryData->vertexUVStart = modelData->vertexUVCount;
-								modelData->vertexUVCount += vertices.count;
-							} else if (name == "COLOR_0") {
-								auto& vertices = model.accessors[accessorIndex];
-								ASSERT_OR_RETURN_FALSE(geometryData->vertexCount == 0 || geometryData->vertexCount == vertices.count);
-								geometryData->vertexCount = vertices.count;
-								auto& vertexBufferView = model.bufferViews[vertices.bufferView];
-								ASSERT_OR_RETURN_FALSE(vertexBufferView.byteStride == 0); // Only supports tightly packed buffers
-								ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength > 0);
-								switch (vertices.componentType) {
-									case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE : {
-										ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength == vertices.count * sizeof(VertexColorU8));
-										geometryData->vertexColorU8Buffer = reinterpret_cast<VertexColorU8*>(&model.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
-										geometryData->vertexColorU8Start = modelData->vertexColorU8Count;
-										modelData->vertexColorU8Count += vertices.count;
-									break;}
-									case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT : {
-										ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength == vertices.count * sizeof(VertexColorU16));
-										geometryData->vertexColorU16Buffer = reinterpret_cast<VertexColorU16*>(&model.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
-										geometryData->vertexColorU16Start = modelData->vertexColorU16Count;
-										modelData->vertexColorU16Count += vertices.count;
-									break;}
-									case TINYGLTF_COMPONENT_TYPE_FLOAT: {
-										ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength == vertices.count * sizeof(VertexColorF32));
-										geometryData->vertexColorF32Buffer = reinterpret_cast<VertexColorF32*>(&model.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
-										geometryData->vertexColorF32Start = modelData->vertexColorF32Count;
-										modelData->vertexColorF32Count += vertices.count;
-									break;}
-									default: throw std::runtime_error("Vertex Color attributes only supports 8 or 16 bit unsigned integer or 32-bit float components");
+						{// Vertex data
+							for (auto&[name,accessorIndex] : p.attributes) {
+								if (name == "POSITION") {
+									auto& vertices = model.accessors[accessorIndex];
+									ASSERT_OR_RETURN_FALSE(primitiveData->vertexCount == 0 || primitiveData->vertexCount == vertices.count);
+									primitiveData->vertexCount = vertices.count;
+									auto& vertexBufferView = model.bufferViews[vertices.bufferView];
+									ASSERT_OR_RETURN_FALSE(vertices.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+									ASSERT_OR_RETURN_FALSE(vertexBufferView.byteStride == 0); // Only supports tightly packed buffers
+									ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength > 0);
+									ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength == vertices.count * sizeof(VertexPosition));
+									primitiveData->vertexPositionBuffer = reinterpret_cast<VertexPosition*>(&model.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
+									primitiveData->vertexPositionStart = modelData->vertexPositionCount;
+									modelData->vertexPositionCount += vertices.count;
+								} else if (name == "NORMAL") {
+									auto& vertices = model.accessors[accessorIndex];
+									ASSERT_OR_RETURN_FALSE(primitiveData->vertexCount == 0 || primitiveData->vertexCount == vertices.count);
+									primitiveData->vertexCount = vertices.count;
+									auto& vertexBufferView = model.bufferViews[vertices.bufferView];
+									ASSERT_OR_RETURN_FALSE(vertices.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+									ASSERT_OR_RETURN_FALSE(vertexBufferView.byteStride == 0); // Only supports tightly packed buffers
+									ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength > 0);
+									ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength == vertices.count * sizeof(VertexNormal));
+									primitiveData->vertexNormalBuffer = reinterpret_cast<VertexNormal*>(&model.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
+									primitiveData->vertexNormalStart = modelData->vertexNormalCount;
+									modelData->vertexNormalCount += vertices.count;
+								} else if (name == "TEXCOORD_0") {
+									auto& vertices = model.accessors[accessorIndex];
+									ASSERT_OR_RETURN_FALSE(primitiveData->vertexCount == 0 || primitiveData->vertexCount == vertices.count);
+									primitiveData->vertexCount = vertices.count;
+									auto& vertexBufferView = model.bufferViews[vertices.bufferView];
+									ASSERT_OR_RETURN_FALSE(vertices.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+									ASSERT_OR_RETURN_FALSE(vertexBufferView.byteStride == 0); // Only supports tightly packed buffers
+									ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength > 0);
+									ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength == vertices.count * sizeof(VertexUV));
+									primitiveData->vertexUVBuffer = reinterpret_cast<VertexUV*>(&model.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
+									primitiveData->vertexUVStart = modelData->vertexUVCount;
+									modelData->vertexUVCount += vertices.count;
+								} else if (name == "COLOR_0") {
+									auto& vertices = model.accessors[accessorIndex];
+									ASSERT_OR_RETURN_FALSE(primitiveData->vertexCount == 0 || primitiveData->vertexCount == vertices.count);
+									primitiveData->vertexCount = vertices.count;
+									auto& vertexBufferView = model.bufferViews[vertices.bufferView];
+									ASSERT_OR_RETURN_FALSE(vertexBufferView.byteStride == 0); // Only supports tightly packed buffers
+									ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength > 0);
+									switch (vertices.componentType) {
+										case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE : {
+											ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength == vertices.count * sizeof(VertexColorU8));
+											primitiveData->vertexColorU8Buffer = reinterpret_cast<VertexColorU8*>(&model.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
+											primitiveData->vertexColorU8Start = modelData->vertexColorU8Count;
+											modelData->vertexColorU8Count += vertices.count;
+										break;}
+										case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT : {
+											ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength == vertices.count * sizeof(VertexColorU16));
+											primitiveData->vertexColorU16Buffer = reinterpret_cast<VertexColorU16*>(&model.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
+											primitiveData->vertexColorU16Start = modelData->vertexColorU16Count;
+											modelData->vertexColorU16Count += vertices.count;
+										break;}
+										case TINYGLTF_COMPONENT_TYPE_FLOAT: {
+											ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength == vertices.count * sizeof(VertexColorF32));
+											primitiveData->vertexColorF32Buffer = reinterpret_cast<VertexColorF32*>(&model.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
+											primitiveData->vertexColorF32Start = modelData->vertexColorF32Count;
+											modelData->vertexColorF32Count += vertices.count;
+										break;}
+										default: throw std::runtime_error("Vertex Color attributes only supports 8 or 16 bit unsigned integer or 32-bit float components");
+									}
+								} else 
+								if (name == "JOINTS_0") {
+									auto& vertices = model.accessors[accessorIndex];
+									ASSERT_OR_RETURN_FALSE(primitiveData->vertexCount == 0 || primitiveData->vertexCount == vertices.count);
+									primitiveData->vertexCount = vertices.count;
+									auto& vertexBufferView = model.bufferViews[vertices.bufferView];
+									ASSERT_OR_RETURN_FALSE(vertices.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE);
+									ASSERT_OR_RETURN_FALSE(vertexBufferView.byteStride == 0); // Only supports tightly packed buffers
+									ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength > 0);
+									ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength == vertices.count * sizeof(uint8_t) * 4);
+									joints = reinterpret_cast<uint8_t*>(&model.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
+								} else if (name == "WEIGHTS_0") {
+									auto& vertices = model.accessors[accessorIndex];
+									ASSERT_OR_RETURN_FALSE(primitiveData->vertexCount == 0 || primitiveData->vertexCount == vertices.count);
+									primitiveData->vertexCount = vertices.count;
+									auto& vertexBufferView = model.bufferViews[vertices.bufferView];
+									ASSERT_OR_RETURN_FALSE(vertices.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+									ASSERT_OR_RETURN_FALSE(vertexBufferView.byteStride == 0); // Only supports tightly packed buffers
+									ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength > 0);
+									ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength == vertices.count * sizeof(float) * 4);
+									weights = reinterpret_cast<float*>(&model.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
+								}
+							}
+							ASSERT_OR_RETURN_FALSE(primitiveData->vertexCount > 0);
+						}
+						
+						{// Skins
+							for (size_t vertexIndex = 0; vertexIndex < primitiveData->vertexCount; ++vertexIndex) {
+								for (int i = 0; i < 4; ++i) {
+									float& weight = weights[vertexIndex*4+i];
+									if (weight > 0) {
+										GeometryJoint& joint = modelData->joints[mesh.name][joints[vertexIndex*4+i]];
+										GeometryVertexAccessor vertex;
+										vertex.primitiveIndex = primitiveIndex;
+										vertex.vertexIndex = vertexIndex;
+										joint.affectedVertices[vertex.packed] = weight;
+										
+										// // TEST
+										// 	primitiveData->vertexPositionBuffer[vertexIndex] = glm::vec3(  );
+										// //
+									}
 								}
 							}
 						}
-						ASSERT_OR_RETURN_FALSE(geometryData->vertexCount > 0);
 						
-						// Material
-						v4d::graphics::RenderableGeometryEntity::Material mat {};
-						auto& material = model.materials[p.material];
-
-						mat.metallic = (uint8_t)glm::clamp(material.pbrMetallicRoughness.metallicFactor * 255.0f, 0.0, 255.0);
-						mat.roughness = (uint8_t)glm::clamp(material.pbrMetallicRoughness.roughnessFactor * 255.0f, 0.0, 255.0);
-						if (material.emissiveFactor[0] > 0 || material.emissiveFactor[1] > 0 || material.emissiveFactor[2] > 0) {
-							mat.baseColor.r = (uint8_t)glm::clamp(material.emissiveFactor[0] * 255.0, 0.0, 255.0);
-							mat.baseColor.g = (uint8_t)glm::clamp(material.emissiveFactor[1] * 255.0, 0.0, 255.0);
-							mat.baseColor.b = (uint8_t)glm::clamp(material.emissiveFactor[2] * 255.0, 0.0, 255.0);
-							mat.emission = 10;
-						} else {
-							mat.baseColor.r = (uint8_t)glm::clamp(material.pbrMetallicRoughness.baseColorFactor[0] * 255.0, 0.0, 255.0);
-							mat.baseColor.g = (uint8_t)glm::clamp(material.pbrMetallicRoughness.baseColorFactor[1] * 255.0, 0.0, 255.0);
-							mat.baseColor.b = (uint8_t)glm::clamp(material.pbrMetallicRoughness.baseColorFactor[2] * 255.0, 0.0, 255.0);
-							mat.emission = 0;
+						{// Material
+							v4d::graphics::RenderableGeometryEntity::Material mat {};
+							auto& material = model.materials[p.material];
+							mat.metallic = (uint8_t)glm::clamp(material.pbrMetallicRoughness.metallicFactor * 255.0f, 0.0, 255.0);
+							mat.roughness = (uint8_t)glm::clamp(material.pbrMetallicRoughness.roughnessFactor * 255.0f, 0.0, 255.0);
+							if (material.emissiveFactor[0] > 0 || material.emissiveFactor[1] > 0 || material.emissiveFactor[2] > 0) {
+								mat.baseColor.r = (uint8_t)glm::clamp(material.emissiveFactor[0] * 255.0, 0.0, 255.0);
+								mat.baseColor.g = (uint8_t)glm::clamp(material.emissiveFactor[1] * 255.0, 0.0, 255.0);
+								mat.baseColor.b = (uint8_t)glm::clamp(material.emissiveFactor[2] * 255.0, 0.0, 255.0);
+								mat.emission = 10;
+							} else {
+								mat.baseColor.r = (uint8_t)glm::clamp(material.pbrMetallicRoughness.baseColorFactor[0] * 255.0, 0.0, 255.0);
+								mat.baseColor.g = (uint8_t)glm::clamp(material.pbrMetallicRoughness.baseColorFactor[1] * 255.0, 0.0, 255.0);
+								mat.baseColor.b = (uint8_t)glm::clamp(material.pbrMetallicRoughness.baseColorFactor[2] * 255.0, 0.0, 255.0);
+								mat.emission = 0;
+							}
+							primitiveData->materialName = material.name;
+							primitiveData->material = mat;
 						}
 						
-						
-						geometryData->materialName = material.name;
-						geometryData->material = mat;
 						modelData->geometriesCount++;
 					}
 				}
