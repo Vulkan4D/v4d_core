@@ -22,6 +22,7 @@
 
 			auto& model = modelData->gltfModel;
 			
+			// Mesh
 			for (int meshIndex = 0; meshIndex < model.meshes.size(); ++meshIndex) {
 				auto& mesh = model.meshes[meshIndex];
 				
@@ -71,30 +72,30 @@
 					auto& geometryPrimitives = modelData->geometries[mesh.name];
 					geometryPrimitives.reserve(mesh.primitives.size());
 					
-					// Rigging and skins
-					for (auto& node : model.nodes) if (node.skin != -1 && node.mesh == meshIndex) {
-						auto& skin = model.skins[node.skin];
-						auto& inverseBindMatricesAccessor = model.accessors[skin.inverseBindMatrices];
-						assert(inverseBindMatricesAccessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
-						auto& inverseBindMatricesCount = inverseBindMatricesAccessor.count;
-						assert(inverseBindMatricesCount == skin.joints.size());
-						auto& inverseBindMatricesBufferView = model.bufferViews[inverseBindMatricesAccessor.bufferView];
-						assert(inverseBindMatricesBufferView.byteLength == inverseBindMatricesCount * sizeof(glm::mat4));
-						glm::mat4* inverseBindMatrices = reinterpret_cast<glm::mat4*>(&model.buffers[inverseBindMatricesBufferView.buffer].data.data()[inverseBindMatricesBufferView.byteOffset]);
-						for (auto& j : skin.joints) {
-							auto& jointNode = model.nodes[j];
-							auto& joint = modelData->joints[mesh.name][j];
-							joint.name = jointNode.name;
-							joint.inverseBindMatrix = inverseBindMatrices[j];
-							joint.nodeMatrix = glm::mat4(1);
-							if (jointNode.translation.size() == 3) joint.nodeMatrix = glm::translate(joint.nodeMatrix, glm::vec3(jointNode.translation[0], jointNode.translation[1], jointNode.translation[2]));
-							if (jointNode.rotation.size() == 4) joint.nodeMatrix *= glm::mat4_cast(glm::quat((float)jointNode.rotation[0], (float)jointNode.rotation[1], (float)jointNode.rotation[2], (float)jointNode.rotation[3]));
-							if (jointNode.scale.size() == 3) joint.nodeMatrix = glm::scale(joint.nodeMatrix, glm::vec3(jointNode.scale[0], jointNode.scale[1], jointNode.scale[2]));
-							joint.childJoints = jointNode.children;
-							joint.affectedVertices.clear();
-						}
-						break;// only one skin per mesh
-					}
+					// // Rigging and skins
+					// for (auto& node : model.nodes) if (node.skin != -1 && node.mesh == meshIndex) {
+					// 	auto& skin = model.skins[node.skin];
+					// 	auto& inverseBindMatricesAccessor = model.accessors[skin.inverseBindMatrices];
+					// 	assert(inverseBindMatricesAccessor.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+					// 	auto& inverseBindMatricesCount = inverseBindMatricesAccessor.count;
+					// 	assert(inverseBindMatricesCount == skin.joints.size());
+					// 	auto& inverseBindMatricesBufferView = model.bufferViews[inverseBindMatricesAccessor.bufferView];
+					// 	assert(inverseBindMatricesBufferView.byteLength == inverseBindMatricesCount * sizeof(glm::mat4));
+					// 	glm::mat4* inverseBindMatrices = reinterpret_cast<glm::mat4*>(&model.buffers[inverseBindMatricesBufferView.buffer].data.data()[inverseBindMatricesBufferView.byteOffset]);
+					// 	for (auto& j : skin.joints) {
+					// 		auto& jointNode = model.nodes[j];
+					// 		auto& joint = modelData->joints[mesh.name][j];
+					// 		joint.name = jointNode.name;
+					// 		joint.inverseBindMatrix = inverseBindMatrices[j];
+					// 		joint.nodeMatrix = glm::mat4(1);
+					// 		if (jointNode.translation.size() == 3) joint.nodeMatrix = glm::translate(joint.nodeMatrix, glm::vec3(jointNode.translation[0], jointNode.translation[1], jointNode.translation[2]));
+					// 		if (jointNode.rotation.size() == 4) joint.nodeMatrix *= glm::mat4_cast(glm::quat((float)jointNode.rotation[0], (float)jointNode.rotation[1], (float)jointNode.rotation[2], (float)jointNode.rotation[3]));
+					// 		if (jointNode.scale.size() == 3) joint.nodeMatrix = glm::scale(joint.nodeMatrix, glm::vec3(jointNode.scale[0], jointNode.scale[1], jointNode.scale[2]));
+					// 		joint.childJoints = jointNode.children;
+					// 		joint.affectedVertices.clear();
+					// 	}
+					// 	break;// only one skin per mesh
+					// }
 					
 					// The Actual model high-poly geometry
 					for (auto& p : mesh.primitives) {
@@ -102,9 +103,9 @@
 						uint32_t primitiveIndex = geometryPrimitives.size();
 						auto* primitiveData = &geometryPrimitives.emplace_back();
 						
-						// Joints
-						uint8_t* joints = nullptr;
-						float* weights = nullptr;
+						// // Joints
+						// uint8_t* joints = nullptr;
+						// float* weights = nullptr;
 						
 						{// Indices
 							auto& primitiveIndices = model.accessors[p.indices];
@@ -197,52 +198,52 @@
 										break;}
 										default: throw std::runtime_error("Vertex Color attributes only supports 8 or 16 bit unsigned integer or 32-bit float components");
 									}
-								} else 
-								if (name == "JOINTS_0") {
-									auto& vertices = model.accessors[accessorIndex];
-									ASSERT_OR_RETURN_FALSE(primitiveData->vertexCount == 0 || primitiveData->vertexCount == vertices.count);
-									primitiveData->vertexCount = vertices.count;
-									auto& vertexBufferView = model.bufferViews[vertices.bufferView];
-									ASSERT_OR_RETURN_FALSE(vertices.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE);
-									ASSERT_OR_RETURN_FALSE(vertexBufferView.byteStride == 0); // Only supports tightly packed buffers
-									ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength > 0);
-									ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength == vertices.count * sizeof(uint8_t) * 4);
-									joints = reinterpret_cast<uint8_t*>(&model.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
-								} else if (name == "WEIGHTS_0") {
-									auto& vertices = model.accessors[accessorIndex];
-									ASSERT_OR_RETURN_FALSE(primitiveData->vertexCount == 0 || primitiveData->vertexCount == vertices.count);
-									primitiveData->vertexCount = vertices.count;
-									auto& vertexBufferView = model.bufferViews[vertices.bufferView];
-									ASSERT_OR_RETURN_FALSE(vertices.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
-									ASSERT_OR_RETURN_FALSE(vertexBufferView.byteStride == 0); // Only supports tightly packed buffers
-									ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength > 0);
-									ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength == vertices.count * sizeof(float) * 4);
-									weights = reinterpret_cast<float*>(&model.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
 								}
+								// else if (name == "JOINTS_0") {
+								// 	auto& vertices = model.accessors[accessorIndex];
+								// 	ASSERT_OR_RETURN_FALSE(primitiveData->vertexCount == 0 || primitiveData->vertexCount == vertices.count);
+								// 	primitiveData->vertexCount = vertices.count;
+								// 	auto& vertexBufferView = model.bufferViews[vertices.bufferView];
+								// 	ASSERT_OR_RETURN_FALSE(vertices.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE);
+								// 	ASSERT_OR_RETURN_FALSE(vertexBufferView.byteStride == 0); // Only supports tightly packed buffers
+								// 	ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength > 0);
+								// 	ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength == vertices.count * sizeof(uint8_t) * 4);
+								// 	joints = reinterpret_cast<uint8_t*>(&model.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
+								// } else if (name == "WEIGHTS_0") {
+								// 	auto& vertices = model.accessors[accessorIndex];
+								// 	ASSERT_OR_RETURN_FALSE(primitiveData->vertexCount == 0 || primitiveData->vertexCount == vertices.count);
+								// 	primitiveData->vertexCount = vertices.count;
+								// 	auto& vertexBufferView = model.bufferViews[vertices.bufferView];
+								// 	ASSERT_OR_RETURN_FALSE(vertices.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+								// 	ASSERT_OR_RETURN_FALSE(vertexBufferView.byteStride == 0); // Only supports tightly packed buffers
+								// 	ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength > 0);
+								// 	ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength == vertices.count * sizeof(float) * 4);
+								// 	weights = reinterpret_cast<float*>(&model.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
+								// }
 							}
 							ASSERT_OR_RETURN_FALSE(primitiveData->vertexCount > 0);
 						}
 						
-						{// Skins
-							for (size_t vertexIndex = 0; vertexIndex < primitiveData->vertexCount; ++vertexIndex) {
-								for (int i = 0; i < 4; ++i) {
-									float& weight = weights[vertexIndex*4+i];
-									if (weight > 0) {
-										GeometryJoint& joint = modelData->joints[mesh.name][joints[vertexIndex*4+i]];
-										GeometryVertexAccessor vertex;
-										vertex.primitiveIndex = primitiveIndex;
-										vertex.vertexIndex = vertexIndex;
-										joint.affectedVertices[vertex.packed] = weight;
+						// {// Skins
+						// 	for (size_t vertexIndex = 0; vertexIndex < primitiveData->vertexCount; ++vertexIndex) {
+						// 		for (int i = 0; i < 4; ++i) {
+						// 			float& weight = weights[vertexIndex*4+i];
+						// 			if (weight > 0) {
+						// 				GeometryJoint& joint = modelData->joints[mesh.name][joints[vertexIndex*4+i]];
+						// 				GeometryVertexAccessor vertex;
+						// 				vertex.primitiveIndex = primitiveIndex;
+						// 				vertex.vertexIndex = vertexIndex;
+						// 				joint.affectedVertices[vertex.packed] = weight;
 										
-										// // TEST
-										// 	primitiveData->vertexPositionBuffer[vertexIndex] = glm::vec3(  );
-										// //
-									}
-								}
-							}
-						}
+						// 				// // TEST
+						// 				// 	primitiveData->vertexPositionBuffer[vertexIndex] = glm::vec3(  );
+						// 				// //
+						// 			}
+						// 		}
+						// 	}
+						// }
 						
-						{// Material
+						if (p.material != -1) {// Material
 							v4d::graphics::RenderableGeometryEntity::Material mat {};
 							auto& material = model.materials[p.material];
 							mat.metallic = (uint8_t)glm::clamp(material.pbrMetallicRoughness.metallicFactor * 255.0f, 0.0, 255.0);
@@ -356,6 +357,13 @@
 					physics->SetMeshCollider(modelData->colliderGeometry.vertexPositionBuffer, modelData->colliderGeometry.vertexCount, modelData->colliderGeometry.index16Buffer, modelData->colliderGeometry.indexCount);
 				} else if (modelData->colliderGeometry.index32Buffer) {
 					physics->SetMeshCollider(modelData->colliderGeometry.vertexPositionBuffer, modelData->colliderGeometry.vertexCount, modelData->colliderGeometry.index32Buffer, modelData->colliderGeometry.indexCount);
+				}
+			}
+			
+			// Special nodes
+			for (auto& node : modelData->gltfModel.nodes) {
+				if (node.name == "Camera" && node.translation.size() == 3) {
+					entity->cameraOffset = glm::translate(glm::dmat4(1), glm::dvec3(node.translation[0], node.translation[1], node.translation[2]));
 				}
 			}
 			

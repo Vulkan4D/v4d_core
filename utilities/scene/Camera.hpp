@@ -33,6 +33,8 @@ namespace v4d::scene {
 		alignas(4) int32_t maxBounces = 10; // -1 = infinite bounces
 		alignas(4) uint32_t frameCount = 0;
 		
+		alignas(16) glm::vec3 gravityVector;
+		
 		// alignas(16) glm::vec2 historyTxaaOffset {0};
 		
 		static constexpr float txaaKernelSize = 1.0f;

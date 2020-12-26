@@ -53,7 +53,7 @@ namespace v4d::graphics::vulkan::rtx {
 		uint64_t globalScratchBufferOffset = 0;
 		
 		struct GeometryAccelerationStructureInfo {
-			VkGeometryFlagsKHR flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+			VkGeometryFlagsKHR flags = VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR;
 			VkDeviceOrHostAddressConstKHR indexBuffer {};
 			size_t indexOffset = 0;
 			size_t indexCount = 0;

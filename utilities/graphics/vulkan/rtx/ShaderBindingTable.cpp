@@ -132,7 +132,7 @@ VkPipeline ShaderBindingTable::CreateRayTracingPipeline(Device* device) {
 		rayTracingPipelineInfo.pStages = stages.data();
 		rayTracingPipelineInfo.groupCount = (uint)groups.size();
 		rayTracingPipelineInfo.pGroups = groups.data();
-		rayTracingPipelineInfo.maxPipelineRayRecursionDepth = 2;
+		rayTracingPipelineInfo.maxPipelineRayRecursionDepth = 1;
 		rayTracingPipelineInfo.layout = pipelineLayout->handle;
 		
 		// const VkRayTracingPipelineInterfaceCreateInfoKHR*    pLibraryInterface;

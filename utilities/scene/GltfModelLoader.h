@@ -18,23 +18,23 @@
 	namespace v4d::scene {
 		using namespace v4d::graphics::Mesh;
 		
-		struct GeometryVertexAccessor {
-			union {
-				uint64_t packed;
-				struct {
-					uint32_t primitiveIndex;
-					uint32_t vertexIndex;
-				};
-			};
-		};
+		// struct GeometryVertexAccessor {
+		// 	union {
+		// 		uint64_t packed;
+		// 		struct {
+		// 			uint32_t primitiveIndex;
+		// 			uint32_t vertexIndex;
+		// 		};
+		// 	};
+		// };
 		
-		struct GeometryJoint {
-			std::string name;
-			glm::mat4 inverseBindMatrix;
-			glm::mat4 nodeMatrix;
-			std::vector<int> childJoints {};
-			std::map<uint64_t/*GeometryVertexAccessor*/, float/*weight*/> affectedVertices {};
-		};
+		// struct GeometryJoint {
+		// 	std::string name;
+		// 	glm::mat4 inverseBindMatrix;
+		// 	glm::mat4 nodeMatrix;
+		// 	std::vector<int> childJoints {};
+		// 	std::map<uint64_t/*GeometryVertexAccessor*/, float/*weight*/> affectedVertices {};
+		// };
 		
 		struct GltfGeometryData {
 			glm::mat4 transform {1};
@@ -73,7 +73,7 @@
 			tinygltf::Model gltfModel {};
 			std::weak_ptr<v4d::graphics::RenderableGeometryEntity::SharedGeometryData> commonGeometryData;
 			std::unordered_map<std::string, std::vector<GltfGeometryData>> geometries {};
-			std::unordered_map<std::string, std::unordered_map<uint32_t, GeometryJoint>> joints {};
+			// std::unordered_map<std::string, std::unordered_map<uint32_t, GeometryJoint>> joints {};
 			GltfColliderData colliderGeometry {};
 			uint32_t geometriesCount = 0;
 			

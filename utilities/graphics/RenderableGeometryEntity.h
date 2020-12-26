@@ -122,8 +122,9 @@ namespace v4d::graphics {
 		std::recursive_mutex writeMutex;
 		std::shared_ptr<SharedGeometryData> sharedGeometryData = nullptr;
 		uint32_t sbtOffset = 0;
-		uint32_t rayTracingMask = 0xff;
+		uint32_t rayTracingMask = 0x01;
 		VkGeometryInstanceFlagsKHR rayTracingFlags = 0;
+		glm::dmat4 cameraOffset {1};
 		
 		bool raster_transparent = false;
 		float raster_wireframe = 0;
