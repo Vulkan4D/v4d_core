@@ -51,6 +51,7 @@ namespace v4d::scene {
 		Id id;
 		
 		std::weak_ptr<v4d::graphics::RenderableGeometryEntity> renderableGeometryEntityInstance;
+		std::any entityData;
 		
 		// Attributes
 		bool active = false;

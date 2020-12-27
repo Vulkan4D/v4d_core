@@ -117,7 +117,7 @@ namespace v4d::graphics {
 		Device* device = nullptr;
 		bool generated = false;
 		glm::dmat4 worldTransform = glm::dmat4{1};
-		std::function<void(RenderableGeometryEntity*, Device*)> generator = [](RenderableGeometryEntity*, Device*){};
+		std::function<void(RenderableGeometryEntity*, Device*)> generator = [](RenderableGeometryEntity* entity, Device*){ entity->generated = false; };
 		RenderableEntityInstance entityInstanceInfo {};
 		std::recursive_mutex writeMutex;
 		std::shared_ptr<SharedGeometryData> sharedGeometryData = nullptr;
