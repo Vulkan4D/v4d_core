@@ -23,6 +23,9 @@ namespace v4d::modular {
 		operator std::string () const {
 			return String();
 		}
+		operator const char* () const {
+			return String().c_str();
+		}
 		std::string String() const {
 			if (vendor == 0 || module == 0) return "";
 			return v4d::BaseN::DecodeStringFromUInt64(vendor, BASE36_UPPER_CHARS) + "_" + v4d::BaseN::DecodeStringFromUInt64(module, BASE36_LOWER_CHARS);
@@ -264,4 +267,16 @@ namespace v4d::modular {
 
 #define V4D_MODULE_CACHE_PATH(moduleName, cacheRelativePath) (\
 	"modules/" moduleName "/cache/" cacheRelativePath \
+)
+
+#define V4D_MODULE_ASSET_PATH_STR(moduleName, assetRelativePath) (\
+	std::string("modules/") + moduleName + "/assets/" + assetRelativePath \
+)
+
+#define V4D_MODULE_DATA_PATH_STR(moduleName, dataRelativePath) (\
+	std::string("modules/") + moduleName + "/data/" + dataRelativePath \
+)
+
+#define V4D_MODULE_CACHE_PATH_STR(moduleName, cacheRelativePath) (\
+	std::string("modules/") + moduleName + "/cache/" + cacheRelativePath \
 )

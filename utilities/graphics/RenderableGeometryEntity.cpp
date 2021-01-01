@@ -143,13 +143,14 @@ namespace v4d::graphics {
 		entityInstanceInfo.objId = objId;
 	}
 	
-	void RenderableGeometryEntity::Allocate(Device* renderingDevice, std::string sbtOffset, int geometriesCount) {
+	v4d::graphics::RenderableGeometryEntity::GeometryInfo* RenderableGeometryEntity::Allocate(Device* renderingDevice, std::string sbtOffset, int geometriesCount) {
 		std::unique_lock<std::recursive_mutex> lock(writeMutex);
 		device = renderingDevice;
-		this->sbtOffset = Renderer::sbtOffsets[std::string("hit:")+sbtOffset];
+		this->sbtOffset = Renderer::sbtOffsets[std::string("rendering:hit:")+sbtOffset];
 		if (geometriesCount > 0) {
-			Add_meshGeometries()->AllocateBuffersCount(renderingDevice, geometriesCount);
+			return Add_meshGeometries()->AllocateBuffersCount(renderingDevice, geometriesCount);
 		}
+		return nullptr;
 	}
 	
 	RenderableGeometryEntity* RenderableGeometryEntity::SetInitialTransform(const glm::dmat4& t) {

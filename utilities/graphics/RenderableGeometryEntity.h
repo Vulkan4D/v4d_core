@@ -149,7 +149,7 @@ namespace v4d::graphics {
 		
 		void operator()(v4d::modular::ModuleID moduleId, uint64_t objId = 0);
 		
-		void Allocate(Device* renderingDevice, std::string sbtOffset = "default", int geometriesCount = 1);
+		v4d::graphics::RenderableGeometryEntity::GeometryInfo* Allocate(Device* renderingDevice, std::string sbtOffset = "V4D_raytracing:default", int geometriesCount = 1);
 		
 		RenderableGeometryEntity* SetInitialTransform(const glm::dmat4&);
 		void SetWorldTransform(glm::dmat4);

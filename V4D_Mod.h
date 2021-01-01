@@ -60,6 +60,7 @@ class V4DLIB V4D_Mod {
 		,GetImage
 		,GetPipelineLayout
 		,AddShader
+		,AddRayTracingHitShader
 		,GetShaderBindingTable
 		,CreateGameObject
 		,DestroyGameObject
@@ -141,7 +142,7 @@ class V4DLIB V4D_Mod {
 	V4D_MODULE_FUNC_DECLARE(void, SecondaryRenderUpdate2, VkCommandBuffer)
 	V4D_MODULE_FUNC_DECLARE(void, RecordStaticGraphicsCommands, VkCommandBuffer, int imageIndex)
 	V4D_MODULE_FUNC_DECLARE(void, RecordStaticGraphicsCommands2, VkCommandBuffer, int imageIndex)
-	// Typically only implemented in primary module
+	// Typically only implemented in primary rendering module
 	V4D_MODULE_FUNC_DECLARE(void, DrawOverlayLine, float x1, float y1, float x2, float y2, glm::vec4 color, float lineWidth)
 	V4D_MODULE_FUNC_DECLARE(void, DrawOverlayText, const char* text, float x, float y, glm::vec4 color, float size)
 	V4D_MODULE_FUNC_DECLARE(void, DrawOverlayCircle, float x, float y, glm::vec4 color, float size, float borderSize)
@@ -149,6 +150,7 @@ class V4DLIB V4D_Mod {
 	V4D_MODULE_FUNC_DECLARE(v4d::graphics::vulkan::Image*, GetImage, const std::string& name)
 	V4D_MODULE_FUNC_DECLARE(v4d::graphics::vulkan::PipelineLayout*, GetPipelineLayout, const std::string& name)
 	V4D_MODULE_FUNC_DECLARE(void, AddShader, const std::string& groupName, v4d::graphics::vulkan::RasterShaderPipeline* shader)
+	V4D_MODULE_FUNC_DECLARE(void, AddRayTracingHitShader, v4d::modular::ModuleID, const std::string& name)
 	V4D_MODULE_FUNC_DECLARE(v4d::graphics::vulkan::rtx::ShaderBindingTable*, GetShaderBindingTable, const std::string& sbtName)
 
 // GameObjects
