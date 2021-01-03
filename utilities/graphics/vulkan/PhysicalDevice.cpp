@@ -17,51 +17,8 @@ PhysicalDevice::PhysicalDevice(xvk::Interface::InstanceInterface* vulkanInstance
 		LOG_VERBOSE("Supported Device Extension: " << extension.extensionName);
 	});
 	
-	// Features
-	deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-	// Vulkan 1.2 features
-	if (Loader::VULKAN_API_VERSION >= VK_API_VERSION_1_2) {
-		vulkan12DeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-		deviceFeatures2.pNext = &vulkan12DeviceFeatures;
-		// Acceleration structure supported?
-		if (SupportsExtension(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)) {
-			accelerationStructureDeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
-			vulkan12DeviceFeatures.pNext = &accelerationStructureDeviceFeatures;
-			// Ray tracing pipeline supported?
-			if (SupportsExtension(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)) {
-				rayTracingPipelineDeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
-				accelerationStructureDeviceFeatures.pNext = &rayTracingPipelineDeviceFeatures;
-				// Ray query supported?
-				if (SupportsExtension(VK_KHR_RAY_QUERY_EXTENSION_NAME)) {
-					rayQueryDeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
-					rayTracingPipelineDeviceFeatures.pNext = &rayQueryDeviceFeatures;
-				} else {
-					rayQueryDeviceFeatures = {};
-				}
-			}
-			else // Ray tracing pipeline NOT supported but Ray query supported?
-			if (SupportsExtension(VK_KHR_RAY_QUERY_EXTENSION_NAME)) {
-				rayTracingPipelineDeviceFeatures = {};
-				rayQueryDeviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
-				accelerationStructureDeviceFeatures.pNext = &rayQueryDeviceFeatures;
-			} else {
-				rayTracingPipelineDeviceFeatures = {};
-				rayQueryDeviceFeatures = {};
-			}
-		} else {
-			rayTracingPipelineDeviceFeatures = {};
-			accelerationStructureDeviceFeatures = {};
-			rayQueryDeviceFeatures = {};
-		}
-	} else {
-		vulkan12DeviceFeatures = {};
-		rayTracingPipelineDeviceFeatures = {};
-		accelerationStructureDeviceFeatures = {};
-		rayQueryDeviceFeatures = {};
-	}
 	// Get supported Features
-	vulkanInstance->GetPhysicalDeviceFeatures(handle, &deviceFeatures);
-	vulkanInstance->GetPhysicalDeviceFeatures2(handle, &deviceFeatures2);
+	vulkanInstance->GetPhysicalDeviceFeatures2(handle, deviceFeatures.GetDeviceFeaturesPNext());
 	
 	// Queue Families
 	uint queueFamilyCount = 0;
@@ -130,25 +87,6 @@ bool PhysicalDevice::SupportsExtension(std::string ext) {
 
 VkPhysicalDeviceProperties PhysicalDevice::GetProperties() const {
 	return deviceProperties;
-}
-
-VkPhysicalDeviceFeatures PhysicalDevice::GetFeatures() const {
-	return deviceFeatures;
-}
-VkPhysicalDeviceFeatures2 PhysicalDevice::GetFeatures2() const {
-	return deviceFeatures2;
-}
-VkPhysicalDeviceVulkan12Features PhysicalDevice::GetVulkan12Features() const {
-	return vulkan12DeviceFeatures;
-}
-VkPhysicalDeviceRayTracingPipelineFeaturesKHR PhysicalDevice::GetRayTracingPipelineFeatures() const {
-	return rayTracingPipelineDeviceFeatures;
-}
-VkPhysicalDeviceAccelerationStructureFeaturesKHR PhysicalDevice::GetAccelerationStructureFeatures() const {
-	return accelerationStructureDeviceFeatures;
-}
-VkPhysicalDeviceRayQueryFeaturesKHR PhysicalDevice::GetRayQueryFeatures() const {
-	return rayQueryDeviceFeatures;
 }
 
 VkPhysicalDevice PhysicalDevice::GetHandle() const {

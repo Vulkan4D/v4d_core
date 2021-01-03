@@ -1,5 +1,4 @@
 // #version 460 core (this is the default)
-#extension GL_ARB_enhanced_layouts : enable
 
 precision highp int;
 precision highp float;
@@ -180,20 +179,95 @@ float fade(float low, float high, float value){
 	return smoothstep(0.0, 1.0, x);
 }
 
-vec3 getHeatMap(float intensity){
-	if (intensity <= 0) return vec3(0);
-	if (intensity >= 1) return vec3(1);
-	vec3 blue = vec3(0.0, 0.0, 1.0);
-	vec3 cyan = vec3(0.0, 1.0, 1.0);
-	vec3 green = vec3(0.0, 1.0, 0.0);
-	vec3 yellow = vec3(1.0, 1.0, 0.0);
-	vec3 red = vec3(1.0, 0.0, 0.0);
-	vec3 color = (
-		fade(-0.25, 0.25, intensity)*blue +
-		fade(0.0, 0.5, intensity)*cyan +
-		fade(0.25, 0.75, intensity)*green +
-		fade(0.5, 1.0, intensity)*yellow +
-		smoothstep(0.75, 1.0, intensity)*red
-	);
-	return color;
+// vec3 getHeatMap(float intensity){
+// 	if (intensity <= 0) return vec3(0);
+// 	if (intensity >= 1) return vec3(1);
+// 	vec3 blue = vec3(0.0, 0.0, 1.0);
+// 	vec3 cyan = vec3(0.0, 1.0, 1.0);
+// 	vec3 green = vec3(0.0, 1.0, 0.0);
+// 	vec3 yellow = vec3(1.0, 1.0, 0.0);
+// 	vec3 red = vec3(1.0, 0.0, 0.0);
+// 	vec3 color = (
+// 		fade(-0.25, 0.25, intensity)*blue +
+// 		fade(0.0, 0.5, intensity)*cyan +
+// 		fade(0.25, 0.75, intensity)*green +
+// 		fade(0.5, 1.0, intensity)*yellow +
+// 		smoothstep(0.75, 1.0, intensity)*red
+// 	);
+// 	return color;
+// }
+
+vec3 heatmap(float t) {
+	if (t <= 0) return vec3(0);
+	if (t >= 1) return vec3(1);
+	const vec3 c[10] = {
+		vec3(0.0f / 255.0f,   2.0f / 255.0f,  91.0f / 255.0f),
+		vec3(0.0f / 255.0f, 108.0f / 255.0f, 251.0f / 255.0f),
+		vec3(0.0f / 255.0f, 221.0f / 255.0f, 221.0f / 255.0f),
+		vec3(51.0f / 255.0f, 221.0f / 255.0f,   0.0f / 255.0f),
+		vec3(255.0f / 255.0f, 252.0f / 255.0f,   0.0f / 255.0f),
+		vec3(255.0f / 255.0f, 180.0f / 255.0f,   0.0f / 255.0f),
+		vec3(255.0f / 255.0f, 104.0f / 255.0f,   0.0f / 255.0f),
+		vec3(226.0f / 255.0f,  22.0f / 255.0f,   0.0f / 255.0f),
+		vec3(191.0f / 255.0f,   0.0f / 255.0f,  83.0f / 255.0f),
+		vec3(145.0f / 255.0f,   0.0f / 255.0f,  65.0f / 255.0f)
+	};
+
+	const float s = t * 10.0f;
+
+	const int cur = int(s) <= 9 ? int(s) : 9;
+	const int prv = cur >= 1 ? cur - 1 : 0;
+	const int nxt = cur < 9 ? cur + 1 : 9;
+
+	const float blur = 0.8f;
+
+	const float wc = smoothstep(float(cur) - blur, float(cur) + blur, s) * (1.0f - smoothstep(float(cur + 1) - blur, float(cur + 1) + blur, s));
+	const float wp = 1.0f - smoothstep(float(cur) - blur, float(cur) + blur, s);
+	const float wn = smoothstep(float(cur + 1) - blur, float(cur + 1) + blur, s);
+
+	const vec3 r = wc * c[cur] + wp * c[prv] + wn * c[nxt];
+	return vec3(clamp(r.x, 0.0f, 1.0f), clamp(r.y, 0.0f, 1.0f), clamp(r.z, 0.0f, 1.0f));
+}
+
+
+
+//////////////////////////////////////
+// Random
+
+#extension GL_EXT_control_flow_attributes : require
+// Generates a seed for a random number generator from 2 inputs plus a backoff
+// https://github.com/nvpro-samples/optix_prime_baking/blob/332a886f1ac46c0b3eea9e89a59593470c755a0e/random.h
+// https://github.com/nvpro-samples/vk_raytracing_tutorial_KHR/tree/master/ray_tracing_jitter_cam
+// https://en.wikipedia.org/wiki/Tiny_Encryption_Algorithm
+uint InitRandomSeed(uint val0, uint val1) {
+	uint v0 = val0, v1 = val1, s0 = 0;
+	[[unroll]]
+	for (uint n = 0; n < 16; n++) {
+		s0 += 0x9e3779b9;
+		v0 += ((v1 << 4) + 0xa341316c) ^ (v1 + s0) ^ ((v1 >> 5) + 0xc8013ea4);
+		v1 += ((v0 << 4) + 0xad90777d) ^ (v0 + s0) ^ ((v0 >> 5) + 0x7e95761e);
+	}
+	return v0;
+}
+uint RandomInt(inout uint seed) {
+	return (seed = 1664525 * seed + 1013904223);
+}
+float RandomFloat(inout uint seed) {
+	return (float(RandomInt(seed) & 0x00FFFFFF) / float(0x01000000));
+}
+vec2 RandomInUnitDisk(inout uint seed) {
+	for (;;) {
+		const vec2 p = 2 * vec2(RandomFloat(seed), RandomFloat(seed)) - 1;
+		if (dot(p, p) < 1) {
+			return p;
+		}
+	}
+}
+vec3 RandomInUnitSphere(inout uint seed) {
+	for (;;) {
+		const vec3 p = 2 * vec3(RandomFloat(seed), RandomFloat(seed), RandomFloat(seed)) - 1;
+		if (dot(p, p) < 1) {
+			return p;
+		}
+	}
 }

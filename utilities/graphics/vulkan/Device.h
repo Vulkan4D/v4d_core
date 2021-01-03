@@ -106,7 +106,6 @@ namespace v4d::graphics::vulkan {
 	public:
 		Device(
 			PhysicalDevice* physicalDevice,
-			VkPhysicalDeviceFeatures& deviceFeatures,
 			std::vector<const char*>& extensions,
 			std::vector<const char*>& layers,
 			std::vector<DeviceQueueInfo> queuesInfo,

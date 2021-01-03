@@ -118,7 +118,7 @@ class V4DLIB V4D_Mod {
 	V4D_MODULE_FUNC_DECLARE(int, RenderOrderIndex)
 	V4D_MODULE_FUNC_DECLARE(void, ScorePhysicalDeviceSelection, int& score, v4d::graphics::vulkan::PhysicalDevice*) // this is executed once for each available GPU
 	// May be Executed many times (ie: when renderer is reloading or screen is resizing)
-	V4D_MODULE_FUNC_DECLARE(void, InitVulkanDeviceFeatures)
+	V4D_MODULE_FUNC_DECLARE(void, InitVulkanDeviceFeatures, v4d::graphics::vulkan::PhysicalDevice::DeviceFeatures* deviceFeaturesToEnable, const v4d::graphics::vulkan::PhysicalDevice::DeviceFeatures* supportedDeviceFeatures)
 	V4D_MODULE_FUNC_DECLARE(void, ConfigureRenderer)
 	V4D_MODULE_FUNC_DECLARE(void, InitVulkanLayouts)
 	V4D_MODULE_FUNC_DECLARE(void, InitRenderingDevice, v4d::graphics::vulkan::Device*)

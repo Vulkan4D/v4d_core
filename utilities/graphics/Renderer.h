@@ -129,40 +129,13 @@ namespace v4d::graphics {
 		std::vector<const char*> deviceExtensions {};
 		std::unordered_map<std::string, bool> enabledDeviceExtensions {};
 		
-		template<typename T>
-		static void FilterSupportedDeviceFeatures(T* enabledFeatures, T supportedFeatures, size_t offset = 0) {
-			const size_t featuresArraySize = (sizeof(T)-offset) / sizeof(VkBool32);
-			VkBool32 supportedFeaturesData[featuresArraySize];
-			VkBool32 enabledFeaturesData[featuresArraySize];
-			memcpy(supportedFeaturesData, ((byte*)&supportedFeatures)+offset, sizeof(supportedFeaturesData));
-			memcpy(enabledFeaturesData, ((byte*)enabledFeatures)+offset, sizeof(enabledFeaturesData));
-			for (size_t i = 0; i < featuresArraySize; ++i) {
-				if (enabledFeaturesData[i] && !supportedFeaturesData[i]) {
-					enabledFeaturesData[i] = VK_FALSE;
-				}
-			}
-			memcpy(((byte*)enabledFeatures+offset), enabledFeaturesData, sizeof(enabledFeaturesData));
-		}
-		
-		// These objects will be modified to keep only the supported & enabled values
-		VkPhysicalDeviceFeatures deviceFeatures {};
-		VkPhysicalDeviceVulkan12Features vulkan12DeviceFeatures {};
-		VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures {};
-		VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures {};
-		VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures {};
-		
-		VkPhysicalDeviceVulkan12Features* EnableVulkan12DeviceFeatures();
-		VkPhysicalDeviceRayTracingPipelineFeaturesKHR* EnableRayTracingPipelineFeatures();
-		VkPhysicalDeviceAccelerationStructureFeaturesKHR* EnableAccelerationStructureFeatures();
-		VkPhysicalDeviceRayQueryFeaturesKHR* EnableRayQueryFeatures();
-		
 		void RequiredDeviceExtension(const char* ext);
 		void OptionalDeviceExtension(const char* ext);
 		bool IsDeviceExtensionEnabled(const char* ext);
 
 	public: // Virtual methods
 		// Init
-		virtual void InitDeviceFeatures();
+		virtual void InitDeviceFeatures(PhysicalDevice::DeviceFeatures* deviceFeaturesToEnable, const PhysicalDevice::DeviceFeatures* supportedDeviceFeatures);
 		virtual void ConfigureRenderer();
 		virtual void InitLayouts();
 		virtual void ConfigureShaders();

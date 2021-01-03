@@ -14,12 +14,6 @@ namespace v4d::graphics::vulkan {
 		VkPhysicalDevice handle;
 
 		VkPhysicalDeviceProperties deviceProperties {};
-		VkPhysicalDeviceFeatures deviceFeatures {};
-		VkPhysicalDeviceFeatures2 deviceFeatures2 {};
-		VkPhysicalDeviceVulkan12Features vulkan12DeviceFeatures {};
-		VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineDeviceFeatures {};
-		VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureDeviceFeatures {};
-		VkPhysicalDeviceRayQueryFeaturesKHR rayQueryDeviceFeatures {};
 		
 		std::vector<VkQueueFamilyProperties>* queueFamilies = nullptr;
 		std::vector<VkExtensionProperties>* supportedExtensions = nullptr;
@@ -27,6 +21,65 @@ namespace v4d::graphics::vulkan {
 	public:
 		PhysicalDevice(xvk::Interface::InstanceInterface* vulkanInstance, VkPhysicalDevice handle);
 		~PhysicalDevice();
+		
+		class DeviceFeatures {
+		public:
+			VkPhysicalDeviceFeatures2 deviceFeatures2 { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, nullptr, VkPhysicalDeviceFeatures{} };
+			
+			// Vulkan 1.1
+			VkPhysicalDeviceShaderClockFeaturesKHR shaderClockFeatures { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_CLOCK_FEATURES_KHR };
+			VkPhysicalDevice16BitStorageFeatures _16bitStorageFeatures { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES };
+			
+			// Vulkan 1.2
+			VkPhysicalDeviceVulkan12Features vulkan12DeviceFeatures { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
+			VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR };
+			VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR };
+			VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR };
+			
+		private:
+			const std::array<void*, 7> featuresPNextOrder {
+				&deviceFeatures2,
+				&shaderClockFeatures,
+				&_16bitStorageFeatures,
+				&vulkan12DeviceFeatures,
+				&rayTracingPipelineFeatures,
+				&accelerationStructureFeatures,
+				&rayQueryFeatures,
+			};
+			
+			template<typename T>
+			static void AndFeatures(T* features, const T& otherFeatures, size_t offset = 0) {
+				const size_t featuresArraySize = (sizeof(T)-offset) / sizeof(VkBool32);
+				VkBool32 otherFeaturesData[featuresArraySize];
+				VkBool32 featuresData[featuresArraySize];
+				memcpy(otherFeaturesData, ((byte*)&otherFeatures)+offset, sizeof(otherFeaturesData));
+				memcpy(featuresData, ((byte*)features)+offset, sizeof(featuresData));
+				for (size_t i = 0; i < featuresArraySize; ++i) {
+					featuresData[i] = (featuresData[i] && otherFeaturesData[i])? VK_TRUE : VK_FALSE;
+				}
+				memcpy(((byte*)features+offset), featuresData, sizeof(featuresData));
+			}
+		
+		public:
+		
+			VkPhysicalDeviceFeatures2* GetDeviceFeaturesPNext() {
+				for (size_t i = featuresPNextOrder.size(); i > 0; --i) {
+					((VkBaseInStructure*)(featuresPNextOrder[i-1]))->pNext = (VkBaseInStructure*)featuresPNextOrder[i];
+				}
+				return &deviceFeatures2;
+			}
+			
+			void operator &= (const DeviceFeatures& other) {
+				AndFeatures(&deviceFeatures2.features, other.deviceFeatures2.features);
+				AndFeatures(&shaderClockFeatures, other.shaderClockFeatures, sizeof(VkStructureType)+sizeof(void*));
+				AndFeatures(&_16bitStorageFeatures, other._16bitStorageFeatures, sizeof(VkStructureType)+sizeof(void*));
+				AndFeatures(&vulkan12DeviceFeatures, other.vulkan12DeviceFeatures, sizeof(VkStructureType)+sizeof(void*));
+				AndFeatures(&rayTracingPipelineFeatures, other.rayTracingPipelineFeatures, sizeof(VkStructureType)+sizeof(void*));
+				AndFeatures(&accelerationStructureFeatures, other.accelerationStructureFeatures, sizeof(VkStructureType)+sizeof(void*));
+				AndFeatures(&rayQueryFeatures, other.rayQueryFeatures, sizeof(VkStructureType)+sizeof(void*));
+			}
+			
+		} deviceFeatures;
 
 		// family queue index
 		int GetQueueFamilyIndexFromFlags(VkDeviceQueueCreateFlags flags, uint minQueuesCount = 1, VkSurfaceKHR* surface = nullptr);
@@ -36,12 +89,7 @@ namespace v4d::graphics::vulkan {
 		bool SupportsExtension(std::string ext);
 
 		VkPhysicalDeviceProperties GetProperties() const;
-		VkPhysicalDeviceFeatures GetFeatures() const;
-		VkPhysicalDeviceFeatures2 GetFeatures2() const;
-		VkPhysicalDeviceVulkan12Features GetVulkan12Features() const;
-		VkPhysicalDeviceRayTracingPipelineFeaturesKHR GetRayTracingPipelineFeatures() const;
-		VkPhysicalDeviceAccelerationStructureFeaturesKHR GetAccelerationStructureFeatures() const;
-		VkPhysicalDeviceRayQueryFeaturesKHR GetRayQueryFeatures() const;
+		
 		VkPhysicalDevice GetHandle() const;
 		xvk::Interface::InstanceInterface* GetVulkanInstance() const;
 		std::string GetDescription() const;

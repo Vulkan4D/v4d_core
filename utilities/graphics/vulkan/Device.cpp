@@ -4,7 +4,6 @@ using namespace v4d::graphics::vulkan;
 
 Device::Device(
 	PhysicalDevice* physicalDevice,
-	VkPhysicalDeviceFeatures& deviceFeatures,
 	std::vector<const char*>& extensions,
 	std::vector<const char*>& layers,
 	std::vector<DeviceQueueInfo> queuesInfo,
@@ -67,7 +66,7 @@ Device::Device(
 	createInfo.pNext = pNext;
 	createInfo.queueCreateInfoCount = queuesCreateInfo.size();
 	createInfo.pQueueCreateInfos = queuesCreateInfo.data();
-	createInfo.pEnabledFeatures = &deviceFeatures;
+	createInfo.pEnabledFeatures = nullptr;
 	createInfo.enabledExtensionCount = extensions.size();
 	createInfo.ppEnabledExtensionNames = extensions.data();
 	createInfo.enabledLayerCount = layers.size();
