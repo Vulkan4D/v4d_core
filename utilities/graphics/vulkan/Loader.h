@@ -37,8 +37,8 @@ namespace v4d::graphics::vulkan {
 	
 		// Required Instance Extensions
 		std::vector<const char*> requiredInstanceExtensions {
-			#ifdef _DEBUG
-			VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+			#if defined(_DEBUG) && defined(_LINUX)
+				VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
 			#endif
 		};
 		

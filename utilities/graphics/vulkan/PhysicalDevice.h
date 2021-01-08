@@ -64,7 +64,7 @@ namespace v4d::graphics::vulkan {
 		
 			VkPhysicalDeviceFeatures2* GetDeviceFeaturesPNext() {
 				for (size_t i = featuresPNextOrder.size(); i > 0; --i) {
-					((VkBaseInStructure*)(featuresPNextOrder[i-1]))->pNext = (VkBaseInStructure*)featuresPNextOrder[i];
+					((VkBaseInStructure*)(featuresPNextOrder[i-1]))->pNext = (i==featuresPNextOrder.size()? nullptr: (VkBaseInStructure*)featuresPNextOrder[i] );
 				}
 				return &deviceFeatures2;
 			}
@@ -79,7 +79,7 @@ namespace v4d::graphics::vulkan {
 				AndFeatures(&rayQueryFeatures, other.rayQueryFeatures, sizeof(VkStructureType)+sizeof(void*));
 			}
 			
-		} deviceFeatures;
+		} deviceFeatures {};
 
 		// family queue index
 		int GetQueueFamilyIndexFromFlags(VkDeviceQueueCreateFlags flags, uint minQueuesCount = 1, VkSurfaceKHR* surface = nullptr);

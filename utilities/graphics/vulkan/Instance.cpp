@@ -19,7 +19,7 @@ using namespace v4d::graphics::vulkan;
 #else
 
 	// Debug Callback
-	#ifdef _DEBUG
+	#if defined(_DEBUG) && defined(_LINUX)
 		VkDebugUtilsMessengerEXT vulkanCallbackExtFunction;
 		static VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugCallback(
 			VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -101,7 +101,7 @@ using namespace v4d::graphics::vulkan;
 		LoadFunctionPointers();
 
 		// Debug Callback
-		#ifdef _DEBUG
+		#if defined(_DEBUG) && defined(_LINUX)
 			VkDebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCreateInfo {
 				VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
 				nullptr,// pNext
@@ -128,7 +128,7 @@ using namespace v4d::graphics::vulkan;
 #endif
 
 Instance::~Instance() {
-	#ifdef _DEBUG
+	#if defined(_DEBUG) && defined(_LINUX)
 		DestroyDebugUtilsMessengerEXT(vulkanCallbackExtFunction, nullptr);
 	#endif
 	#ifdef XVK_USE_QT_VULKAN_LOADER

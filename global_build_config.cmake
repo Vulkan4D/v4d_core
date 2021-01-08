@@ -17,7 +17,7 @@ set(CMAKE_RELWITHDEBINFO_POSTFIX "" CACHE STRING "" FORCE)
 
 # Windows / Linux
 if(WIN32)
-	add_definitions(-D_WINDOWS -D_WIN32_WINNT=0x06030000)
+	add_definitions(-D_WINDOWS -D_WIN32_WINNT=0x0A000000)
 else()
 	add_definitions(-D_LINUX)
 endif()

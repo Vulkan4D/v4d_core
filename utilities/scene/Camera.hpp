@@ -21,7 +21,8 @@ namespace v4d::scene {
 		alignas(128) glm::dmat4 projectionMatrix {1};
 		alignas(128) glm::dmat4 historyViewMatrix {1};
 		alignas(64) glm::mat4 reprojectionMatrix {1};
-		alignas(16) glm::vec2 txaaOffset {0};
+		alignas(8) glm::vec2 txaaOffset {0};
+		alignas(8) glm::vec2 historyTxaaOffset {0};
 		
 		alignas(4) float brightness = 1.0f;
 		alignas(4) float contrast = 1.0f;

@@ -23,7 +23,7 @@
 			auto& model = modelData->gltfModel;
 			
 			// Mesh
-			for (int meshIndex = 0; meshIndex < model.meshes.size(); ++meshIndex) {
+			for (size_t meshIndex = 0; meshIndex < model.meshes.size(); ++meshIndex) {
 				auto& mesh = model.meshes[meshIndex];
 				
 				if (mesh.name == "collider") {
