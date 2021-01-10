@@ -79,12 +79,11 @@ namespace v4d::graphics {
 		
 		struct RenderableEntityInstance {
 			glm::mat4 modelViewTransform {1};
+			glm::mat4 modelViewTransform_history {1};
 			uint64_t moduleVen {0};
 			uint64_t moduleId {0};
 			uint64_t objId {0};
 			uint64_t geometries {0};
-			// for 128 bytes, we're missing two vec4 (velocity vectors ?)
-			RenderableEntityInstance() {static_assert(sizeof(RenderableEntityInstance) == 96);}
 		};
 		
 		struct SharedGeometryData {

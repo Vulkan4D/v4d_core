@@ -230,6 +230,11 @@ vec3 heatmap(float t) {
 }
 
 
+float luminance(vec3 rgb) {
+	const vec3 w = vec3(0.2125, 0.7154, 0.721);
+	return dot(rgb, w);
+}
+
 
 //////////////////////////////////////
 // Random

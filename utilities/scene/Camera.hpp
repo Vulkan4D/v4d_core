@@ -16,8 +16,8 @@ namespace v4d::scene {
 		alignas(8) double znear = 0.0001; // 0.1 mm
 		alignas(32) glm::dvec3 viewUp = {0,0,1};
 		alignas(8) double zfar = 1.e19; // 1e19 = 1000 light-years
+		alignas(128) glm::dmat4 multisampleProjectionMatrices[9];
 		alignas(128) glm::dmat4 viewMatrix {1};
-		alignas(128) glm::dmat4 rawProjectionMatrix {1};
 		alignas(128) glm::dmat4 projectionMatrix {1};
 		alignas(128) glm::dmat4 historyViewMatrix {1};
 		alignas(64) glm::mat4 reprojectionMatrix {1};
@@ -28,18 +28,17 @@ namespace v4d::scene {
 		alignas(4) float contrast = 1.0f;
 		alignas(4) float gamma = 2.2f;
 		alignas(4) float time = 0;
-		alignas(4) float bounceTimeBudget = 1;
+		alignas(4) float bounceTimeBudget = 0;
 		
 		alignas(4) uint32_t renderMode = 1;
 		alignas(4) float renderDebugScaling = 1.0f;
-		alignas(4) int32_t maxBounces = 10; // -1 = infinite bounces
+		alignas(4) int32_t maxBounces = 4; // -1 = infinite bounces
 		alignas(4) uint32_t frameCount = 0;
+		alignas(4) int32_t accumulateFrames = -1;
 		
 		alignas(16) glm::vec3 gravityVector;
 		
-		// alignas(16) glm::vec2 historyTxaaOffset {0};
-		
-		static constexpr float txaaKernelSize = 1.0f;
+		float multisamplingKernelSize = 1.0f;
 		
 		enum : int {
 			CAMERA_FRUSTUM_NEAR  = 0,
@@ -51,12 +50,37 @@ namespace v4d::scene {
 		};
 		glm::dvec4 frustumPlanes[6] {};
 		
+		Camera() {static_assert(sizeof(Camera) < 65536);}
+		
 		void RefreshProjectionMatrix() {
 			// zfar and znear are swapped on purpose. 
 			// this technique while also reversing the normal depth test operation will make the depth buffer linear again, giving it a better depth precision on the entire range. 
 			projectionMatrix = glm::perspective(glm::radians(fov), (double) width / height, zfar, znear);
 			projectionMatrix[1].y *= -1;
-			rawProjectionMatrix = projectionMatrix;
+			
+			// Multisampling
+			static const glm::dvec2 samples[9] = {
+				glm::dvec2( 0, 0),
+				// glm::dvec2(-1,-1),
+				// glm::dvec2( 1, 1),
+				// glm::dvec2(-1, 1),
+				// glm::dvec2( 1,-1),
+				glm::dvec2(-7.0, 1.0) / 8.0,
+				glm::dvec2(-5.0, -5.0) / 8.0,
+				glm::dvec2(-1.0, -3.0) / 8.0,
+				glm::dvec2(3.0, -7.0) / 8.0,
+				glm::dvec2(5.0, -1.0) / 8.0,
+				glm::dvec2(7.0, 7.0) / 8.0,
+				glm::dvec2(1.0, 3.0) / 8.0,
+				glm::dvec2(-3.0, 5.0) / 8.0
+			};
+			for (int i = 0; i < 9; ++i) {
+				glm::dvec2 sample = samples[i] * double(multisamplingKernelSize) / glm::dvec2(width, height);
+				multisampleProjectionMatrices[i] = projectionMatrix;
+				multisampleProjectionMatrices[i][2].x = sample.x;
+				multisampleProjectionMatrices[i][2].y = sample.y;
+			}
+			historyViewMatrix = viewMatrix;
 		}
 		
 		void MakeViewMatrix(glm::dvec3 worldPosition, glm::dvec3 lookDirection, glm::dvec3 viewUp) {

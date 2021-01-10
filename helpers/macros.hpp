@@ -380,7 +380,7 @@
 	#define ___CPU_AFFINITY_REMOVE___(n) processAffinityMask &= ~(1 << ((n) % std::thread::hardware_concurrency()));
 	#define UNSET_CPU_AFFINITY(...) {\
 		DWORD_PTR processAffinityMask = 0;\
-		for (int i = 0; i < std::thread::hardware_concurrency(); ++i) ___CPU_AFFINITY_ADD___(i)\
+		for (unsigned int i = 0; i < std::thread::hardware_concurrency(); ++i) ___CPU_AFFINITY_ADD___(i)\
 		FOR_EACH(___CPU_AFFINITY_REMOVE___, __VA_ARGS__)\
 		if (!SetThreadAffinityMask(GetCurrentThread(), processAffinityMask)) LOG_ERROR("Error calling SetThreadAffinityMask");\
 	}
