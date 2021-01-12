@@ -16,7 +16,6 @@ namespace v4d::scene {
 		alignas(8) double znear = 0.0001; // 0.1 mm
 		alignas(32) glm::dvec3 viewUp = {0,0,1};
 		alignas(8) double zfar = 1.e19; // 1e19 = 1000 light-years
-		alignas(128) glm::dmat4 multisampleProjectionMatrices[9];
 		alignas(128) glm::dmat4 viewMatrix {1};
 		alignas(128) glm::dmat4 projectionMatrix {1};
 		alignas(128) glm::dmat4 historyViewMatrix {1};
@@ -57,29 +56,6 @@ namespace v4d::scene {
 			// this technique while also reversing the normal depth test operation will make the depth buffer linear again, giving it a better depth precision on the entire range. 
 			projectionMatrix = glm::perspective(glm::radians(fov), (double) width / height, zfar, znear);
 			projectionMatrix[1].y *= -1;
-			
-			// Multisampling
-			static const glm::dvec2 samples[9] = {
-				glm::dvec2( 0, 0),
-				// glm::dvec2(-1,-1),
-				// glm::dvec2( 1, 1),
-				// glm::dvec2(-1, 1),
-				// glm::dvec2( 1,-1),
-				glm::dvec2(-7.0, 1.0) / 8.0,
-				glm::dvec2(-5.0, -5.0) / 8.0,
-				glm::dvec2(-1.0, -3.0) / 8.0,
-				glm::dvec2(3.0, -7.0) / 8.0,
-				glm::dvec2(5.0, -1.0) / 8.0,
-				glm::dvec2(7.0, 7.0) / 8.0,
-				glm::dvec2(1.0, 3.0) / 8.0,
-				glm::dvec2(-3.0, 5.0) / 8.0
-			};
-			for (int i = 0; i < 9; ++i) {
-				glm::dvec2 sample = samples[i] * double(multisamplingKernelSize) / glm::dvec2(width, height);
-				multisampleProjectionMatrices[i] = projectionMatrix;
-				multisampleProjectionMatrices[i][2].x = sample.x;
-				multisampleProjectionMatrices[i][2].y = sample.y;
-			}
 			historyViewMatrix = viewMatrix;
 		}
 		
