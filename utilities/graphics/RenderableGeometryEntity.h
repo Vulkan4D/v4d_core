@@ -31,17 +31,78 @@ namespace v4d::graphics {
 		};
 		
 		struct Material {
-			uint8_t type = 0;
-			uint8_t metallic = 0;
-			uint8_t roughness = 255;
-			uint8_t indexOfRefraction = (uint8_t)(1.45 * 50);
-			glm::u8vec4 baseColor {255,255,255,255};
-			glm::u8vec4 rim {0,0,0,0};
-			float emission = 0;
-			uint8_t textures[8] {0};
-			uint8_t texFactors[8] {0};
+			static constexpr int DEFAULT_VISIBILITY_MATERIAL_RCALL = 0;
+			static constexpr int DEFAULT_SPECTRAL_EMIT_RCALL = 1;
+			static constexpr int DEFAULT_SPECTRAL_ABSORB_RCALL = 2;
+			static constexpr int DEFAULT_COLLIDER_RCALL = 3;
+			static constexpr int DEFAULT_PHYSICS_RCALL = 4;
+			static constexpr int DEFAULT_SOUND_PROP_RCALL = 5;
+			static constexpr int DEFAULT_SOUND_GEN_RCALL = 6;
 			
-			Material() {static_assert(sizeof(Material) == 32);}
+			// Visibility
+			struct {
+				uint32_t rcall_material = DEFAULT_VISIBILITY_MATERIAL_RCALL;
+				glm::u8vec4 baseColor {255,255,255,255};
+				uint8_t metallic = 0;
+				uint8_t roughness = 255;
+				uint8_t indexOfRefraction = (uint8_t)(1.45 * 50);
+				uint8_t extra = 0;
+				float emission = 0;
+				uint8_t textures[8] {0};
+				uint8_t texFactors[8] {0};
+			} visibility;
+			
+			// Spectral
+			struct {
+				uint32_t rcall_emit = DEFAULT_SPECTRAL_EMIT_RCALL;
+				uint32_t rcall_absorb = DEFAULT_SPECTRAL_ABSORB_RCALL;
+				float blackBodyRadiator = 1;
+				float temperature = 0;
+				uint8_t elements[8] {0};
+				uint8_t elementRatios[8] {0};
+			} spectral;
+			
+			// Collider
+			struct {
+				uint32_t rcall_collider = DEFAULT_COLLIDER_RCALL;
+				glm::u8vec4 props {
+					/*uint8_t friction */ 0,
+					/*uint8_t bounciness */ 0,
+					/*uint8_t ferromagnetic */ 0,
+					/*uint8_t _unused */ 0
+				};
+				float extra1;
+				float extra2;
+			} collider;
+			
+			// Sound
+			struct {
+				uint32_t rcall_props = DEFAULT_SOUND_PROP_RCALL;
+				uint32_t rcall_gen = DEFAULT_SOUND_GEN_RCALL;
+				glm::u8vec4 props {};
+				glm::u8vec4 gen {};
+			} sound;
+			
+			Material() {
+				static_assert(sizeof(Material::visibility) == 32);
+				static_assert(sizeof(Material::spectral) == 32);
+				static_assert(sizeof(Material::collider) == 16);
+				static_assert(sizeof(Material::sound) == 16);
+				static_assert(sizeof(Material) == 96);
+			}
+		};
+		
+		struct Physics {
+			uint32_t rcall_collider = Material::DEFAULT_PHYSICS_RCALL;
+			uint parent; // parent obj instance index
+			float extra1;
+			float extra2;
+			glm::vec4 mass; // xyz = center of mass, w = mass
+			glm::vec4 magneticField; // xyz = dir, w = strength
+			glm::vec4 position; // xyz = position relative to parent, w = bounding distance
+			glm::vec4 angularVelocity; // quaternion
+			glm::vec4 velocity; // w = extra
+			Physics() {static_assert(sizeof(Physics) == 96);}
 		};
 		
 		struct Geometry {
@@ -74,7 +135,7 @@ namespace v4d::graphics {
 			uint64_t customData = 0;
 			uint64_t extra = 0;
 			Material material {};
-			GeometryInfo() {static_assert(sizeof(GeometryInfo) == 176 && (sizeof(GeometryInfo) % 16) == 0);}
+			GeometryInfo() {static_assert(sizeof(GeometryInfo) == 240 && (sizeof(GeometryInfo) % 16) == 0);}
 		};
 		
 		struct RenderableEntityInstance {

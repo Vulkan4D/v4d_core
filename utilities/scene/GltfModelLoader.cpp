@@ -246,18 +246,18 @@
 						if (p.material != -1) {// Material
 							v4d::graphics::RenderableGeometryEntity::Material mat {};
 							auto& material = model.materials[p.material];
-							mat.metallic = (uint8_t)glm::clamp(material.pbrMetallicRoughness.metallicFactor * 255.0f, 0.0, 255.0);
-							mat.roughness = (uint8_t)glm::clamp(material.pbrMetallicRoughness.roughnessFactor * 255.0f, 0.0, 255.0);
+							mat.visibility.metallic = (uint8_t)glm::clamp(material.pbrMetallicRoughness.metallicFactor * 255.0f, 0.0, 255.0);
+							mat.visibility.roughness = (uint8_t)glm::clamp(material.pbrMetallicRoughness.roughnessFactor * 255.0f, 0.0, 255.0);
 							if (material.emissiveFactor[0] > 0 || material.emissiveFactor[1] > 0 || material.emissiveFactor[2] > 0) {
-								mat.baseColor.r = (uint8_t)glm::clamp(material.emissiveFactor[0] * 255.0, 0.0, 255.0);
-								mat.baseColor.g = (uint8_t)glm::clamp(material.emissiveFactor[1] * 255.0, 0.0, 255.0);
-								mat.baseColor.b = (uint8_t)glm::clamp(material.emissiveFactor[2] * 255.0, 0.0, 255.0);
-								mat.emission = 10;
+								mat.visibility.baseColor.r = (uint8_t)glm::clamp(material.emissiveFactor[0] * 255.0, 0.0, 255.0);
+								mat.visibility.baseColor.g = (uint8_t)glm::clamp(material.emissiveFactor[1] * 255.0, 0.0, 255.0);
+								mat.visibility.baseColor.b = (uint8_t)glm::clamp(material.emissiveFactor[2] * 255.0, 0.0, 255.0);
+								mat.visibility.emission = 10;
 							} else {
-								mat.baseColor.r = (uint8_t)glm::clamp(material.pbrMetallicRoughness.baseColorFactor[0] * 255.0, 0.0, 255.0);
-								mat.baseColor.g = (uint8_t)glm::clamp(material.pbrMetallicRoughness.baseColorFactor[1] * 255.0, 0.0, 255.0);
-								mat.baseColor.b = (uint8_t)glm::clamp(material.pbrMetallicRoughness.baseColorFactor[2] * 255.0, 0.0, 255.0);
-								mat.emission = 0;
+								mat.visibility.baseColor.r = (uint8_t)glm::clamp(material.pbrMetallicRoughness.baseColorFactor[0] * 255.0, 0.0, 255.0);
+								mat.visibility.baseColor.g = (uint8_t)glm::clamp(material.pbrMetallicRoughness.baseColorFactor[1] * 255.0, 0.0, 255.0);
+								mat.visibility.baseColor.b = (uint8_t)glm::clamp(material.pbrMetallicRoughness.baseColorFactor[2] * 255.0, 0.0, 255.0);
+								mat.visibility.emission = 0;
 							}
 							primitiveData->materialName = material.name;
 							primitiveData->material = mat;

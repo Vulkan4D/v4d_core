@@ -34,6 +34,7 @@ namespace v4d::scene {
 		alignas(4) int32_t maxBounces = 4; // -1 = infinite bounces
 		alignas(4) uint32_t frameCount = 0;
 		alignas(4) int32_t accumulateFrames = -1;
+		alignas(4) float denoise = 0;
 		
 		alignas(16) glm::vec3 gravityVector;
 		
