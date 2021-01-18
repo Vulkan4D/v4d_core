@@ -50,7 +50,7 @@ namespace v4d::graphics {
 				float emission = 0;
 				uint8_t textures[8] {0};
 				uint8_t texFactors[8] {0};
-			} visibility;
+			} visibility {};
 			
 			// Spectral
 			struct {
@@ -60,7 +60,7 @@ namespace v4d::graphics {
 				float temperature = 0;
 				uint8_t elements[8] {0};
 				uint8_t elementRatios[8] {0};
-			} spectral;
+			} spectral {};
 			
 			// Collider
 			struct {
@@ -73,7 +73,7 @@ namespace v4d::graphics {
 				};
 				float extra1;
 				float extra2;
-			} collider;
+			} collider {};
 			
 			// Sound
 			struct {
@@ -81,15 +81,15 @@ namespace v4d::graphics {
 				uint32_t rcall_gen = DEFAULT_SOUND_GEN_RCALL;
 				glm::u8vec4 props {};
 				glm::u8vec4 gen {};
-			} sound;
+			} sound {};
 			
-			Material() {
-				static_assert(sizeof(Material::visibility) == 32);
-				static_assert(sizeof(Material::spectral) == 32);
-				static_assert(sizeof(Material::collider) == 16);
-				static_assert(sizeof(Material::sound) == 16);
-				static_assert(sizeof(Material) == 96);
-			}
+			// Material() {
+			// 	static_assert(sizeof(Material::visibility) == 32);
+			// 	static_assert(sizeof(Material::spectral) == 32);
+			// 	static_assert(sizeof(Material::collider) == 16);
+			// 	static_assert(sizeof(Material::sound) == 16);
+			// 	static_assert(sizeof(Material) == 96);
+			// }
 		};
 		
 		struct Physics {

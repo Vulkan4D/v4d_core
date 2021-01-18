@@ -97,33 +97,39 @@ namespace v4d::graphics::Mesh {
 		
 		size_t TypeSize() const {return sizeof(T);}
 		
-		T* AllocateBuffers(Device* device, const std::initializer_list<T>& list) {
-			AllocateBuffersCount(device, list.size());
-			memcpy(data, list.begin(), list.size() * sizeof(T));
-			dirtyOnDevice = true;
-			return data;
-		}
-		T* AllocateBuffers(Device* device, const std::vector<T>& list) {
-			AllocateBuffersCount(device, list.size());
-			memcpy(data, list.data(), list.size() * sizeof(T));
-			dirtyOnDevice = true;
-			return data;
-		}
-		T* AllocateBuffers(Device* device, T* inputDataOrArray, size_t elementCount = 1) {
-			AllocateBuffersCount(device, elementCount);
-			memcpy(data, inputDataOrArray, elementCount * sizeof(T));
-			dirtyOnDevice = true;
-			return data;
-		}
 		template<typename _T>
-		T* AllocateBuffers(Device* device, _T&& value) {
+		T* AllocateBuffersFromValue(Device* device, _T&& value) {
 			AllocateBuffersCount(device, 1);
 			*data = std::forward<_T>(value);
 			dirtyOnDevice = true;
 			return data;
 		}
+		T* AllocateBuffers(Device* device, T&& value) {
+			AllocateBuffersCount(device, 1);
+			*data = std::forward<T>(value);
+			dirtyOnDevice = true;
+			return data;
+		}
 		T* AllocateBuffers(Device* device) {
 			return AllocateBuffersCount(device, 1);
+		}
+		T* AllocateBuffersFromList(Device* device, const std::initializer_list<T>& list) {
+			AllocateBuffersCount(device, list.size());
+			memcpy(data, list.begin(), list.size() * sizeof(T));
+			dirtyOnDevice = true;
+			return data;
+		}
+		T* AllocateBuffersFromVector(Device* device, const std::vector<T>& list) {
+			AllocateBuffersCount(device, list.size());
+			memcpy(data, list.data(), list.size() * sizeof(T));
+			dirtyOnDevice = true;
+			return data;
+		}
+		T* AllocateBuffersFromArray(Device* device, T* inputDataOrArray, size_t elementCount = 1) {
+			AllocateBuffersCount(device, elementCount);
+			memcpy(data, inputDataOrArray, elementCount * sizeof(T));
+			dirtyOnDevice = true;
+			return data;
 		}
 		T* AllocateBuffersCount(Device* device, uint32_t elementCount) {
 			assert(elementCount > 0);

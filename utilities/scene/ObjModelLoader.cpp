@@ -83,10 +83,10 @@
 			modelData->commonGeometryData = entity->sharedGeometryData;
 			
 			entity->Allocate(device, "default");
-			entity->Add_meshIndices32()->AllocateBuffers(device, modelData->preloadedIndices.data(), modelData->preloadedIndices.size());
-			entity->Add_meshVertexPosition()->AllocateBuffers(device, modelData->preloadedVertexPositions.data(), modelData->preloadedVertexPositions.size());
-			entity->Add_meshVertexNormal()->AllocateBuffers(device, modelData->preloadedVertexNormals.data(), modelData->preloadedVertexNormals.size());
-			entity->Add_meshVertexColorU8()->AllocateBuffers(device, modelData->preloadedVertexColors.data(), modelData->preloadedVertexColors.size());
+			entity->Add_meshIndices32()->AllocateBuffersFromArray(device, modelData->preloadedIndices.data(), modelData->preloadedIndices.size());
+			entity->Add_meshVertexPosition()->AllocateBuffersFromArray(device, modelData->preloadedVertexPositions.data(), modelData->preloadedVertexPositions.size());
+			entity->Add_meshVertexNormal()->AllocateBuffersFromArray(device, modelData->preloadedVertexNormals.data(), modelData->preloadedVertexNormals.size());
+			entity->Add_meshVertexColorU8()->AllocateBuffersFromArray(device, modelData->preloadedVertexColors.data(), modelData->preloadedVertexColors.size());
 		}
 	}
 

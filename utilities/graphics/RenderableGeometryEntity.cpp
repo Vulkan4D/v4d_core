@@ -148,7 +148,8 @@ namespace v4d::graphics {
 		device = renderingDevice;
 		this->sbtOffset = Renderer::sbtOffsets[std::string("rendering:hit:")+sbtOffset];
 		if (geometriesCount > 0) {
-			return Add_meshGeometries()->AllocateBuffersCount(renderingDevice, geometriesCount);
+			std::vector<v4d::graphics::RenderableGeometryEntity::GeometryInfo> list (geometriesCount);
+			return Add_meshGeometries()->AllocateBuffersFromVector(renderingDevice, list);
 		}
 		return nullptr;
 	}
@@ -190,6 +191,8 @@ namespace v4d::graphics {
 					// handle default single-geometry entities
 					if (sharedGeometryData->geometries.size() == 0 && sharedGeometryData->geometriesAccelerationStructureInfo.size() == 1) {
 						auto& geometry = sharedGeometryData->geometries.emplace_back();
+						// Material
+						geometry.material = geometriesData->data->material;
 						// Indices 16
 						if (auto indexData = meshIndices16.Lock(); indexData && indexData->data) {
 							geometry.indexCount = indexData->count;
