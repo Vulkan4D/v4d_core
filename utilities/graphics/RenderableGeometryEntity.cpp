@@ -154,17 +154,29 @@ namespace v4d::graphics {
 		return nullptr;
 	}
 	
-	RenderableGeometryEntity* RenderableGeometryEntity::SetInitialTransform(const glm::dmat4& t) {
-		worldTransform = t;
+	RenderableGeometryEntity* RenderableGeometryEntity::SetInitialTransform(const glm::dmat4& t, std::shared_ptr<RenderableGeometryEntity> parent) {
+		this->parent = parent;
+		SetLocalTransform(t);
 		return this;
 	}
 	
-	void RenderableGeometryEntity::SetWorldTransform(glm::dmat4 t) {
-		worldTransform = t;
+	void RenderableGeometryEntity::SetLocalTransform(const glm::dmat4& t) {
+		transformMatrix = t;
 	}
 	
-	glm::dmat4 RenderableGeometryEntity::GetWorldTransform() {
-		return worldTransform;
+	void RenderableGeometryEntity::SetWorldTransform(const glm::dmat4& t) {
+		transformMatrix = glm::inverse(GetParentWorldTransform()) * t;
+	}
+	
+	glm::dmat4 RenderableGeometryEntity::GetWorldTransform() const {
+		return GetParentWorldTransform() * transformMatrix;
+	}
+	
+	glm::dmat4 RenderableGeometryEntity::GetParentWorldTransform() const {
+		if (parent)  {
+			return parent->GetWorldTransform();
+		}
+		return glm::dmat4{1};
 	}
 	
 	RenderableGeometryEntity::~RenderableGeometryEntity() {

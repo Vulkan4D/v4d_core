@@ -101,7 +101,7 @@ namespace v4d::scene {
 		std::lock_guard lock(mu);
 		if (!posInit) {
 			if (auto entity = renderableGeometryEntityInstance.lock(); entity) {
-				entity->SetWorldTransform(transform);
+				entity->SetLocalTransform(transform);
 				if (velocity != glm::dvec3(0)) {
 					if (auto physics = entity->physics.Lock(); physics) {
 						physics->AddImpulse(velocity * physics->mass);
@@ -122,9 +122,9 @@ namespace v4d::scene {
 				glm::dquat finalRotation = glm::slerp(rotation1, rotation2, delta);
 				glm::dmat4 finalMatrix = glm::mat4_cast(finalRotation);
 				finalMatrix[3] = matrix1[3] * (1 - delta) + matrix2[3] * delta;
-				entity->SetWorldTransform(finalMatrix);
+				entity->SetLocalTransform(finalMatrix);
 			} else {
-				entity->SetWorldTransform(transform);
+				entity->SetLocalTransform(transform);
 			}
 		}
 	}

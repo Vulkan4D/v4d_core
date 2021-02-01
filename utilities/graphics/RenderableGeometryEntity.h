@@ -71,8 +71,8 @@ namespace v4d::graphics {
 					/*uint8_t ferromagnetic */ 0,
 					/*uint8_t _unused */ 0
 				};
-				float extra1;
-				float extra2;
+				float extra1 = 0;
+				float extra2 = 0;
 			} collider {};
 			
 			// Sound
@@ -83,13 +83,13 @@ namespace v4d::graphics {
 				glm::u8vec4 gen {};
 			} sound {};
 			
-			// Material() {
-			// 	static_assert(sizeof(Material::visibility) == 32);
-			// 	static_assert(sizeof(Material::spectral) == 32);
-			// 	static_assert(sizeof(Material::collider) == 16);
-			// 	static_assert(sizeof(Material::sound) == 16);
-			// 	static_assert(sizeof(Material) == 96);
-			// }
+			Material() {
+				static_assert(sizeof(Material::visibility) == 32);
+				static_assert(sizeof(Material::spectral) == 32);
+				static_assert(sizeof(Material::collider) == 16);
+				static_assert(sizeof(Material::sound) == 16);
+				static_assert(sizeof(Material) == 96);
+			}
 		};
 		
 		struct Physics {
@@ -176,7 +176,7 @@ namespace v4d::graphics {
 	public:
 		Device* device = nullptr;
 		bool generated = false;
-		glm::dmat4 worldTransform = glm::dmat4{1};
+		glm::dmat4 transformMatrix = glm::dmat4{1};
 		std::function<void(RenderableGeometryEntity*, Device*)> generator = [](RenderableGeometryEntity* entity, Device*){ entity->generated = false; };
 		RenderableEntityInstance entityInstanceInfo {};
 		std::recursive_mutex writeMutex;
@@ -189,6 +189,8 @@ namespace v4d::graphics {
 		bool raster_transparent = false;
 		float raster_wireframe = 0;
 		glm::vec4 raster_wireframe_color {0.7f};
+		
+		std::shared_ptr<RenderableGeometryEntity> parent = nullptr;
 		
 		class V4DLIB BufferWriteLock {
 			std::unique_lock<std::recursive_mutex> lock;
@@ -211,9 +213,11 @@ namespace v4d::graphics {
 		
 		v4d::graphics::RenderableGeometryEntity::GeometryInfo* Allocate(Device* renderingDevice, std::string sbtOffset = "V4D_raytracing:default", int geometriesCount = 1);
 		
-		RenderableGeometryEntity* SetInitialTransform(const glm::dmat4&);
-		void SetWorldTransform(glm::dmat4);
-		glm::dmat4 GetWorldTransform();
+		RenderableGeometryEntity* SetInitialTransform(const glm::dmat4& localTransform, std::shared_ptr<RenderableGeometryEntity> parent = nullptr);
+		void SetWorldTransform(const glm::dmat4&);
+		void SetLocalTransform(const glm::dmat4&);
+		glm::dmat4 GetWorldTransform() const;
+		glm::dmat4 GetParentWorldTransform() const;
 		
 		bool Generate(Device* device); // returns true if generated correctly with at least one shared geometry, false if either error or using existing geometry (we can use this return value to generate something only once per shared geometry and only if something was generated)
 		
