@@ -37,6 +37,7 @@ namespace v4d::scene {
 		bool colliderDirty = false;
 		bool physicsDirty = false;
 		float friction = 0.5f;
+		float bounciness = 0.1f;
 		float angularFactor = 1.0f;
 		float angularDamping = 0.001f;
 		
