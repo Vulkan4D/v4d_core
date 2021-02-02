@@ -4,7 +4,7 @@ namespace v4d::scene {
 
 	std::atomic<uint32_t> PhysicsInfo::nextUniqueId = 0;
 	
-	PhysicsInfo::PhysicsInfo(RigidBodyType rigidbodyType, double mass) : uniqueId(nextUniqueId++), rigidbodyType(rigidbodyType), mass(mass) {}
+	PhysicsInfo::PhysicsInfo(RigidBodyType rigidbodyType, float mass) : uniqueId(nextUniqueId++), rigidbodyType(rigidbodyType), mass(mass) {}
 	
 	void PhysicsInfo::SetForce(glm::dvec3 forceDir, glm::dvec3 atPoint) {
 		addedForce = (forceDir.length() > 0);

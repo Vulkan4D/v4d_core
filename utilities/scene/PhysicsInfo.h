@@ -18,11 +18,11 @@ namespace v4d::scene {
 		
 		uint32_t uniqueId;
 		RigidBodyType rigidbodyType;
-		double mass;
+		float mass;
 		
 		static std::atomic<uint32_t> nextUniqueId;
 		
-		PhysicsInfo(RigidBodyType rigidbodyType = RigidBodyType::NONE, double mass = 0);
+		PhysicsInfo(RigidBodyType rigidbodyType = RigidBodyType::NONE, float mass = 0);
 		
 		// Collider
 		ColliderType colliderType = ColliderType::NONE;
@@ -36,6 +36,9 @@ namespace v4d::scene {
 		glm::dvec3 centerOfMass {0,0,0};
 		bool colliderDirty = false;
 		bool physicsDirty = false;
+		float friction = 0.5f;
+		float angularFactor = 1.0f;
+		float angularDamping = 0.001f;
 		
 		// Forces
 		bool addedForce = false;
@@ -46,9 +49,22 @@ namespace v4d::scene {
 		void AddImpulse(glm::dvec3 impulseDir, glm::dvec3 atPoint = {0,0,0});
 		
 		// Joints
-		int32_t p2pJointParent = -1; // must be the uniqueId of the parent's physics component
-		glm::dvec3 localPivotPoint {0,0,0};
-		glm::dvec3 pivotPointInParent {0,0,0};
+		int32_t jointParent = -1; // must be the uniqueId of the parent's physics component
+		glm::dmat4 localJointPoint {1};
+		glm::dmat4 parentJointPoint {1};
+		struct {float min, max;} jointTranslationLimitsX {0,0};
+		struct {float min, max;} jointTranslationLimitsY {0,0};
+		struct {float min, max;} jointTranslationLimitsZ {0,0};
+		struct {float min, max;} jointRotationLimitsX {0,0};
+		struct {float min, max;} jointRotationLimitsY {0,0};
+		struct {float min, max;} jointRotationLimitsZ {0,0};
+		glm::vec3 jointTranslationTarget {0};
+		glm::vec3 jointRotationTarget {0};
+		
+		
+		// int32_t p2pJointParent = -1; // must be the uniqueId of the parent's physics component
+		// glm::dvec3 localPivotPoint {0,0,0};
+		// glm::dvec3 pivotPointInParent {0,0,0};
 		
 		// Set Colliders
 		void SetMeshCollider(v4d::graphics::Mesh::VertexPosition* vertices, uint32_t vertexCount, v4d::graphics::Mesh::Index16* indices, uint32_t indexCount);

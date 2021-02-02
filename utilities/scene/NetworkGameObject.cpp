@@ -104,7 +104,7 @@ namespace v4d::scene {
 				entity->SetLocalTransform(transform);
 				if (velocity != glm::dvec3(0)) {
 					if (auto physics = entity->physics.Lock(); physics) {
-						physics->AddImpulse(velocity * physics->mass);
+						physics->AddImpulse(velocity * double(physics->mass));
 					}
 				}
 			}
