@@ -6,8 +6,9 @@ namespace v4d::io {
 	class V4DLIB ConfigFile : public FilePath {
 	public:
 		enum CONFTYPE {
-			NONE,
+			UNKNOWN,
 			STRING,
+			STREAM,
 			BOOL,
 			LONG,
 			INT,
@@ -19,13 +20,18 @@ namespace v4d::io {
 			ConfigFile* configFile;
 			std::string name;
 			void* ptr;
-			CONFTYPE type = NONE;
+			CONFTYPE type;
+			
+			Conf(ConfigFile* configFile, std::string name, void* ptr, CONFTYPE type = STREAM) : configFile(configFile), name(name), ptr(ptr), type(type) {}
 
 			void ReadValue(std::string value) {
 				try {
 					switch (type) {
 						case STRING:
 							*(std::string*)ptr = value;
+						break;
+						case STREAM:
+							*(std::stringstream*)ptr << value;
 						break;
 						case BOOL:
 							v4d::String::ToLowerCase(value);
@@ -47,7 +53,7 @@ namespace v4d::io {
 						case FLOAT:
 							*(float*)ptr = std::stof(value);
 						break;
-						case NONE:
+						case UNKNOWN:
 							LOG_ERROR("Invalid Conf type")
 						break;
 					}
@@ -59,6 +65,9 @@ namespace v4d::io {
 				switch (type) {
 					case STRING:
 						return *(std::string*)ptr;
+					break;
+					case STREAM:
+						return (*(std::stringstream*)ptr).str();
 					break;
 					case BOOL:
 						return (*(bool*)ptr)? "yes" : "no";
@@ -75,18 +84,25 @@ namespace v4d::io {
 					case FLOAT:
 						return std::to_string(*(float*)ptr);
 					break;
-					case NONE:
+					case UNKNOWN:
 						LOG_ERROR("Invalid Conf type")
 					break;
 				}
 				return "";
 			}
 		};
+		
+		struct ConfLineStream {
+			std::string name {""};
+			std::stringstream value {""};
+		};
 
 		template<typename T>
 		CONFTYPE constexpr ConfType() const {
 			if constexpr (std::is_same_v<T, std::string>) 
 									 return STRING;
+			if constexpr (std::is_same_v<T, std::stringstream>) 
+									 return STREAM;
 			if constexpr (std::is_same_v<T, bool>) 
 									 return BOOL;
 			if constexpr (std::is_same_v<T, long>) 
@@ -97,7 +113,7 @@ namespace v4d::io {
 									 return DOUBLE;
 			if constexpr (std::is_same_v<T, float>) 
 									 return FLOAT;
-			return NONE;
+			return UNKNOWN;
 		}
 
 	protected: // Class members
@@ -142,6 +158,7 @@ namespace v4d::io {
 
 		void ReadFromINI(const std::string& section, std::vector<Conf> configs, bool writeIfNotExists = false);
 		void WriteToINI(const std::string& section, std::vector<Conf> configs);
+		void ReadFromINI(std::function<void(const std::string& section, std::vector<ConfLineStream>& configs)>&& callbackPerSection); // runs the callback for each section, with a vector containing all configs as ConfLineStream
 
 	};
 }

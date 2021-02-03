@@ -62,11 +62,6 @@ namespace v4d::scene {
 		glm::vec3 jointTranslationTarget {0};
 		glm::vec3 jointRotationTarget {0};
 		
-		
-		// int32_t p2pJointParent = -1; // must be the uniqueId of the parent's physics component
-		// glm::dvec3 localPivotPoint {0,0,0};
-		// glm::dvec3 pivotPointInParent {0,0,0};
-		
 		// Set Colliders
 		void SetMeshCollider(v4d::graphics::Mesh::VertexPosition* vertices, uint32_t vertexCount, v4d::graphics::Mesh::Index16* indices, uint32_t indexCount);
 		void SetMeshCollider(v4d::graphics::Mesh::Index16* indices, uint32_t indexCount);
