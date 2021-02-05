@@ -36,10 +36,12 @@ namespace v4d::scene {
 		glm::dvec3 centerOfMass {0,0,0};
 		bool colliderDirty = false;
 		bool physicsDirty = false;
+		float angularDamping = 0.001f;
+		
+		// Dynamic stuff
 		float friction = 0.5f;
 		float bounciness = 0.1f;
-		float angularFactor = 1.0f;
-		float angularDamping = 0.001f;
+		glm::vec3 angularFactor = {1.0f,1.0f,1.0f};
 		
 		// Forces
 		bool addedForce = false;
@@ -61,6 +63,12 @@ namespace v4d::scene {
 		struct {float min, max;} jointRotationLimitsZ {0,0};
 		glm::vec3 jointTranslationTarget {0};
 		glm::vec3 jointRotationTarget {0};
+		glm::vec3 jointTranslationMaxForce {0};
+		glm::vec3 jointRotationMaxForce {0};
+		glm::vec3 jointTranslationVelocity {0};
+		glm::vec3 jointRotationVelocity {0};
+		bool jointMotor = false;
+		bool jointIsDirty = true;
 		
 		// Set Colliders
 		void SetMeshCollider(v4d::graphics::Mesh::VertexPosition* vertices, uint32_t vertexCount, v4d::graphics::Mesh::Index16* indices, uint32_t indexCount);

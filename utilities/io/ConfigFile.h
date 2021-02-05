@@ -93,7 +93,7 @@ namespace v4d::io {
 		};
 		
 		struct ConfLineStream {
-			std::string name {""};
+			std::stringstream name {""};
 			std::stringstream value {""};
 		};
 
@@ -153,12 +153,12 @@ namespace v4d::io {
 		void StartAutoReloadThread();
 
 		const std::regex INI_REGEX_COMMENT	{R"(^(;|#|//).*$)"};
-		const std::regex INI_REGEX_SECTION	{R"(^\[(\w+)\]$)"};
-		const std::regex INI_REGEX_CONF		{R"(^(\w+)\s*[=:]\s*(.*)$)"};
+		const std::regex INI_REGEX_SECTION	{R"(^\[([\w\s]+)\]$)"};
+		const std::regex INI_REGEX_CONF		{R"(^([\w\s]+)\s*[=:]\s*(.*)$)"};
 
 		void ReadFromINI(const std::string& section, std::vector<Conf> configs, bool writeIfNotExists = false);
 		void WriteToINI(const std::string& section, std::vector<Conf> configs);
-		void ReadFromINI(std::function<void(const std::string& section, std::vector<ConfLineStream>& configs)>&& callbackPerSection); // runs the callback for each section, with a vector containing all configs as ConfLineStream
+		void ReadFromINI(std::function<void(std::stringstream section, std::vector<ConfLineStream>& configs)>&& callbackPerSection); // runs the callback for each section, with a vector containing all configs as ConfLineStream
 
 	};
 }

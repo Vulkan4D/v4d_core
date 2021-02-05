@@ -174,7 +174,7 @@ void ConfigFile::WriteToINI(const std::string& section, std::vector<Conf> config
 	file.close();
 }
 
-void ConfigFile::ReadFromINI(std::function<void(const std::string& section, std::vector<ConfLineStream>& configs)>&& callbackPerSection) {
+void ConfigFile::ReadFromINI(std::function<void(std::stringstream section, std::vector<ConfLineStream>& configs)>&& callbackPerSection) {
 	LOG_VERBOSE("Config File Read: " << filePath.string())
 	std::ifstream file(filePath);
 	std::string curSection = "";
@@ -189,17 +189,16 @@ void ConfigFile::ReadFromINI(std::function<void(const std::string& section, std:
 		if (std::regex_match(line.c_str(), match, INI_REGEX_COMMENT)) continue;
 		if (std::regex_match(line.c_str(), match, INI_REGEX_SECTION)) {
 			if (curConfigs.size() > 0) {
-				callbackPerSection(curSection, curConfigs);
+				callbackPerSection(std::move(std::stringstream{curSection}), curConfigs);
 				curConfigs.clear();
 			}
-			curSection = match[1];
+			curSection = match[1].str();
 			continue;
 		}
 		if (std::regex_match(line.c_str(), match, INI_REGEX_CONF)) {
 			auto& confLineStream = curConfigs.emplace_back();
-			Conf conf {this, match[1].str(), &confLineStream.value, STREAM};
-			confLineStream.name = conf.name;
-			conf.ReadValue(match[2].str());
+			confLineStream.name << match[1].str();
+			confLineStream.value << match[2].str();
 			continue;
 		}
 		LOG_WARN_VERBOSE("Line " << n << " is invalid in config file " << filePath)
@@ -207,6 +206,6 @@ void ConfigFile::ReadFromINI(std::function<void(const std::string& section, std:
 	file.close();
 	
 	if (curConfigs.size() > 0) {
-		callbackPerSection(curSection, curConfigs);
+		callbackPerSection(std::move(std::stringstream{curSection}), curConfigs);
 	}
 }
