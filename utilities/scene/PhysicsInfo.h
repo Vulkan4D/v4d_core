@@ -70,6 +70,9 @@ namespace v4d::scene {
 		bool jointMotor = false;
 		bool jointIsDirty = true;
 		
+		// Collision contacts / events
+		int contacts = 0;
+		
 		// Set Colliders
 		void SetMeshCollider(v4d::graphics::Mesh::VertexPosition* vertices, uint32_t vertexCount, v4d::graphics::Mesh::Index16* indices, uint32_t indexCount);
 		void SetMeshCollider(v4d::graphics::Mesh::Index16* indices, uint32_t indexCount);
