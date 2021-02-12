@@ -8,6 +8,7 @@ namespace v4d::scene {
 			SPHERE,
 			BOX,
 			STATIC_PLANE,
+			HEIGHTFIELD,
 		};
 		enum class RigidBodyType : int {
 			NONE = 0,
