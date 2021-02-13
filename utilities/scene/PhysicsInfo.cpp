@@ -17,6 +17,10 @@ namespace v4d::scene {
 		physicsForceImpulses.emplace(impulseDir, atPoint);
 	}
 	
+	void PhysicsInfo::AddTorque(glm::dvec3 torque) {
+		appliedTorque += torque;
+	}
+	
 	// Set Colliders
 	void PhysicsInfo::SetMeshCollider(v4d::graphics::Mesh::VertexPosition* vertices, uint32_t vertexCount, v4d::graphics::Mesh::Index16* indices, uint32_t indexCount) {
 		colliderMeshVertices.resize(vertexCount);

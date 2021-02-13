@@ -48,9 +48,11 @@ namespace v4d::scene {
 		bool addedForce = false;
 		glm::dvec3 forcePoint {0,0,0};
 		glm::dvec3 forceDirection {0,0,0};
+		glm::dvec3 appliedTorque {0,0,0};
 		void SetForce(glm::dvec3 forceDir, glm::dvec3 atPoint = {0,0,0});
 		std::queue<std::tuple<glm::dvec3, glm::dvec3>> physicsForceImpulses {};
 		void AddImpulse(glm::dvec3 impulseDir, glm::dvec3 atPoint = {0,0,0});
+		void AddTorque(glm::dvec3);
 		
 		// Joints
 		int32_t jointParent = -1; // must be the uniqueId of the parent's physics component

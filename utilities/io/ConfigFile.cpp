@@ -92,13 +92,18 @@ void ConfigFile::ReadFromINI(const std::string& section, std::vector<Conf> confi
 		if (std::regex_match(line.c_str(), match, INI_REGEX_COMMENT)) continue;
 		if (std::regex_match(line.c_str(), match, INI_REGEX_SECTION)) {
 			curSection = match[1];
+			v4d::String::Trim(curSection);
 			continue;
 		}
 		if (std::regex_match(line.c_str(), match, INI_REGEX_CONF)) {
 			for (auto it = configs.begin(); it != configs.end(); it++) {
 				auto conf = *it;
-				if (conf.name == match[1]) {
-					conf.ReadValue(match[2]);
+				std::string confName = match[1];
+				v4d::String::Trim(confName);
+				if (conf.name == confName) {
+					std::string value = match[2];
+					v4d::String::Trim(value);
+					conf.ReadValue(value);
 					configs.erase(it);
 					break;
 				}
@@ -144,11 +149,14 @@ void ConfigFile::WriteToINI(const std::string& section, std::vector<Conf> config
 				if (std::regex_match(line->c_str(), match, INI_REGEX_COMMENT)) continue;
 				if (std::regex_match(line->c_str(), match, INI_REGEX_SECTION)) {
 					curSection = match[1];
+					v4d::String::Trim(curSection);
 					continue;
 				}
 			}
 			if (std::regex_match(line->c_str(), match, INI_REGEX_CONF)) {
-				if (conf.name == match[1]) {
+				std::string confName = match[1];
+				v4d::String::Trim(confName);
+				if (conf.name == confName) {
 					// Edit existing line in file
 					*line = confLine;
 					goto NextConf;
