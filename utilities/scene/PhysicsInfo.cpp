@@ -17,7 +17,7 @@ namespace v4d::scene {
 		physicsForceImpulses.emplace(impulseDir, atPoint);
 	}
 	
-	void PhysicsInfo::AddTorque(glm::dvec3 torque) {
+	void PhysicsInfo::AddLocalTorque(const glm::dvec3& torque) {
 		appliedTorque += torque;
 	}
 	
@@ -72,7 +72,7 @@ namespace v4d::scene {
 	}
 	void PhysicsInfo::SetBoxCollider(glm::vec3 size) {
 		boundingBoxSize = size;
-		boundingDistance = glm::max(size.x, glm::max(size.y, size.z))*1.42;
+		boundingDistance = glm::max(size.x, glm::max(size.y, size.z))*1.42f;
 		colliderType = PhysicsInfo::ColliderType::BOX;
 		colliderDirty = true;
 		physicsDirty = true;

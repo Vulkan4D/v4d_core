@@ -39,6 +39,9 @@ namespace v4d::scene {
 		bool physicsDirty = false;
 		float angularDamping = 0.001f;
 		
+		// Updated by the physics module
+		glm::dvec3 localAngularVelocity {0,0,0};
+		
 		// Dynamic stuff
 		float friction = 0.5f;
 		float bounciness = 0.1f;
@@ -52,7 +55,7 @@ namespace v4d::scene {
 		void SetForce(glm::dvec3 forceDir, glm::dvec3 atPoint = {0,0,0});
 		std::queue<std::tuple<glm::dvec3, glm::dvec3>> physicsForceImpulses {};
 		void AddImpulse(glm::dvec3 impulseDir, glm::dvec3 atPoint = {0,0,0});
-		void AddTorque(glm::dvec3);
+		void AddLocalTorque(const glm::dvec3&);
 		
 		// Joints
 		int32_t jointParent = -1; // must be the uniqueId of the parent's physics component
