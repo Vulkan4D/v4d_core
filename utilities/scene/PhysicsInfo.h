@@ -40,7 +40,9 @@ namespace v4d::scene {
 		float angularDamping = 0.001f;
 		
 		// Updated by the physics module
-		glm::dvec3 localAngularVelocity {0,0,0};
+		v4d::Timer timer {false};
+		glm::dvec3 gForce {0,0,0};
+		glm::dvec3 linearVelocity {0,0,0};
 		
 		// Dynamic stuff
 		float friction = 0.5f;

@@ -21,6 +21,21 @@ namespace v4d {
 				Start();
 		}
 
+		Timer(const Timer& other) {
+			timePoint = other.timePoint;
+		}
+		Timer(Timer&& other) {
+			timePoint = other.timePoint;
+		}
+		Timer& operator= (const Timer& other) {
+			timePoint = other.timePoint;
+			return *this;
+		}
+		Timer& operator= (Timer&& other) {
+			timePoint = other.timePoint;
+			return *this;
+		}
+
 		/**
 		 * starts the time point to the current system time
 		 */
