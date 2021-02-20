@@ -91,6 +91,8 @@ namespace v4d::graphics {
 		size_t nextFrameInFlight = 1;
 		size_t previousFrameInFlight = 1;
 		static constexpr int NB_FRAMES_IN_FLIGHT = 2;
+		double deltaTime = 1.0/60;
+		double avgDeltaTime = 1.0/60;
 		
 		// Descriptor sets
 		VkDescriptorPool descriptorPool;
@@ -219,7 +221,7 @@ namespace v4d::graphics {
 		virtual ~Renderer() override;
 		
 	public: // Public Update Methods
-		virtual void Update();
+		virtual void Update(double deltaTime);
 	};
 }
 

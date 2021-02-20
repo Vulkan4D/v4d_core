@@ -62,7 +62,7 @@ namespace v4d::graphics::vulkan::rtx {
 		ShaderBindingTable(PipelineLayout& pipelineLayout, ShaderInfo rgen);
 		
 		uint32_t AddMissShader(ShaderInfo rmiss);
-		uint32_t AddHitShader(ShaderInfo rchit, ShaderInfo rahit = "", ShaderInfo rint = "");
+		uint32_t AddHitShader(ShaderInfo rchit = "", ShaderInfo rahit = "", ShaderInfo rint = "");
 		uint32_t AddCallableShader(ShaderInfo rcall);
 		
 		void ReadShaders();

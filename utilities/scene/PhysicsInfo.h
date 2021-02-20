@@ -43,6 +43,7 @@ namespace v4d::scene {
 		v4d::Timer timer {false};
 		glm::dvec3 gForce {0,0,0};
 		glm::dvec3 linearVelocity {0,0,0};
+		glm::dvec3 angularVelocity {0,0,0};
 		
 		// Dynamic stuff
 		float friction = 0.5f;

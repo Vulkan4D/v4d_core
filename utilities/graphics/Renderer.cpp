@@ -814,7 +814,9 @@ void Renderer::DestroyPipelines() {
 	});
 }
 
-void Renderer::Update() {
+void Renderer::Update(double deltaTime) {
+	this->deltaTime = deltaTime;
+	avgDeltaTime = glm::mix(avgDeltaTime, deltaTime, 1.0/10);
 	renderThreadId = std::this_thread::get_id();
 	std::scoped_lock lock(renderMutex1);
 	
