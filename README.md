@@ -138,12 +138,6 @@ The core consists of the following structure :
 - V4D_Mod:: `CreateVulkanPipelines` ()
 - EVENT `v4d::graphics::renderer::event::PipelinesCreate` (Renderer*)
 - V4D_Mod:: `CreateVulkanCommandBuffers` ()
-    - Begin recording command buffer `graphics`
-        - V4D_Mod:: `RecordStaticGraphicsCommands` () sorted by `render`
-        - Execute RayCast compute
-        - Render thumbnail (for histogram)
-        - Render Post Processing passes (`postfx`, `histogram_write`, `present`)
-        - V4D_Mod:: `RecordStaticGraphicsCommands2` () sorted by `render`
 - EVENT `v4d::graphics::renderer::event::Load` (Renderer*)
 - Start Server
 - Start Client
@@ -203,40 +197,64 @@ The core consists of the following structure :
 - V4D_Mod:: `CreateVulkanPipelines` ()
 - EVENT `v4d::graphics::renderer::event::PipelinesCreate` (Renderer*)
 - V4D_Mod:: `CreateVulkanCommandBuffers` ()
-    - Begin recording command buffer `graphics`
-        - V4D_Mod:: `RecordStaticGraphicsCommands` () sorted by `render`
-        - Execute RayCast compute
-        - Render thumbnail (for histogram)
-        - Render Post Processing passes (`postfx`, `histogram_write`, `present`)
-        - V4D_Mod:: `RecordStaticGraphicsCommands2` () sorted by `render`
 - EVENT `v4d::graphics::renderer::event::Load` (Renderer*)
 #### Slow Game Loop
 - V4D_Mod:: `SlowLoopUpdate` ()
 #### Game Loop
 - V4D_Mod:: `GameLoopUpdate` ()
-- V4D_Mod:: `PhysicsUpdate` ()
 #### Primary Rendering Loop
-- V4D_Mod:: `RenderUpdate` ()
+- V4D_Mod:: `RenderUpdate` ()  
+    **Main Rendering Module:**
     - Aquire next swapchain image
-    - V4D_Mod:: `OnRendererRayCastHit` ()
-    - Reset camera information and Apply TXAA
-    - V4D_Mod:: `BeginFrameUpdate` ()
-    - Loop through scene objects and create acceleration structures
-    - Begin recording command buffer `graphicsDynamic`
-        - Clear output target image
-        - Upload camera and global objects/lights uniform buffers to GPU
-        - Loop through scene and Upload some uniform buffers to GPU
-        - Build all bottom level acceleration structures that have changed
-        - ReBuild top level acceleration structure
-        - V4D_Mod:: `RenderUpdate2` () sorted by `render`
-    - Submit command buffer `graphicsDynamic`
-    - Submit command buffer `graphics` (previously recorded)
-        - V4D_Mod:: `RecordStaticGraphicsCommands` () sorted by `render`
-        - Execute RayCast compute
-        - Render thumbnail (for histogram)
-        - Render Post Processing passes (`postfx`, `histogram_write`, `present`)
-        - V4D_Mod:: `RecordStaticGraphicsCommands2` () sorted by `render`
-    - Present
+    - Wait for fence signaled by previous frame's Push commands
+    - Set camera options and projection matrix
+    - V4D_Mod:: `RenderFrame_BeforeUpdate` ()  
+        - Modules may create new entities here  
+        - Modules may set the camera's view matrix here  
+    - Generate entities via their generator function
+    - Wait for fence signaled by previous frame's Pull commands
+    - V4D_Mod:: `OnRendererRayCastOut` ()  
+    - V4D_Mod:: `OnRendererRayCastHit` ()  
+    *TODO catch collision events here*
+    - Cleanup destroyed entities
+    - V4D_Mod:: `RenderFrame_Update` ()
+    - Loop through scene objects
+        - Prepare BLAS build if not already built
+        - Apply physics (velocity, collisions, constraints, gravity, forces)
+        - Prepare collision buffer for processing on the GPU via Ray-Tracing
+        - Prepare TLAS instance
+        - Cache important light sources in a buffer
+    - Record Push Commands
+        - Push buffers to GPU
+        - V4D_Mod:: `RenderFrame_Push` ()
+    - Submit Push commands
+    - Record Build Commands
+        - Build Acceleration Structures
+        - V4D_Mod:: `RenderFrame_Build` ()
+    - Submit Build commands
+    - Record Graphics Commands
+        - Run ray-traced rendering
+        - V4D_Mod:: `RenderFrame_Graphics` ()
+        - Run `sg_transparent` shaders (rasterization)
+        - Run `sg_wireframe` shaders (rasterization)
+    - Submit Graphics commands
+    - Record Physics Commands
+        - Run ray-traced collision detection
+        - V4D_Mod:: `RenderFrame_Physics` ()
+    - Submit Physics commands
+    - Record Pull Commands
+        - Pull collision buffer
+        - Pull raycast buffer
+        - V4D_Mod:: `RenderFrame_Pull` ()
+    - Submit Pull commands
+    - Wait for fence signaled by previous frame's Post commands
+    - Record Post Commands
+        - V4D_Mod:: `RenderFrame_Post` ()
+        - Run `sg_present` shaders (rasterization)
+        - Copy render images to history
+        - Generate thumbnail
+    - Submit Post commands
+    - Present image to screen
 #### Secondary Rendering Loop
 - V4D_Mod:: `DrawUi` ()
 - V4D_Mod:: `SecondaryRenderUpdate` ()

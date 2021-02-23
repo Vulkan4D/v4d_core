@@ -6,26 +6,6 @@ namespace v4d::graphics {
 
 	#pragma region Pack Helpers
 	
-	/////////////////
-	// NOT WORKING
-			// static NormalBuffer_T PackNormal(glm::vec3 normal) {
-			// 	// // vec2
-			// 	// float f = glm::sqrt(8.0f * normal.z + 8.0f);
-			// 	// return glm::vec2(normal) / f + 0.5f;
-				
-			// 	// vec4
-			// 	return glm::vec4(normal, 0);
-			// }
-
-			// static glm::vec3 UnpackNormal(NormalBuffer_T norm) {
-			// 	// glm::vec2 fenc = norm * 4.0f - 2.0f;
-			// 	// float f = glm::dot(fenc, fenc);
-			// 	// float g = glm::sqrt(1.0f - f / 4.0f);
-			// 	// return glm::vec3(fenc * g, 1.0f - f / 2.0f);
-			// 	return norm;
-			// }
-	/////////////////
-
 	V4DLIB glm::f32 PackColorAsFloat(glm::vec4 color);
 	V4DLIB glm::u32 PackColorAsUint(glm::vec4 color);
 	V4DLIB glm::vec4 UnpackColorFromFloat(glm::f32 color);
@@ -87,10 +67,7 @@ namespace v4d::graphics {
 
 		// Swap Chains
 		SwapChain* swapChain = nullptr;
-		size_t currentFrameInFlight = 0;
-		size_t nextFrameInFlight = 1;
-		size_t previousFrameInFlight = 1;
-		static constexpr int NB_FRAMES_IN_FLIGHT = 2;
+		uint64_t frameIndex = 0;
 		double deltaTime = 1.0/60;
 		double avgDeltaTime = 1.0/60;
 		
@@ -117,7 +94,7 @@ namespace v4d::graphics {
 		};
 		std::vector<VkSurfaceFormatKHR> preferredFormats {
 			{VK_FORMAT_R16G16B16A16_SFLOAT, VK_COLOR_SPACE_HDR10_HLG_EXT},
-			{VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR},
+			// {VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR},
 		};
 
 	public: // Device Extensions and features
@@ -188,22 +165,9 @@ namespace v4d::graphics {
 		void AllocateBufferStaged(const Queue&, Buffer&);
 		void AllocateBuffersStaged(const Queue&, std::vector<Buffer>&);
 		void AllocateBuffersStaged(const Queue&, std::vector<Buffer*>&);
-		
-		// void AllocateBufferStaged(Buffer&);
-		// void AllocateBuffersStaged(std::vector<Buffer>&);
-		// void AllocateBuffersStaged(std::vector<Buffer*>&);
 
-		// void TransitionImageLayout(Image image, VkImageLayout oldLayout, VkImageLayout newLayout);
 		void TransitionImageLayout(VkCommandBuffer commandBuffer, Image image, VkImageLayout oldLayout, VkImageLayout newLayout);
-		// void TransitionImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels = 1, uint32_t layerCount = 1, VkImageAspectFlags aspectMask = 0);
 		void TransitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels = 1, uint32_t layerCount = 1, VkImageAspectFlags aspectMask = 0);
-
-		// void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
-		// void CopyBufferToImage(VkCommandBuffer commandBuffer, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
-
-		// void GenerateMipmaps(Texture2D* texture);
-
-		// void GenerateMipmaps(VkImage image, VkFormat imageFormat, int32_t width, int32_t height, uint32_t mipLevels);
 
 	public: // Init//LoadReset Methods
 		virtual void RecreateSwapChains();

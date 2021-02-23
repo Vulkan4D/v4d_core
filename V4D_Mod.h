@@ -23,7 +23,6 @@ class V4DLIB V4D_Mod {
 		,DestroyVulkanResources2
 		,DrawUi2
 		,DrawUiDebug2
-		,BeginFrameUpdate
 		,BeginSecondaryFrameUpdate
 		,SecondaryFrameCompute
 		,OnRendererRayCastHit
@@ -49,10 +48,17 @@ class V4DLIB V4D_Mod {
 		,DestroyVulkanPipelines
 		,RenderUpdate
 		,SecondaryRenderUpdate
-		,RenderUpdate2
+		
+		,RenderFrame_BeforeUpdate
+		,RenderFrame_Update
+		,RenderFrame_Push
+		,RenderFrame_Build
+		,RenderFrame_Graphics
+		,RenderFrame_Physics
+		,RenderFrame_Post
+		,RenderFrame_Pull
+		
 		,SecondaryRenderUpdate2
-		,RecordStaticGraphicsCommands
-		,RecordStaticGraphicsCommands2
 		,DrawOverlayLine
 		,DrawOverlayText
 		,DrawOverlayCircle
@@ -104,7 +110,6 @@ class V4DLIB V4D_Mod {
 	V4D_MODULE_FUNC_DECLARE(void, DestroyVulkanResources2, v4d::graphics::vulkan::Device*)
 	V4D_MODULE_FUNC_DECLARE(void, DrawUi2)
 	V4D_MODULE_FUNC_DECLARE(void, DrawUiDebug2)
-	V4D_MODULE_FUNC_DECLARE(void, BeginFrameUpdate)
 	V4D_MODULE_FUNC_DECLARE(void, BeginSecondaryFrameUpdate)
 	V4D_MODULE_FUNC_DECLARE(void, SecondaryFrameCompute, VkCommandBuffer)
 	V4D_MODULE_FUNC_DECLARE(void, OnRendererRayCastHit, v4d::graphics::RayCast)
@@ -134,14 +139,22 @@ class V4DLIB V4D_Mod {
 	V4D_MODULE_FUNC_DECLARE(void, FreeVulkanBuffers)
 	V4D_MODULE_FUNC_DECLARE(void, CreateVulkanPipelines)
 	V4D_MODULE_FUNC_DECLARE(void, DestroyVulkanPipelines)
+	
 	// Executed every frame
-	V4D_MODULE_FUNC_DECLARE(void, DrawUi) // Main Renderer module must call V4D_Game::DrawUi2 and V4D_Game::DrawUiDebug2
-	V4D_MODULE_FUNC_DECLARE(void, RenderUpdate) // Main Renderer module must call V4D_Game::BeginFrameUpdate and V4D_Renderer::RenderUpdate2
-	V4D_MODULE_FUNC_DECLARE(void, SecondaryRenderUpdate) // Main Renderer module must call V4D_Game::BeginSecondaryFrameUpdate and V4D_Game::SecondaryFrameCompute and V4D_Renderer::SecondaryRenderUpdate2
-	V4D_MODULE_FUNC_DECLARE(void, RenderUpdate2, VkCommandBuffer)
+	V4D_MODULE_FUNC_DECLARE(void, DrawUi) // Main Renderer module must call DrawUi2 and DrawUiDebug2
+	V4D_MODULE_FUNC_DECLARE(void, RenderUpdate) // Main Renderer module must call all the RenderFrame_* functions for all modules
+	V4D_MODULE_FUNC_DECLARE(void, SecondaryRenderUpdate) // Main Renderer module must call BeginSecondaryFrameUpdate and SecondaryFrameCompute and SecondaryRenderUpdate2
+	
+	V4D_MODULE_FUNC_DECLARE(void, RenderFrame_BeforeUpdate)
+	V4D_MODULE_FUNC_DECLARE(void, RenderFrame_Update)
+	V4D_MODULE_FUNC_DECLARE(void, RenderFrame_Push, VkCommandBuffer/*Transfer queue*/)
+	V4D_MODULE_FUNC_DECLARE(void, RenderFrame_Build, VkCommandBuffer/*Compute queue*/)
+	V4D_MODULE_FUNC_DECLARE(void, RenderFrame_Graphics, VkCommandBuffer/*Graphics queue*/)
+	V4D_MODULE_FUNC_DECLARE(void, RenderFrame_Physics, VkCommandBuffer/*Compute queue*/)
+	V4D_MODULE_FUNC_DECLARE(void, RenderFrame_Post, VkCommandBuffer/*Graphics queue*/)
+	V4D_MODULE_FUNC_DECLARE(void, RenderFrame_Pull, VkCommandBuffer/*Transfer queue*/)
+	
 	V4D_MODULE_FUNC_DECLARE(void, SecondaryRenderUpdate2, VkCommandBuffer)
-	V4D_MODULE_FUNC_DECLARE(void, RecordStaticGraphicsCommands, VkCommandBuffer, int imageIndex)
-	V4D_MODULE_FUNC_DECLARE(void, RecordStaticGraphicsCommands2, VkCommandBuffer, int imageIndex)
 	// Typically only implemented in primary rendering module
 	V4D_MODULE_FUNC_DECLARE(void, DrawOverlayLine, float x1, float y1, float x2, float y2, glm::vec4 color, float lineWidth)
 	V4D_MODULE_FUNC_DECLARE(void, DrawOverlayText, const char* text, float x, float y, glm::vec4 color, float size)

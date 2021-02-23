@@ -347,7 +347,7 @@ namespace v4d::data::EntityComponentSystem {
 	void ClassName::ForEach(std::function<void(std::shared_ptr<ClassName>)>&& func) {\
 		std::lock_guard lock(entityInstancesMutex);\
 		for (auto& entity : entityInstances) {\
-			if (entity) {\
+			if (entity && !entity->markedForDestruction) {\
 				func(entity);\
 			}\
 		}\
