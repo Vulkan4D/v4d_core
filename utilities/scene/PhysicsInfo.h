@@ -9,8 +9,8 @@ namespace v4d::scene {
 		int32_t objectGeometryA;
 		int32_t objectGeometryB;
 		
-		glm::vec4 startPosition; // view-space, w = depth (how much under the object's surface this start position is)
-		glm::vec4 velocity; // view-space direction, w = max travel distance from surface (typically velocity*deltaTime)
+		glm::vec4 position; // view-space, w = depth (how much under the object's surface this start position is)
+		glm::vec4 direction; // view-space direction, w = max travel distance from surface (typically velocity*deltaTime)
 		
 		glm::vec4 contactA;
 		glm::vec4 contactB;
@@ -18,13 +18,13 @@ namespace v4d::scene {
 		glm::vec4 normalA;
 		glm::vec4 normalB;
 		
-		Collision(uint32_t objectInstanceId, uint8_t collisionIndex, uint8_t rayMask, glm::vec4 startPositionViewSpaceAndBoundingDistance, glm::vec4 velocityViewSpaceAndMaxTravelDistance)
+		Collision(uint32_t objectInstanceId, uint8_t collisionIndex, uint8_t rayMask, glm::vec4 startPositionViewSpaceAndBoundingDistance, glm::vec4 directionViewSpaceAndMaxTravelDistance)
 		: collisionInstance( (objectInstanceId << 8) | collisionIndex )
 		, objectInstanceB( rayMask )
 		, objectGeometryA(-1)
 		, objectGeometryB(-1)
-		, startPosition(startPositionViewSpaceAndBoundingDistance)
-		, velocity(velocityViewSpaceAndMaxTravelDistance)
+		, position(startPositionViewSpaceAndBoundingDistance)
+		, direction(directionViewSpaceAndMaxTravelDistance)
 		, contactA(0)
 		, contactB(0)
 		{}
