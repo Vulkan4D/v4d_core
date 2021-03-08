@@ -3,21 +3,25 @@
 namespace v4d::scene {
 	
 	struct Collision {
-		int32_t objectInstanceA;
+		uint32_t collisionInstance; // objectInstanceA | collision options
+		uint32_t objectInstanceB; // objectInstanceB | collision Ray Mask
+		
 		int32_t objectGeometryA;
-		int32_t objectInstanceB;
 		int32_t objectGeometryB;
 		
-		glm::vec4 startPosition; // view-space, w = max distance to surface (typically boundingRadius)
-		glm::vec4 velocity; // view-space, w = max travel distance from surface (typically velocity*deltaTime)
+		glm::vec4 startPosition; // view-space, w = depth (how much under the object's surface this start position is)
+		glm::vec4 velocity; // view-space direction, w = max travel distance from surface (typically velocity*deltaTime)
 		
 		glm::vec4 contactA;
 		glm::vec4 contactB;
 		
-		Collision(uint32_t objectInstanceId, glm::vec4 startPositionViewSpaceAndBoundingDistance, glm::vec4 velocityViewSpaceAndMaxTravelDistance)
-		: objectInstanceA(objectInstanceId)
+		glm::vec4 normalA;
+		glm::vec4 normalB;
+		
+		Collision(uint32_t objectInstanceId, uint8_t collisionIndex, uint8_t rayMask, glm::vec4 startPositionViewSpaceAndBoundingDistance, glm::vec4 velocityViewSpaceAndMaxTravelDistance)
+		: collisionInstance( (objectInstanceId << 8) | collisionIndex )
+		, objectInstanceB( rayMask )
 		, objectGeometryA(-1)
-		, objectInstanceB(-1)
 		, objectGeometryB(-1)
 		, startPosition(startPositionViewSpaceAndBoundingDistance)
 		, velocity(velocityViewSpaceAndMaxTravelDistance)
@@ -107,12 +111,12 @@ namespace v4d::scene {
 		int contacts = 0;
 		
 		struct CollisionTest {
-			std::optional<Collision> collision;
+			std::vector<Collision> collisions;
 			std::optional<glm::dmat4> worldTransformBefore;
 			std::optional<glm::dmat4> worldTransformAfter;
-			CollisionTest() : collision(std::nullopt), worldTransformBefore(std::nullopt), worldTransformAfter(std::nullopt) {};
+			CollisionTest() : collisions(), worldTransformBefore(std::nullopt), worldTransformAfter(std::nullopt) {};
 			CollisionTest(const glm::dmat4& worldTransform, const glm::dvec3& velocity, double deltaTime) 
-			: collision(std::nullopt)
+			: collisions()
 			, worldTransformBefore(worldTransform)
 			, worldTransformAfter(glm::translate(glm::dmat4(1), velocity * deltaTime) * worldTransform)
 			{}
