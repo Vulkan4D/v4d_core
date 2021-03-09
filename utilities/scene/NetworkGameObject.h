@@ -94,7 +94,6 @@ namespace v4d::scene {
 		void SetVelocity(const glm::dvec3&);
 		
 		glm::dvec3 GetLookDirection() const;
-		glm::dvec3 GetWorldPosition() const;
 		
 		void SetAttributes(Attributes attrs);
 		Attributes GetAttributes() const;

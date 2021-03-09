@@ -64,9 +64,12 @@ namespace v4d::scene {
 		
 		// RigidBody
 		glm::dvec3 centerOfMass {0,0,0};
+		float friction = 0.5f;
+		float bounciness = 0.1f;
+		// glm::vec3 angularFactor = {1.0f,1.0f,1.0f};
+		// float angularDamping = 0.001f;
 		bool colliderDirty = false;
 		bool physicsDirty = false;
-		float angularDamping = 0.001f;
 		
 		// // Updated by the physics module
 		// v4d::Timer timer {false};
@@ -74,10 +77,6 @@ namespace v4d::scene {
 		glm::dvec3 linearVelocity {0,0,0};
 		glm::dvec3 angularVelocity {0,0,0};
 		
-		// Dynamic stuff
-		float friction = 0.5f;
-		float bounciness = 0.1f;
-		glm::vec3 angularFactor = {1.0f,1.0f,1.0f};
 		
 		// Forces
 		bool addedForce = false;
@@ -89,26 +88,26 @@ namespace v4d::scene {
 		void AddImpulse(glm::dvec3 impulseDir, glm::dvec3 atPoint = {0,0,0});
 		void AddLocalTorque(const glm::dvec3&);
 		
-		// Joints
-		int32_t jointParent = -1; // must be the uniqueId of the parent's physics component
-		glm::dmat4 localJointPoint {1};
-		glm::dmat4 parentJointPoint {1};
-		struct {float min, max;} jointTranslationLimitsX {0,0};
-		struct {float min, max;} jointTranslationLimitsY {0,0};
-		struct {float min, max;} jointTranslationLimitsZ {0,0};
-		struct {float min, max;} jointRotationLimitsX {0,0};
-		struct {float min, max;} jointRotationLimitsY {0,0};
-		struct {float min, max;} jointRotationLimitsZ {0,0};
-		glm::vec3 jointTranslationTarget {0};
-		glm::vec3 jointRotationTarget {0};
-		glm::vec3 jointTranslationMaxForce {0};
-		glm::vec3 jointRotationMaxForce {0};
-		glm::vec3 jointTranslationVelocity {0};
-		glm::vec3 jointRotationVelocity {0};
-		bool jointMotor = false;
-		bool jointIsDirty = true;
+		// // Joints
+		// int32_t jointParent = -1; // must be the uniqueId of the parent's physics component
+		// glm::dmat4 localJointPoint {1};
+		// glm::dmat4 parentJointPoint {1};
+		// struct {float min, max;} jointTranslationLimitsX {0,0};
+		// struct {float min, max;} jointTranslationLimitsY {0,0};
+		// struct {float min, max;} jointTranslationLimitsZ {0,0};
+		// struct {float min, max;} jointRotationLimitsX {0,0};
+		// struct {float min, max;} jointRotationLimitsY {0,0};
+		// struct {float min, max;} jointRotationLimitsZ {0,0};
+		// glm::vec3 jointTranslationTarget {0};
+		// glm::vec3 jointRotationTarget {0};
+		// glm::vec3 jointTranslationMaxForce {0};
+		// glm::vec3 jointRotationMaxForce {0};
+		// glm::vec3 jointTranslationVelocity {0};
+		// glm::vec3 jointRotationVelocity {0};
+		// bool jointMotor = false;
+		// bool jointIsDirty = true;
 		
-		int contacts = 0;
+		// int contacts = 0;
 		
 		struct CollisionTest {
 			std::vector<Collision> collisions;

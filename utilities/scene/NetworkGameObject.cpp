@@ -64,11 +64,6 @@ namespace v4d::scene {
 		return glm::transpose(glm::dmat3(transform)) * glm::dvec3(0,0,1)/*forward*/;
 	}
 	
-	glm::dvec3 NetworkGameObject::GetWorldPosition() const {
-		std::lock_guard lock(mu);
-		return transform[3];
-	}
-	
 	void NetworkGameObject::SetAttributes(Attributes attrs) {
 		for (size_t i = 0; i < attributesPtrs.size(); ++i) {
 			*attributesPtrs[i] = attrs & (1 << i);
@@ -115,7 +110,7 @@ namespace v4d::scene {
 	void NetworkGameObject::SmoothlyInterpolateGameObjectTransform(double delta) {
 		if (auto entity = renderableGeometryEntityInstance.lock(); entity) {
 			if (delta > 0) {
-				glm::dmat4 matrix1 = entity->GetWorldTransform();
+				const glm::dmat4& matrix1 = entity->GetLocalTransform();
 				glm::dmat4 matrix2 = transform;
 				glm::dquat rotation1 = glm::quat_cast(matrix1);
 				glm::dquat rotation2= glm::quat_cast(matrix2);
@@ -132,7 +127,7 @@ namespace v4d::scene {
 	bool NetworkGameObject::ReverseUpdateGameObjectTransform() {
 		std::lock_guard lock(mu);
 		if (auto entity = renderableGeometryEntityInstance.lock(); entity) {
-			auto t = entity->GetWorldTransform();
+			const auto& t = entity->GetLocalTransform();
 			if (transform != t) {
 				transform = t;
 				return true;

@@ -719,6 +719,7 @@ void Renderer::DestroyPipelines() {
 }
 
 void Renderer::Update(double deltaTime) {
+	this->previousDeltaTime = this->deltaTime;
 	this->deltaTime = deltaTime;
 	avgDeltaTime = glm::mix(avgDeltaTime, deltaTime, 1.0/10);
 	renderThreadId = std::this_thread::get_id();

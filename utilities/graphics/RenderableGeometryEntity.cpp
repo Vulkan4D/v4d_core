@@ -172,6 +172,10 @@ namespace v4d::graphics {
 		return GetParentWorldTransform() * transformMatrix;
 	}
 	
+	glm::dmat4& RenderableGeometryEntity::GetLocalTransform() {
+		return transformMatrix;
+	}
+	
 	glm::dmat4 RenderableGeometryEntity::GetParentWorldTransform() const {
 		if (parent)  {
 			return parent->GetWorldTransform();

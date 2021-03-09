@@ -69,6 +69,7 @@ namespace v4d::graphics {
 		SwapChain* swapChain = nullptr;
 		uint64_t frameIndex = 0;
 		double deltaTime = 1.0/60;
+		double previousDeltaTime = 1.0/60;
 		double avgDeltaTime = 1.0/60;
 		
 		// Descriptor sets

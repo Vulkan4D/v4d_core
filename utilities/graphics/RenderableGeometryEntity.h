@@ -217,6 +217,7 @@ namespace v4d::graphics {
 		void SetWorldTransform(const glm::dmat4&);
 		void SetLocalTransform(const glm::dmat4&);
 		glm::dmat4 GetWorldTransform() const;
+		glm::dmat4& GetLocalTransform();
 		glm::dmat4 GetParentWorldTransform() const;
 		
 		bool Generate(Device* device); // returns true if generated correctly with at least one shared geometry, false if either error or using existing geometry (we can use this return value to generate something only once per shared geometry and only if something was generated)
