@@ -192,6 +192,9 @@ namespace v4d::graphics {
 		
 		std::shared_ptr<RenderableGeometryEntity> parent = nullptr;
 		
+		uint64_t parentId;
+		uint64_t extra;
+		
 		class V4DLIB BufferWriteLock {
 			std::unique_lock<std::recursive_mutex> lock;
 			bool valid;
@@ -202,6 +205,8 @@ namespace v4d::graphics {
 			operator bool() const;
 			void Unlock();
 		};
+		
+		static std::shared_ptr<RenderableGeometryEntity> GetRoot(std::shared_ptr<RenderableGeometryEntity>&);
 		
 		BufferWriteLock GetBuffersWriteLock();
 		

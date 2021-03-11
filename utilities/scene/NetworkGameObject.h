@@ -40,8 +40,9 @@ namespace v4d::scene {
 	class V4DLIB NetworkGameObject {
 	public:
 		typedef uint32_t Type;
-		typedef uint32_t Parent;
+		typedef uint64_t Parent;
 		typedef uint32_t Id;
+		typedef uint64_t Extra; 
 		typedef uint32_t Attributes;
 		typedef uint32_t Iteration;
 		
@@ -49,6 +50,7 @@ namespace v4d::scene {
 		Type type;
 		Parent parent;
 		Id id;
+		Extra extra;
 		
 		std::weak_ptr<v4d::graphics::RenderableGeometryEntity> renderableGeometryEntityInstance;
 		std::any entityData;

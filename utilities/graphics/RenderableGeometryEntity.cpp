@@ -335,4 +335,10 @@ namespace v4d::graphics {
 		return false;
 	}
 	
+	std::shared_ptr<RenderableGeometryEntity> RenderableGeometryEntity::GetRoot(std::shared_ptr<RenderableGeometryEntity>& entity) {
+		if (!entity) return nullptr;
+		if (!entity->parent || entity->parent == entity) return entity;
+		return GetRoot(entity->parent);
+	}
+	
 }

@@ -28,6 +28,7 @@ class V4DLIB V4D_Mod {
 		,OnRendererRayCastHit
 		,OnRendererRayCastOut
 		,PhysicsUpdate
+		,ServerPhysicsUpdate
 		,RenderOrderIndex
 		,ScorePhysicalDeviceSelection
 		,InitVulkanDeviceFeatures
@@ -117,6 +118,7 @@ class V4DLIB V4D_Mod {
 
 // Physics
 	V4D_MODULE_FUNC_DECLARE(void, PhysicsUpdate, double deltaTime)
+	V4D_MODULE_FUNC_DECLARE(void, ServerPhysicsUpdate, double deltaTime)
 
 // Renderer
 	// Executed only once for configuration

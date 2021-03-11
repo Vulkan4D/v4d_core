@@ -4,14 +4,14 @@
 namespace v4d::networking {
 	class IncomingClient {
 	public:
-		ulong id;
+		uint64_t id;
 		std::string token;
 		v4d::crypto::AES aes;
 		std::vector<std::thread> threads{};
-		std::atomic<ulong> requestIncrement = 0;
+		std::atomic<uint64_t> requestIncrement = 0;
 		
-		IncomingClient(ulong id, std::string token, std::string aesHex);
-		IncomingClient(ulong id);
+		IncomingClient(uint64_t id, std::string token, std::string aesHex);
+		IncomingClient(uint64_t id);
 
 		~IncomingClient();
 

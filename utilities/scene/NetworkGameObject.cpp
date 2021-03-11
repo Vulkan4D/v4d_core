@@ -79,15 +79,17 @@ namespace v4d::scene {
 
 	void NetworkGameObject::UpdateGameObject() {
 		std::lock_guard lock(mu);
-		if (auto entity = renderableGeometryEntityInstance.lock(); entity && entity->physics) {
+		if (auto entity = renderableGeometryEntityInstance.lock(); entity) {
+			entity->parentId = parent;
+			entity->extra = extra;
 			if (auto physics = entity->physics.Lock(); physics) {
-				if (physics->rigidbodyType == PhysicsInfo::RigidBodyType::DYNAMIC || physics->rigidbodyType == PhysicsInfo::RigidBodyType::KINEMATIC) {
+				// if (physics->rigidbodyType == PhysicsInfo::RigidBodyType::DYNAMIC || physics->rigidbodyType == PhysicsInfo::RigidBodyType::KINEMATIC) {
 					if (isDynamic) {
 						physics->rigidbodyType = physicsControl? PhysicsInfo::RigidBodyType::DYNAMIC : PhysicsInfo::RigidBodyType::KINEMATIC;
 					} else {
 						physics->rigidbodyType = PhysicsInfo::RigidBodyType::STATIC;
 					}
-				}
+				// }
 			}
 		}
 	}
