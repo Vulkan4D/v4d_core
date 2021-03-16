@@ -36,6 +36,8 @@ namespace v4d::scene {
 		alignas(4) int32_t accumulateFrames = -1;
 		alignas(4) float denoise = 0;
 		
+		alignas(32) glm::i64vec3 originOffset {0};
+		alignas(32) glm::dvec4 velocity {0}; // w = speed as a ratio of C
 		alignas(16) glm::vec3 gravityVector;
 		
 		float multisamplingKernelSize = 1.0f;
