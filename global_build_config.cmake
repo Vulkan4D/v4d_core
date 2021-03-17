@@ -64,6 +64,7 @@ function(SubModule _ModuleClass)
 	target_include_directories(${_SubModuleName} PRIVATE "${_ModuleDir}")
 	target_compile_definitions(${_SubModuleName}
 		PRIVATE -DTHIS_MODULE="${_ModuleVendor}_${_ModuleName}"
+		PRIVATE -D_V4D_MODULE
 	)
 	set_target_properties(${_SubModuleName}
 		PROPERTIES

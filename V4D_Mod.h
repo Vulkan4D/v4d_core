@@ -85,6 +85,8 @@ class V4DLIB V4D_Mod {
 		,ServerSendBursts
 		,ServerReceiveAction
 		,ServerReceiveBurst
+		
+		,RunFromConsole
 	)
 	
 // Init
@@ -190,5 +192,7 @@ class V4DLIB V4D_Mod {
 	V4D_MODULE_FUNC_DECLARE(void, ServerReceiveAction, v4d::io::SocketPtr stream, v4d::networking::IncomingClientPtr client)
 	V4D_MODULE_FUNC_DECLARE(void, ServerReceiveBurst, v4d::io::SocketPtr stream, v4d::networking::IncomingClientPtr client)
 
+// Console
+	V4D_MODULE_FUNC_DECLARE(int, RunFromConsole, const int argc, const char** argv)
 
 };
