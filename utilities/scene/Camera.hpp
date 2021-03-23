@@ -142,8 +142,8 @@ namespace v4d::scene {
 			return true;
 		}
 		
-		/* // UNUSED FOR NOW...
-		glm::dvec3 GetPositionInScreen(glm::dvec3 a) const {
+		
+		glm::dvec3 GetPositionInScreen(const glm::dvec3& a) const {
 			auto pos = projectionMatrix * viewMatrix * glm::dvec4(a, 1);
 			return glm::dvec3{pos.x, pos.y, pos.z} / pos.w;
 		}
@@ -162,6 +162,6 @@ namespace v4d::scene {
 			auto pp = GetPositionInScreen(a);
 			return (pp.z < 1.0 && glm::abs(pp.x) < 1.0 && glm::abs(pp.y) < 1.0);
 		}
-		*/
+		
 	};
 }
