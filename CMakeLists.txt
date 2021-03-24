@@ -3,10 +3,11 @@ file(GLOB_RECURSE V4DCoreSourceFiles **.cpp)
 if(ENABLE_IMGUI)
 	add_library(v4d SHARED 
 		${V4DCoreSourceFiles}
-		"${PROJECT_SOURCE_DIR}/src/imgui/examples/imgui_impl_glfw.cpp"
+		"${PROJECT_SOURCE_DIR}/src/imgui/backends/imgui_impl_glfw.cpp"
 		"${PROJECT_SOURCE_DIR}/src/imgui/imgui.cpp"
 		"${PROJECT_SOURCE_DIR}/src/imgui/imgui_widgets.cpp"
 		"${PROJECT_SOURCE_DIR}/src/imgui/imgui_draw.cpp"
+		"${PROJECT_SOURCE_DIR}/src/imgui/imgui_tables.cpp"
 	)
 	target_compile_definitions(v4d
 		PUBLIC -D_ENABLE_IMGUI

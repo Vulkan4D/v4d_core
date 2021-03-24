@@ -72,7 +72,7 @@
 	#endif
 	#include "imgui/imgui.h"
 	#include "utilities/graphics/imgui_vulkan.h"
-	#include "imgui/examples/imgui_impl_glfw.h"
+	#include "imgui/backends/imgui_impl_glfw.h"
 #endif
 
 // V4D Renderer
