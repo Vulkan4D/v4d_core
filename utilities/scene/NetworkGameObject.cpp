@@ -115,7 +115,7 @@ namespace v4d::scene {
 				const glm::dmat4& matrix1 = entity->GetLocalTransform();
 				glm::dmat4 matrix2 = transform;
 				glm::dquat rotation1 = glm::quat_cast(matrix1);
-				glm::dquat rotation2= glm::quat_cast(matrix2);
+				glm::dquat rotation2 = glm::quat_cast(matrix2);
 				glm::dquat finalRotation = glm::slerp(rotation1, rotation2, delta);
 				glm::dmat4 finalMatrix = glm::mat4_cast(finalRotation);
 				finalMatrix[3] = matrix1[3] * (1 - delta) + matrix2[3] * delta;

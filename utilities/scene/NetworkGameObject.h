@@ -94,6 +94,7 @@ namespace v4d::scene {
 		void SetTransform(const glm::dmat4&);
 		glm::dmat4 GetTransform() const;
 		void SetVelocity(const glm::dvec3&);
+		const glm::dvec3& GetVelocity() const {return velocity;}
 		
 		glm::dvec3 GetLookDirection() const;
 		

@@ -3,18 +3,18 @@
 #include <v4d.h>
 
 /**
- * V4D's Entity-Component system v1.0
- * Author: Olivier St-Laurent, December 2020
+ * V4D's Entity-Component system v1.1
+ * Author: Olivier St-Laurent, December 2020 - March 2021
  * 
  * This is a very lightweight and elegant implementation of a data-oriented entity-component workload for very fast computation.
- * It is thread-safe and optimized for looping through all components of certain types instead of entities.
- * You can fine your own entities and components in a very elegant way without bloating your code.
- * It is important to note that we cannot do inheritance because this will defeat the purpose of Entity-Component Systems.
+ * It is thread-safe and optimized for looping through all components of certain types instead of the full entities.
+ * You can define your own entities and components in a very elegant way without bloating your code.
+ * It is important to note that we cannot do component inheritance because this will defeat the purpose of this concept.
  * 
  * This is especially good for defining GameObjects that have components that get traversed every frame.
  * 
  * You may define any number of entity classes, each with completely custom components types.
- * This uses lots of MACROS and Templates to "automatically generate code" from very simple and elegant definitions.
+ * This uses lots of MACROS and Templates to "automagically generate code" from very simple and elegant definitions.
  * 
  * Usage:
 
@@ -27,9 +27,10 @@
 
 	class MyEntity {
 		V4D_ENTITY_DECLARE_CLASS(MyEntity)
-		V4D_ENTITY_DECLARE_COMPONENT(MyEntity, std::string, firstName)
+		V4D_ENTITY_DECLARE_COMPONENT(MyEntity, std::string, firstName) // OneToOne entity-component
 		V4D_ENTITY_DECLARE_COMPONENT(MyEntity, glm::mat4, transform)
 		V4D_ENTITY_DECLARE_COMPONENT(MyEntity, SomeDataStruct, someData)
+		V4D_ENTITY_DECLARE_COMPONENT_MAP(MyEntity, std::string_view, SomeDataStruct, someDataMap) // OneToMany (with this feature, an entity can host a map of a certain type of components) documented at the end
 		//... more components
 	};
 
@@ -39,6 +40,7 @@
 	V4D_ENTITY_DEFINE_COMPONENT(MyEntity, std::string, firstName)
 	V4D_ENTITY_DEFINE_COMPONENT(MyEntity, glm::mat4, transform)
 	V4D_ENTITY_DEFINE_COMPONENT(MyEntity, SomeDataStruct, someData)
+	V4D_ENTITY_DEFINE_COMPONENT_MAP(MyEntity, std::string_view, SomeDataStruct, someDataMap)
 	//... more components
 
  // main.cpp
@@ -133,6 +135,35 @@
 	// This also ensures that the component exists before running the code, so you may run this with any entity without worrying if the component is present.
 	// The 'Do' method also returns true if the entity has that component, false otherwise. 
 	
+	
+	/////////////////////////////////
+	// OneToMany component maps
+	
+	// If your needs require a single entity to be able to host a variable-size map of a certain type of component, you may define a component map
+	// example using std::string_view as the map's key type in the second parameter of the macro
+	V4D_ENTITY_DECLARE_COMPONENT_MAP(MyEntity, std::string_view, SomeDataStruct, someDataMap)
+	
+	// To use a component map, it is a little different than a standard OneToOne component.
+	
+	// You must first Add the component map to your entity like so: 
+	entity->Add_someDataMap(); // note that it takes no parameter, but returns a reference to entity->someDataMap
+	
+	// You can add or access an instance of a component in the map using the operator[] and assign its value to your component (using its constructor) or any member of that component by following with the operator->
+	entity->someDataMap["myKey"] = {...};
+	entity->someDataMap["myKey"]->a = 6;
+	cout << entity->someDataMap["myKey"]->a;
+	
+	// You may remove the entire component map like this and it will effectively erase all elements in it
+	entity->Remove_someDataMap();
+	
+	// You can also erase specific keys from the map like this:
+	entity->someDataMap.Erase("myKey");
+	
+	// You may loop through all components in the map related to a specific entity like with the Do() method above:
+	entity->someDataMap.ForEach([](auto& someData){
+		someData.a = 44;
+	});
+	
  */
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -158,28 +189,28 @@ namespace v4d::data::EntityComponentSystem {
 		};
 		std::vector<ComponentTuple> componentsList;
 		template<typename...Args>
-		int32_t __Add__(int32_t entityInstanceIndex, void* componentIndexPtrInEntity, Args&&...args) {
+		void __Add__(int32_t entityInstanceIndex, void* componentIndexPtrInEntity, Args&&...args) {
 			// std::lock_guard lock(componentsMutex); // always already locked in caller, and also locks Entities
 			componentsList.emplace_back(entityInstanceIndex, (uint32_t*)componentIndexPtrInEntity, std::forward<Args>(args)...);
-			return componentsList.size() - 1;
+			(*(int32_t*)componentIndexPtrInEntity) = componentsList.size() - 1;
 		}
 		template<typename List_T>
-		int32_t __Add__(int32_t entityInstanceIndex, void* componentIndexPtrInEntity, std::initializer_list<List_T>&& list) {
+		void __Add__(int32_t entityInstanceIndex, void* componentIndexPtrInEntity, std::initializer_list<List_T>&& list) {
 			// std::lock_guard lock(componentsMutex); // always already locked in caller, and also locks Entities
 			componentsList.emplace_back(entityInstanceIndex, (uint32_t*)componentIndexPtrInEntity, std::forward<std::initializer_list<List_T>>(list));
-			return componentsList.size() - 1;
+			(*(int32_t*)componentIndexPtrInEntity) = componentsList.size() - 1;
 		}
 		template<typename ArrayRef, int ArrayN>
-		int32_t __Add__(int32_t entityInstanceIndex, void* componentIndexPtrInEntity, const ArrayRef (&val)[ArrayN]) {
+		void __Add__(int32_t entityInstanceIndex, void* componentIndexPtrInEntity, const ArrayRef (&val)[ArrayN]) {
 			// std::lock_guard lock(componentsMutex); // always already locked in caller, and also locks Entities
 			componentsList.emplace_back(entityInstanceIndex, (uint32_t*)componentIndexPtrInEntity, val);
-			return componentsList.size() - 1;
+			(*(int32_t*)componentIndexPtrInEntity) = componentsList.size() - 1;
 		}
 		void __Remove__(int32_t componentIndex) {
 			// std::lock_guard lock(componentsMutex); // always already locked in caller, and also locks Entities
 			if (componentIndex != -1) {
 				if ((size_t)componentIndex < componentsList.size()-1) {
-					// Move the last element to the position we want to delete and return its instance index so that we can adjust it in the calling method
+					// Move the last element to the position we want to delete, then reassign the index to the last element's parent entity
 					componentsList[componentIndex] = std::move(componentsList.back());
 					if (componentsList[componentIndex].entityInstanceIndex != -1) {
 						*componentsList[componentIndex].componentIndexPtrInEntity = componentIndex;
@@ -235,7 +266,7 @@ namespace v4d::data::EntityComponentSystem {
 			ComponentReferenceLocked(std::unique_lock<std::recursive_mutex>& lock, ComponentType* ptr) : lock(std::move(lock)), ptr(ptr) {}
 			operator bool() {return !!ptr;}
 			template<typename T>
-			auto operator = (T&& val) {
+			auto operator= (T&& val) {
 				*ptr = std::forward<T>(val);
 				return std::forward<T>(val);
 			}
@@ -401,7 +432,7 @@ namespace v4d::data::EntityComponentSystem {
 		public:\
 		operator bool() {return index != -1;}\
 		template<typename T>\
-		auto operator = (T&& val) {\
+		auto operator= (T&& val) {\
 			if (index != -1) return MemberName ## Components .Lock(index).operator=(std::forward<T>(val));\
 			return std::forward<T>(val);\
 		}\
@@ -414,25 +445,26 @@ namespace v4d::data::EntityComponentSystem {
 		}\
 	} MemberName;\
 	static v4d::data::EntityComponentSystem::Component<ClassName, ComponentType> MemberName ## Components ;\
+	/* Add_<component> */\
 	template<typename...Args>\
 	v4d::data::EntityComponentSystem::Component<ClassName, ComponentType>::ComponentReferenceLocked Add_ ## MemberName (Args&&...args) {\
 		std::lock_guard entitiesLock(ClassName::entityInstancesMutex);\
 		std::unique_lock<std::recursive_mutex> componentsLock(MemberName ## Components.componentsMutex);\
-		if (MemberName.index == -1) MemberName.index = MemberName ## Components .__Add__<Args...>(index, &MemberName.index, std::forward<Args>(args)...);\
+		if (MemberName.index == -1) MemberName ## Components .__Add__<Args...>(index, &MemberName.index, std::forward<Args>(args)...);\
 		return {componentsLock, MemberName ## Components .__Get__(MemberName.index)};\
 	}\
 	template<typename List_T>\
 	v4d::data::EntityComponentSystem::Component<ClassName, ComponentType>::ComponentReferenceLocked Add_ ## MemberName (std::initializer_list<List_T>&& list) {\
 		std::lock_guard entitiesLock(ClassName::entityInstancesMutex);\
 		std::unique_lock<std::recursive_mutex> componentsLock(MemberName ## Components.componentsMutex);\
-		if (MemberName.index == -1) MemberName.index = MemberName ## Components .__Add__<List_T>(index, &MemberName.index, std::forward<std::initializer_list<List_T>>(list));\
+		if (MemberName.index == -1) MemberName ## Components .__Add__<List_T>(index, &MemberName.index, std::forward<std::initializer_list<List_T>>(list));\
 		return {componentsLock, MemberName ## Components .__Get__(MemberName.index)};\
 	}\
 	template<typename ArrayRef, int ArrayN>\
 	v4d::data::EntityComponentSystem::Component<ClassName, ComponentType>::ComponentReferenceLocked Add_ ## MemberName (const ArrayRef (&val)[ArrayN]) {\
 		std::lock_guard entitiesLock(ClassName::entityInstancesMutex);\
 		std::unique_lock<std::recursive_mutex> componentsLock(MemberName ## Components.componentsMutex);\
-		if (MemberName.index == -1) MemberName.index = MemberName ## Components .__Add__<ArrayRef, ArrayN>(index, &MemberName.index, val);\
+		if (MemberName.index == -1) MemberName ## Components .__Add__<ArrayRef, ArrayN>(index, &MemberName.index, val);\
 		return {componentsLock, MemberName ## Components .__Get__(MemberName.index)};\
 	}\
 	void Remove_ ## MemberName ();
@@ -447,5 +479,84 @@ namespace v4d::data::EntityComponentSystem {
 			MemberName ## Components .__Remove__(MemberName.index);\
 			MemberName.index = -1;\
 		}\
+	}
+
+
+// Used in .h files
+#define V4D_ENTITY_DECLARE_COMPONENT_MAP(ClassName, MapKey, ComponentType, MemberName) \
+	class ComponentReferenceMap_ ## MemberName {\
+		friend ClassName;\
+		EntityIndex_T entityIndex;\
+		std::unordered_map<MapKey, ClassName::ComponentIndex_T*> indices {};\
+		ComponentReferenceMap_ ## MemberName () : entityIndex(-1) {}\
+		ComponentReferenceMap_ ## MemberName (EntityIndex_T entityIndex) : entityIndex(entityIndex) {}\
+		~ComponentReferenceMap_ ## MemberName () {\
+			if (entityIndex == -1) return;\
+			std::lock_guard entitiesLock(ClassName::entityInstancesMutex);\
+			std::lock_guard componentsLock(MemberName ## Components.componentsMutex);\
+			for (auto&[key, indexPtr] : indices) if (indexPtr) {\
+				MemberName ## Components .__Remove__(*indexPtr);\
+				delete indexPtr;\
+			}\
+		}\
+		public:\
+		operator bool() {return (entityIndex != -1);}\
+		template<typename T>\
+		v4d::data::EntityComponentSystem::Component<ClassName, ComponentType>::ComponentReferenceLocked operator[] (T&& key) {\
+			if (entityIndex == -1) return {};\
+			std::lock_guard componentsLock(MemberName ## Components.componentsMutex);\
+			if (!indices[std::forward<T>(key)]) {\
+				indices[std::forward<T>(key)] = new ClassName::ComponentIndex_T;\
+				MemberName ## Components .__Add__(entityIndex, indices[std::forward<T>(key)]);\
+			}\
+			return MemberName ## Components .Lock(*indices[std::forward<T>(key)]);\
+		}\
+		bool ForEach(std::function<void(ComponentType&)>&& func){\
+			if (entityIndex == -1) return false;\
+			std::lock_guard componentsLock(MemberName ## Components.componentsMutex);\
+			for (auto&[key, indexPtr] : indices) if(indexPtr) {\
+				MemberName ## Components .Do(*indexPtr, std::forward<std::function<void(ComponentType&)>>(func));\
+			}\
+			return true;\
+		}\
+		size_t Count() const {\
+			if (entityIndex == -1) return 0;\
+			std::lock_guard componentsLock(MemberName ## Components.componentsMutex);\
+			return indices.size();\
+		}\
+		void Erase(MapKey key) {\
+			if (entityIndex == -1) return;\
+			std::lock_guard componentsLock(MemberName ## Components.componentsMutex);\
+			try {\
+				ClassName::ComponentIndex_T* indexPtr = indices.at(key);\
+				if (indexPtr) {\
+					MemberName ## Components .__Remove__(*indexPtr);\
+					delete indices[key];\
+				}\
+				indices.erase(key);\
+			} catch(...){}\
+		}\
+	} MemberName;\
+	static v4d::data::EntityComponentSystem::Component<ClassName, ComponentType> MemberName ## Components ;\
+	/* Add_<component> */\
+	ComponentReferenceMap_ ## MemberName & Add_ ## MemberName () {\
+		MemberName.entityIndex = index;\
+		return MemberName;\
+	}\
+	void Remove_ ## MemberName ();
+
+// Used in .cpp files
+#define V4D_ENTITY_DEFINE_COMPONENT_MAP(ClassName, MapKey, ComponentType, MemberName) \
+	v4d::data::EntityComponentSystem::Component<ClassName, ComponentType> ClassName::MemberName ## Components  {};\
+	void ClassName::Remove_ ## MemberName () {\
+		if (MemberName.entityIndex == -1) return;\
+		std::lock_guard entitiesLock(ClassName::entityInstancesMutex);\
+		std::lock_guard componentsLock(MemberName ## Components.componentsMutex);\
+		for (auto&[key, indexPtr] : MemberName.indices) if (indexPtr) {\
+			MemberName ## Components .__Remove__(*indexPtr);\
+			delete indexPtr;\
+		}\
+		MemberName.indices.clear();\
+		MemberName.entityIndex = -1;\
 	}
 

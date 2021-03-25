@@ -41,6 +41,7 @@ class TestEntity {
 	V4D_ENTITY_DECLARE_COMPONENT(TestEntity, std::string, test4)
 	V4D_ENTITY_DECLARE_COMPONENT(TestEntity, int, test5)
 	V4D_ENTITY_DECLARE_COMPONENT(TestEntity, SpecialClass, test6)
+	V4D_ENTITY_DECLARE_COMPONENT_MAP(TestEntity, std::string_view, Test2, test2Map)
 	
 	void Allocate() {
 		test6.Do([](auto& test){
@@ -67,6 +68,7 @@ V4D_ENTITY_DEFINE_COMPONENT(TestEntity, std::vector<int>, test3)
 V4D_ENTITY_DEFINE_COMPONENT(TestEntity, std::string, test4)
 V4D_ENTITY_DEFINE_COMPONENT(TestEntity, int, test5)
 V4D_ENTITY_DEFINE_COMPONENT(TestEntity, SpecialClass, test6)
+V4D_ENTITY_DEFINE_COMPONENT_MAP(TestEntity, std::string_view, Test2, test2Map)
 
 //
 namespace v4d::tests {
@@ -219,6 +221,51 @@ namespace v4d::tests {
 		result += TestEntity::CountActive();
 		TestEntity::Trim();
 		result += TestEntity::Count();
+		
+		// OneToMany
+		{
+			result = -2;
+			TestEntity::Create()->Add_test2Map()["test1"] = Test2("hello");
+			TestEntity::ForEach([](auto entity){
+				entity->test2Map["test1"]->a = 2;
+				entity->test2Map["test2"]->a = 5;
+				entity->test2Map.ForEach([](auto& component){
+					if (component.str == "hello") component.a -= 1;
+					else component.a -= 4;
+				});
+			});
+			TestEntity::test2MapComponents.ForEach([&result](auto entityIndex, auto& component){
+				result += component.a;
+			});
+			
+			if (result != 0) return -1;
+			
+			result = 2;
+			TestEntity::ForEach([&result](auto entity){
+				result -= entity->test2Map.Count();
+			});
+			
+			if (result != 0) return -1;
+			
+			result = -1;
+			TestEntity::ForEach([](auto entity){
+				entity->test2Map.Erase("test1");
+			});
+			TestEntity::test2MapComponents.ForEach([&result](auto entityIndex, auto& component){
+				result += component.a;
+			});
+			
+			if (result != 0) return -2;
+			
+			TestEntity::ForEach([](auto entity){
+				entity->Remove_test2Map();
+			});
+			
+			TestEntity::test2MapComponents.ForEach([&result](auto entityIndex, auto& component){
+				result += component.a;
+			});
+			
+		}
 		
 		return result;
 	}
