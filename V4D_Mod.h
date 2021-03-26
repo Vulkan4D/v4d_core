@@ -1,5 +1,36 @@
 #pragma once
+
 #include <v4d.h>
+
+// Dependencies for Modular
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <mutex>
+#include <vector>
+#include <functional>
+#include <filesystem>
+#include "utilities/io/FilePath.h"
+
+// Dependencies for V4D_Mod
+#include "utilities/graphics/vulkan/Loader.h"
+#include "utilities/graphics/Window.h"
+#include "utilities/graphics/Renderer.h"
+#include "utilities/graphics/vulkan/Device.h"
+#include "utilities/graphics/vulkan/PhysicalDevice.h"
+#include "utilities/graphics/vulkan/Image.h"
+#include "utilities/graphics/vulkan/PipelineLayout.h"
+#include "utilities/graphics/vulkan/RasterShaderPipeline.h"
+#include "utilities/graphics/vulkan/rtx/ShaderBindingTable.h"
+#include "utilities/io/Socket.h"
+#include "utilities/data/ReadOnlyStream.hpp"
+#include "utilities/data/WriteOnlyStream.hpp"
+#include "utilities/networking/OutgoingConnection.h"
+#include "utilities/networking/ListeningServer.h"
+#include "utilities/networking/IncomingClient.h"
+#include "utilities/scene/Scene.h"
+#include "utilities/scene/NetworkGameObject.h"
+
 
 class V4DLIB V4D_Mod {
 	V4D_MODULE_CLASS_HEADER(V4D_Mod

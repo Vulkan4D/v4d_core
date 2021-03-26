@@ -1,5 +1,8 @@
 #pragma once
+
 #include <v4d.h>
+#include <string>
+#include <vector>
 
 namespace v4d::crypto {
 	V4DLIB std::string SHA1(const byte* data, size_t);

@@ -6,7 +6,13 @@
  * This class is an abstraction of individual shader files within a shader program
  */
 #pragma once
+
 #include <v4d.h>
+#include <vector>
+#include <string>
+#include <unordered_map>
+#include "utilities/graphics/vulkan/Loader.h"
+#include "utilities/graphics/vulkan/Device.h"
 
 namespace v4d::graphics::vulkan {
 

@@ -1,6 +1,7 @@
 #pragma once
 
-#include <v4d.h>
+#include <mutex>
+#include <vector>
 
 /**
  * V4D's Entity-Component system v1.1
@@ -214,8 +215,6 @@ namespace v4d::data::EntityComponentSystem {
 					componentsList[componentIndex] = std::move(componentsList.back());
 					if (componentsList[componentIndex].entityInstanceIndex != -1) {
 						*componentsList[componentIndex].componentIndexPtrInEntity = componentIndex;
-					} else {
-						LOG_ERROR("component __Remove__ last component entity index is -1")
 					}
 				}
 				if (componentsList.size() > 0) componentsList.pop_back();

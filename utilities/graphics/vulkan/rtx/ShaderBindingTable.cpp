@@ -1,4 +1,4 @@
-#include <v4d.h>
+#include "ShaderBindingTable.h"
 
 using namespace v4d::graphics::vulkan;
 using namespace v4d::graphics::vulkan::rtx;

@@ -8,6 +8,7 @@
 #endif
 
 #include <v4d.h>
+#include "utilities/io/Logger.h"
 
 using namespace v4d::graphics::vulkan;
 

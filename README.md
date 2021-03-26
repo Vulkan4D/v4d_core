@@ -25,13 +25,11 @@ See modding documentation in [the sample module repository](https://github.com/V
 
 ## File Structure
 The core consists of the following structure :
-- `common/*` common headers (mostly std stuff)
 - `helpers/*` Contains header-only `.hpp` files with helper methods
-- `modules/*` Contains module classes for modding
 - `utilities/*` Contains subdirectories for utility categories with all their utilities
-- `Core.cpp` Core Source File compiled only in the core library
-- `Core.h` Core header file
+- `Core.h/cpp` Core source compiled only in the core library
 - `v4d.h` Main Header file to be included in anything that is part of V4D
+- `V4D_Mod.h/cpp` Modding interface base class
 - `tests.cxx` Core Unit Tests
 - `README.md` this documentation
 - `*.hh` Grouped Header files included in v4d.h

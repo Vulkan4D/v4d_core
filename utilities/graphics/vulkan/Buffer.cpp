@@ -1,4 +1,4 @@
-#include <v4d.h>
+#include "Buffer.h"
 
 using namespace v4d::graphics::vulkan;
 
@@ -156,7 +156,7 @@ void StagedBuffer::Free(Device* device) {
 void StagedBuffer::Update(Device* device, VkCommandBuffer commandBuffer, size_t maxCopySize) {
 	if (stagingBuffer.srcDataPointers.size() > 0) stagingBuffer.CopySrcData(device, maxCopySize);
 	if (!device->TouchAllocation(deviceLocalBuffer.allocation)) {
-		LOG_DEBUG("Staging Buffer Update() ALLOCATION LOST")
+		// LOG_DEBUG("Staging Buffer Update() ALLOCATION LOST")
 		return;
 	}
 	Buffer::Copy(device, commandBuffer, stagingBuffer, deviceLocalBuffer, maxCopySize);

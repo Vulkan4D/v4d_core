@@ -1,9 +1,12 @@
 #pragma once
-#include <v4d.h>
 
-namespace v4d::crypto {
-	class Crypto;
-}
+#include <v4d.h>
+#include <vector>
+#include <functional>
+#include <mutex>
+
+#include "utilities/io/Logger.h"
+#include "utilities/crypto/Crypto.h"
 
 namespace v4d::data {
 

@@ -1,5 +1,4 @@
 #pragma once
-#include <v4d.h>
 
 #ifdef _V4D_CORE
 	#define ___EVENTEXPORT_CLASS EXTERNCPP class DLLEXPORT

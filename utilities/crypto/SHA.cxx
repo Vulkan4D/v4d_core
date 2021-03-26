@@ -1,4 +1,5 @@
 #include <v4d.h>
+#include "utilities/crypto/SHA.h"
 
 namespace v4d::tests {
 	int SHA() {

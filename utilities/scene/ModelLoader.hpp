@@ -1,6 +1,9 @@
 #pragma once
 
 #include <v4d.h>
+#include <memory>
+#include "utilities/graphics/vulkan/Device.h"
+#include "utilities/graphics/RenderableGeometryEntity.h"
 
 namespace v4d::scene {
 	template<class ModelDataType>

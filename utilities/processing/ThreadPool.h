@@ -1,5 +1,21 @@
 #pragma once
+
 #include <v4d.h>
+#include <string>
+#include <unordered_map>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <vector>
+#include <queue>
+#include <deque>
+#include <functional>
+#include <future>
+#include <chrono>
+#include <type_traits>
+#include <memory>
+#include <utility>
+#include "utilities/io/Logger.h"
 
 namespace v4d::processing {
 	
@@ -8,11 +24,11 @@ namespace v4d::processing {
 		bool stopping = false;
 		size_t numThreads = 0;
 		mutable std::mutex eventMutex {}; // For stopping, numThreads and tasks
-		std::unordered_map<index_t, std::thread> threads {};
+		std::unordered_map<uint32_t, std::thread> threads {};
 		std::recursive_mutex threadsMutex {};
 		std::condition_variable eventVar {};
 		
-		virtual void StartNewThread(index_t) = 0;
+		virtual void StartNewThread(uint32_t) = 0;
 		
 	public:
 
@@ -37,9 +53,9 @@ namespace v4d::processing {
 					}
 				}
 			} catch (std::exception& e) {
-				LOG_ERROR("Error while joining ThreadPool threads: " << e.what())
+				// LOG_ERROR("Error while joining ThreadPool threads: " << e.what())
 			} catch (...) {
-				LOG_ERROR("Unknown Error while joining ThreadPool threads")
+				// LOG_ERROR("Unknown Error while joining ThreadPool threads")
 			}
 			std::lock_guard lock(eventMutex);
 		}
@@ -79,7 +95,7 @@ namespace v4d::processing {
 		std::function<void(QueuedElementType& item)> taskRunFunction;
 		QueueType items {};
 		
-		virtual void StartNewThread(index_t index) override {
+		virtual void StartNewThread(uint32_t index) override {
 			std::lock_guard threadsLock(threadsMutex);
 			threads.emplace(index, 
 				[this, index] {

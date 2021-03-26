@@ -8,6 +8,7 @@
 #pragma once
 
 #include <v4d.h>
+#include <vector>
 
 #ifndef XVK_INTERFACE_RAW_FUNCTIONS_ACCESSIBILITY
 	#define XVK_INTERFACE_RAW_FUNCTIONS_ACCESSIBILITY private

@@ -1,4 +1,5 @@
-#include <v4d.h>
+#include "StringListFile.h"
+#include <fstream>
 
 using namespace v4d::io;
 

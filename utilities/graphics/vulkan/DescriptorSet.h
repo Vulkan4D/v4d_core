@@ -6,7 +6,14 @@
  * This weird class is a work in progress
  */
 #pragma once
+
 #include <v4d.h>
+#include <vector>
+#include <map>
+#include "utilities/graphics/vulkan/Loader.h"
+#include "utilities/graphics/vulkan/Device.h"
+#include "utilities/graphics/vulkan/Buffer.h"
+#include "utilities/graphics/vulkan/Image.h"
 
 namespace v4d::graphics::vulkan {
 	

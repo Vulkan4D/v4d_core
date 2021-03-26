@@ -1,5 +1,12 @@
 #pragma once
+
 #include <v4d.h>
+#include <string>
+#include <vector>
+#include <atomic>
+#include <memory>
+#include <thread>
+#include "utilities/crypto/AES.h"
 
 namespace v4d::networking {
 	class IncomingClient {

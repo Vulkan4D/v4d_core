@@ -1,4 +1,4 @@
-#include <v4d.h>
+#include "AccelerationStructure.h"
 
 namespace v4d::graphics::vulkan::rtx {
 	
@@ -231,7 +231,7 @@ namespace v4d::graphics::vulkan::rtx {
 		// LOG_VERBOSE("Created Acceleration Structure " << accelerationStructure)
 		
 		if (!device->TouchAllocation(accelerationStructureAllocation)) {
-			LOG_DEBUG("Acceleration Structure CreateAndAllocate ALLOCATION LOST")
+			// LOG_DEBUG("Acceleration Structure CreateAndAllocate ALLOCATION LOST")
 		}
 	}
 	

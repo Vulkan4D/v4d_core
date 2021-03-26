@@ -1,4 +1,6 @@
-#include <v4d.h>
+#include "ConfigFile.h"
+#include <fstream>
+#include "utilities/io/Logger.h"
 
 using namespace v4d::io;
 

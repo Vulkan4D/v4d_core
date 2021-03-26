@@ -1,6 +1,15 @@
 #pragma once
 
 #include <v4d.h>
+#include <any>
+#include <mutex>
+#include <atomic>
+#include <memory>
+#include <vector>
+#include <unordered_map>
+#include "utilities/graphics/vulkan/Loader.h"
+#include "utilities/networking/ZAP.hh"
+#include "utilities/graphics/RenderableGeometryEntity.h"
 
 namespace v4d::networking::ZAP::data {
 	
@@ -39,12 +48,12 @@ namespace v4d::scene {
 	using namespace zapdata;
 	class V4DLIB NetworkGameObject {
 	public:
-		typedef uint32_t Type;
-		typedef uint64_t Parent;
-		typedef uint32_t Id;
-		typedef uint64_t Extra; 
-		typedef uint32_t Attributes;
-		typedef uint32_t Iteration;
+		using Type = uint32_t;
+		using Parent = uint64_t;
+		using Id = uint32_t;
+		using Extra = uint64_t; 
+		using Attributes = uint32_t;
+		using Iteration = uint32_t;
 		
 		v4d::modular::ModuleID moduleID; // refers to a module with a submodule class of V4D_Objects
 		Type type;

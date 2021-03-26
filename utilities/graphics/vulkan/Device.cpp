@@ -1,4 +1,4 @@
-#include <v4d.h>
+#include "Device.h"
 
 using namespace v4d::graphics::vulkan;
 
@@ -263,7 +263,7 @@ void Device::EndSingleTimeCommands(Queue queue, VkCommandBuffer commandBuffer) {
 		uint64_t timeout = std::numeric_limits<uint64_t>::max();
 	// #endif
 	if (VkResult res = WaitForFences(1, &fence, VK_TRUE, timeout); res != VK_SUCCESS) {
-		LOG_ERROR(res)
+		// LOG_ERROR(res)
 		throw std::runtime_error("Failed to wait for fence to signal");
 	}
 
@@ -439,8 +439,8 @@ void Device::FreeAndDestroyBuffer(VkBuffer& buffer, MemoryAllocation& allocation
 		std::lock_guard lock(allocatorDeleteMutex);
 		if (allocator) {
 			vmaDestroyBuffer(allocator, buffer, allocation);
-		} else {
-			LOG_DEBUG("FreeAndDestroyBuffer called after allocator has been destroyed")
+		// } else {
+			// LOG_DEBUG("FreeAndDestroyBuffer called after allocator has been destroyed")
 		}
 	#else
 		DestroyBuffer(buffer, nullptr);
@@ -454,8 +454,8 @@ void Device::FreeAndDestroyImage(VkImage& image, MemoryAllocation& allocation) {
 		std::lock_guard lock(allocatorDeleteMutex);
 		if (allocator) {
 			vmaDestroyImage(allocator, image, allocation);
-		} else {
-			LOG_DEBUG("FreeAndDestroyImage called after allocator has been destroyed")
+		// } else {
+			// LOG_DEBUG("FreeAndDestroyImage called after allocator has been destroyed")
 		}
 	#else
 		DestroyImage(image, nullptr);

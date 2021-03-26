@@ -1,5 +1,6 @@
 #pragma once
-#include <v4d.h>
+
+#include <string>
 
 namespace v4d {
 	const std::string base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

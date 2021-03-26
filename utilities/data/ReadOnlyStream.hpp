@@ -1,5 +1,7 @@
 #pragma once
-#include <v4d.h>
+
+#include <cstring>
+#include "utilities/data/Stream.h"
 
 namespace v4d::data {
 	class V4DLIB ReadOnlyStream : public Stream {

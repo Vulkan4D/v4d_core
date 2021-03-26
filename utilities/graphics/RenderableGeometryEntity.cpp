@@ -1,4 +1,5 @@
-#include <v4d.h>
+#include "RenderableGeometryEntity.h"
+#include "utilities/io/Logger.h"
 
 namespace v4d::graphics {
 

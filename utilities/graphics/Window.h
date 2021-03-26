@@ -6,7 +6,13 @@
  * This class is an abstraction of GLFW methods for quick Vulkan integration
  */
 #pragma once
+
 #include <v4d.h>
+#include <map>
+#include <vector>
+#include <functional>
+#include <string>
+#include "utilities/graphics/vulkan/Loader.h"
 
 namespace v4d::graphics {
 	

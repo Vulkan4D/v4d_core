@@ -1,5 +1,28 @@
 #pragma once
+
 #include <v4d.h>
+#include <atomic>
+#include <vector>
+#include <thread>
+#include <memory>
+#include <string>
+
+#include "utilities/data/Stream.h"
+#include "utilities/data/ReadOnlyStream.hpp"
+
+#ifdef _WINDOWS
+	#include <winsock2.h>
+	#include <direct.h>
+	#include <ws2tcpip.h>
+	#include <mstcpip.h>
+#else// _LINUX
+	#include <sys/socket.h>
+	#include <sys/poll.h>
+	#include <netdb.h>
+	#include <netinet/in.h>
+	#include <netinet/tcp.h>
+	#include <arpa/inet.h>
+#endif
 
 #ifndef SOCKET_BUFFER_SIZE
 	#define SOCKET_BUFFER_SIZE 1024

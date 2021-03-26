@@ -1,5 +1,13 @@
 #pragma once
+
 #include <v4d.h>
+#include <string>
+#include <thread>
+#include "utilities/data/Stream.h"
+#include "utilities/io/Socket.h"
+#include "utilities/crypto/AES.h"
+#include "utilities/crypto/RSA.h"
+#include "utilities/networking/ZAP.hh"
 
 namespace v4d::networking {
 	class V4DLIB OutgoingConnection {

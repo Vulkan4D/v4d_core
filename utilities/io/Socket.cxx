@@ -1,11 +1,12 @@
-#include <v4d.h>
+#include "Socket.h"
+#include "utilities/crypto/RSA.h"
 
 namespace v4d::tests {
 	int Socket() {
 		// LOGGER_INSTANCE->SetVerbose(true);
 
 		{// Test 1 (TCP)
-			LOG_VERBOSE("    Running Test 1")
+			// LOG_VERBOSE("    Running Test 1")
 			int result = 100;
 
 			v4d::io::Socket server(v4d::io::TCP);
@@ -35,13 +36,13 @@ namespace v4d::tests {
 			server.Disconnect();
 
 			if (result != 0) {
-				LOG_ERROR(result << " v4d::tests::Socket Error test1")
+				// LOG_ERROR(result << " v4d::tests::Socket Error test1")
 				return 1;
 			}
 		}
 
 		{// Test 2 (vectors via TCP)
-			LOG_VERBOSE("    Running Test 2")
+			// LOG_VERBOSE("    Running Test 2")
 			int result = 100;
 
 			v4d::io::Socket server(v4d::io::TCP);
@@ -73,13 +74,13 @@ namespace v4d::tests {
 			server.Disconnect();
 
 			if (result != 0) {
-				LOG_ERROR(result << " v4d::tests::Socket Error test2")
+				// LOG_ERROR(result << " v4d::tests::Socket Error test2")
 				return 1;
 			}
 		}
 
 		{// Test 3 (UDP)
-			LOG_VERBOSE("    Running Test 3")
+			// LOG_VERBOSE("    Running Test 3")
 			int result = 100;
 
 			v4d::io::Socket server(v4d::io::UDP);
@@ -105,13 +106,13 @@ namespace v4d::tests {
 			server.Disconnect();
 
 			if (result != 0) {
-				LOG_ERROR(result << " v4d::tests::Socket Error test3")
+				// LOG_ERROR(result << " v4d::tests::Socket Error test3")
 				return 2;
 			}
 		}
 
 		{// Test 4 (DataStream via UDP)
-			LOG_VERBOSE("    Running Test 4")
+			// LOG_VERBOSE("    Running Test 4")
 			int result = 100;
 
 			v4d::io::Socket server(v4d::io::UDP);
@@ -141,7 +142,7 @@ namespace v4d::tests {
 			server.Disconnect();
 
 			if (result != 0) {
-				LOG_ERROR(result << " v4d::tests::Socket Error test4")
+				// LOG_ERROR(result << " v4d::tests::Socket Error test4")
 				return 3;
 			}
 		}
@@ -149,7 +150,7 @@ namespace v4d::tests {
 		auto rsa = v4d::crypto::RSA(2048, 3);
 
 		{// Test 5 (Encrypted data via TCP)
-			LOG_VERBOSE("    Running Test 5")
+			// LOG_VERBOSE("    Running Test 5")
 			int result = 100;
 
 			v4d::io::Socket server(v4d::io::TCP);
@@ -179,13 +180,13 @@ namespace v4d::tests {
 			server.Disconnect();
 
 			if (result != 0) {
-				LOG_ERROR(result << " v4d::tests::Socket Error test5")
+				// LOG_ERROR(result << " v4d::tests::Socket Error test5")
 				return 1;
 			}
 		}
 
 		{// Test 6 (Encrypted DataStream via UDP)
-			LOG_VERBOSE("    Running Test 6")
+			// LOG_VERBOSE("    Running Test 6")
 			int result = 100;
 
 			v4d::io::Socket server(v4d::io::UDP);
@@ -215,7 +216,7 @@ namespace v4d::tests {
 			server.Disconnect();
 
 			if (result != 0) {
-				LOG_ERROR(result << " v4d::tests::Socket Error test6")
+				// LOG_ERROR(result << " v4d::tests::Socket Error test6")
 				return 3;
 			}
 		}

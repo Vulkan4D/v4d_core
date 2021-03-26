@@ -1,5 +1,8 @@
 #pragma once
+
 #include <v4d.h>
+#include <vector>
+#include <string>
 
 namespace v4d::data {
 	class Stream;

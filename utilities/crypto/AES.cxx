@@ -1,4 +1,8 @@
 #include <v4d.h>
+#include <cstring>
+#include "utilities/io/Socket.h"
+#include "utilities/networking/ZAP.hh"
+#include "utilities/crypto/AES.h"
 
 namespace v4d::networking::ZAP::data {
 	ZAPDATA( ClientTokenTest, 
@@ -27,7 +31,7 @@ namespace v4d::tests {
 			v4d::crypto::AES aes2(aesHex);
 
 			if (aesHex != aes2.GetHexKey()) {
-				LOG_ERROR("ERROR: AES Test1 failed: converting to/from hex string")
+				// LOG_ERROR("ERROR: AES Test1 failed: converting to/from hex string")
 				return -1;
 			}
 
@@ -50,7 +54,10 @@ namespace v4d::tests {
 				result -= (int)e;
 			}
 
-			if (result != 0) LOG_ERROR("ERROR: AES Test1 failed")
+			if (result != 0) {
+				// LOG_ERROR("ERROR: AES Test1 failed")
+				return -1;
+			}
 		}
 
 		{// Test2: Encrypt / Decrypt String
@@ -62,7 +69,7 @@ namespace v4d::tests {
 			auto decryptedString = aes2.DecryptString(encryptedData);
 
 			if (decryptedString != "Hello AES!") {
-				LOG_ERROR("ERROR: AES Test2 failed")
+				// LOG_ERROR("ERROR: AES Test2 failed")
 				return 2;
 			}
 		}
@@ -79,7 +86,7 @@ namespace v4d::tests {
 
 			for (byte b : decryptedData) result -= b;
 
-			if (result != 0) LOG_ERROR("ERROR: AES Test3 failed")
+			// if (result != 0) LOG_ERROR("ERROR: AES Test3 failed")
 		}
 
 		{// Test4: Encrypt / Decrypt ZAP String
@@ -91,7 +98,10 @@ namespace v4d::tests {
 			auto data = zapdata::ClientTokenTest{4, zapdata::EncryptedString{}.Encrypt(&aes, token)};
 			std::string token2 = data.token.Decrypt(&aes2);
 
-			if (strcmp(token.c_str(), token2.c_str()) != 0) LOG_ERROR("ERROR: AES Test4 failed")
+			if (strcmp(token.c_str(), token2.c_str()) != 0) {
+				return -3;
+				// LOG_ERROR("ERROR: AES Test4 failed")
+			}
 		}
 
 

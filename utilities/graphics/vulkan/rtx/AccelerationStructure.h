@@ -1,6 +1,10 @@
 #pragma once
 
 #include <v4d.h>
+#include <vector>
+#include "utilities/graphics/vulkan/Loader.h"
+#include "utilities/graphics/vulkan/Device.h"
+#include "utilities/graphics/vulkan/Buffer.h"
 
 #ifndef RAY_TRACING_TLAS_MAX_INSTANCES
 	#define RAY_TRACING_TLAS_MAX_INSTANCES 65536

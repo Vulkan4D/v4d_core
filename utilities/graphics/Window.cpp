@@ -1,4 +1,5 @@
-#include <v4d.h>
+#include "Window.h"
+#include <atomic>
 
 using namespace v4d::graphics;
 
@@ -83,7 +84,7 @@ Window::~Window() {
 VkSurfaceKHR Window::CreateVulkanSurface(VkInstance instance) {
 	VkSurfaceKHR surface;
 	if (VkResult err = glfwCreateWindowSurface(instance, handle, nullptr, &surface); err != VK_SUCCESS) {
-		LOG_ERROR(err)
+		// LOG_ERROR(err)
 		throw std::runtime_error("Failed to create Vulkan Surface");
 	}
 	return surface;

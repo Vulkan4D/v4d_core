@@ -1,4 +1,13 @@
+#pragma once
+
 #include <v4d.h>
+#include <vector>
+#include <atomic>
+#include <tuple>
+#include <queue>
+#include <optional>
+#include "utilities/graphics/vulkan/Loader.h"
+#include "utilities/graphics/Mesh.hpp"
 
 namespace v4d::scene {
 	

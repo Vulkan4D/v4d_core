@@ -6,7 +6,12 @@
  * This class extends from xvk's Vulkan Instance (xvk is another open-source library related to Vulkan4D)
  */
 #pragma once
+
 #include <v4d.h>
+#include <vector>
+#include <functional>
+#include "utilities/graphics/vulkan/Loader.h"
+#include "utilities/graphics/vulkan/PhysicalDevice.h"
 
 namespace v4d::graphics::vulkan {
 

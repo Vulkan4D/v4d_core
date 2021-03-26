@@ -1,5 +1,7 @@
 #define TINYGLTF_IMPLEMENTATION
-#include <v4d.h>
+
+#include "GltfModelLoader.h"
+#include "utilities/io/Logger.h"
 
 #ifdef V4D_INCLUDE_TINYGLTFLOADER
 

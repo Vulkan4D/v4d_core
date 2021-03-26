@@ -1,5 +1,7 @@
 #pragma once
-#include <v4d.h>
+
+#include <string>
+#include <algorithm>
 
 #define TRIM_CHARS " \f\n\r\t\v"
 

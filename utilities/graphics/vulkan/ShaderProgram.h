@@ -6,7 +6,13 @@
  * This class handles the loading of multiple shader stages into one shader 'program'
  */
 #pragma once
+
 #include <v4d.h>
+#include <vector>
+#include "utilities/graphics/vulkan/Loader.h"
+#include "utilities/graphics/vulkan/Device.h"
+#include "utilities/graphics/vulkan/PipelineLayout.h"
+#include "utilities/graphics/vulkan/Shader.h"
 
 namespace v4d::graphics::vulkan {
 

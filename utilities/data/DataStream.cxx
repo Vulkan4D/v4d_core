@@ -1,4 +1,6 @@
 #include <v4d.h>
+#include <thread>
+#include "utilities/data/DataStream.hpp"
 
 namespace v4d::tests {
 	int DataStream() {
@@ -29,7 +31,7 @@ namespace v4d::tests {
 				result -= (int)(c+(float)d);
 			}
 			if (result != 0) {
-				LOG_ERROR(result << " Failed DataStream test1")
+				// LOG_ERROR(result << " Failed DataStream test1")
 				return result;
 			}
 		}
@@ -47,7 +49,7 @@ namespace v4d::tests {
 
 			tRead.join();
 			if (result != 0) {
-				LOG_ERROR(result << " Failed DataStream test2")
+				// LOG_ERROR(result << " Failed DataStream test2")
 				return result;
 			}
 		}
@@ -75,7 +77,7 @@ namespace v4d::tests {
 
 			tRead.join();
 			if (result != 0) {
-				LOG_ERROR(result << " Failed DataStream test3")
+				// LOG_ERROR(result << " Failed DataStream test3")
 				return result;
 			}
 		}
@@ -94,7 +96,7 @@ namespace v4d::tests {
 
 			tRead.join();
 			if (result != 0) {
-				LOG_ERROR(result << " Failed DataStream test4")
+				// LOG_ERROR(result << " Failed DataStream test4")
 				return result;
 			}
 		}
@@ -115,7 +117,7 @@ namespace v4d::tests {
 
 			tRead.join();
 			if (result != 0) {
-				LOG_ERROR(result << " Failed DataStream test5")
+				// LOG_ERROR(result << " Failed DataStream test5")
 				return result;
 			}
 		}
@@ -136,7 +138,7 @@ namespace v4d::tests {
 
 			tRead.join();
 			if (result != 0) {
-				LOG_ERROR(result << " Failed DataStream test6")
+				// LOG_ERROR(result << " Failed DataStream test6")
 				return result;
 			}
 		}
@@ -155,7 +157,7 @@ namespace v4d::tests {
 
 			tRead.join();
 			if (result != 0) {
-				LOG_ERROR(result << " Failed DataStream test7")
+				// LOG_ERROR(result << " Failed DataStream test7")
 				return result;
 			}
 		}
@@ -176,7 +178,7 @@ namespace v4d::tests {
 
 			tRead.join();
 			if (result != 0) {
-				LOG_ERROR(result << " Failed DataStream test8")
+				// LOG_ERROR(result << " Failed DataStream test8")
 				return result;
 			}
 		}
@@ -195,7 +197,7 @@ namespace v4d::tests {
 
 			tRead.join();
 			if (result != 0) {
-				LOG_ERROR(result << " Failed DataStream test9")
+				// LOG_ERROR(result << " Failed DataStream test9")
 				return result;
 			}
 		}

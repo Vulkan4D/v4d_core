@@ -1,5 +1,6 @@
 #pragma once
-#include <v4d.h>
+
+#include <string>
 
 namespace v4d {
 	// for maximum string length of 13, padding is first character (space)

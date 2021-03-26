@@ -6,7 +6,13 @@
  * This class handles the binding and draw calls related to a specific shader program
  */
 #pragma once
+
 #include <v4d.h>
+#include <vector>
+#include <string>
+#include "utilities/graphics/vulkan/Loader.h"
+#include "utilities/graphics/vulkan/Device.h"
+#include "utilities/graphics/vulkan/ShaderProgram.h"
 
 namespace v4d::graphics::vulkan {
 

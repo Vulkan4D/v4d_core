@@ -1,4 +1,4 @@
-#include <v4d.h>
+#include "SHA.h"
 
 // SHA1
 std::string v4d::crypto::SHA1(const byte* data, size_t size) {

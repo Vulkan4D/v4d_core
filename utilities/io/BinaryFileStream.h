@@ -1,5 +1,11 @@
 #pragma once
+
 #include <v4d.h>
+#include <string>
+#include <fstream>
+#include <vector>
+#include "utilities/io/FilePath.h"
+#include "utilities/data/Stream.h"
 
 namespace v4d::io {
 	class V4DLIB BinaryFileStream : public v4d::data::Stream, public v4d::io::FilePath {

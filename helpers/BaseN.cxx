@@ -54,9 +54,6 @@ namespace v4d::tests {
 
 	int BaseN() {
 		int result = RunBaseNTests();
-		if (result != 0) {
-			LOG_ERROR("failed with test " << result)
-		}
 		return result;
 	}
 }

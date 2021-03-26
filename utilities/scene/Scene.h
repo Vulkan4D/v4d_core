@@ -1,6 +1,9 @@
 #pragma once
 
 #include <v4d.h>
+#include <memory>
+#include "utilities/graphics/vulkan/Loader.h"
+#include "utilities/graphics/RenderableGeometryEntity.h"
 
 #include "Camera.hpp"
 

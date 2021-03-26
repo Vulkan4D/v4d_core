@@ -1,5 +1,6 @@
 #pragma once
-#include <v4d.h>
+// #include <v4d.h>
+#include <memory>
 
 // V4D Core class and events (Compiled into v4d.dll)
 

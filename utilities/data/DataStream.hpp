@@ -1,8 +1,11 @@
 #pragma once
-#include <v4d.h>
+
+#include <condition_variable>
+#include <cstring>
+#include "utilities/data/Stream.h"
 
 namespace v4d::data {
-	class V4DLIB DataStream : public Stream {
+	class DataStream : public Stream {
 	protected:
 		size_t dataBufferCursor;
 		std::vector<byte> dataBuffer;

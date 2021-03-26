@@ -26,20 +26,70 @@
 	#include "../../config.hh"
 #endif
 
-// Common includes (Mostly STL)
-#include "common/includes.hh"
+// Common includes
+#include <iostream>
+#include <csignal>
+#ifdef _V4D_CORE
+	// OpenSSL
+	#include <openssl/sha.h>
+	#include <openssl/pem.h>
+	#include <openssl/aes.h>
+	#include <openssl/rsa.h>
+	#include <openssl/err.h>
+	#include <openssl/rand.h>
+#endif
+#ifdef _WINDOWS
+	#include <winsock2.h>
+	#include <windows.h>
+	#define MAXFLOAT std::numeric_limits<float>::max()
+#else// _LINUX
+	#include <dlfcn.h>
+	#include <unistd.h>
+	#define MAXBYTE 0xFF
+#endif
 
-// This includes all helpers (simple header-only source files)
-#include "helpers.hh"
+// Helpers (simple header-only files unaware of V4D)
+#include "helpers/types.hpp"
+#include "helpers/macros.hpp"
+#include "helpers/event.hpp"
+#include "helpers/Timer.hpp"
+#include "helpers/String.hpp"
+#include "helpers/Base16.hpp"
+#include "helpers/Base64.hpp"
+#include "helpers/BaseN.hpp"
+#include "helpers/modular.hpp"
 
 // V4D Core class (Compiled into v4d.dll)
 #include "Core.h"
 
-// This includes all V4D Core Utilities (Also Compiled into v4d.dll)
-#include "utilities.hh"
+#ifdef _V4D_PROJECT
+	// Initial source code for the Project (App or Game)
+	namespace v4d {
+		bool CheckCoreVersion() {
+			if (V4D_VERSION != v4d::GetCoreBuildVersion()) {
+				std::cerr << "V4D Core Library version mismatch (PROJECT:" << V4D_VERSION << ", V4D_CORE:" << v4d::GetCoreBuildVersion() << ")\n";
+				return false;
+			}
+			return true;
+		}
+		bool Init() {
+			ATTACH_SIGNAL_HANDLER(V4D_SIGNAL_HANDLER)
+			if (!v4d::CheckCoreVersion()) return false;
+			return true;
+		}
+	}
+#endif
 
-// Mods
-#include "V4D_Mod.h"
+// Vulkan loader and xvk
+#include "utilities/graphics/vulkan/Loader.h"
 
-// Initial source code for the End-Project
-#include "project.hh"
+// ImGui
+#ifdef _ENABLE_IMGUI
+	#ifndef IMGUI_API
+		#define IMGUI_API V4DLIB
+		#define IMGUI_IMPL_API V4DLIB
+	#endif
+	#include "imgui/imgui.h"
+	#include "utilities/graphics/imgui_vulkan.h"
+	#include "imgui/backends/imgui_impl_glfw.h"
+#endif

@@ -1,4 +1,6 @@
-#include <v4d.h>
+#include "Logger.h"
+#include <thread>
+#include <cstring>
 
 using namespace v4d::io;
 

@@ -6,7 +6,14 @@
  * This class extends from ShaderPipeline with specific functionality for rasterization
  */
 #pragma once
+
 #include <v4d.h>
+#include <vector>
+#include "utilities/graphics/vulkan/Loader.h"
+#include "utilities/graphics/vulkan/Device.h"
+#include "utilities/graphics/vulkan/Image.h"
+#include "utilities/graphics/vulkan/SwapChain.h"
+#include "utilities/graphics/vulkan/ShaderPipeline.h"
 
 namespace v4d::graphics::vulkan {
 

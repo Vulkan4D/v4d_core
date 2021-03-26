@@ -1,4 +1,5 @@
-#include <v4d.h>
+#include "ThreadPool.h"
+#include "utilities/io/Logger.h"
 
 namespace v4d::tests {
 	int ThreadPool() {

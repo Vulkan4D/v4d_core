@@ -1,4 +1,5 @@
 #pragma once
+
 #include <v4d.h>
 
 using namespace XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE;

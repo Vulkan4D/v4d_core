@@ -1,5 +1,8 @@
 #pragma once
+
 #include <v4d.h>
+#include <filesystem>
+#include <string>
 
 #define PATH_MAX_STRING_SIZE 256
 

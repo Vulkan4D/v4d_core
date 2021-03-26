@@ -1,4 +1,7 @@
 #include <v4d.h>
+#include "utilities/data/Stream.h"
+#include "utilities/crypto/RSA.h"
+#include "utilities/crypto/Crypto.h"
 
 namespace v4d::tests {
 	int RSA() {
@@ -38,7 +41,7 @@ namespace v4d::tests {
 			}
 
 			if (result != 0) {
-				LOG_ERROR("ERROR: RSA Test1 failed")
+				// LOG_ERROR("ERROR: RSA Test1 failed")
 				return 1;
 			}
 		}
@@ -49,7 +52,7 @@ namespace v4d::tests {
 			auto decryptedString = rsa.DecryptString(encryptedData);
 
 			if (decryptedString != "Hello RSA!") {
-				LOG_ERROR("ERROR: RSA Test2 failed")
+				// LOG_ERROR("ERROR: RSA Test2 failed")
 				return 2;
 			}
 		}
@@ -65,7 +68,7 @@ namespace v4d::tests {
 			for (byte b : decryptedData) result -= b;
 
 			if (result != 0) {
-				LOG_ERROR("ERROR: RSA Test3 failed")
+				// LOG_ERROR("ERROR: RSA Test3 failed")
 				return 3;
 			}
 		}
@@ -98,7 +101,7 @@ namespace v4d::tests {
 			}
 
 			if (result != 0) {
-				LOG_ERROR("ERROR: RSA Test4 failed")
+				// LOG_ERROR("ERROR: RSA Test4 failed")
 				return 4;
 			}
 		}

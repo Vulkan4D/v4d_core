@@ -9,6 +9,9 @@
 #pragma once
 
 #include <v4d.h>
+#include <vector>
+#include "utilities/graphics/vulkan/Loader.h"
+#include "utilities/graphics/vulkan/Device.h"
 
 namespace v4d::graphics::vulkan {
 	class V4DLIB Image {

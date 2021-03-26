@@ -1,21 +1,16 @@
 #pragma once
-#include <v4d.h>
+
+#include <type_traits>
+#include <tuple>
 
 #ifdef _LINUX // Fore matching Windows counterparts
-typedef std::uint8_t byte;
-typedef int SOCKET;
+	typedef uint8_t byte;
+	typedef int SOCKET;
 #endif
-
-typedef std::uint16_t ushort;
-typedef std::uint32_t uint;
-typedef std::uint64_t ulong;
-
-typedef size_t			index_t;
-typedef std::uint8_t	index_255;
-typedef std::uint16_t	index_65k;
-typedef std::uint32_t	index_int;
-typedef std::uint64_t	index_long;
-
+#ifdef _WINDOWS // Fore matching Linux counterparts
+	typedef uint32_t uint;
+	typedef uint64_t ulong;
+#endif
 
 /////////////////////////////////////////////////////////////////////////
 // Compile-time Reflection for Looping through struct members (Maximum of 24 members for now)

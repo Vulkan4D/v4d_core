@@ -1,4 +1,6 @@
-#include <v4d.h>
+#include "DescriptorSet.h"
+#include "utilities/graphics/vulkan/Image.h"
+#include "utilities/graphics/vulkan/Buffer.h"
 
 using namespace v4d::graphics::vulkan;
 

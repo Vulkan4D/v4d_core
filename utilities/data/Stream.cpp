@@ -1,4 +1,6 @@
-#include <v4d.h>
+#include <cstring>
+#include "Stream.h"
+#include "utilities/data/ReadOnlyStream.hpp"
 
 using namespace v4d::data;
 

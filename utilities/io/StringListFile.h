@@ -1,5 +1,11 @@
 #pragma once
+
 #include <v4d.h>
+#include <string>
+#include <optional>
+#include <vector>
+#include "utilities/io/FilePath.h"
+#include "utilities/io/ASCIIFile.h"
 
 namespace v4d::io {
 	class V4DLIB StringListFile : public ASCIIFile {

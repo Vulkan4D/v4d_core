@@ -1,5 +1,8 @@
 #pragma once
+
 #include <v4d.h>
+#include <vector>
+#include "utilities/crypto/Crypto.h"
 
 namespace v4d::crypto {
 	

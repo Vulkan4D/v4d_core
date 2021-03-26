@@ -1,16 +1,16 @@
-#include <v4d.h>
+#include "BinaryFileStream.h"
 
 namespace v4d::tests {
 	int BinaryFileStream() {
 		int result = 0;
 
 		if (!v4d::io::FilePath::CreateDirectory("testdir_/someotherdir/stuff")) {
-			LOG_ERROR("Failed to create directory")
+			// LOG_ERROR("Failed to create directory")
 			return 1;
 		}
 
 		if (!v4d::io::FilePath::DeleteDirectory("testdir_", true)) {
-			LOG_ERROR("Failed to delete directory")
+			// LOG_ERROR("Failed to delete directory")
 			return 2;
 		}
 
@@ -44,7 +44,7 @@ namespace v4d::tests {
 					result -= (int)(c+(float)d);
 				}
 				if (result != 0) {
-					LOG_ERROR(result << " Failed BinaryFileStream test1")
+					// LOG_ERROR(result << " Failed BinaryFileStream test1")
 					return result;
 				}
 			}
@@ -64,7 +64,7 @@ namespace v4d::tests {
 				}
 
 				if (result != 0) {
-					LOG_ERROR(result << " Failed BinaryFileStream test2")
+					// LOG_ERROR(result << " Failed BinaryFileStream test2")
 					return result;
 				}
 			}
@@ -73,7 +73,7 @@ namespace v4d::tests {
 		}
 
 		if (!v4d::io::FilePath::DeleteDirectory("testfiles_", true)) {
-			LOG_ERROR("Failed to delete directory after running tests")
+			// LOG_ERROR("Failed to delete directory after running tests")
 			return 3;
 		}
 

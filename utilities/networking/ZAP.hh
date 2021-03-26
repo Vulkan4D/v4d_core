@@ -1,5 +1,11 @@
 #pragma once
+
 #include <v4d.h>
+#include <vector>
+#include "utilities/data/Stream.h"
+#include "utilities/io/Socket.h"
+#include "utilities/crypto/Crypto.h"
+#include "utilities/data/ReadOnlyStream.hpp"
 
 // ZAP Ain't a Protocol
 namespace v4d::networking::ZAP {

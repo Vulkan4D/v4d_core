@@ -1,4 +1,7 @@
-#include <v4d.h>
+#include "utilities/networking/OutgoingConnection.h"
+#include "utilities/networking/IncomingClient.h"
+#include "utilities/networking/ListeningServer.h"
+#include "utilities/io/Logger.h"
 
 std::atomic<int> result = 100;
 

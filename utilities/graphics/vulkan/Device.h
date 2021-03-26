@@ -5,7 +5,15 @@
  * 
  */
 #pragma once
+
 #include <v4d.h>
+#include <map>
+#include <unordered_map>
+#include <mutex>
+#include <vector>
+#include "utilities/graphics/vulkan/Loader.h"
+#include "utilities/graphics/vulkan/PhysicalDevice.h"
+#include "utilities/graphics/vulkan/Queue.hpp"
 
 namespace v4d::graphics::vulkan {
 

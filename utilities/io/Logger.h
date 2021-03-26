@@ -1,5 +1,13 @@
 #pragma once
+
 #include <v4d.h>
+#include <mutex>
+#include <atomic>
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <memory>
+#include <optional>
 
 namespace v4d::io {
 	// https://misc.flogisoft.com/bash/tip_colors_and_formatting

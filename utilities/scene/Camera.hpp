@@ -1,6 +1,7 @@
 #pragma once
 
 #include <v4d.h>
+#include "utilities/graphics/vulkan/Loader.h"
 
 namespace v4d::scene {
 	struct V4DLIB Camera {

@@ -1,6 +1,10 @@
 #pragma once
 
 #include <v4d.h>
+#include <vector>
+#include "utilities/graphics/vulkan/Loader.h"
+#include "utilities/graphics/vulkan/Device.h"
+#include "utilities/graphics/vulkan/ShaderProgram.h"
 
 namespace v4d::graphics::Mesh {
 
@@ -15,7 +19,7 @@ namespace v4d::graphics::Mesh {
 		VertexPosition(const glm::vec3& v) : x(v.x), y(v.y), z(v.z) {}
 		operator glm::vec3() {return glm::vec3(x, y, z);}
 		VertexPosition() {static_assert(sizeof(VertexPosition) == 12);}
-		static std::vector<VertexInputAttributeDescription> GetInputAttributes() {
+		static std::vector<v4d::graphics::vulkan::VertexInputAttributeDescription> GetInputAttributes() {
 			return {
 				{0, offsetof(VertexPosition, x), VK_FORMAT_R32G32B32_SFLOAT},
 			};
@@ -77,7 +81,7 @@ namespace v4d::graphics::Mesh {
 		glm::vec3 aabbMax;
 		ProceduralVertexAABB(glm::vec3 aabbMin, glm::vec3 aabbMax) : aabbMin(aabbMin), aabbMax(aabbMax) {}
 		ProceduralVertexAABB() {static_assert(sizeof(ProceduralVertexAABB) == 24);}
-		static std::vector<VertexInputAttributeDescription> GetInputAttributes() {
+		static std::vector<v4d::graphics::vulkan::VertexInputAttributeDescription> GetInputAttributes() {
 			return {
 				{0, offsetof(ProceduralVertexAABB, aabbMin), VK_FORMAT_R32G32B32_SFLOAT},
 				{1, offsetof(ProceduralVertexAABB, aabbMax), VK_FORMAT_R32G32B32_SFLOAT},
@@ -91,47 +95,47 @@ namespace v4d::graphics::Mesh {
 		size_t count = 0;
 		VkBuffer hostBuffer = VK_NULL_HANDLE;
 		VkBuffer deviceBuffer = VK_NULL_HANDLE;
-		MemoryAllocation hostBufferAllocation = VK_NULL_HANDLE;
-		MemoryAllocation deviceBufferAllocation = VK_NULL_HANDLE;
+		v4d::graphics::vulkan::MemoryAllocation hostBufferAllocation = VK_NULL_HANDLE;
+		v4d::graphics::vulkan::MemoryAllocation deviceBufferAllocation = VK_NULL_HANDLE;
 		bool dirtyOnDevice = false;
 		
 		size_t TypeSize() const {return sizeof(T);}
 		
 		template<typename _T>
-		T* AllocateBuffersFromValue(Device* device, _T&& value) {
+		T* AllocateBuffersFromValue(v4d::graphics::vulkan::Device* device, _T&& value) {
 			AllocateBuffersCount(device, 1);
 			*data = std::forward<_T>(value);
 			dirtyOnDevice = true;
 			return data;
 		}
-		T* AllocateBuffers(Device* device, T&& value) {
+		T* AllocateBuffers(v4d::graphics::vulkan::Device* device, T&& value) {
 			AllocateBuffersCount(device, 1);
 			*data = std::forward<T>(value);
 			dirtyOnDevice = true;
 			return data;
 		}
-		T* AllocateBuffers(Device* device) {
+		T* AllocateBuffers(v4d::graphics::vulkan::Device* device) {
 			return AllocateBuffersCount(device, 1);
 		}
-		T* AllocateBuffersFromList(Device* device, const std::initializer_list<T>& list) {
+		T* AllocateBuffersFromList(v4d::graphics::vulkan::Device* device, const std::initializer_list<T>& list) {
 			AllocateBuffersCount(device, list.size());
 			memcpy(data, list.begin(), list.size() * sizeof(T));
 			dirtyOnDevice = true;
 			return data;
 		}
-		T* AllocateBuffersFromVector(Device* device, const std::vector<T>& list) {
+		T* AllocateBuffersFromVector(v4d::graphics::vulkan::Device* device, const std::vector<T>& list) {
 			AllocateBuffersCount(device, list.size());
 			memcpy(data, list.data(), list.size() * sizeof(T));
 			dirtyOnDevice = true;
 			return data;
 		}
-		T* AllocateBuffersFromArray(Device* device, T* inputDataOrArray, size_t elementCount = 1) {
+		T* AllocateBuffersFromArray(v4d::graphics::vulkan::Device* device, T* inputDataOrArray, size_t elementCount = 1) {
 			AllocateBuffersCount(device, elementCount);
 			memcpy(data, inputDataOrArray, elementCount * sizeof(T));
 			dirtyOnDevice = true;
 			return data;
 		}
-		T* AllocateBuffersCount(Device* device, uint32_t elementCount) {
+		T* AllocateBuffersCount(v4d::graphics::vulkan::Device* device, uint32_t elementCount) {
 			assert(elementCount > 0);
 			
 			count = elementCount;
@@ -145,7 +149,7 @@ namespace v4d::graphics::Mesh {
 				createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 				createInfo.size = count * sizeof(T);
 				createInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-				device->CreateAndAllocateBuffer(createInfo, MemoryUsage::MEMORY_USAGE_CPU_ONLY, hostBuffer, &hostBufferAllocation);
+				device->CreateAndAllocateBuffer(createInfo, v4d::graphics::vulkan::MemoryUsage::MEMORY_USAGE_CPU_ONLY, hostBuffer, &hostBufferAllocation);
 			}
 			
 			// Map data pointer to host buffer
@@ -165,11 +169,11 @@ namespace v4d::graphics::Mesh {
 				if constexpr (std::is_same_v<T, Mesh::ProceduralVertexAABB>) {
 					createInfo.usage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
 				}
-				device->CreateAndAllocateBuffer(createInfo, MemoryUsage::MEMORY_USAGE_GPU_ONLY, deviceBuffer, &deviceBufferAllocation);
+				device->CreateAndAllocateBuffer(createInfo, v4d::graphics::vulkan::MemoryUsage::MEMORY_USAGE_GPU_ONLY, deviceBuffer, &deviceBufferAllocation);
 			}
 			return data;
 		}
-		void Push(Device* device, VkCommandBuffer commandBuffer) {
+		void Push(v4d::graphics::vulkan::Device* device, VkCommandBuffer commandBuffer) {
 			if (dirtyOnDevice) {
 				assert(data && deviceBuffer && hostBuffer);
 				VkBufferCopy region = {};{
@@ -181,7 +185,7 @@ namespace v4d::graphics::Mesh {
 				dirtyOnDevice = false;
 			}
 		}
-		void Pull(Device* device, VkCommandBuffer commandBuffer) {
+		void Pull(v4d::graphics::vulkan::Device* device, VkCommandBuffer commandBuffer) {
 			assert(deviceBuffer && hostBuffer);
 			VkBufferCopy region = {};{
 				region.srcOffset = 0;
@@ -190,7 +194,7 @@ namespace v4d::graphics::Mesh {
 			}
 			device->CmdCopyBuffer(commandBuffer, deviceBuffer, hostBuffer, 1, &region);
 		}
-		void FreeBuffers(Device* device) {
+		void FreeBuffers(v4d::graphics::vulkan::Device* device) {
 			if (data) {
 				assert(hostBuffer && hostBufferAllocation && deviceBuffer && deviceBufferAllocation); 
 				device->UnmapMemoryAllocation(hostBufferAllocation);

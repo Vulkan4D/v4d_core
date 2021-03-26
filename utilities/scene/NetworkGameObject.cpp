@@ -1,4 +1,4 @@
-#include <v4d.h>
+#include "NetworkGameObject.h"
 
 namespace v4d::scene {
 

@@ -6,7 +6,13 @@
  * This file contains the Buffer class, the StagedBuffer class and the DeviceLocalBufferPool template
  */
 #pragma once
+
 #include <v4d.h>
+#include <vector>
+#include <array>
+#include <mutex>
+#include "utilities/graphics/vulkan/Loader.h"
+#include "utilities/graphics/vulkan/Device.h"
 
 namespace v4d::graphics::vulkan {
 

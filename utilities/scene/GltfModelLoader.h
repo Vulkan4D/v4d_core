@@ -1,6 +1,17 @@
 #pragma once
 
 #include <v4d.h>
+#include "utilities/graphics/vulkan/Loader.h"
+#include "utilities/graphics/Mesh.hpp"
+#include "utilities/scene/PhysicsInfo.h"
+#include "utilities/graphics/RenderableGeometryEntity.h"
+#include <string>
+#include <string_view>
+#include <memory>
+#include <unordered_map>
+#include <vector>
+#include "utilities/graphics/vulkan/Device.h"
+#include "utilities/scene/ModelLoader.hpp"
 
 #ifdef V4D_INCLUDE_TINYGLTFLOADER
 
