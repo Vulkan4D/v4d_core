@@ -35,7 +35,7 @@ int SpecialClass::count = 0;
 
 // TestEntity.h
 class TestEntity {
-	V4D_ENTITY_DECLARE_CLASS(TestEntity)
+	V4D_ENTITY_DECLARE_CLASS_MAP(TestEntity)
 	V4D_ENTITY_DECLARE_COMPONENT(TestEntity, Test1, test1)
 	V4D_ENTITY_DECLARE_COMPONENT(TestEntity, Test2, test2)
 	V4D_ENTITY_DECLARE_COMPONENT(TestEntity, std::vector<int>, test3)
@@ -56,13 +56,17 @@ class TestEntity {
 		});
 	}
 	
+	void operator()(int constructorA, double constructorB) {
+		Add_test1(constructorA, constructorB);
+	}
+	
 	~TestEntity() {
 		Free();
 	}
 };
 
 // TestEntity.cpp
-V4D_ENTITY_DEFINE_CLASS(TestEntity)
+V4D_ENTITY_DEFINE_CLASS_MAP(TestEntity)
 V4D_ENTITY_DEFINE_COMPONENT(TestEntity, Test1, test1);
 V4D_ENTITY_DEFINE_COMPONENT(TestEntity, Test2, test2);
 V4D_ENTITY_DEFINE_COMPONENT(TestEntity, std::vector<int>, test3)
@@ -76,12 +80,13 @@ namespace v4d::tests {
 	int EntityComponentSystem() {
 		int result = 0;
 		
-		TestEntity::Create();
-		TestEntity::Create();
-		TestEntity::Create();
+		TestEntity::Create(0);
+		TestEntity::Create(1);
+		TestEntity::Create(2);
 		
-		auto entity = TestEntity::Create();
-		entity->Add_test1(14, 2.5);
+		TestEntity::NextID(3);
+		
+		auto entity = TestEntity::Create(-1, 14, 2.5);
 		{auto test1 = entity->test1.Lock();
 			if (test1->a != 14) ++result;
 		}

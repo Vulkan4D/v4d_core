@@ -50,7 +50,7 @@ namespace v4d::scene {
 	public:
 		using Type = uint32_t;
 		using Parent = uint64_t;
-		using Id = uint32_t;
+		using Id = uint64_t;
 		using Extra = uint64_t; 
 		using Attributes = uint32_t;
 		using Iteration = uint32_t;
