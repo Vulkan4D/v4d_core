@@ -8,44 +8,9 @@
 #include <vector>
 #include <unordered_map>
 #include "utilities/graphics/vulkan/Loader.h"
-#include "utilities/networking/ZAP.hh"
 #include "utilities/graphics/RenderableGeometryEntity.h"
 
-namespace v4d::networking::ZAP::data {
-	
-	ZAPDATA(DVector3,
-		double x;
-		double y;
-		double z;
-	)
-	ZAPDATA(DMat3x4,
-		double x0;
-		double x1;
-		double x2;
-		double y0;
-		double y1;
-		double y2;
-		double z0;
-		double z1;
-		double z2;
-		double w0;
-		double w1;
-		double w2;
-	)
-	
-	struct V4DLIB NetworkGameObjectTransform {
-		ZAPABLE(NetworkGameObjectTransform) // 120 bytes
-		
-		DMat3x4 mat3x4 {};
-		DVector3 velocity {0,0,0};
-		
-		void SetFromTransformAndVelocity(const glm::dmat4&, const glm::dvec3&);
-		void GetTransformAndVelocity(glm::dmat4&, glm::dvec3&) const;
-	};
-}
-
 namespace v4d::scene {
-	using namespace zapdata;
 	class V4DLIB NetworkGameObject {
 	public:
 		using Type = uint32_t;
@@ -54,6 +19,8 @@ namespace v4d::scene {
 		using Extra = uint64_t; 
 		using Attributes = uint32_t;
 		using Iteration = uint32_t;
+		using Position = glm::dvec3;
+		using Orientation = glm::dquat;
 		
 		v4d::modular::ModuleID moduleID; // refers to a module with a submodule class of V4D_Objects
 		Type type;
@@ -75,15 +42,17 @@ namespace v4d::scene {
 		
 	private: 
 		std::atomic<Iteration> iteration = 1;
-		glm::dmat4 transform {1};
-		glm::dvec3 velocity {0};
 		mutable std::mutex mu;
 		
 	public:
+		Position position {0};
+		Orientation orientation {1,0,0,0};
 		
 		// Client-Side only
 		bool posInit = false;
 		bool physicsControl = false;
+		Position targetPosition {0};
+		Orientation targetOrientation {1,0,0,0};
 		
 		// Server-Side only
 		uint64_t physicsClientID = 0; // client id that controls physics for this object, 0 = server controls physics
@@ -94,18 +63,7 @@ namespace v4d::scene {
 		Iteration GetIteration() const;
 		Iteration SetIteration(Iteration i);
 		
-		NetworkGameObjectTransform GetNetworkTransform() const;
-		void SetTransformFromNetwork(const NetworkGameObjectTransform&);
 		void SmoothlyInterpolateGameObjectTransform(double delta);
-		
-		void SetTransform(const glm::dvec3& position = {0,0,0}, double angle = 0, const glm::dvec3& axis = {0,0,1});
-		void SetTransform(const glm::dvec3& position, const glm::dvec3& forwardVector, const glm::dvec3& upVector);
-		void SetTransform(const glm::dmat4&);
-		glm::dmat4 GetTransform() const;
-		void SetVelocity(const glm::dvec3&);
-		const glm::dvec3& GetVelocity() const {return velocity;}
-		
-		glm::dvec3 GetLookDirection() const;
 		
 		void SetAttributes(Attributes attrs);
 		Attributes GetAttributes() const;

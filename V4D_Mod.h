@@ -103,15 +103,8 @@ class V4DLIB V4D_Mod {
 		,AddRayTracingHitShader
 		,GetShaderBindingTable
 		
-		//TODO remove
-		,CreateGameObject
-		,DestroyGameObject
-		,SendStreamCustomGameObjectData
-		,ReceiveStreamCustomGameObjectData
-		,SendStreamCustomGameObjectTransformData
-		,ReceiveStreamCustomGameObjectTransformData
-		,AddGameObjectToScene
-		
+		,CreateEntity
+		,DestroyEntity
 		,StreamSendEntityData
 		,StreamReceiveEntityData
 		,StreamSendEntityTransformData
@@ -211,19 +204,13 @@ class V4DLIB V4D_Mod {
 	V4D_MODULE_FUNC_DECLARE(void, AddRayTracingHitShader, v4d::modular::ModuleID, const std::string& name)
 	V4D_MODULE_FUNC_DECLARE(v4d::graphics::vulkan::rtx::ShaderBindingTable*, GetShaderBindingTable, const std::string& sbtName)
 
-//TODO remove
-	V4D_MODULE_FUNC_DECLARE(void, CreateGameObject, v4d::scene::NetworkGameObjectPtr obj)
-	V4D_MODULE_FUNC_DECLARE(void, DestroyGameObject, v4d::scene::NetworkGameObjectPtr obj, v4d::scene::Scene* scene)
-	V4D_MODULE_FUNC_DECLARE(void, SendStreamCustomGameObjectData, v4d::scene::NetworkGameObjectPtr obj, v4d::data::WriteOnlyStream& stream)
-	V4D_MODULE_FUNC_DECLARE(void, ReceiveStreamCustomGameObjectData, v4d::scene::NetworkGameObjectPtr obj, v4d::data::ReadOnlyStream& stream)
-	V4D_MODULE_FUNC_DECLARE(void, SendStreamCustomGameObjectTransformData, v4d::scene::NetworkGameObjectPtr obj, v4d::data::WriteOnlyStream& stream)
-	V4D_MODULE_FUNC_DECLARE(void, ReceiveStreamCustomGameObjectTransformData, v4d::scene::NetworkGameObjectPtr obj, v4d::data::ReadOnlyStream& stream)
-	V4D_MODULE_FUNC_DECLARE(void, AddGameObjectToScene, v4d::scene::NetworkGameObjectPtr obj, v4d::scene::Scene* scene)
 // Stream Entities
-	V4D_MODULE_FUNC_DECLARE(void, StreamSendEntityData, uint64_t entityUniqueID, v4d::data::WriteOnlyStream&)
-	V4D_MODULE_FUNC_DECLARE(void, StreamReceiveEntityData, uint64_t entityUniqueID, v4d::data::ReadOnlyStream&)
-	V4D_MODULE_FUNC_DECLARE(void, StreamSendEntityTransformData, uint64_t entityUniqueID, v4d::data::WriteOnlyStream&)
-	V4D_MODULE_FUNC_DECLARE(void, StreamReceiveEntityTransformData, uint64_t entityUniqueID, v4d::data::ReadOnlyStream&)
+	V4D_MODULE_FUNC_DECLARE(void, CreateEntity, int64_t entityUniqueID, uint64_t type)
+	V4D_MODULE_FUNC_DECLARE(void, DestroyEntity, int64_t entityUniqueID, uint64_t type)
+	V4D_MODULE_FUNC_DECLARE(void, StreamSendEntityData, int64_t entityUniqueID, uint64_t type, v4d::data::WriteOnlyStream&)
+	V4D_MODULE_FUNC_DECLARE(void, StreamReceiveEntityData, int64_t entityUniqueID, uint64_t type, v4d::data::ReadOnlyStream&)
+	V4D_MODULE_FUNC_DECLARE(void, StreamSendEntityTransformData, int64_t entityUniqueID, uint64_t type, v4d::data::WriteOnlyStream&)
+	V4D_MODULE_FUNC_DECLARE(void, StreamReceiveEntityTransformData, int64_t entityUniqueID, uint64_t type, v4d::data::ReadOnlyStream&)
 
 // Client
 	V4D_MODULE_FUNC_DECLARE(void, ClientSendActions, v4d::io::SocketPtr stream)
