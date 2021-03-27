@@ -6,6 +6,8 @@
 #include <optional>
 #include <memory>
 #include <atomic>
+#include <functional>
+#include <thread>
 
 /**
  * V4D's Entity-Component system v1.1
@@ -312,25 +314,27 @@ namespace v4d::data::EntityComponentSystem {
 
 // Used in .h files
 #define V4D_ENTITY_DECLARE_CLASS(ClassName)\
+	public: using Ptr = std::shared_ptr<ClassName>;\
+	public: using WeakPtr = std::weak_ptr<ClassName>;\
 	private:\
 		static std::recursive_mutex _ecs_entityInstancesMutex;\
-		static std::vector<std::shared_ptr<ClassName>> _ecs_entityInstances;\
+		static std::vector<Ptr> _ecs_entityInstances;\
 	private:\
 		static std::optional<std::thread::id> _ecs_destroyThreadId;\
 		v4d::data::EntityComponentSystem::EntityIndex_T _ecs_index;\
 		bool _ecs_markedForDestruction = false;\
 		ClassName(v4d::data::EntityComponentSystem::EntityIndex_T);\
 	public:\
-		static std::shared_ptr<ClassName> Create();\
+		static Ptr Create();\
 		template<typename...Args>\
-		static std::shared_ptr<ClassName> Create(Args&&...args) {\
+		static Ptr Create(Args&&...args) {\
 			std::lock_guard lock(_ecs_entityInstancesMutex);\
 			size_t nbEntityInstances = _ecs_entityInstances.size();\
 			for (size_t i = 0; i < nbEntityInstances; ++i) {\
 				if (!_ecs_entityInstances[i]) {\
 					auto* e = new ClassName(i);\
 					(*e)(std::forward<Args>(args)...);\
-					return _ecs_entityInstances[i] = std::shared_ptr<ClassName>(e);\
+					return _ecs_entityInstances[i] = Ptr(e);\
 				}\
 			}\
 			auto* e = new ClassName(nbEntityInstances);\
@@ -345,21 +349,21 @@ namespace v4d::data::EntityComponentSystem {
 		static size_t Count();\
 		static size_t CountActive();\
 		static std::unique_lock<std::recursive_mutex> GetLock();\
-		static void ForEach(std::function<void(std::shared_ptr<ClassName>)>&& func);\
-		static std::shared_ptr<ClassName> Get(v4d::data::EntityComponentSystem::EntityIndex_T entityInstanceIndex);\
+		static void ForEach(std::function<void(Ptr)>&& func);\
+		static Ptr Get(v4d::data::EntityComponentSystem::EntityIndex_T entityInstanceIndex);\
 		inline v4d::data::EntityComponentSystem::EntityIndex_T GetIndex() const {return _ecs_index;};
 
 // Used in .cpp files
 #define V4D_ENTITY_DEFINE_CLASS(ClassName)\
 	std::recursive_mutex ClassName::_ecs_entityInstancesMutex {};\
-	std::vector<std::shared_ptr<ClassName>> ClassName::_ecs_entityInstances {};\
+	std::vector<ClassName::Ptr> ClassName::_ecs_entityInstances {};\
 	std::optional<std::thread::id> ClassName::_ecs_destroyThreadId = std::nullopt;\
 	ClassName::ClassName(v4d::data::EntityComponentSystem::EntityIndex_T index) : _ecs_index(index) {}\
-	std::shared_ptr<ClassName> ClassName::Create() {\
+	ClassName::Ptr ClassName::Create() {\
 		std::lock_guard lock(_ecs_entityInstancesMutex);\
 		size_t nbEntityInstances = _ecs_entityInstances.size();\
 		for (size_t i = 0; i < nbEntityInstances; ++i) {\
-			if (!_ecs_entityInstances[i]) return _ecs_entityInstances[i] = std::shared_ptr<ClassName>(new ClassName(i));\
+			if (!_ecs_entityInstances[i]) return _ecs_entityInstances[i] = ClassName::Ptr(new ClassName(i));\
 		}\
 		return _ecs_entityInstances.emplace_back(new ClassName(nbEntityInstances));\
 	}\
@@ -395,7 +399,7 @@ namespace v4d::data::EntityComponentSystem {
 		std::lock_guard lock(_ecs_entityInstancesMutex);\
 		Destroy(_ecs_index);\
 	}\
-	void ClassName::ForEach(std::function<void(std::shared_ptr<ClassName>)>&& func) {\
+	void ClassName::ForEach(std::function<void(ClassName::Ptr)>&& func) {\
 		std::lock_guard lock(_ecs_entityInstancesMutex);\
 		for (auto& entity : _ecs_entityInstances) {\
 			if (entity && !entity->_ecs_markedForDestruction) {\
@@ -403,7 +407,7 @@ namespace v4d::data::EntityComponentSystem {
 			}\
 		}\
 	}\
-	std::shared_ptr<ClassName> ClassName::Get(v4d::data::EntityComponentSystem::EntityIndex_T entityInstanceIndex) {\
+	ClassName::Ptr ClassName::Get(v4d::data::EntityComponentSystem::EntityIndex_T entityInstanceIndex) {\
 		std::lock_guard lock(_ecs_entityInstancesMutex);\
 		if (entityInstanceIndex == -1 || (size_t)entityInstanceIndex >= _ecs_entityInstances.size()) return nullptr;\
 		return _ecs_entityInstances[entityInstanceIndex];\
@@ -434,9 +438,11 @@ namespace v4d::data::EntityComponentSystem {
 
 // Used in .h files
 #define V4D_ENTITY_DECLARE_CLASS_MAP(ClassName)\
+	public: using Ptr = std::shared_ptr<ClassName>;\
+	public: using WeakPtr = std::weak_ptr<ClassName>;\
 	private:\
 		static std::recursive_mutex _ecs_entityInstancesMutex;\
-		static std::unordered_map<v4d::data::EntityComponentSystem::EntityIndex_T, std::shared_ptr<ClassName>> _ecs_entityInstances;\
+		static std::unordered_map<v4d::data::EntityComponentSystem::EntityIndex_T, Ptr> _ecs_entityInstances;\
 	private:\
 		static std::optional<std::thread::id> _ecs_destroyThreadId;\
 		v4d::data::EntityComponentSystem::EntityIndex_T _ecs_index;\
@@ -444,14 +450,14 @@ namespace v4d::data::EntityComponentSystem {
 		ClassName(v4d::data::EntityComponentSystem::EntityIndex_T);\
 	public:\
 		static v4d::data::EntityComponentSystem::EntityIndex_T NextID(v4d::data::EntityComponentSystem::EntityIndex_T setNext = -1);\
-		static std::shared_ptr<ClassName> Create(v4d::data::EntityComponentSystem::EntityIndex_T id = -1);\
+		static Ptr Create(v4d::data::EntityComponentSystem::EntityIndex_T id = -1);\
 		template<typename...Args>\
-		static std::shared_ptr<ClassName> Create(v4d::data::EntityComponentSystem::EntityIndex_T id, Args&&...args) {\
+		static Ptr Create(v4d::data::EntityComponentSystem::EntityIndex_T id, Args&&...args) {\
 			std::lock_guard lock(_ecs_entityInstancesMutex);\
 			if (id < 0) id = NextID();\
 			auto* e = new ClassName(id);\
 			(*e)(std::forward<Args>(args)...);\
-			return _ecs_entityInstances[id] = std::shared_ptr<ClassName>(e);\
+			return _ecs_entityInstances[id] = Ptr(e);\
 		}\
 		static void CleanupOnThisThread();\
 		static void Destroy(v4d::data::EntityComponentSystem::EntityIndex_T);\
@@ -461,15 +467,15 @@ namespace v4d::data::EntityComponentSystem {
 		static size_t Count();\
 		static size_t CountActive();\
 		static std::unique_lock<std::recursive_mutex> GetLock();\
-		static void ForEach(std::function<void(std::shared_ptr<ClassName>)>&& func);\
-		static std::shared_ptr<ClassName> Get(v4d::data::EntityComponentSystem::EntityIndex_T id);\
+		static void ForEach(std::function<void(Ptr)>&& func);\
+		static Ptr Get(v4d::data::EntityComponentSystem::EntityIndex_T id);\
 		inline v4d::data::EntityComponentSystem::EntityIndex_T GetIndex() const {return _ecs_index;};\
 		inline v4d::data::EntityComponentSystem::EntityIndex_T GetID() const {return _ecs_index;};
 
 // Used in .cpp files
 #define V4D_ENTITY_DEFINE_CLASS_MAP(ClassName)\
 	std::recursive_mutex ClassName::_ecs_entityInstancesMutex {};\
-	std::unordered_map<v4d::data::EntityComponentSystem::EntityIndex_T, std::shared_ptr<ClassName>> ClassName::_ecs_entityInstances;\
+	std::unordered_map<v4d::data::EntityComponentSystem::EntityIndex_T, ClassName::Ptr> ClassName::_ecs_entityInstances;\
 	std::optional<std::thread::id> ClassName::_ecs_destroyThreadId = std::nullopt;\
 	ClassName::ClassName(v4d::data::EntityComponentSystem::EntityIndex_T index) : _ecs_index(index) {}\
 	v4d::data::EntityComponentSystem::EntityIndex_T ClassName::NextID(v4d::data::EntityComponentSystem::EntityIndex_T setNext){\
@@ -477,10 +483,10 @@ namespace v4d::data::EntityComponentSystem {
 		if (setNext >= 0) return nextID = setNext;\
 		return nextID++;\
 	}\
-	std::shared_ptr<ClassName> ClassName::Create(v4d::data::EntityComponentSystem::EntityIndex_T id) {\
+	ClassName::Ptr ClassName::Create(v4d::data::EntityComponentSystem::EntityIndex_T id) {\
 		std::lock_guard lock(_ecs_entityInstancesMutex);\
 		if (id < 0) id = NextID();\
-		return _ecs_entityInstances[id] = std::shared_ptr<ClassName>(new ClassName(id));\
+		return _ecs_entityInstances[id] = ClassName::Ptr(new ClassName(id));\
 	}\
 	void ClassName::CleanupOnThisThread(){\
 		std::lock_guard lock(_ecs_entityInstancesMutex);\
@@ -516,7 +522,7 @@ namespace v4d::data::EntityComponentSystem {
 		std::lock_guard lock(_ecs_entityInstancesMutex);\
 		Destroy(_ecs_index);\
 	}\
-	void ClassName::ForEach(std::function<void(std::shared_ptr<ClassName>)>&& func) {\
+	void ClassName::ForEach(std::function<void(ClassName::Ptr)>&& func) {\
 		std::lock_guard lock(_ecs_entityInstancesMutex);\
 		for (auto&[id,entity] : _ecs_entityInstances) {\
 			if (entity && !entity->_ecs_markedForDestruction) {\
@@ -524,7 +530,7 @@ namespace v4d::data::EntityComponentSystem {
 			}\
 		}\
 	}\
-	std::shared_ptr<ClassName> ClassName::Get(v4d::data::EntityComponentSystem::EntityIndex_T id) {\
+	ClassName::Ptr ClassName::Get(v4d::data::EntityComponentSystem::EntityIndex_T id) {\
 		std::lock_guard lock(_ecs_entityInstancesMutex);\
 		if (id == -1 || _ecs_entityInstances.count(id) == 0) return nullptr;\
 		return _ecs_entityInstances[id];\

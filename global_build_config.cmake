@@ -61,6 +61,9 @@ function(SubModule _ModuleClass)
 	if(MODULES_LINK_WITH_V4D_CORE)
 		target_link_libraries(${_SubModuleName} v4d)
 	endif()
+	if(MODULES_LINK_WITH_GAME)
+		target_link_libraries(${_SubModuleName} game)
+	endif()
 	target_include_directories(${_SubModuleName} PRIVATE "${_ModuleDir}")
 	target_compile_definitions(${_SubModuleName}
 		PRIVATE -DTHIS_MODULE="${_ModuleVendor}_${_ModuleName}"

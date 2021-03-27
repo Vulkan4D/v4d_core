@@ -63,8 +63,14 @@
 #endif
 #ifdef _V4D_CORE
 	#define V4DLIB DLLEXPORT
+	#define V4DGAME
 #else// Project/Module
 	#define V4DLIB DLLIMPORT
+	#ifdef _V4D_GAME
+		#define V4DGAME DLLEXPORT
+	#else// Project/Module
+		#define V4DGAME DLLIMPORT
+	#endif
 #endif
 
 

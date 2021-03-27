@@ -30,9 +30,6 @@
 #include "utilities/networking/IncomingClient.h"
 #include "utilities/scene/Scene.h"
 
-//TODO remove
-#include "utilities/scene/NetworkGameObject.h"
-
 
 class V4DLIB V4D_Mod {
 	V4D_MODULE_CLASS_HEADER(V4D_Mod

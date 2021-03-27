@@ -62,7 +62,7 @@
 // V4D Core class (Compiled into v4d.dll)
 #include "Core.h"
 
-#ifdef _V4D_PROJECT
+#if defined(_V4D_PROJECT)
 	// Initial source code for the Project (App or Game)
 	namespace v4d {
 		bool CheckCoreVersion() {
