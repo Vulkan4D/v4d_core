@@ -58,6 +58,7 @@
 #include "helpers/Base64.hpp"
 #include "helpers/BaseN.hpp"
 #include "helpers/modular.hpp"
+#include "helpers/EntityComponentSystem.hpp"
 
 // V4D Core class (Compiled into v4d.dll)
 #include "Core.h"

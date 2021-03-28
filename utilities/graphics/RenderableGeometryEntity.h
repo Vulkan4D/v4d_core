@@ -1,7 +1,6 @@
 #pragma once
 
 #include <v4d.h>
-#include "utilities/data/EntityComponentSystem.hpp"
 #include "utilities/graphics/vulkan/Loader.h"
 #include "utilities/graphics/vulkan/Device.h"
 #include "utilities/graphics/Renderer.h"

@@ -8,9 +8,10 @@
 #include <atomic>
 #include <functional>
 #include <thread>
+#include <utility>
 
 /**
- * V4D's Entity-Component system v1.1
+ * V4D's ECS v1.2
  * Author: Olivier St-Laurent, December 2020 - March 2021
  * 
  * This is a very lightweight and elegant implementation of a data-oriented entity-component workload for very fast computation.
@@ -53,9 +54,10 @@
  // main.cpp
 	
 	// this creates and returns a shared pointer to a new entity
-	auto entity = MyEntity::Create();
+	MyEntity::Ptr entity = MyEntity::Create();
+	
 	// You cannot create any constructor for the entity as it is made opaque by this system.
-	// However, if you want to construct things upon instantiation with custom arguments, you may have an operator(...) overload and arguments you pass to Create(...) will be forwarded to it. Passing no argument to Create() will NOT call operator().
+	// However, if you want to construct things upon instantiation with custom arguments, you may have an operator()(...) overload and arguments you pass to Create(...) will be forwarded to it. Passing no argument to Create() will NOT call operator()().
 	
 	// The entity does not get destroyed when we leave the scope, it will live forever until we manually destroy them in one of three ways:
 		
@@ -69,20 +71,23 @@
 		
 			MyEntity::ClearAll();
 			
-		// 3. Call Destroy with a given entity instance index
+		// 3. Call the Destroy static function with a given entity instance index
 		
 			MyEntity::Destroy(index);
 			
 		// All three ways are equivalent
 		
-	// Note: since they are shared pointers, if a reference exists somewhere else it will not get destroyed until all references are destroyed, but its index WILL be invalidated and set to -1.
+	// Note: since they are shared pointers, if a reference exists somewhere else it will not actually get destroyed until all references are destroyed.
+	// You may verify if the entity has been Destroy()ed using the ->IsDestroyed() method on an entity's remaining shared pointer.
+	// Looping through entities or components will NOT include the ones that were Destroy()ed even if they still have a living reference somewhere.
+	// You may define a destructor in your entity class and it will only be called when all references have actually been destroyed, not necessarily when the Destroy() function is called.
 	
 	// We can get the index of an entity like this:
 	auto index = entity->GetIndex();
 	// This index can then be used to fetch that entity again like this:
 	auto entity = MyEntity::Get(index);
 	// Entity indices will not change for a given entity as long as you don't destroy it. Then their indices will be reused by new entities, hence invalidated.
-	// To verify if an entity has been destroyed, you may compare GetIndex() with -1.
+	// To verify if an entity has been destroyed, you may call IsDestroyed().
 	
 	// Entities may have any number of Components. 
 	// Each component is referenced through an opaque pointer in the entity but exposes a few practical features for indirect access.
@@ -124,7 +129,11 @@
 	});
 	// This will only run for existing components, not for entities that don't have that component added to it
 	// All components of the same type are contiguous in memory for great CPU cache usage
-	// Hence it is preferable to not use pointers as component types because it will defeat the purpose
+	// Hence it is preferable to not use pointers as component types because it will defeat the purpose.
+	// CAUTION: Watch out for deadlocks when looping through components
+	//		If you intend to call MyEntity::Get(entityInstanceIndex) from the lambda in a component ForEach() function, you must use ForEach_LockEntities() or ForEach_Entity() instead.
+	//		This will ensure that we always lock the entities around the components and not the other way around.
+	//		For the same reason, from within a component ForEach(), you cannot do a ForEach() through another component type. You must loop through the entities themselves and fetch its components individually instead.
 	
 	// Direct component member access will cast to boolean so that we can check if an entity has a specific component:
 	if (entity->someData) {
@@ -193,14 +202,13 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// Components wrapper template
 
-namespace v4d::data::EntityComponentSystem {
+namespace v4d::ECS {
 	using EntityIndex_T = int64_t;
 	using ComponentIndex_T = int64_t;
 	
+	// Components wrapper template
 	template<typename EntityClass, typename ComponentType>
 	class Component {
 	friend EntityClass;
@@ -239,9 +247,7 @@ namespace v4d::data::EntityComponentSystem {
 				if ((size_t)componentIndex < componentsList.size()-1) {
 					// Move the last element to the position we want to delete, then reassign the index to the last element's parent entity
 					componentsList[componentIndex] = std::move(componentsList.back());
-					if (componentsList[componentIndex].entityInstanceIndex != -1) {
-						*componentsList[componentIndex].componentIndexPtrInEntity = componentIndex;
-					}
+					*componentsList[componentIndex].componentIndexPtrInEntity = componentIndex;
 				}
 				if (componentsList.size() > 0) componentsList.pop_back();
 			}
@@ -255,17 +261,25 @@ namespace v4d::data::EntityComponentSystem {
 			return nullptr;
 		}
 	public:
-		void ForEach(std::function<void(EntityIndex_T& entityInstanceIndex, ComponentType& data)>&& func) {
+		void ForEach(std::function<void(EntityIndex_T, ComponentType&)>&& func) {
 			std::lock_guard lock(componentsMutex);
 			for (auto&[entityInstanceIndex, cmpIdxPtr, data] : componentsList) {
 				func(entityInstanceIndex, data);
 			}
 		}
-		void ForEach_LockEntities(std::function<void(EntityIndex_T& entityInstanceIndex, ComponentType& data)>&& func) {
+		void ForEach_LockEntities(std::function<void(EntityIndex_T, ComponentType&)>&& func) {
 			auto entitiesLock = EntityClass::GetLock();
 			std::lock_guard lock(componentsMutex);
 			for (auto&[entityInstanceIndex, cmpIdxPtr, data] : componentsList) {
 				func(entityInstanceIndex, data);
+			}
+		}
+		void ForEach_Entity(std::function<void(std::shared_ptr<EntityClass>&, ComponentType&)>&& func) {
+			auto entitiesLock = EntityClass::GetLock();
+			std::lock_guard lock(componentsMutex);
+			for (auto&[entityInstanceIndex, cmpIdxPtr, data] : componentsList) {
+				std::shared_ptr<EntityClass> entity = EntityClass::Get(entityInstanceIndex);
+				if (entity) func(entity, data);
 			}
 		}
 		size_t Count() const {
@@ -321,9 +335,10 @@ namespace v4d::data::EntityComponentSystem {
 		static std::vector<Ptr> _ecs_entityInstances;\
 	private:\
 		static std::optional<std::thread::id> _ecs_destroyThreadId;\
-		v4d::data::EntityComponentSystem::EntityIndex_T _ecs_index;\
+		v4d::ECS::EntityIndex_T _ecs_index;\
 		bool _ecs_markedForDestruction = false;\
-		ClassName(v4d::data::EntityComponentSystem::EntityIndex_T);\
+		bool _ecs_destroyed = false;\
+		ClassName(v4d::ECS::EntityIndex_T);\
 	public:\
 		static Ptr Create();\
 		template<typename...Args>\
@@ -342,7 +357,7 @@ namespace v4d::data::EntityComponentSystem {
 			return _ecs_entityInstances.emplace_back(e);\
 		}\
 		static void CleanupOnThisThread();\
-		static void Destroy(v4d::data::EntityComponentSystem::EntityIndex_T);\
+		static void Destroy(v4d::ECS::EntityIndex_T);\
 		static void Trim();\
 		void Destroy();\
 		static void ClearAll();\
@@ -350,15 +365,16 @@ namespace v4d::data::EntityComponentSystem {
 		static size_t CountActive();\
 		static std::unique_lock<std::recursive_mutex> GetLock();\
 		static void ForEach(std::function<void(Ptr)>&& func);\
-		static Ptr Get(v4d::data::EntityComponentSystem::EntityIndex_T entityInstanceIndex);\
-		inline v4d::data::EntityComponentSystem::EntityIndex_T GetIndex() const {return _ecs_index;};
+		static Ptr Get(v4d::ECS::EntityIndex_T entityInstanceIndex);\
+		inline v4d::ECS::EntityIndex_T GetIndex() const {return _ecs_index;};\
+		inline bool IsDestroyed() const {return _ecs_destroyed;}
 
 // Used in .cpp files
 #define V4D_ENTITY_DEFINE_CLASS(ClassName)\
 	std::recursive_mutex ClassName::_ecs_entityInstancesMutex {};\
 	std::vector<ClassName::Ptr> ClassName::_ecs_entityInstances {};\
 	std::optional<std::thread::id> ClassName::_ecs_destroyThreadId = std::nullopt;\
-	ClassName::ClassName(v4d::data::EntityComponentSystem::EntityIndex_T index) : _ecs_index(index) {}\
+	ClassName::ClassName(v4d::ECS::EntityIndex_T index) : _ecs_index(index) {}\
 	ClassName::Ptr ClassName::Create() {\
 		std::lock_guard lock(_ecs_entityInstancesMutex);\
 		size_t nbEntityInstances = _ecs_entityInstances.size();\
@@ -372,7 +388,7 @@ namespace v4d::data::EntityComponentSystem {
 		_ecs_destroyThreadId = std::this_thread::get_id();\
 		for (auto& entity : _ecs_entityInstances) {\
 			if (entity && entity->_ecs_markedForDestruction) {\
-				entity->_ecs_index = -1;\
+				entity->_ecs_destroyed = true;\
 				entity.reset();\
 			}\
 		}\
@@ -384,13 +400,13 @@ namespace v4d::data::EntityComponentSystem {
 			_ecs_entityInstances.pop_back();\
 		}\
 	}\
-	void ClassName::Destroy(v4d::data::EntityComponentSystem::EntityIndex_T index) {\
+	void ClassName::Destroy(v4d::ECS::EntityIndex_T index) {\
 		std::lock_guard lock(_ecs_entityInstancesMutex);\
-		if (index != -1 && (size_t)index < _ecs_entityInstances.size()) {\
+		if (index >= 0 && (size_t)index < _ecs_entityInstances.size()) {\
 			if (_ecs_destroyThreadId.has_value() && _ecs_destroyThreadId.value() != std::this_thread::get_id()) {\
 				_ecs_entityInstances[index]->_ecs_markedForDestruction = true;\
 			} else {\
-				_ecs_entityInstances[index]->_ecs_index = -1;\
+				_ecs_entityInstances[index]->_ecs_destroyed = true;\
 				_ecs_entityInstances[index].reset();\
 			}\
 		}\
@@ -407,15 +423,15 @@ namespace v4d::data::EntityComponentSystem {
 			}\
 		}\
 	}\
-	ClassName::Ptr ClassName::Get(v4d::data::EntityComponentSystem::EntityIndex_T entityInstanceIndex) {\
+	ClassName::Ptr ClassName::Get(v4d::ECS::EntityIndex_T entityInstanceIndex) {\
 		std::lock_guard lock(_ecs_entityInstancesMutex);\
-		if (entityInstanceIndex == -1 || (size_t)entityInstanceIndex >= _ecs_entityInstances.size()) return nullptr;\
+		if (entityInstanceIndex < 0 || (size_t)entityInstanceIndex >= _ecs_entityInstances.size()) return nullptr;\
 		return _ecs_entityInstances[entityInstanceIndex];\
 	}\
 	void ClassName::ClearAll() {\
 		std::lock_guard lock(_ecs_entityInstancesMutex);\
 		for (auto& entity : _ecs_entityInstances) {\
-			if (entity) entity->_ecs_index = -1;\
+			if (entity) entity->_ecs_destroyed = true;\
 		}\
 		_ecs_entityInstances.clear();\
 	}\
@@ -427,7 +443,7 @@ namespace v4d::data::EntityComponentSystem {
 		size_t count = 0;\
 		std::lock_guard lock(_ecs_entityInstancesMutex);\
 		for (auto& entity : _ecs_entityInstances) {\
-			if (entity && entity->_ecs_index != -1 && !entity->_ecs_markedForDestruction) ++count;\
+			if (entity && !entity->_ecs_markedForDestruction) ++count;\
 		}\
 		return count;\
 	}\
@@ -442,17 +458,18 @@ namespace v4d::data::EntityComponentSystem {
 	public: using WeakPtr = std::weak_ptr<ClassName>;\
 	private:\
 		static std::recursive_mutex _ecs_entityInstancesMutex;\
-		static std::unordered_map<v4d::data::EntityComponentSystem::EntityIndex_T, Ptr> _ecs_entityInstances;\
+		static std::unordered_map<v4d::ECS::EntityIndex_T, Ptr> _ecs_entityInstances;\
 	private:\
 		static std::optional<std::thread::id> _ecs_destroyThreadId;\
-		v4d::data::EntityComponentSystem::EntityIndex_T _ecs_index;\
+		v4d::ECS::EntityIndex_T _ecs_index;\
 		bool _ecs_markedForDestruction = false;\
-		ClassName(v4d::data::EntityComponentSystem::EntityIndex_T);\
+		bool _ecs_destroyed = false;\
+		ClassName(v4d::ECS::EntityIndex_T);\
 	public:\
-		static v4d::data::EntityComponentSystem::EntityIndex_T NextID(v4d::data::EntityComponentSystem::EntityIndex_T setNext = -1);\
-		static Ptr Create(v4d::data::EntityComponentSystem::EntityIndex_T id = -1);\
+		static v4d::ECS::EntityIndex_T NextID(v4d::ECS::EntityIndex_T setNext = -1);\
+		static Ptr Create(v4d::ECS::EntityIndex_T id = -1);\
 		template<typename...Args>\
-		static Ptr Create(v4d::data::EntityComponentSystem::EntityIndex_T id, Args&&...args) {\
+		static Ptr Create(v4d::ECS::EntityIndex_T id, Args&&...args) {\
 			std::lock_guard lock(_ecs_entityInstancesMutex);\
 			if (id < 0) id = NextID();\
 			auto* e = new ClassName(id);\
@@ -460,7 +477,7 @@ namespace v4d::data::EntityComponentSystem {
 			return _ecs_entityInstances[id] = Ptr(e);\
 		}\
 		static void CleanupOnThisThread();\
-		static void Destroy(v4d::data::EntityComponentSystem::EntityIndex_T);\
+		static void Destroy(v4d::ECS::EntityIndex_T);\
 		static void Trim();\
 		void Destroy();\
 		static void ClearAll();\
@@ -468,22 +485,23 @@ namespace v4d::data::EntityComponentSystem {
 		static size_t CountActive();\
 		static std::unique_lock<std::recursive_mutex> GetLock();\
 		static void ForEach(std::function<void(Ptr)>&& func);\
-		static Ptr Get(v4d::data::EntityComponentSystem::EntityIndex_T id);\
-		inline v4d::data::EntityComponentSystem::EntityIndex_T GetIndex() const {return _ecs_index;};\
-		inline v4d::data::EntityComponentSystem::EntityIndex_T GetID() const {return _ecs_index;};
+		static Ptr Get(v4d::ECS::EntityIndex_T id);\
+		inline v4d::ECS::EntityIndex_T GetIndex() const {return _ecs_index;};\
+		inline v4d::ECS::EntityIndex_T GetID() const {return _ecs_index;};\
+		inline bool IsDestroyed() const {return _ecs_destroyed;}
 
 // Used in .cpp files
 #define V4D_ENTITY_DEFINE_CLASS_MAP(ClassName)\
 	std::recursive_mutex ClassName::_ecs_entityInstancesMutex {};\
-	std::unordered_map<v4d::data::EntityComponentSystem::EntityIndex_T, ClassName::Ptr> ClassName::_ecs_entityInstances;\
+	std::unordered_map<v4d::ECS::EntityIndex_T, ClassName::Ptr> ClassName::_ecs_entityInstances;\
 	std::optional<std::thread::id> ClassName::_ecs_destroyThreadId = std::nullopt;\
-	ClassName::ClassName(v4d::data::EntityComponentSystem::EntityIndex_T index) : _ecs_index(index) {}\
-	v4d::data::EntityComponentSystem::EntityIndex_T ClassName::NextID(v4d::data::EntityComponentSystem::EntityIndex_T setNext){\
-		static std::atomic<v4d::data::EntityComponentSystem::EntityIndex_T> nextID = 0;\
+	ClassName::ClassName(v4d::ECS::EntityIndex_T index) : _ecs_index(index) {}\
+	v4d::ECS::EntityIndex_T ClassName::NextID(v4d::ECS::EntityIndex_T setNext){\
+		static std::atomic<v4d::ECS::EntityIndex_T> nextID = 0;\
 		if (setNext >= 0) return nextID = setNext;\
 		return nextID++;\
 	}\
-	ClassName::Ptr ClassName::Create(v4d::data::EntityComponentSystem::EntityIndex_T id) {\
+	ClassName::Ptr ClassName::Create(v4d::ECS::EntityIndex_T id) {\
 		std::lock_guard lock(_ecs_entityInstancesMutex);\
 		if (id < 0) id = NextID();\
 		return _ecs_entityInstances[id] = ClassName::Ptr(new ClassName(id));\
@@ -493,7 +511,7 @@ namespace v4d::data::EntityComponentSystem {
 		_ecs_destroyThreadId = std::this_thread::get_id();\
 		for (auto&[id,entity] : _ecs_entityInstances) {\
 			if (entity && entity->_ecs_markedForDestruction) {\
-				entity->_ecs_index = -1;\
+				entity->_ecs_destroyed = true;\
 				entity.reset();\
 			}\
 		}\
@@ -507,13 +525,13 @@ namespace v4d::data::EntityComponentSystem {
 			else ++it;\
 		}\
 	}\
-	void ClassName::Destroy(v4d::data::EntityComponentSystem::EntityIndex_T id) {\
+	void ClassName::Destroy(v4d::ECS::EntityIndex_T id) {\
 		std::lock_guard lock(_ecs_entityInstancesMutex);\
-		if (id != -1 && _ecs_entityInstances.count(id) > 0) {\
+		if (id >= 0 && _ecs_entityInstances.count(id) > 0) {\
 			if (_ecs_destroyThreadId.has_value() && _ecs_destroyThreadId.value() != std::this_thread::get_id()) {\
 				_ecs_entityInstances[id]->_ecs_markedForDestruction = true;\
 			} else {\
-				_ecs_entityInstances[id]->_ecs_index = -1;\
+				_ecs_entityInstances[id]->_ecs_destroyed = true;\
 				_ecs_entityInstances[id].reset();\
 			}\
 		}\
@@ -530,15 +548,15 @@ namespace v4d::data::EntityComponentSystem {
 			}\
 		}\
 	}\
-	ClassName::Ptr ClassName::Get(v4d::data::EntityComponentSystem::EntityIndex_T id) {\
+	ClassName::Ptr ClassName::Get(v4d::ECS::EntityIndex_T id) {\
 		std::lock_guard lock(_ecs_entityInstancesMutex);\
-		if (id == -1 || _ecs_entityInstances.count(id) == 0) return nullptr;\
+		if (id < 0 || _ecs_entityInstances.count(id) == 0) return nullptr;\
 		return _ecs_entityInstances[id];\
 	}\
 	void ClassName::ClearAll() {\
 		std::lock_guard lock(_ecs_entityInstancesMutex);\
 		for (auto&[id,entity] : _ecs_entityInstances) {\
-			if (entity) entity->_ecs_index = -1;\
+			if (entity) entity->_ecs_destroyed = true;\
 		}\
 		_ecs_entityInstances.clear();\
 	}\
@@ -550,7 +568,7 @@ namespace v4d::data::EntityComponentSystem {
 		size_t count = 0;\
 		std::lock_guard lock(_ecs_entityInstancesMutex);\
 		for (auto&[id,entity] : _ecs_entityInstances) {\
-			if (entity && entity->_ecs_index != -1 && !entity->_ecs_markedForDestruction) ++count;\
+			if (entity && !entity->_ecs_markedForDestruction) ++count;\
 		}\
 		return count;\
 	}\
@@ -563,9 +581,9 @@ namespace v4d::data::EntityComponentSystem {
 #define V4D_ENTITY_DECLARE_COMPONENT(ClassName, ComponentType, MemberName) \
 	class ComponentReference_ ## MemberName {\
 		friend ClassName;\
-		v4d::data::EntityComponentSystem::ComponentIndex_T index;\
+		v4d::ECS::ComponentIndex_T index;\
 		ComponentReference_ ## MemberName () : index(-1) {}\
-		ComponentReference_ ## MemberName (v4d::data::EntityComponentSystem::ComponentIndex_T componentIndex) : index(componentIndex) {}\
+		ComponentReference_ ## MemberName (v4d::ECS::ComponentIndex_T componentIndex) : index(componentIndex) {}\
 		~ComponentReference_ ## MemberName () {\
 			std::lock_guard entitiesLock(ClassName::_ecs_entityInstancesMutex);\
 			std::lock_guard componentsLock(MemberName ## Components.componentsMutex);\
@@ -584,28 +602,28 @@ namespace v4d::data::EntityComponentSystem {
 			if (index == -1) return false;\
 			return MemberName ## Components .Do(index, std::forward<std::function<void(ComponentType&)>>(func));\
 		}\
-		v4d::data::EntityComponentSystem::Component<ClassName, ComponentType>::ComponentReferenceLocked Lock(){\
+		v4d::ECS::Component<ClassName, ComponentType>::ComponentReferenceLocked Lock(){\
 			return MemberName ## Components .Lock(index);\
 		}\
 	} MemberName;\
-	static v4d::data::EntityComponentSystem::Component<ClassName, ComponentType> MemberName ## Components ;\
+	static v4d::ECS::Component<ClassName, ComponentType> MemberName ## Components ;\
 	/* Add_<component> */\
 	template<typename...Args>\
-	v4d::data::EntityComponentSystem::Component<ClassName, ComponentType>::ComponentReferenceLocked Add_ ## MemberName (Args&&...args) {\
+	v4d::ECS::Component<ClassName, ComponentType>::ComponentReferenceLocked Add_ ## MemberName (Args&&...args) {\
 		std::lock_guard entitiesLock(ClassName::_ecs_entityInstancesMutex);\
 		std::unique_lock<std::recursive_mutex> componentsLock(MemberName ## Components.componentsMutex);\
 		if (MemberName.index == -1) MemberName ## Components .__Add__<Args...>(_ecs_index, &MemberName.index, std::forward<Args>(args)...);\
 		return {componentsLock, MemberName ## Components .__Get__(MemberName.index)};\
 	}\
 	template<typename List_T>\
-	v4d::data::EntityComponentSystem::Component<ClassName, ComponentType>::ComponentReferenceLocked Add_ ## MemberName (std::initializer_list<List_T>&& list) {\
+	v4d::ECS::Component<ClassName, ComponentType>::ComponentReferenceLocked Add_ ## MemberName (std::initializer_list<List_T>&& list) {\
 		std::lock_guard entitiesLock(ClassName::_ecs_entityInstancesMutex);\
 		std::unique_lock<std::recursive_mutex> componentsLock(MemberName ## Components.componentsMutex);\
 		if (MemberName.index == -1) MemberName ## Components .__Add__<List_T>(_ecs_index, &MemberName.index, std::forward<std::initializer_list<List_T>>(list));\
 		return {componentsLock, MemberName ## Components .__Get__(MemberName.index)};\
 	}\
 	template<typename ArrayRef, int ArrayN>\
-	v4d::data::EntityComponentSystem::Component<ClassName, ComponentType>::ComponentReferenceLocked Add_ ## MemberName (const ArrayRef (&val)[ArrayN]) {\
+	v4d::ECS::Component<ClassName, ComponentType>::ComponentReferenceLocked Add_ ## MemberName (const ArrayRef (&val)[ArrayN]) {\
 		std::lock_guard entitiesLock(ClassName::_ecs_entityInstancesMutex);\
 		std::unique_lock<std::recursive_mutex> componentsLock(MemberName ## Components.componentsMutex);\
 		if (MemberName.index == -1) MemberName ## Components .__Add__<ArrayRef, ArrayN>(_ecs_index, &MemberName.index, val);\
@@ -615,7 +633,7 @@ namespace v4d::data::EntityComponentSystem {
 
 // Used in .cpp files
 #define V4D_ENTITY_DEFINE_COMPONENT(ClassName, ComponentType, MemberName) \
-	v4d::data::EntityComponentSystem::Component<ClassName, ComponentType> ClassName::MemberName ## Components  {};\
+	v4d::ECS::Component<ClassName, ComponentType> ClassName::MemberName ## Components  {};\
 	void ClassName::Remove_ ## MemberName () {\
 		std::lock_guard entitiesLock(ClassName::_ecs_entityInstancesMutex);\
 		std::lock_guard componentsLock(MemberName ## Components.componentsMutex);\
@@ -630,10 +648,10 @@ namespace v4d::data::EntityComponentSystem {
 #define V4D_ENTITY_DECLARE_COMPONENT_MAP(ClassName, MapKey, ComponentType, MemberName) \
 	class ComponentReferenceMap_ ## MemberName {\
 		friend ClassName;\
-		v4d::data::EntityComponentSystem::EntityIndex_T entityIndex;\
-		std::unordered_map<MapKey, v4d::data::EntityComponentSystem::ComponentIndex_T*> indices {};\
+		v4d::ECS::EntityIndex_T entityIndex;\
+		std::unordered_map<MapKey, v4d::ECS::ComponentIndex_T*> indices {};\
 		ComponentReferenceMap_ ## MemberName () : entityIndex(-1) {}\
-		ComponentReferenceMap_ ## MemberName (v4d::data::EntityComponentSystem::EntityIndex_T entityIndex) : entityIndex(entityIndex) {}\
+		ComponentReferenceMap_ ## MemberName (v4d::ECS::EntityIndex_T entityIndex) : entityIndex(entityIndex) {}\
 		~ComponentReferenceMap_ ## MemberName () {\
 			if (entityIndex == -1) return;\
 			std::lock_guard entitiesLock(ClassName::_ecs_entityInstancesMutex);\
@@ -646,11 +664,11 @@ namespace v4d::data::EntityComponentSystem {
 		public:\
 		operator bool() {return (entityIndex != -1);}\
 		template<typename T>\
-		v4d::data::EntityComponentSystem::Component<ClassName, ComponentType>::ComponentReferenceLocked operator[] (T&& key) {\
+		v4d::ECS::Component<ClassName, ComponentType>::ComponentReferenceLocked operator[] (T&& key) {\
 			if (entityIndex == -1) return {};\
 			std::lock_guard componentsLock(MemberName ## Components.componentsMutex);\
 			if (!indices[std::forward<T>(key)]) {\
-				indices[std::forward<T>(key)] = new v4d::data::EntityComponentSystem::ComponentIndex_T;\
+				indices[std::forward<T>(key)] = new v4d::ECS::ComponentIndex_T;\
 				MemberName ## Components .__Add__(entityIndex, indices[std::forward<T>(key)]);\
 			}\
 			return MemberName ## Components .Lock(*indices[std::forward<T>(key)]);\
@@ -672,7 +690,7 @@ namespace v4d::data::EntityComponentSystem {
 			if (entityIndex == -1) return;\
 			std::lock_guard componentsLock(MemberName ## Components.componentsMutex);\
 			try {\
-				v4d::data::EntityComponentSystem::ComponentIndex_T* indexPtr = indices.at(key);\
+				v4d::ECS::ComponentIndex_T* indexPtr = indices.at(key);\
 				if (indexPtr) {\
 					MemberName ## Components .__Remove__(*indexPtr);\
 					delete indices[key];\
@@ -681,7 +699,7 @@ namespace v4d::data::EntityComponentSystem {
 			} catch(...){}\
 		}\
 	} MemberName;\
-	static v4d::data::EntityComponentSystem::Component<ClassName, ComponentType> MemberName ## Components ;\
+	static v4d::ECS::Component<ClassName, ComponentType> MemberName ## Components ;\
 	/* Add_<component> */\
 	ComponentReferenceMap_ ## MemberName & Add_ ## MemberName () {\
 		MemberName.entityIndex = _ecs_index;\
@@ -691,7 +709,7 @@ namespace v4d::data::EntityComponentSystem {
 
 // Used in .cpp files
 #define V4D_ENTITY_DEFINE_COMPONENT_MAP(ClassName, MapKey, ComponentType, MemberName) \
-	v4d::data::EntityComponentSystem::Component<ClassName, ComponentType> ClassName::MemberName ## Components  {};\
+	v4d::ECS::Component<ClassName, ComponentType> ClassName::MemberName ## Components  {};\
 	void ClassName::Remove_ ## MemberName () {\
 		if (MemberName.entityIndex == -1) return;\
 		std::lock_guard entitiesLock(ClassName::_ecs_entityInstancesMutex);\
