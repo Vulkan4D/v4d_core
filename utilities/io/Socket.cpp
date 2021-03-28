@@ -167,7 +167,7 @@ size_t Socket::Receive(byte* data, size_t maxBytesToRead) {
 	}
 	if (bytesRead == 0) {
 		memset(data, 0, maxBytesToRead);
-		throw std::runtime_error("Socket Disconnected");
+		throw disconnected_error();
 	}
 	return (size_t)bytesRead;
 }
@@ -223,7 +223,8 @@ void Socket::StartListeningThread(int waitIntervalMilliseconds, ListeningThreadC
 				if (polled == 0) continue; // timeout, keep going
 				if (polled == -1) { // error, stop here
 					LOG_ERROR("UDP Socket Listening Poll error")
-					// listening = false;
+					listening = false;
+					ResetReadBuffer();
 					break;
 				}
 

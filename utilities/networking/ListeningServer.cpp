@@ -40,78 +40,84 @@ bool ListeningServer::IsListening() const {
 }
 
 void ListeningServer::HandleNewConnection(v4d::io::SocketPtr socket){
-	// If receive nothing after timeout, Disconnect now!
-	if (socket->IsTCP() && socket->Poll(newConnectionFirstByteTimeout) <= 0) {
-		LOG_ERROR_VERBOSE("ListeningServer: new connection failed to send first data in time")
-		socket->Disconnect();
-		return;
-	}
-
-	// If first byte received is not HELLO, Disconnect now!
-	byte hello = socket->Read<byte>();
-	if (hello != ZAP::HELLO) {
-		LOG_ERROR_VERBOSE("ListeningServer: new connection first data was not the HELLO byte")
-		socket->Disconnect();
-		return;
-	}
-	auto[clientAppName, clientAppVersion, clientType] = zapdata::ClientHello::ReadFrom(socket);
-	if (!ValidateAppName(socket, clientAppName)) return;
-	if (!ValidateVersion(socket, clientAppVersion)) return;
-
-	// If no more data was sent, Disconnect now!
-	if (socket->IsTCP() && socket->Poll(newConnectionFirstByteTimeout) <= 0) {
-		LOG_ERROR_VERBOSE("ListeningServer: new connection type " << (int)clientType << " failed to send authentication request in time")
-		socket->Disconnect();
-		return;
-	}
-	
-	// Client Requests
-	byte request = socket->Read<byte>();
-	if (socket->IsTCP()) LOG_VERBOSE("New client connection type " << (int)clientType << " request " << (int)request << " from " << socket->GetIncomingIP() << ":" << socket->GetIncomingPort())
-	
-	switch (request) {
-
-		// Authentication
-		case ZAP::TOKEN:
-			TokenRequest(socket, clientType);
-		break;
-		case ZAP::ANONYM:
-			AnonymousRequest(socket, clientType);
-		break;
-		case ZAP::AUTH:
-			AuthRequest(socket, clientType);
-		break;
-
-		// Other requests
-
-		case ZAP::PUBKEY:
-			if (socket->IsTCP()) {
-				*socket << ZAP::OK;
-				*socket << (rsa? rsa->GetPublicKeyPEM() : std::string(""));
-				socket->Flush();
-				socket->Disconnect();
-			} else {
-				LOG_ERROR("ListeningServer: Received new connection request for PUBKEY over UDP")
-			}
-		break;
-		
-		case ZAP::PING:
-			if (socket->IsTCP()) {
-				*socket << ZAP::PONG;
-				socket->Flush();
-				socket->Disconnect();
-			} else {
-				LOG_ERROR("ListeningServer: Received new connection request for PING over UDP")
-			}
-		break;
-
-		case ZAP::EXT:
-			ExtendedRequest(socket, clientType);
-		break;
-
-		default:
-			LOG_ERROR("ListeningServer: Received unrecognized request")
+	try {
+		// If receive nothing after timeout, Disconnect now!
+		if (socket->IsTCP() && socket->Poll(newConnectionFirstByteTimeout) <= 0) {
+			LOG_ERROR_VERBOSE("ListeningServer: new connection failed to send first data in time")
 			socket->Disconnect();
+			return;
+		}
+
+		// If first byte received is not HELLO, Disconnect now!
+		byte hello = socket->Read<byte>();
+		if (hello != ZAP::HELLO) {
+			LOG_ERROR_VERBOSE("ListeningServer: new connection first data was not the HELLO byte")
+			socket->Disconnect();
+			return;
+		}
+		auto[clientAppName, clientAppVersion, clientType] = zapdata::ClientHello::ReadFrom(socket);
+		if (!ValidateAppName(socket, clientAppName)) return;
+		if (!ValidateVersion(socket, clientAppVersion)) return;
+
+		// If no more data was sent, Disconnect now!
+		if (socket->IsTCP() && socket->Poll(newConnectionFirstByteTimeout) <= 0) {
+			LOG_ERROR_VERBOSE("ListeningServer: new connection type " << (int)clientType << " failed to send authentication request in time")
+			socket->Disconnect();
+			return;
+		}
+		
+		// Client Requests
+		byte request = socket->Read<byte>();
+		if (socket->IsTCP()) LOG_VERBOSE("New client connection type " << (int)clientType << " request " << (int)request << " from " << socket->GetIncomingIP() << ":" << socket->GetIncomingPort())
+		
+		switch (request) {
+
+			// Authentication
+			case ZAP::TOKEN:
+				TokenRequest(socket, clientType);
+			break;
+			case ZAP::ANONYM:
+				AnonymousRequest(socket, clientType);
+			break;
+			case ZAP::AUTH:
+				AuthRequest(socket, clientType);
+			break;
+
+			// Other requests
+
+			case ZAP::PUBKEY:
+				if (socket->IsTCP()) {
+					*socket << ZAP::OK;
+					*socket << (rsa? rsa->GetPublicKeyPEM() : std::string(""));
+					socket->Flush();
+					socket->Disconnect();
+				} else {
+					LOG_ERROR("ListeningServer: Received new connection request for PUBKEY over UDP")
+				}
+			break;
+			
+			case ZAP::PING:
+				if (socket->IsTCP()) {
+					*socket << ZAP::PONG;
+					socket->Flush();
+					socket->Disconnect();
+				} else {
+					LOG_ERROR("ListeningServer: Received new connection request for PING over UDP")
+				}
+			break;
+
+			case ZAP::EXT:
+				ExtendedRequest(socket, clientType);
+			break;
+
+			default:
+				LOG_ERROR("ListeningServer: Received unrecognized request")
+				socket->Disconnect();
+		}
+	} catch(v4d::io::Socket::disconnected_error&) {
+		socket->Disconnect();
+		LOG("Server: Client disconnected")
+		return;
 	}
 }
 

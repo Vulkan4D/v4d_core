@@ -90,6 +90,10 @@ namespace v4d::io {
 		Socket(SOCKET_TYPE type, SOCKET_PROTOCOL protocol = IPV4);
 		Socket(SOCKET socket, const sockaddr_in& remoteAddr, SOCKET_TYPE type, SOCKET_PROTOCOL protocol = IPV4);
 		virtual ~Socket();
+		
+		struct disconnected_error : public std::runtime_error {
+			disconnected_error() : std::runtime_error("Socket Disconnected") {}
+		};
 
 		DELETE_COPY_MOVE_CONSTRUCTORS(Socket)
 
