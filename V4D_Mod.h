@@ -59,6 +59,7 @@ class V4DLIB V4D_Mod {
 		,OnRendererRayCastOut
 		,PhysicsUpdate
 		,ServerPhysicsUpdate
+		,OnCollisionHit
 		,RenderOrderIndex
 		,ScorePhysicalDeviceSelection
 		,InitVulkanDeviceFeatures
@@ -152,6 +153,7 @@ class V4DLIB V4D_Mod {
 // Physics
 	V4D_MODULE_FUNC_DECLARE(void, PhysicsUpdate, double deltaTime)
 	V4D_MODULE_FUNC_DECLARE(void, ServerPhysicsUpdate, double deltaTime)
+	V4D_MODULE_FUNC_DECLARE(void, OnCollisionHit, int64_t entityUniqueID, uint64_t type, glm::dvec3 contactPoint, double contactSpeed)
 
 // Renderer
 	// Executed only once for configuration
