@@ -92,6 +92,7 @@ class V4DLIB V4D_Mod {
 		
 		,SecondaryRenderUpdate2
 		,DrawOverlayLine
+		,DrawOverlayLineViewSpace
 		,DrawOverlayText
 		,DrawOverlayCircle
 		,DrawOverlaySquare
@@ -194,6 +195,7 @@ class V4DLIB V4D_Mod {
 	V4D_MODULE_FUNC_DECLARE(void, SecondaryRenderUpdate2, VkCommandBuffer)
 	// Typically only implemented in primary rendering module
 	V4D_MODULE_FUNC_DECLARE(void, DrawOverlayLine, float x1, float y1, float x2, float y2, glm::vec4 color, float lineWidth)
+	V4D_MODULE_FUNC_DECLARE(void, DrawOverlayLineViewSpace, glm::dvec3 line1, glm::dvec3 line2, glm::vec4 color, float lineWidth)
 	V4D_MODULE_FUNC_DECLARE(void, DrawOverlayText, const char* text, float x, float y, glm::vec4 color, float size)
 	V4D_MODULE_FUNC_DECLARE(void, DrawOverlayCircle, float x, float y, glm::vec4 color, float size, float borderSize)
 	V4D_MODULE_FUNC_DECLARE(void, DrawOverlaySquare, float x, float y, glm::vec4 color, glm::vec2 size, float borderSize)

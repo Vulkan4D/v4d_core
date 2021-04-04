@@ -232,8 +232,8 @@ namespace v4d::tests {
 			result = -2;
 			TestEntity::Create()->Add_test2Map()["test1"] = Test2("hello");
 			TestEntity::ForEach([](auto entity){
-				entity->test2Map["test1"]->a = 2;
-				entity->test2Map["test2"]->a = 5;
+				if (auto test1 = entity->test2Map["test1"]; test1) test1->a = 2;
+				if (auto test2 = entity->test2Map["test2"]; test2) test2->a = 5;
 				entity->test2Map.ForEach([](auto& component){
 					if (component.str == "hello") component.a -= 1;
 					else component.a -= 4;
