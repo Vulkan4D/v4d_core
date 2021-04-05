@@ -222,7 +222,7 @@ class V4DLIB V4D_Mod {
 // Server
 	V4D_MODULE_FUNC_DECLARE(void, ServerIncomingClient, v4d::networking::IncomingClientPtr client)
 	V4D_MODULE_FUNC_DECLARE(void, ServerSendActions, v4d::io::SocketPtr stream, v4d::networking::IncomingClientPtr client)
-	V4D_MODULE_FUNC_DECLARE(void, ServerSendBursts, v4d::io::SocketPtr stream, v4d::networking::IncomingClientPtr client)
+	V4D_MODULE_FUNC_DECLARE(void, ServerSendBursts, v4d::io::SocketPtr stream, v4d::networking::IncomingClientPtr client, uint64_t frame)
 	V4D_MODULE_FUNC_DECLARE(void, ServerReceiveAction, v4d::io::SocketPtr stream, v4d::networking::IncomingClientPtr client)
 	V4D_MODULE_FUNC_DECLARE(void, ServerReceiveBurst, v4d::io::SocketPtr stream, v4d::networking::IncomingClientPtr client)
 
