@@ -14,11 +14,6 @@
 	#define XVK_INTERFACE_RAW_FUNCTIONS_ACCESSIBILITY private
 #endif
 
-//TODO make these macros external to this class (maybe the config file ?) or have an option to use a custom Loader
-// #define XVK_USE_QT_VULKAN_LOADER // uncomment if using Qt
-#define XVK_INCLUDE_GLFW // comment if using Qt or another window context manager
-#define XVK_INCLUDE_GLM
-
 #ifdef V4D_VULKAN_USE_VMA
 	#define XVK_INCLUDE_VMA
 #endif
