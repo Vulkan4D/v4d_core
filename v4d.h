@@ -57,6 +57,7 @@
 #include "helpers/Base16.hpp"
 #include "helpers/Base64.hpp"
 #include "helpers/BaseN.hpp"
+#include "helpers/TextID.hpp"
 #include "helpers/modular.hpp"
 #include "helpers/EntityComponentSystem.hpp"
 
