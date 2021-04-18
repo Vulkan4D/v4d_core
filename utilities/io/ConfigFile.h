@@ -142,7 +142,7 @@ namespace v4d::io {
 
 	public: // non-virtual methods
 
-		void Load();
+		ConfigFile* Load();
 
 		void SetAutoReloadInterval(int interval);
 
@@ -180,6 +180,13 @@ namespace v4d::io {
 #define CONFIGFILE_WRITE_TO_INI(section, ...) WriteToINI(section, { FOR_EACH(__CONFIGFILE_RW_INI_EACH_ARG, __VA_ARGS__) } );
 #define CONFIGFILE_STRUCT(className) \
 	className(const std::string& filePath, std::optional<int> autoReloadInterval) : ConfigFile(filePath, autoReloadInterval) {} \
-	static auto Instance(FilePath filePath, std::optional<int> autoReloadInterval = std::nullopt) \
-		STATIC_CLASS_INSTANCES((std::string)filePath, className, filePath, autoReloadInterval)
+	static std::shared_ptr<className> Instance(FilePath filePath, std::optional<int> autoReloadInterval = std::nullopt) \
+		STATIC_CLASS_INSTANCES_CPP((std::string)filePath, className, filePath, autoReloadInterval)
+#define CONFIGFILE_STRUCT_H(className) \
+	className(const std::string& filePath, std::optional<int> autoReloadInterval); \
+	static std::shared_ptr<className> Instance(FilePath filePath, std::optional<int> autoReloadInterval = std::nullopt);
+#define CONFIGFILE_STRUCT_CPP(className) \
+	className::className(const std::string& filePath, std::optional<int> autoReloadInterval) : ConfigFile(filePath, autoReloadInterval) {} \
+	std::shared_ptr<className> className::Instance(FilePath filePath, std::optional<int> autoReloadInterval) \
+		STATIC_CLASS_INSTANCES_CPP((std::string)filePath, className, filePath, autoReloadInterval)
 

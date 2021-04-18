@@ -18,7 +18,7 @@ std::shared_ptr<Logger> Logger::ConsoleInstance(std::optional<bool> verbose) {
 }
 
 std::shared_ptr<Logger> Logger::FileInstance(const std::string& filepath, std::optional<bool> verbose) 
-	STATIC_CLASS_INSTANCES((std::string)filepath, Logger, filepath, verbose)
+	STATIC_CLASS_INSTANCES_CPP((std::string)filepath, Logger, filepath, verbose)
 
 void Logger::LogToFile(const std::string& message) {
 	std::call_once(readFileOnce, [&f=file, &filepath=filepath](){

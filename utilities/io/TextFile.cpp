@@ -27,3 +27,6 @@ void TextFile::WriteToFile() {
 	}
 	file.close();
 }
+
+std::shared_ptr<TextFile> TextFile::Instance(FilePath filePath, std::optional<int> autoReloadInterval)
+	STATIC_CLASS_INSTANCES_CPP((std::string)filePath, TextFile, filePath, autoReloadInterval)

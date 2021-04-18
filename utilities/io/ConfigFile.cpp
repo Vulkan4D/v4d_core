@@ -25,7 +25,7 @@ ConfigFile::~ConfigFile() {
 	}
 }
 
-void ConfigFile::Load() {
+ConfigFile* ConfigFile::Load() {
 	std::lock_guard lock(mu);
 	lastWriteTimeCache = GetLastWriteTime();
 	if (lastWriteTimeCache == 0) {
@@ -34,6 +34,7 @@ void ConfigFile::Load() {
 	}
 	ReadConfig();
 	lastWriteTimeCache = GetLastWriteTime();
+	return this;
 }
 
 void ConfigFile::SetAutoReloadInterval(int interval) {

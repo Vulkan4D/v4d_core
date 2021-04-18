@@ -26,3 +26,6 @@ void StringListFile::WriteToFile() {
 	}
 	file.close();
 }
+
+std::shared_ptr<StringListFile> StringListFile::Instance(FilePath filePath, std::optional<int> autoReloadInterval)
+	STATIC_CLASS_INSTANCES_CPP((std::string)filePath, StringListFile, filePath, autoReloadInterval)

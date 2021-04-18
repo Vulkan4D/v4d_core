@@ -20,8 +20,6 @@ namespace v4d::io {
 		void ReadFromFile();
 		void WriteToFile();
 		
-		static auto Instance(FilePath filePath, std::optional<int> autoReloadInterval = std::nullopt)
-			STATIC_CLASS_INSTANCES((std::string)filePath, TextFile, filePath, autoReloadInterval)
-
+		static std::shared_ptr<TextFile> Instance(FilePath filePath, std::optional<int> autoReloadInterval = std::nullopt);
 	};
 }

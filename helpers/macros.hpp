@@ -96,15 +96,14 @@
 
 //////////////////////////////////////////////////////////
 // Static Instances Map
-#define STATIC_CLASS_INSTANCES(key, className, ...) { \
+#define STATIC_CLASS_INSTANCES_CPP(key, className, ...) { \
 	static std::mutex staticMu; \
 	std::lock_guard staticLock(staticMu); \
-	static std::unordered_map<decltype(key), std::shared_ptr<className>> instances {}; \
-	if (instances.find(key) == instances.end()) { \
+	static std::unordered_map<std::decay<decltype(key)>::type, std::shared_ptr<className>> instances {}; \
+	if (instances.count(key) == 0) { \
 		instances.emplace(key, std::make_shared<className>(__VA_ARGS__)); \
 	} \
-	std::shared_ptr<className> instance = instances.at(key); \
-	return instance; \
+	return instances.at(key); \
 }
 
 
