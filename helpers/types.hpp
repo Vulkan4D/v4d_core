@@ -3,8 +3,9 @@
 #include <type_traits>
 #include <tuple>
 
+typedef uint8_t byte;
+
 #ifdef _LINUX // Fore matching Windows counterparts
-	typedef uint8_t byte;
 	typedef int SOCKET;
 #endif
 #ifdef _WINDOWS // Fore matching Linux counterparts
