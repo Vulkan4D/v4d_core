@@ -61,6 +61,11 @@
 #include "helpers/modular.hpp"
 #include "helpers/EntityComponentSystem.hpp"
 
+// Automatically use vulkan validation layers if we are in debug mode on linux, unless we have defined V4D_VULKAN_NO_VALIDATION_LAYERS
+#if !defined(V4D_VULKAN_USE_VALIDATION_LAYERS) && (defined(_DEBUG) && defined(_LINUX) && !defined(V4D_VULKAN_NO_VALIDATION_LAYERS))
+	#define V4D_VULKAN_USE_VALIDATION_LAYERS
+#endif
+
 // V4D Core class (Compiled into v4d.dll)
 #include "Core.h"
 

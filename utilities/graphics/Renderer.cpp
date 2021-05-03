@@ -1,5 +1,5 @@
 #include "Renderer.h"
-#include "V4D_Mod.h"
+// #include "V4D_Mod.h"
 #include "utilities/io/Logger.h"
 
 using namespace v4d::graphics;
@@ -49,11 +49,7 @@ void Renderer::CreateDevices() {
 		for (auto& ext : optionalDeviceExtensions) if (physicalDevice->SupportsExtension(ext))
 			++score;
 
-		// Modules
-		V4D_Mod::ForEachModule([&score, physicalDevice](auto mod){
-			if (mod->ScorePhysicalDeviceSelection) mod->ScorePhysicalDeviceSelection(score, physicalDevice);
-		});
-		
+		ScorePhysicalDeviceSelection(score, physicalDevice);
 	});
 
 	LOG("Selected Rendering PhysicalDevice: " << renderingPhysicalDevice->GetDescription());
@@ -93,9 +89,6 @@ void Renderer::CreateDevices() {
 		throw std::runtime_error("Failed to get Presentation Queue for surface. At least one queue must be defined with a VkSurfaceKHR or you must manually specify a 'present' queue");
 	}
 	
-	V4D_Mod::ForEachSortedModule([this](auto mod){
-		if (mod->InitRenderingDevice) mod->InitRenderingDevice(renderingDevice);
-	});
 	renderingDevice->CreateAllocator();
 }
 
@@ -103,18 +96,6 @@ void Renderer::DestroyDevices() {
 	renderingDevice->DeviceWaitIdle();
 	renderingDevice->DestroyAllocator();
 	delete renderingDevice;
-}
-
-void Renderer::CreateSyncObjects() {
-	V4D_Mod::ForEachSortedModule([this](auto mod){
-		if (mod->CreateVulkanSyncObjects) mod->CreateVulkanSyncObjects();
-	});
-}
-
-void Renderer::DestroySyncObjects() {
-	V4D_Mod::ForEachSortedModule([this](auto mod){
-		if (mod->DestroyVulkanSyncObjects) mod->DestroyVulkanSyncObjects();
-	});
 }
 
 void Renderer::CreateCommandPools() {
@@ -222,23 +203,23 @@ void Renderer::UpdateDescriptorSet(DescriptorSet* set, const std::vector<uint32_
 	renderingDevice->UpdateDescriptorSets((uint)descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
 }
 
-bool Renderer::CreateSwapChain() {
+void Renderer::CreateSwapChain() {
 	
 	// Put old swapchain in a temporary pointer and delete it after creating new swapchain
 	SwapChain* oldSwapChain = swapChain;
 	swapChain = nullptr;
+	
+	VkSurfaceCapabilitiesKHR capabilities;
 
 	do {
 		if (swapChain) {
 			delete swapChain;
-			SLEEP(100ms)
+			SLEEP(20ms)
 		}
-		
 		// Create the new swapchain object
 		swapChain = new SwapChain(
 			renderingDevice,
 			surface,
-			2,
 			{ // Preferred Extent (Screen Resolution)
 				0, // width
 				0 // height
@@ -253,7 +234,9 @@ bool Renderer::CreateSwapChain() {
 		// swapChain->createInfo.xxxx = xxxxxx...
 		// swapChain->imageViewsCreateInfo.xxxx = xxxxxx...
 		
-	} while (swapChain->extent.width == 0 || swapChain->extent.height == 0);
+		GetPhysicalDeviceSurfaceCapabilitiesKHR(renderingDevice->GetPhysicalDeviceHandle(), surface, &capabilities);
+		
+	} while (swapChain->extent.width == 0 || swapChain->extent.height == 0 || swapChain->extent.width != capabilities.currentExtent.width || swapChain->extent.height != capabilities.currentExtent.height);
 
 	// Create the swapchain handle and corresponding imageviews
 	swapChain->Create(oldSwapChain);
@@ -263,26 +246,12 @@ bool Renderer::CreateSwapChain() {
 		oldSwapChain->Destroy();
 		delete oldSwapChain;
 	}
-	
-	return true;
 }
 
 void Renderer::DestroySwapChain() {
 	swapChain->Destroy();
 	delete swapChain;
 	swapChain = nullptr;
-}
-
-void Renderer::CreateCommandBuffers() {
-	V4D_Mod::ForEachSortedModule([this](auto mod){
-		if (mod->CreateVulkanCommandBuffers) mod->CreateVulkanCommandBuffers();
-	});
-}
-
-void Renderer::DestroyCommandBuffers() {
-	V4D_Mod::ForEachSortedModule([this](auto mod){
-		if (mod->DestroyVulkanCommandBuffers) mod->DestroyVulkanCommandBuffers();
-	});
 }
 
 #pragma endregion
@@ -507,20 +476,10 @@ void Renderer::TransitionImageLayout(VkCommandBuffer commandBuffer, VkImage imag
 
 #pragma region Init/Load/Reset Methods
 
-void Renderer::RecreateSwapChains() {
-	ReloadRenderer();return; // Temporary fix for crash when resizing window
-	
-	// std::scoped_lock lock(renderMutex1, renderMutex2);
-	
-	// v4d::graphics::renderer::event::Unload(this);
-	
-	// if (graphicsLoadedToDevice)
-	// 	UnloadGraphicsFromDevice();
-		
-	// v4d::graphics::renderer::event::Resize(this);
-	
-	// LoadGraphicsToDevice();
-	// v4d::graphics::renderer::event::Load(this);
+void Renderer::RecreateSwapChain() {
+	UnloadGraphicsFromDevice();
+	v4d::graphics::renderer::event::Resize(this);
+	LoadGraphicsToDevice();
 }
 
 void Renderer::InitRenderer() {
@@ -532,37 +491,27 @@ void Renderer::LoadRenderer() {
 	CreateDevices();
 	ConfigureRenderer();
 	CreateSyncObjects();
+	CreateCommandPools();
 	LoadGraphicsToDevice();
 	v4d::graphics::renderer::event::Load(this);
+	LOG_SUCCESS("Vulkan Renderer is Ready !")
 }
 
 void Renderer::UnloadRenderer() {
 	v4d::graphics::renderer::event::Unload(this);
-	
-	if (graphicsLoadedToDevice)
-		UnloadGraphicsFromDevice();
-	
+	UnloadGraphicsFromDevice();
 	DestroySwapChain();
+	DestroyCommandPools();
 	DestroySyncObjects();
 	DestroyDevices();
 }
 
 void Renderer::ReloadRenderer() {
-	if (renderThreadId != std::this_thread::get_id()) {
-		mustReload = true;
-		return;
-	}
-	std::scoped_lock lock(renderMutex1, renderMutex2);
-	
-	mustReload = false;
-	
 	LOG("Reloading renderer...")
 	v4d::graphics::renderer::event::Unload(this);
-	
-	if (graphicsLoadedToDevice)
-		UnloadGraphicsFromDevice();
-	
+	UnloadGraphicsFromDevice();
 	DestroySwapChain();
+	DestroyCommandPools();
 	DestroySyncObjects();
 	DestroyDevices();
 	
@@ -573,41 +522,28 @@ void Renderer::ReloadRenderer() {
 	CreateDevices();
 	ConfigureRenderer();
 	CreateSyncObjects();
-	
+	CreateCommandPools();
 	LoadGraphicsToDevice();
 	v4d::graphics::renderer::event::Load(this);
 }
 
 void Renderer::LoadGraphicsToDevice() {
-	std::scoped_lock lock(renderMutex1, renderMutex2);
-	while (!CreateSwapChain()) {
-		LOG_WARN("Failed to create SwapChain... Reloading renderer...")
-		SLEEP(1s)
-		ReloadRenderer();
-		return;
-	}
-	
-	CreateCommandPools();
+	CreateSwapChain();
 	AllocateBuffers();
 	CreateResources();
 	CreateDescriptorSets();
-	CreatePipelines(); // shaders are assigned here
+	CreatePipelines();
 	
 	v4d::graphics::renderer::event::PipelinesCreate(this);
 	
-	CreateCommandBuffers(); // objects are rendered here
+	CreateCommandBuffers();
 	
 	frameIndex = 0;
-	graphicsLoadedToDevice = true;
-	LOG_SUCCESS("Vulkan Renderer is Ready !")
 }
 
 void Renderer::UnloadGraphicsFromDevice() {
-	std::scoped_lock lock(renderMutex1, renderMutex2);
+	renderingDevice->DeviceWaitIdle();
 	
-	// Wait for renderingDevice to be idle before destroying everything
-	renderingDevice->DeviceWaitIdle(); // We can also wait for operations in a specific command queue to be finished with vkQueueWaitIdle. These functions can be used as a very rudimentary way to perform synchronization. 
-
 	DestroyCommandBuffers();
 	
 	v4d::graphics::renderer::event::PipelinesDestroy(this);
@@ -616,9 +552,6 @@ void Renderer::UnloadGraphicsFromDevice() {
 	DestroyDescriptorSets();
 	DestroyResources();
 	FreeBuffers();
-	DestroyCommandPools();
-	
-	graphicsLoadedToDevice = false;
 }
 
 #pragma endregion
@@ -628,120 +561,28 @@ void Renderer::UnloadGraphicsFromDevice() {
 Renderer::Renderer(Loader* loader, const char* applicationName, uint applicationVersion)
 : Instance(loader, applicationName, applicationVersion) {}
 
-Renderer::~Renderer() {}
-
 #pragma endregion
 
-#pragma region V4D_Renderer modules passthrough
-
-void Renderer::InitDeviceFeatures(PhysicalDevice::DeviceFeatures* deviceFeaturesToEnable, const PhysicalDevice::DeviceFeatures* supportedDeviceFeatures) {
-	// Modules
-	V4D_Mod::ForEachSortedModule([deviceFeaturesToEnable, supportedDeviceFeatures](auto mod){
-		if (mod->InitVulkanDeviceFeatures) mod->InitVulkanDeviceFeatures(deviceFeaturesToEnable, supportedDeviceFeatures);
-	});
-}
-
-void Renderer::ConfigureRenderer() {
-	// Modules
-	V4D_Mod::ForEachSortedModule([this](auto mod){
-		if (mod->ConfigureRenderer) mod->ConfigureRenderer();
-	});
-}
-
-void Renderer::InitLayouts() {
-	// Modules
-	V4D_Mod::ForEachSortedModule([this](auto mod){
-		if (mod->InitVulkanLayouts) mod->InitVulkanLayouts();
-	});
-}
-
-void Renderer::ConfigureShaders() {
-	// Modules
-	V4D_Mod::ForEachSortedModule([this](auto mod){
-		if (mod->ConfigureShaders) mod->ConfigureShaders();
-	});
-}
-
-// Scene
-void Renderer::ReadShaders() {
-	// Modules
-	V4D_Mod::ForEachSortedModule([this](auto mod){
-		if (mod->ReadShaders) mod->ReadShaders();
-	});
-}
-
-// Resources
-void Renderer::CreateResources() {
-	// Modules
-	V4D_Mod::ForEachSortedModule([this](auto mod){
-		if (mod->CreateVulkanResources) mod->CreateVulkanResources();
-	});
-	V4D_Mod::ForEachSortedModule([this](auto mod){
-		if (mod->CreateVulkanResources2) mod->CreateVulkanResources2(renderingDevice);
-	});
-}
-
-void Renderer::DestroyResources() {
-	// Modules
-	V4D_Mod::ForEachSortedModule([this](auto mod){
-		if (mod->DestroyVulkanResources2) mod->DestroyVulkanResources2(renderingDevice);
-	});
-	V4D_Mod::ForEachSortedModule([this](auto mod){
-		if (mod->DestroyVulkanResources) mod->DestroyVulkanResources();
-	});
-}
-
-void Renderer::AllocateBuffers() {
-	// Modules
-	V4D_Mod::ForEachSortedModule([this](auto mod){
-		if (mod->AllocateVulkanBuffers) mod->AllocateVulkanBuffers();
-	});
-}
-
-void Renderer::FreeBuffers() {
-	// Modules
-	V4D_Mod::ForEachSortedModule([this](auto mod){
-		if (mod->FreeVulkanBuffers) mod->FreeVulkanBuffers();
-	});
-}
-
-// Pipelines
-void Renderer::CreatePipelines() {
-	// Modules
-	V4D_Mod::ForEachSortedModule([this](auto mod){
-		if (mod->CreateVulkanPipelines) mod->CreateVulkanPipelines();
-	});
-}
-
-void Renderer::DestroyPipelines() {
-	// Modules
-	V4D_Mod::ForEachSortedModule([this](auto mod){
-		if (mod->DestroyVulkanPipelines) mod->DestroyVulkanPipelines();
-	});
-}
-
-void Renderer::Update(double deltaTime) {
-	this->previousDeltaTime = this->deltaTime;
-	this->deltaTime = deltaTime;
-	avgDeltaTime = glm::mix(avgDeltaTime, deltaTime, 1.0/10);
-	renderThreadId = std::this_thread::get_id();
-	std::scoped_lock lock(renderMutex1);
+// void Renderer::Update(double deltaTime) {
+// 	// this->previousDeltaTime = this->deltaTime;
+// 	// this->deltaTime = deltaTime;
+// 	// avgDeltaTime = glm::mix(avgDeltaTime, deltaTime, 1.0/10);
+// 	// // renderThreadId = std::this_thread::get_id();
+// 	// // std::scoped_lock lock(renderMutex1);
 	
-	if (!graphicsLoadedToDevice || mustReload) {
-		ReloadRenderer();
-		return;
-	}
+// 	// // if (!graphicsLoadedToDevice || mustReload) {
+// 	// // 	ReloadRenderer();
+// 	// // 	return;
+// 	// // }
 	
-	renderingDevice->AllocatorSetCurrentFrameIndex(0);
+// 	// renderingDevice->AllocatorSetCurrentFrameIndex(0);
 	
-	V4D_Mod::ForEachSortedModule([this](auto mod){
-		if (mod->RenderUpdate) mod->RenderUpdate();
-	});
+// 	// V4D_Mod::ForEachSortedModule([this](auto mod){
+// 	// 	if (mod->RenderUpdate) mod->RenderUpdate();
+// 	// });
 	
-	++frameIndex;
-}
-
-#pragma endregion
+// 	// ++frameIndex;
+// }
 
 #pragma region Pack Helpers
 namespace v4d::graphics {

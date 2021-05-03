@@ -19,7 +19,6 @@ namespace v4d::graphics::vulkan {
 
 	class V4DLIB RasterShaderPipeline : public ShaderPipeline {
 		VkGraphicsPipelineCreateInfo pipelineCreateInfo {};
-		Image* renderTarget;
 	public:
 		
 		// Data to draw
@@ -34,7 +33,7 @@ namespace v4d::graphics::vulkan {
 		VkPipelineRasterizationStateCreateInfo rasterizer {VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
 			nullptr, // const void* pNext
 			0, // VkPipelineRasterizationStateCreateFlags flags
-			VK_TRUE, // VkBool32 depthClampEnable
+			VK_FALSE, // VkBool32 depthClampEnable
 			VK_FALSE, // VkBool32 rasterizerDiscardEnable
 			VK_POLYGON_MODE_FILL, // VkPolygonMode polygonMode
 			VK_CULL_MODE_BACK_BIT, // VkCullModeFlags cullMode
@@ -80,6 +79,8 @@ namespace v4d::graphics::vulkan {
 		VkPipelineColorBlendStateCreateInfo colorBlending {};
 		VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo {};
 		std::vector<VkDynamicState> dynamicStates {}; // Dynamic settings that CAN be changed at runtime but preferably NOT every frame
+		std::vector<VkViewport> viewports {};
+		std::vector<VkRect2D> scissors {};
 		
 		RasterShaderPipeline(PipelineLayout& pipelineLayout, const std::vector<ShaderInfo>& shaderInfo, int sortIndex = 0);
 		virtual ~RasterShaderPipeline();

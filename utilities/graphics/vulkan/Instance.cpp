@@ -20,7 +20,7 @@ using namespace v4d::graphics::vulkan;
 #else
 
 	// Debug Callback
-	#if defined(_DEBUG) && defined(_LINUX)
+	#ifdef V4D_VULKAN_USE_VALIDATION_LAYERS
 		VkDebugUtilsMessengerEXT vulkanCallbackExtFunction;
 		static VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugCallback(
 			VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -53,10 +53,13 @@ using namespace v4d::graphics::vulkan;
 					break;
 					default:
 					case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: // Message about behavior that is invalid and may cause crashes
+					
+						// Ignored errors
+						if (std::string("VUID-VkSwapchainCreateInfoKHR-imageExtent-01274") == pCallbackData->pMessageIdName) break;
+						
 						LOG_ERROR("VULKAN_ERROR" << type << ": " << pCallbackData->pMessage);
 						#ifndef _WINDOWS
-							#ifdef VULKAN_VALIDATION_ABORT_ON_ERROR
-							// 	raise(SIGKILL);
+							#ifdef V4D_VULKAN_VALIDATION_ABORT_ON_ERROR
 								std::abort();
 							#endif
 						#endif
@@ -102,7 +105,7 @@ using namespace v4d::graphics::vulkan;
 		LoadFunctionPointers();
 
 		// Debug Callback
-		#if defined(_DEBUG) && defined(_LINUX)
+		#ifdef V4D_VULKAN_USE_VALIDATION_LAYERS
 			VkDebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCreateInfo {
 				VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
 				nullptr,// pNext
@@ -129,7 +132,7 @@ using namespace v4d::graphics::vulkan;
 #endif
 
 Instance::~Instance() {
-	#if defined(_DEBUG) && defined(_LINUX)
+	#ifdef V4D_VULKAN_USE_VALIDATION_LAYERS
 		DestroyDebugUtilsMessengerEXT(vulkanCallbackExtFunction, nullptr);
 	#endif
 	#ifdef XVK_USE_QT_VULKAN_LOADER

@@ -1,6 +1,6 @@
-# C++17 standard, 64-bit only
+# C++20 standard, 64-bit only
 enable_language(CXX)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_SYSTEM_PROCESSOR x86_64)
 

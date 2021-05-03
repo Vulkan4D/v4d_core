@@ -5,10 +5,10 @@
 #include "utilities/crypto/AES.h"
 
 namespace v4d::networking::ZAP::data {
-	ZAPDATA( ClientTokenTest, 
+	struct ClientTokenTest { STREAMABLE(ClientTokenTest, increment, token)
 		Int64_u increment;
 		EncryptedString token;
-	)
+	};
 }
 
 namespace v4d::tests {

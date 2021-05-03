@@ -41,6 +41,8 @@ namespace v4d::graphics {
 
 		static void ActivateWindowSystem();
 		static void DeactivateWindowSystem();
+		
+		bool frameBufferResized = false;
 
 	public:
 		Window(const std::string& title, int width, int height, GLFWmonitor* monitor = nullptr, GLFWwindow* share = nullptr);
@@ -71,10 +73,18 @@ namespace v4d::graphics {
 		
 		int GetWidth() const;
 		int GetHeight() const;
-
-		void RefreshSize();
+		
+		void SetTitle(const char* title);
 
 		void WaitEvents();
+		
+		inline bool WasFrameBufferResized() {
+			if (frameBufferResized) {
+				frameBufferResized = false;
+				return true;
+			}
+			return false;
+		}
 
 	};
 }

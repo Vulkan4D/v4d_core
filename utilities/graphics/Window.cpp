@@ -28,37 +28,39 @@ void Window::DeactivateWindowSystem() {
 }
 
 void Window::ResizeCallback(GLFWwindow* handle, int newWidth, int newHeight) {
-	auto window = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
-	window->RefreshSize();
-	for (auto[name, callback] : window->resizeCallbacks) {
+	auto* window = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
+	window->frameBufferResized = true;
+	window->width = newWidth;
+	window->height = newHeight;
+	for (auto&[name, callback] : window->resizeCallbacks) {
 		callback(newWidth, newHeight);
 	}
 }
 
 void Window::KeyCallback(GLFWwindow* handle, int key, int scancode, int action, int mods) {
 	auto window = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
-	for (auto[name, callback] : window->keyCallbacks) {
+	for (auto&[name, callback] : window->keyCallbacks) {
 		callback(key, scancode, action, mods);
 	}
 }
 
 void Window::MouseButtonCallback(GLFWwindow* handle, int button, int action, int mods) {
 	auto window = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
-	for (auto[name, callback] : window->mouseButtonCallbacks) {
+	for (auto&[name, callback] : window->mouseButtonCallbacks) {
 		callback(button, action, mods);
 	}
 }
 
 void Window::ScrollCallback(GLFWwindow* handle, double x, double y) {
 	auto window = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
-	for (auto[name, callback] : window->scrollCallbacks) {
+	for (auto&[name, callback] : window->scrollCallbacks) {
 		callback(x, y);
 	}
 }
 
 void Window::CharCallback(GLFWwindow* handle, unsigned int c) {
 	auto window = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
-	for (auto[name, callback] : window->charCallbacks) {
+	for (auto&[name, callback] : window->charCallbacks) {
 		callback(c);
 	}
 }
@@ -156,11 +158,10 @@ int Window::GetHeight() const {
 	return height;
 }
 
-void Window::RefreshSize() {
-	glfwGetFramebufferSize(handle, &width, &height);
+void Window::WaitEvents() {
+	glfwWaitEvents();
 }
 
-void Window::WaitEvents() {
-	RefreshSize();
-	glfwWaitEvents();
+void Window::SetTitle(const char* title) {
+	glfwSetWindowTitle(handle, title);
 }

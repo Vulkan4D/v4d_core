@@ -33,13 +33,20 @@ namespace v4d::graphics::vulkan {
 	
 		// Required Instance Extensions
 		std::vector<const char*> requiredInstanceExtensions {
-			#if defined(_DEBUG) && defined(_LINUX)
+			#ifdef V4D_VULKAN_USE_VALIDATION_LAYERS
 				VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+			#endif
+			#ifdef V4D_VULKAN_USE_VMA
+				VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
 			#endif
 		};
 		
 		// Required Instance Layers
-		std::vector<const char*> requiredInstanceLayers {};
+		std::vector<const char*> requiredInstanceLayers {
+			#ifdef V4D_VULKAN_USE_VALIDATION_LAYERS
+				"VK_LAYER_KHRONOS_validation",
+			#endif
+		};
 		
 		#ifndef XVK_USE_QT_VULKAN_LOADER
 			void CheckExtensions();

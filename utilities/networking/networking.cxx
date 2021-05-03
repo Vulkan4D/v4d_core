@@ -6,11 +6,11 @@
 std::atomic<int> result = 100;
 
 namespace v4d::networking::ZAP::data {
-	ZAPDATA( Auth, 
+	struct Auth { STREAMABLE(Auth, username, password, stuff)
 		String username;
 		String password;
 		Vector<Int32> stuff;
-	)
+	};
 }
 
 class TestServer : public v4d::networking::ListeningServer{
@@ -26,7 +26,7 @@ public:
 
 	ulong Authenticate(v4d::data::ReadOnlyStream* authStream) override {
 		if (authStream) {
-			auto[username, password, stuff] = zapdata::Auth::ReadFrom(authStream);
+			auto[username, password, stuff] = zapdata::Auth::ConstructFromStream(authStream);
 			if (username == "bob" && password == "12345") {
 				if (stuff.size() == 3 && stuff[0] == 4 && stuff[1] == 16 && stuff[2] == 512) {
 					return 16488; // ID

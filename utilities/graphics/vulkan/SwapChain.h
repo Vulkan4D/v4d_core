@@ -46,7 +46,6 @@ namespace v4d::graphics::vulkan {
 		SwapChain(
 			Device* device, 
 			VkSurfaceKHR surface, 
-			uint32_t nbFrames, 
 			VkExtent2D preferredExtent, 
 			const std::vector<VkSurfaceFormatKHR> preferredFormats, 
 			const std::vector<VkPresentModeKHR> preferredPresentModes
@@ -55,7 +54,7 @@ namespace v4d::graphics::vulkan {
 
 		VkSwapchainKHR GetHandle() const;
 
-		void SetConfiguration(uint32_t nbFrames, VkExtent2D preferredExtent, const std::vector<VkSurfaceFormatKHR> preferredFormats, const std::vector<VkPresentModeKHR>& preferredPresentModes);
+		void SetConfiguration(VkExtent2D preferredExtent, const std::vector<VkSurfaceFormatKHR> preferredFormats, const std::vector<VkPresentModeKHR>& preferredPresentModes);
 		void AssignQueues(std::vector<uint32_t>& queues);
 
 		void Create(SwapChain* oldSwapChain = nullptr);

@@ -28,14 +28,11 @@
 #include "utilities/networking/OutgoingConnection.h"
 #include "utilities/networking/ListeningServer.h"
 #include "utilities/networking/IncomingClient.h"
-#include "utilities/scene/Scene.h"
 
 
 class V4DLIB V4D_Mod {
 	V4D_MODULE_CLASS_HEADER(V4D_Mod
 		,OrderIndex
-		,LoadScene
-		,UnloadScene
 		,DrawUi
 		,InitRenderer
 		,InitClient
@@ -124,8 +121,6 @@ class V4DLIB V4D_Mod {
 	
 // Init
 	V4D_MODULE_FUNC_DECLARE(int, OrderIndex)
-	V4D_MODULE_FUNC_DECLARE(void, LoadScene, v4d::scene::Scene*)
-	V4D_MODULE_FUNC_DECLARE(void, UnloadScene)
 	V4D_MODULE_FUNC_DECLARE(void, InitRenderer, v4d::graphics::Renderer*)
 	V4D_MODULE_FUNC_DECLARE(void, InitClient, std::shared_ptr<v4d::networking::OutgoingConnection> client)
 	V4D_MODULE_FUNC_DECLARE(void, InitServer, std::shared_ptr<v4d::networking::ListeningServer> server)

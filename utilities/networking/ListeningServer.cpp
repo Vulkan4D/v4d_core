@@ -55,7 +55,7 @@ void ListeningServer::HandleNewConnection(v4d::io::SocketPtr socket){
 			socket->Disconnect();
 			return;
 		}
-		auto[clientAppName, clientAppVersion, clientType] = zapdata::ClientHello::ReadFrom(socket);
+		auto[clientAppName, clientAppVersion, clientType] = zapdata::ClientHello::ConstructFromStream(socket);
 		if (!ValidateAppName(socket, clientAppName)) return;
 		if (!ValidateVersion(socket, clientAppVersion)) return;
 
@@ -168,7 +168,7 @@ void ListeningServer::TokenRequest(v4d::io::SocketPtr socket, byte clientType) {
 			return;
 		}
 		auto encryptedToken = socket->ReadEncryptedStream(&clients->at(clientID)->aes);
-		auto[increment, token] = zapdata::ClientToken::ReadFrom(encryptedToken);
+		auto[increment, token] = zapdata::ClientToken::ConstructFromStream(encryptedToken);
 		// Compare token with client's token
 		if (strcmp(token.c_str(), clients->at(clientID)->token.c_str()) != 0) {
 			if (socket->IsTCP()) {

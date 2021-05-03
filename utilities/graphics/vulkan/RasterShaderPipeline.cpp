@@ -69,24 +69,23 @@ void RasterShaderPipeline::CreatePipeline(Device* device) {
 	CreateShaderStages(device);
 	
 	VkPipelineViewportStateCreateInfo viewportState {};
-	VkViewport viewport {};
-	VkRect2D scissor {};
+	
 	if (pipelineCreateInfo.pViewportState == nullptr) {
-		viewport.x = 0;
-		viewport.y = 0;
-		viewport.width = (float) renderTarget->width;
-		viewport.height = (float) renderTarget->height;
-		viewport.minDepth = 0;
-		viewport.maxDepth = renderTarget->imageInfo.extent.depth;
-		scissor.offset = {0, 0};
-		scissor.extent = {renderTarget->width, renderTarget->height};
 		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-		viewportState.viewportCount = 1;
-		viewportState.scissorCount = 1;
-		viewportState.pViewports = &viewport;
-		viewportState.pScissors = &scissor;
+		viewportState.viewportCount = viewports.size();
+		viewportState.scissorCount = scissors.size();
+		viewportState.pViewports = viewports.size()>0? viewports.data() : nullptr;
+		viewportState.pScissors = scissors.size()>0? scissors.data() : nullptr;
 		pipelineCreateInfo.pViewportState = &viewportState;
 	}
+	
+	// if (viewports.size() == 0) {
+	// 	dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
+	// }
+	
+	// if (scissors.size() == 0) {
+	// 	dynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
+	// }
 	
 	// Bindings and Attributes
 	vertexInputInfo.vertexBindingDescriptionCount = GetBindings()->size();
@@ -125,6 +124,9 @@ void RasterShaderPipeline::CreatePipeline(Device* device) {
 }
 
 void RasterShaderPipeline::DestroyPipeline(Device* device) {
+	dynamicStates.clear();
+	viewports.clear();
+	scissors.clear();
 	device->DestroyPipeline(pipeline, nullptr);
 	DestroyShaderStages(device);
 	colorBlendAttachments.clear();
@@ -143,7 +145,17 @@ void RasterShaderPipeline::SetRenderPass(SwapChain* swapChain, VkRenderPass rend
 }
 
 void RasterShaderPipeline::SetRenderPass(Image* renderTarget, VkRenderPass renderPass, uint32_t subpass) {
-	this->renderTarget = renderTarget;
+	
+	viewports.emplace_back(
+		/*x*/ 0,
+		/*y*/ 0,
+		/*width*/ (float) renderTarget->width,
+		/*height*/ (float) renderTarget->height,
+		/*minDepth*/ 0,
+		/*maxDepth*/ renderTarget->imageInfo.extent.depth
+	);
+	scissors.emplace_back(VkOffset2D{0,0}, VkExtent2D{renderTarget->width, renderTarget->height});
+	
 	pipelineCreateInfo.pViewportState = nullptr;
 	pipelineCreateInfo.renderPass = renderPass;
 	pipelineCreateInfo.subpass = subpass;

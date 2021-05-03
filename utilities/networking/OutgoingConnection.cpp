@@ -117,7 +117,7 @@ bool OutgoingConnection::TokenRequest() {
 				return HandleConnection();
 			break;
 			case ZAP::DENY:
-				auto[errCode, errMsg] = zapdata::Error::ReadFrom(socket);
+				auto[errCode, errMsg] = zapdata::Error::ConstructFromStream(socket);
 				Error(errCode, "Error while trying to connect to server: " + errMsg);
 				return false;
 		}
@@ -139,7 +139,7 @@ bool OutgoingConnection::AnonymousRequest() {
 				return HandleConnection();
 			break;
 			case ZAP::DENY:
-				auto[errCode, errMsg] = zapdata::Error::ReadFrom(socket);
+				auto[errCode, errMsg] = zapdata::Error::ConstructFromStream(socket);
 				Error(errCode, "Error while trying to connect to server: " + errMsg);
 				return false;
 		}
@@ -179,7 +179,7 @@ bool OutgoingConnection::AuthRequest(v4d::data::Stream& authData) {
 			}
 		break;
 		case ZAP::DENY:
-			auto[errCode, errMsg] = zapdata::Error::ReadFrom(socket);
+			auto[errCode, errMsg] = zapdata::Error::ConstructFromStream(socket);
 			Error(errCode, "Error while trying to connect to server: " + errMsg);
 			return false;
 	}

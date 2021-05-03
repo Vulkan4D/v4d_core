@@ -94,18 +94,18 @@ namespace v4d::graphics {
 		// Ray-Tracing Shaders
 		static std::unordered_map<std::string, uint32_t> sbtOffsets;
 		
-	public: // States
-		bool mustReload = false;
-		bool graphicsLoadedToDevice = false;
-		std::thread::id renderThreadId = std::this_thread::get_id();
-		std::recursive_mutex renderMutex1, renderMutex2;
+	// public: // States
+		// bool mustReload = false;
+		// bool graphicsLoadedToDevice = false;
+		// std::thread::id renderThreadId = std::this_thread::get_id();
+		// std::recursive_mutex renderMutex1, renderMutex2;
 		
 	public: // Preferences
 
 		std::vector<VkPresentModeKHR> preferredPresentModes {
-			// VK_PRESENT_MODE_MAILBOX_KHR,	// TripleBuffering (No Tearing, low latency)
-			// VK_PRESENT_MODE_FIFO_KHR,	// VSync ON (No Tearing, more latency)
+			VK_PRESENT_MODE_MAILBOX_KHR,	// TripleBuffering (No Tearing, low latency)
 			VK_PRESENT_MODE_IMMEDIATE_KHR,	// VSync OFF (With Tearing, no latency)
+			VK_PRESENT_MODE_FIFO_KHR,	// VSync ON (No Tearing, more latency)
 		};
 		std::vector<VkSurfaceFormatKHR> preferredFormats {
 			{VK_FORMAT_R16G16B16A16_SFLOAT, VK_COLOR_SPACE_HDR10_HLG_EXT},
@@ -116,6 +116,7 @@ namespace v4d::graphics {
 		std::vector<const char*> requiredDeviceExtensions {
 			VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 			#ifdef V4D_VULKAN_USE_VMA
+				VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
 				VK_KHR_BIND_MEMORY_2_EXTENSION_NAME,
 			#endif
 		};
@@ -127,45 +128,38 @@ namespace v4d::graphics {
 		void OptionalDeviceExtension(const char* ext);
 		bool IsDeviceExtensionEnabled(const char* ext);
 
-	public: // Virtual methods
-		// Init
-		virtual void InitDeviceFeatures(PhysicalDevice::DeviceFeatures* deviceFeaturesToEnable, const PhysicalDevice::DeviceFeatures* supportedDeviceFeatures);
-		virtual void ConfigureRenderer();
-		virtual void InitLayouts();
-		virtual void ConfigureShaders();
-		
-		// Scene
-		virtual void ReadShaders();
-		
-		// Resources
-		virtual void CreateResources();
-		virtual void DestroyResources();
-		virtual void AllocateBuffers();
-		virtual void FreeBuffers();
-		
-		// Pipelines
-		virtual void CreatePipelines();
-		virtual void DestroyPipelines();
+	public: // Pure virtual methods
+		virtual void ScorePhysicalDeviceSelection(int& score, PhysicalDevice*) = 0;
+		virtual void InitDeviceFeatures(PhysicalDevice::DeviceFeatures* deviceFeaturesToEnable, const PhysicalDevice::DeviceFeatures* supportedDeviceFeatures) = 0;
+		virtual void ConfigureRenderer() = 0;
+		virtual void InitLayouts() = 0;
+		virtual void ConfigureShaders() = 0;
+		virtual void ReadShaders() = 0;
+		virtual void CreateResources() = 0;
+		virtual void DestroyResources() = 0;
+		virtual void AllocateBuffers() = 0;
+		virtual void FreeBuffers() = 0;
+		virtual void CreatePipelines() = 0;
+		virtual void DestroyPipelines() = 0;
+		virtual void CreateSyncObjects() = 0;
+		virtual void DestroySyncObjects() = 0;
+		virtual void CreateCommandBuffers() = 0;
+		virtual void DestroyCommandBuffers() = 0;
+		virtual void Render() = 0;
 		
 	protected: // Virtual INIT Methods
 
 		virtual void CreateDevices();
 		virtual void DestroyDevices();
 
-		virtual void CreateSyncObjects();
-		virtual void DestroySyncObjects();
-		
 		virtual void CreateCommandPools();
 		virtual void DestroyCommandPools();
 		
 		virtual void CreateDescriptorSets();
 		virtual void DestroyDescriptorSets();
 
-		virtual bool CreateSwapChain();
+		virtual void CreateSwapChain();
 		virtual void DestroySwapChain();
-
-		virtual void CreateCommandBuffers();
-		virtual void DestroyCommandBuffers();
 
 	public: // Sync methods
 		virtual void UpdateDescriptorSets();
@@ -185,7 +179,7 @@ namespace v4d::graphics {
 		void TransitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels = 1, uint32_t layerCount = 1, VkImageAspectFlags aspectMask = 0);
 
 	public: // Init//LoadReset Methods
-		virtual void RecreateSwapChains();
+		virtual void RecreateSwapChain();
 		
 		virtual void InitRenderer();
 		virtual void LoadRenderer();
@@ -197,10 +191,8 @@ namespace v4d::graphics {
 		
 	public: // Constructor & Destructor
 		Renderer(Loader* loader, const char* applicationName, uint applicationVersion);
-		virtual ~Renderer() override;
+		virtual ~Renderer() override = default;
 		
-	public: // Public Update Methods
-		virtual void Update(double deltaTime);
 	};
 }
 
