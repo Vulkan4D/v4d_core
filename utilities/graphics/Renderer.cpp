@@ -206,29 +206,30 @@ void Renderer::CreateSwapChain() {
 	// Put old swapchain in a temporary pointer and delete it after creating new swapchain
 	SwapChain* oldSwapChain = swapChain;
 	swapChain = nullptr;
-	
-	VkSurfaceCapabilitiesKHR capabilities;
 
 	do {
 		if (swapChain) {
 			delete swapChain;
-			SLEEP(20ms)
+			#ifdef XVK_INCLUDE_GLFW
+				glfwWaitEvents();
+			#else
+				SLEEP(20ms)
+			#endif
 		}
+		
+		VkSurfaceCapabilitiesKHR capabilities;
+		GetPhysicalDeviceSurfaceCapabilitiesKHR(renderingDevice->GetPhysicalDeviceHandle(), surface, &capabilities);
+		
 		// Create the new swapchain object
 		swapChain = new SwapChain(
 			renderingDevice,
 			surface,
-			{ // Preferred Extent (Screen Resolution)
-				0, // width
-				0 // height
-			},
+			capabilities.currentExtent,
 			preferredFormats,
 			preferredPresentModes
 		);
 		
-		GetPhysicalDeviceSurfaceCapabilitiesKHR(renderingDevice->GetPhysicalDeviceHandle(), surface, &capabilities);
-		
-	} while (swapChain->extent.width == 0 || swapChain->extent.height == 0 || swapChain->extent.width != capabilities.currentExtent.width || swapChain->extent.height != capabilities.currentExtent.height);
+	} while (swapChain->extent.width == 0 || swapChain->extent.height == 0);
 
 	// Create the swapchain handle and corresponding imageviews
 	swapChain->Create(oldSwapChain);
