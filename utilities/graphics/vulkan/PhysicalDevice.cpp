@@ -33,7 +33,7 @@ PhysicalDevice::~PhysicalDevice() {
 	delete supportedExtensions;
 }
 
-int PhysicalDevice::GetQueueFamilyIndexFromFlags(VkDeviceQueueCreateFlags flags, uint minQueuesCount, VkSurfaceKHR* surface) {
+int PhysicalDevice::GetQueueFamilyIndexFromFlags(VkQueueFlags flags, uint minQueuesCount, VkSurfaceKHR* surface) {
 	int i = 0;
 	for (const auto& queueFamily : *queueFamilies) {
 		if (queueFamily.queueCount >= minQueuesCount && queueFamily.queueFlags & flags) {
@@ -47,7 +47,7 @@ int PhysicalDevice::GetQueueFamilyIndexFromFlags(VkDeviceQueueCreateFlags flags,
 	return -1;
 }
 
-std::vector<int> PhysicalDevice::GetQueueFamilyIndicesFromFlags(VkDeviceQueueCreateFlags flags, uint minQueuesCount, VkSurfaceKHR* surface) {
+std::vector<int> PhysicalDevice::GetQueueFamilyIndicesFromFlags(VkQueueFlags flags, uint minQueuesCount, VkSurfaceKHR* surface) {
 	std::vector<int> indices {};
 	int i = 0;
 	for (const auto& queueFamily : *queueFamilies) {
@@ -65,7 +65,7 @@ std::vector<int> PhysicalDevice::GetQueueFamilyIndicesFromFlags(VkDeviceQueueCre
 	return indices;
 }
 
-bool PhysicalDevice::QueueFamiliesContainsFlags(VkDeviceQueueCreateFlags flags, uint minQueuesCount, VkSurfaceKHR* surface) {
+bool PhysicalDevice::QueueFamiliesContainsFlags(VkQueueFlags flags, uint minQueuesCount, VkSurfaceKHR* surface) {
 	for (const auto& queueFamily : *queueFamilies) {
 		if (queueFamily.queueCount >= minQueuesCount && queueFamily.queueFlags & flags) {
 			if (!surface || *surface == VK_NULL_HANDLE) return true;

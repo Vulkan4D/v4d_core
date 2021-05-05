@@ -29,7 +29,6 @@ void Window::DeactivateWindowSystem() {
 
 void Window::ResizeCallback(GLFWwindow* handle, int newWidth, int newHeight) {
 	auto* window = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
-	window->frameBufferResized = true;
 	window->width = newWidth;
 	window->height = newHeight;
 	for (auto&[name, callback] : window->resizeCallbacks) {
@@ -92,7 +91,7 @@ VkSurfaceKHR Window::CreateVulkanSurface(VkInstance instance) {
 	return surface;
 }
 
-void Window::GetRequiredVulkanInstanceExtensions(std::vector<const char*>& requiredInstanceExtensions) const {
+void Window::FillRequiredVulkanInstanceExtensions(std::vector<const char*>& requiredInstanceExtensions) const {
 	uint glfwExtensionCount = 0;
 	const char** glfwExtensions;
 	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
@@ -164,4 +163,8 @@ void Window::WaitEvents() {
 
 void Window::SetTitle(const char* title) {
 	glfwSetWindowTitle(handle, title);
+}
+
+void Window::SetTitle(const std::string& title) {
+	glfwSetWindowTitle(handle, title.c_str());
 }

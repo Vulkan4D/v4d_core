@@ -206,7 +206,3 @@ VkPresentModeKHR SwapChain::GetPreferredPresentMode(const std::vector<VkPresentM
 	}
 	return presentModes[0];
 }
-
-VkSwapchainKHR SwapChain::GetHandle() const {
-	return handle;
-}

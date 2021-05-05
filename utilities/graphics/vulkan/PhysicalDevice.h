@@ -87,9 +87,9 @@ namespace v4d::graphics::vulkan {
 		} deviceFeatures {};
 
 		// family queue index
-		int GetQueueFamilyIndexFromFlags(VkDeviceQueueCreateFlags flags, uint minQueuesCount = 1, VkSurfaceKHR* surface = nullptr);
-		std::vector<int> GetQueueFamilyIndicesFromFlags(VkDeviceQueueCreateFlags flags, uint minQueuesCount = 1, VkSurfaceKHR* surface = nullptr);
-		bool QueueFamiliesContainsFlags(VkDeviceQueueCreateFlags flags, uint minQueuesCount = 1, VkSurfaceKHR* surface = nullptr);
+		int GetQueueFamilyIndexFromFlags(VkQueueFlags flags, uint minQueuesCount = 1, VkSurfaceKHR* surface = nullptr);
+		std::vector<int> GetQueueFamilyIndicesFromFlags(VkQueueFlags flags, uint minQueuesCount = 1, VkSurfaceKHR* surface = nullptr);
+		bool QueueFamiliesContainsFlags(VkQueueFlags flags, uint minQueuesCount = 1, VkSurfaceKHR* surface = nullptr);
 
 		bool SupportsExtension(std::string ext);
 

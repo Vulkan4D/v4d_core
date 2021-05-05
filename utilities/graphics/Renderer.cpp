@@ -1,5 +1,4 @@
 #include "Renderer.h"
-// #include "V4D_Mod.h"
 #include "utilities/io/Logger.h"
 
 using namespace v4d::graphics;
@@ -55,6 +54,7 @@ void Renderer::CreateDevices() {
 	LOG("Selected Rendering PhysicalDevice: " << renderingPhysicalDevice->GetDescription());
 
 	// Prepare enabled extensions
+	ConfigureDeviceExtensions();
 	deviceExtensions.clear();
 	for (auto& ext : requiredDeviceExtensions) {
 		deviceExtensions.push_back(ext);
@@ -73,7 +73,7 @@ void Renderer::CreateDevices() {
 	
 	// Prepare Device Features
 	PhysicalDevice::DeviceFeatures enabledDeviceFeatures {};
-	InitDeviceFeatures(&enabledDeviceFeatures, &renderingPhysicalDevice->deviceFeatures);
+	ConfigureDeviceFeatures(&enabledDeviceFeatures, &renderingPhysicalDevice->deviceFeatures);
 	renderingPhysicalDevice->deviceFeatures &= enabledDeviceFeatures;
 	
 	// Create Logical Device
@@ -85,7 +85,7 @@ void Renderer::CreateDevices() {
 		renderingPhysicalDevice->deviceFeatures.GetDeviceFeaturesPNext()
 	);
 
-	if (!renderingDevice->GetQueue("present").handle) {
+	if (!renderingDevice->GetPresentQueue().handle) {
 		throw std::runtime_error("Failed to get Presentation Queue for surface. At least one queue must be defined with a VkSurfaceKHR or you must manually specify a 'present' queue");
 	}
 	
@@ -99,7 +99,7 @@ void Renderer::DestroyDevices() {
 }
 
 void Renderer::CreateCommandPools() {
-	for (auto&[k, qs] : renderingDevice->GetQueues()) if (k != "present") {
+	for (auto&[k, qs] : renderingDevice->GetQueues()) if (k) {
 		for (auto& q : qs) {
 			if (!q.commandPool) {
 				renderingDevice->CreateCommandPool(q.familyIndex, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &q.commandPool);
@@ -109,7 +109,7 @@ void Renderer::CreateCommandPools() {
 }
 
 void Renderer::DestroyCommandPools() {
-	for (auto&[k, qs] : renderingDevice->GetQueues()) if (k != "present") {
+	for (auto&[k, qs] : renderingDevice->GetQueues()) if (k) {
 		for (auto& q : qs) {
 			if (q.commandPool) {
 				renderingDevice->DestroyCommandPool(q.commandPool);
@@ -120,13 +120,13 @@ void Renderer::DestroyCommandPools() {
 
 void Renderer::CreateDescriptorSets() {
 	
-	for (auto[name,set] : descriptorSets) {
+	for (auto&[name,set] : descriptorSets) {
 		set->CreateDescriptorSetLayout(renderingDevice);
 	}
 	
 	// Descriptor sets / pool
 	std::map<VkDescriptorType, uint> descriptorTypes {};
-	for (auto[name,set] : descriptorSets) {
+	for (auto&[name,set] : descriptorSets) {
 		for (auto&[binding, descriptor] : set->GetBindings()) {
 			if (descriptorTypes.find(descriptor.descriptorType) == descriptorTypes.end()) {
 				descriptorTypes[descriptor.descriptorType] = 1;
@@ -147,7 +147,7 @@ void Renderer::CreateDescriptorSets() {
 		std::vector<VkDescriptorSetLayout> setLayouts {};
 		vkDescriptorSets.resize(descriptorSets.size());
 		setLayouts.reserve(descriptorSets.size());
-		for (auto[name,set] : descriptorSets) {
+		for (auto&[name,set] : descriptorSets) {
 			setLayouts.push_back(set->GetDescriptorSetLayout());
 		}
 		VkDescriptorSetAllocateInfo allocInfo = {};
@@ -159,7 +159,7 @@ void Renderer::CreateDescriptorSets() {
 			throw std::runtime_error("Failed to allocate descriptor sets");
 		}
 		int i = 0;
-		for (auto[name,set] : descriptorSets) {
+		for (auto&[name,set] : descriptorSets) {
 			descriptorSets[name]->descriptorSet = vkDescriptorSets[i++];
 		}
 	}
@@ -168,21 +168,19 @@ void Renderer::CreateDescriptorSets() {
 }
 
 void Renderer::DestroyDescriptorSets() {
-	
 	// Descriptor Sets
 	if (descriptorSets.size() > 0) {
 		renderingDevice->FreeDescriptorSets(descriptorPool, (uint)vkDescriptorSets.size(), vkDescriptorSets.data());
-		for (auto[name,set] : descriptorSets) set->DestroyDescriptorSetLayout(renderingDevice);
+		for (auto&[name,set] : descriptorSets) set->DestroyDescriptorSetLayout(renderingDevice);
 		// Descriptor pools
 		renderingDevice->DestroyDescriptorPool(descriptorPool, nullptr);
 	}
 }
 
 void Renderer::UpdateDescriptorSets() {
-	
 	if (descriptorSets.size() > 0) {
 		std::vector<VkWriteDescriptorSet> descriptorWrites {};
-		for (auto[name,set] : descriptorSets) {
+		for (auto&[name,set] : descriptorSets) {
 			for (auto&[binding, descriptor] : set->GetBindings()) {
 				if (descriptor.IsWriteDescriptorSetValid()) {
 					descriptorWrites.push_back(descriptor.GetWriteDescriptorSet(set->descriptorSet));
@@ -228,12 +226,6 @@ void Renderer::CreateSwapChain() {
 			preferredPresentModes
 		);
 		
-		// Assign queues
-		// swapChain->AssignQueues({renderingDevice->GetQueue("present").familyIndex, renderingDevice->GetQueue("graphics").familyIndex});
-		// Set custom params
-		// swapChain->createInfo.xxxx = xxxxxx...
-		// swapChain->imageViewsCreateInfo.xxxx = xxxxxx...
-		
 		GetPhysicalDeviceSurfaceCapabilitiesKHR(renderingDevice->GetPhysicalDeviceHandle(), surface, &capabilities);
 		
 	} while (swapChain->extent.width == 0 || swapChain->extent.height == 0 || swapChain->extent.width != capabilities.currentExtent.width || swapChain->extent.height != capabilities.currentExtent.height);
@@ -258,219 +250,51 @@ void Renderer::DestroySwapChain() {
 
 #pragma region Helper methods
 
-VkCommandBuffer Renderer::BeginSingleTimeCommands(const Queue& queue) {
-	return renderingDevice->BeginSingleTimeCommands(queue);
-}
-
-void Renderer::EndSingleTimeCommands(const Queue& queue, VkCommandBuffer commandBuffer) {
-	renderingDevice->EndSingleTimeCommands(queue, commandBuffer);
-}
-
-void Renderer::RunSingleTimeCommands(const Queue& queue, std::function<void(VkCommandBuffer)>&& func) {
-	renderingDevice->RunSingleTimeCommands(queue, std::forward<std::function<void(VkCommandBuffer)>>(func));
-}
-
-void Renderer::AllocateBufferStaged(const Queue& queue, Buffer& buffer) {
-	auto cmdBuffer = BeginSingleTimeCommands(queue);
-	Buffer stagingBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-	stagingBuffer.srcDataPointers = std::ref(buffer.srcDataPointers);
-	stagingBuffer.Allocate(renderingDevice, MEMORY_USAGE_CPU_ONLY, true);
-	buffer.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-	buffer.Allocate(renderingDevice, MEMORY_USAGE_GPU_ONLY, false);
-	Buffer::Copy(renderingDevice, cmdBuffer, stagingBuffer.buffer, buffer.buffer, buffer.size);
-	EndSingleTimeCommands(queue, cmdBuffer);
-	stagingBuffer.Free(renderingDevice);
-}
-void Renderer::AllocateBuffersStaged(const Queue& queue, std::vector<Buffer>& buffers) {
-	auto cmdBuffer = BeginSingleTimeCommands(queue);
-	std::vector<Buffer> stagingBuffers {};
-	stagingBuffers.reserve(buffers.size());
-	for (auto& buffer : buffers) {
-		auto& stagingBuffer = stagingBuffers.emplace_back(VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-		stagingBuffer.srcDataPointers = std::ref(buffer.srcDataPointers);
-		stagingBuffer.Allocate(renderingDevice, MEMORY_USAGE_CPU_ONLY, true);
-		buffer.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-		buffer.Allocate(renderingDevice, MEMORY_USAGE_GPU_ONLY, false);
-		Buffer::Copy(renderingDevice, cmdBuffer, stagingBuffer.buffer, buffer.buffer, buffer.size);
-	}
-	EndSingleTimeCommands(queue, cmdBuffer);
-	for (auto& stagingBuffer : stagingBuffers) {
-		stagingBuffer.Free(renderingDevice);
-	}
-}
-void Renderer::AllocateBuffersStaged(const Queue& queue, std::vector<Buffer*>& buffers) {
-	auto cmdBuffer = BeginSingleTimeCommands(queue);
-	std::vector<Buffer> stagingBuffers {};
-	stagingBuffers.reserve(buffers.size());
-	for (auto& buffer : buffers) {
-		auto& stagingBuffer = stagingBuffers.emplace_back(VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-		stagingBuffer.srcDataPointers = std::ref(buffer->srcDataPointers);
-		stagingBuffer.Allocate(renderingDevice, MEMORY_USAGE_CPU_ONLY, true);
-		buffer->usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-		buffer->Allocate(renderingDevice, MEMORY_USAGE_GPU_ONLY, false);
-		Buffer::Copy(renderingDevice, cmdBuffer, stagingBuffer.buffer, buffer->buffer, buffer->size);
-	}
-	EndSingleTimeCommands(queue, cmdBuffer);
-	for (auto& stagingBuffer : stagingBuffers) {
-		stagingBuffer.Free(renderingDevice);
-	}
-}
-
-void Renderer::TransitionImageLayout(VkCommandBuffer commandBuffer, Image image, VkImageLayout oldLayout, VkImageLayout newLayout) {
-	VkImageAspectFlags aspectMask = 0;
-	if (image.format == VK_FORMAT_D32_SFLOAT) aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT;
-	if (image.format == VK_FORMAT_D32_SFLOAT_S8_UINT) aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-	if (!aspectMask && (image.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-	TransitionImageLayout(commandBuffer, image.image, oldLayout, newLayout, image.mipLevels, image.arrayLayers, aspectMask);
-}
-void Renderer::TransitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint32_t layerCount, VkImageAspectFlags aspectMask) {
-	VkImageMemoryBarrier barrier = {};
-	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	barrier.oldLayout = oldLayout; // VK_IMAGE_LAYOUT_UNDEFINED if we dont care about existing contents of the image
-	barrier.newLayout = newLayout;
-	// If we are using the barrier to transfer queue family ownership, these two fields should be the indices of the queue families. Otherwise VK_QUEUE_FAMILY_IGNORED
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	//
-	barrier.image = image;
-	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.levelCount = mipLevels;
-	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount = layerCount;
-	barrier.srcAccessMask = 0;
-	barrier.dstAccessMask = 0;
-	//
-	if (aspectMask) {
-		barrier.subresourceRange.aspectMask = aspectMask;
-	} else {
-		if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
-			barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-		} else {
-			barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		}
-	}
-	//
-	VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, dstStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-	
-	// Source layouts (old)
-	// Source access mask controls actions that have to be finished on the old layout
-	// before it will be transitioned to the new layout
-	switch (oldLayout) {
-		case VK_IMAGE_LAYOUT_UNDEFINED:
-			// Image layout is undefined (or does not matter)
-			// Only valid as initial layout
-			// No flags required, listed only for completeness
-			barrier.srcAccessMask = 0;
-			break;
-
-		case VK_IMAGE_LAYOUT_PREINITIALIZED:
-			// Image is preinitialized
-			// Only valid as initial layout for linear images, preserves memory contents
-			// Make sure host writes have been finished
-			barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
-			break;
-
-		case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-			// Image is a color attachment
-			// Make sure any writes to the color buffer have been finished
-			barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-			break;
-
-		case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
-			// Image is a depth/stencil attachment
-			// Make sure any writes to the depth/stencil buffer have been finished
-			barrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-			break;
-
-		case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
-			// Image is a transfer source 
-			// Make sure any reads from the image have been finished
-			barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-			break;
-
-		case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-			// Image is a transfer destination
-			// Make sure any writes to the image have been finished
-			barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-			break;
-
-		case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-			// Image is read by a shader
-			// Make sure any shader reads from the image have been finished
-			barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-			break;
-		default:
-			// Other source layouts aren't handled (yet)
-			break;
-	}
-
-	// Target layouts (new)
-	// Destination access mask controls the dependency for the new image layout
-	switch (newLayout) {
-		case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-			// Image will be used as a transfer destination
-			// Make sure any writes to the image have been finished
-			barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-			break;
-
-		case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
-			// Image will be used as a transfer source
-			// Make sure any reads from the image have been finished
-			barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-			break;
-
-		case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-			// Image will be used as a color attachment
-			// Make sure any writes to the color buffer have been finished
-			barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-			break;
-
-		case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
-			// Image layout will be used as a depth/stencil attachment
-			// Make sure any writes to depth/stencil buffer have been finished
-			barrier.dstAccessMask = barrier.dstAccessMask | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-			break;
-
-		case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-			// Image will be read in a shader (sampler, input attachment)
-			// Make sure any writes to the image have been finished
-			if (barrier.srcAccessMask == 0)
-			{
-				barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
-			}
-			barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-			break;
-		default:
-			// Other source layouts aren't handled (yet)
-			break;
-	}
-
-	/*
-	Transfer writes must occur in the pipeline transfer stage. 
-	Since the writes dont have to wait on anything, we mayy specify an empty access mask and the earliest possible pipeline stage VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT for the pre-barrier operations.
-	It should be noted that VK_PIPELINE_STAGE_TRANSFER_BIT is not a Real stage within the graphics and compute pipelines.
-	It is more of a pseudo-stage where transfers happen.
-	
-	The image will be written in the same pipeline stage and subsequently read by the fragment shader, which is why we specify shader reading access in the fragment pipeline stage.
-	If we need to do more transitions in the future, then we'll extend the function.
-	
-	One thing to note is that command buffer submission results in implicit VK_ACCESS_HOST_WRITE_BIT synchronization at the beginning.
-	Since the TransitionImageLayout function executes a command buffer with only a single command, we could use this implicit synchronization and set srcAccessMask to 0 if we ever needed a VK_ACCESS_HOST_WRITE_BIT dependency in a layout transition.
-
-	There is actually a special type of image layout that supports all operations, VK_IMAGE_LAYOUT_GENERAL.
-	The problem with it is that it doesnt necessarily offer the best performance for any operation.
-	It is required for some special cases, like using an image as both input and output, or for reading an image after it has left the preinitialized layout.
-	*/
-	//
-	renderingDevice->CmdPipelineBarrier(
-		commandBuffer,
-		srcStage, dstStage,
-		0,
-		0, nullptr,
-		0, nullptr,
-		1, &barrier
-	);
-}
+// void Renderer::AllocateBufferStaged(const Queue& queue, Buffer& buffer) {
+// 	auto cmdBuffer = BeginSingleTimeCommands(queue);
+// 	Buffer stagingBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+// 	stagingBuffer.srcDataPointers = std::ref(buffer.srcDataPointers);
+// 	stagingBuffer.Allocate(renderingDevice, MEMORY_USAGE_CPU_ONLY, true);
+// 	buffer.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+// 	buffer.Allocate(renderingDevice, MEMORY_USAGE_GPU_ONLY, false);
+// 	Buffer::Copy(renderingDevice, cmdBuffer, stagingBuffer.buffer, buffer.buffer, buffer.size);
+// 	EndSingleTimeCommands(queue, cmdBuffer);
+// 	stagingBuffer.Free(renderingDevice);
+// }
+// void Renderer::AllocateBuffersStaged(const Queue& queue, std::vector<Buffer>& buffers) {
+// 	auto cmdBuffer = BeginSingleTimeCommands(queue);
+// 	std::vector<Buffer> stagingBuffers {};
+// 	stagingBuffers.reserve(buffers.size());
+// 	for (auto& buffer : buffers) {
+// 		auto& stagingBuffer = stagingBuffers.emplace_back(VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+// 		stagingBuffer.srcDataPointers = std::ref(buffer.srcDataPointers);
+// 		stagingBuffer.Allocate(renderingDevice, MEMORY_USAGE_CPU_ONLY, true);
+// 		buffer.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+// 		buffer.Allocate(renderingDevice, MEMORY_USAGE_GPU_ONLY, false);
+// 		Buffer::Copy(renderingDevice, cmdBuffer, stagingBuffer.buffer, buffer.buffer, buffer.size);
+// 	}
+// 	EndSingleTimeCommands(queue, cmdBuffer);
+// 	for (auto& stagingBuffer : stagingBuffers) {
+// 		stagingBuffer.Free(renderingDevice);
+// 	}
+// }
+// void Renderer::AllocateBuffersStaged(const Queue& queue, std::vector<Buffer*>& buffers) {
+// 	auto cmdBuffer = BeginSingleTimeCommands(queue);
+// 	std::vector<Buffer> stagingBuffers {};
+// 	stagingBuffers.reserve(buffers.size());
+// 	for (auto& buffer : buffers) {
+// 		auto& stagingBuffer = stagingBuffers.emplace_back(VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+// 		stagingBuffer.srcDataPointers = std::ref(buffer->srcDataPointers);
+// 		stagingBuffer.Allocate(renderingDevice, MEMORY_USAGE_CPU_ONLY, true);
+// 		buffer->usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+// 		buffer->Allocate(renderingDevice, MEMORY_USAGE_GPU_ONLY, false);
+// 		Buffer::Copy(renderingDevice, cmdBuffer, stagingBuffer.buffer, buffer->buffer, buffer->size);
+// 	}
+// 	EndSingleTimeCommands(queue, cmdBuffer);
+// 	for (auto& stagingBuffer : stagingBuffers) {
+// 		stagingBuffer.Free(renderingDevice);
+// 	}
+// }
 
 #pragma endregion
 
@@ -483,8 +307,9 @@ void Renderer::RecreateSwapChain() {
 }
 
 void Renderer::InitRenderer() {
-	InitLayouts();
+	ConfigureLayouts();
 	ConfigureShaders();
+	ReadShaders();
 }
 
 void Renderer::LoadRenderer() {
@@ -494,6 +319,7 @@ void Renderer::LoadRenderer() {
 	CreateCommandPools();
 	LoadGraphicsToDevice();
 	v4d::graphics::renderer::event::Load(this);
+	
 	LOG_SUCCESS("Vulkan Renderer is Ready !")
 }
 
@@ -508,6 +334,7 @@ void Renderer::UnloadRenderer() {
 
 void Renderer::ReloadRenderer() {
 	LOG("Reloading renderer...")
+	
 	v4d::graphics::renderer::event::Unload(this);
 	UnloadGraphicsFromDevice();
 	DestroySwapChain();
@@ -537,8 +364,6 @@ void Renderer::LoadGraphicsToDevice() {
 	v4d::graphics::renderer::event::PipelinesCreate(this);
 	
 	CreateCommandBuffers();
-	
-	frameIndex = 0;
 }
 
 void Renderer::UnloadGraphicsFromDevice() {
@@ -556,33 +381,12 @@ void Renderer::UnloadGraphicsFromDevice() {
 
 #pragma endregion
 
-#pragma region Constructor & Destructor
+#pragma region Constructor
 
 Renderer::Renderer(Loader* loader, const char* applicationName, uint applicationVersion)
 : Instance(loader, applicationName, applicationVersion) {}
 
 #pragma endregion
-
-// void Renderer::Update(double deltaTime) {
-// 	// this->previousDeltaTime = this->deltaTime;
-// 	// this->deltaTime = deltaTime;
-// 	// avgDeltaTime = glm::mix(avgDeltaTime, deltaTime, 1.0/10);
-// 	// // renderThreadId = std::this_thread::get_id();
-// 	// // std::scoped_lock lock(renderMutex1);
-	
-// 	// // if (!graphicsLoadedToDevice || mustReload) {
-// 	// // 	ReloadRenderer();
-// 	// // 	return;
-// 	// // }
-	
-// 	// renderingDevice->AllocatorSetCurrentFrameIndex(0);
-	
-// 	// V4D_Mod::ForEachSortedModule([this](auto mod){
-// 	// 	if (mod->RenderUpdate) mod->RenderUpdate();
-// 	// });
-	
-// 	// ++frameIndex;
-// }
 
 #pragma region Pack Helpers
 namespace v4d::graphics {

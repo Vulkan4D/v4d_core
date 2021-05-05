@@ -52,7 +52,9 @@ namespace v4d::graphics::vulkan {
 		);
 		~SwapChain();
 
-		VkSwapchainKHR GetHandle() const;
+		inline VkSwapchainKHR& GetHandle() {
+			return handle;
+		}
 
 		void SetConfiguration(VkExtent2D preferredExtent, const std::vector<VkSurfaceFormatKHR> preferredFormats, const std::vector<VkPresentModeKHR>& preferredPresentModes);
 		void AssignQueues(std::vector<uint32_t>& queues);

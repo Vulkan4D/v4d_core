@@ -107,6 +107,9 @@ namespace v4d::graphics::vulkan {
 		virtual void Create(Device* device, uint32_t width, uint32_t height = 0, const std::vector<VkFormat>& tryFormats = {}, int additionalFormatFeatures = 0);
 		virtual void Destroy(Device* device);
 		
+		void TransitionLayout(Device* device, VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels = 1, uint32_t layerCount = 1);
+		static void TransitionImageLayout(Device* device, VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels = 1, uint32_t layerCount = 1, VkImageAspectFlags aspectMask = 0);
+		
 	};
 	
 	class V4DLIB DepthStencilImage : public Image {

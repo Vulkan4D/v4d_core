@@ -41,16 +41,14 @@ namespace v4d::graphics {
 
 		static void ActivateWindowSystem();
 		static void DeactivateWindowSystem();
-		
-		bool frameBufferResized = false;
 
 	public:
 		Window(const std::string& title, int width, int height, GLFWmonitor* monitor = nullptr, GLFWwindow* share = nullptr);
 		~Window();
 
-		VkSurfaceKHR CreateVulkanSurface(VkInstance instance);
+		[[nodiscard]] VkSurfaceKHR CreateVulkanSurface(VkInstance instance);
 		
-		void GetRequiredVulkanInstanceExtensions(std::vector<const char*>& requiredInstanceExtensions) const;
+		void FillRequiredVulkanInstanceExtensions(std::vector<const char*>& requiredInstanceExtensions) const;
 		
 		void AddResizeCallback(std::string name, std::function<void(int,int)>&& callback);
 		void RemoveResizeCallback(std::string name);
@@ -75,16 +73,13 @@ namespace v4d::graphics {
 		int GetHeight() const;
 		
 		void SetTitle(const char* title);
+		void SetTitle(const std::string& title);
 
 		void WaitEvents();
 		
-		inline bool WasFrameBufferResized() {
-			if (frameBufferResized) {
-				frameBufferResized = false;
-				return true;
-			}
-			return false;
+		inline void Close() {
+			glfwSetWindowShouldClose(handle, 1);
 		}
-
+		
 	};
 }
