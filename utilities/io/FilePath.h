@@ -28,6 +28,7 @@ namespace v4d::io {
 		virtual bool Delete();
 
 		std::string GetExtension() const;
+		std::string GetParentPath() const;
 		double GetLastWriteTime() const;
 
 	public: // Static methods

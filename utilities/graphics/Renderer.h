@@ -17,7 +17,6 @@
 #include "utilities/graphics/vulkan/DescriptorSet.h"
 #include <utilities/graphics/vulkan/RasterShaderPipeline.h>
 #include "utilities/io/Logger.h"
-#include "utilities/io/FilePath.h"
 
 // Useful macro to be used in ConfigureDeviceFeatures()
 #define V4D_ENABLE_DEVICE_FEATURE(F) \
@@ -109,13 +108,6 @@ namespace v4d::graphics {
 		std::mutex frameSyncMutex;
 		std::queue<std::function<void()>> syncQueue {};
 		std::unique_ptr<std::thread> shaderWatcherThread = nullptr;
-		struct ShaderFileWatcher {
-			v4d::io::FilePath file;
-			std::vector<v4d::graphics::vulkan::ShaderPipeline*> shaders;
-			double mtime;
-			ShaderFileWatcher(v4d::io::FilePath file, std::vector<v4d::graphics::vulkan::ShaderPipeline*>&& shaders)
-			: file(file), shaders(shaders), mtime(0) {}
-		};
 		
 		// Descriptor sets
 		VkDescriptorPool descriptorPool;
@@ -344,7 +336,7 @@ namespace v4d::graphics {
 		virtual void UnloadRenderer();
 		virtual void ReloadRenderer();
 		virtual void ReloadPipelines();
-		void WatchModifiedShadersForReload(const std::vector<ShaderFileWatcher>&);
+		void WatchModifiedShadersForReload(const std::vector<ShaderPipelineMetaFile>&);
 		
 		void AssignSurface(const VkSurfaceKHR& surface) {
 			this->surface = surface;

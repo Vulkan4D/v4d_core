@@ -286,7 +286,7 @@ void Renderer::DestroySwapChain() {
 
 #pragma region Init/Load/Reset Methods
 
-void Renderer::WatchModifiedShadersForReload(const std::vector<ShaderFileWatcher>& shaderWatchers) {
+void Renderer::WatchModifiedShadersForReload(const std::vector<ShaderPipelineMetaFile>& shaderWatchers) {
 	shaderWatcherThread = std::make_unique<std::thread>([watchers=shaderWatchers,this]() mutable {
 		while (state != STATE::NONE) {
 			for (auto& watcher : watchers) {

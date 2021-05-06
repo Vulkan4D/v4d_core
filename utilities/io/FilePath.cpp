@@ -36,6 +36,10 @@ std::string FilePath::GetExtension() const {
 	return filePath.extension().string();
 }
 
+std::string FilePath::GetParentPath() const {
+	return filePath.parent_path().string();
+}
+
 double FilePath::GetLastWriteTime() const {
 	if (!std::filesystem::exists(filePath.string())) return 0;
 	return ((std::chrono::duration<double, std::milli>)std::filesystem::last_write_time(filePath.string()).time_since_epoch()).count();

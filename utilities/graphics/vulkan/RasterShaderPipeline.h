@@ -18,7 +18,31 @@
 namespace v4d::graphics::vulkan {
 
 	class V4DLIB RasterShaderPipeline : public ShaderPipeline {
-		VkGraphicsPipelineCreateInfo pipelineCreateInfo {};
+		VkGraphicsPipelineCreateInfo pipelineCreateInfo {VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+			nullptr,// const void* pNext
+			0,// VkPipelineCreateFlags flags
+			0,// uint32_t stageCount
+			nullptr,// const VkPipelineShaderStageCreateInfo* pStages
+			&vertexInputInfo,// const VkPipelineVertexInputStateCreateInfo* pVertexInputState
+			&inputAssembly,// const VkPipelineInputAssemblyStateCreateInfo* pInputAssemblyState
+			nullptr,// const VkPipelineTessellationStateCreateInfo* pTessellationState
+			nullptr,// const VkPipelineViewportStateCreateInfo* pViewportState
+			&rasterizer,// const VkPipelineRasterizationStateCreateInfo* pRasterizationState
+			&multisampling,// const VkPipelineMultisampleStateCreateInfo* pMultisampleState
+			&depthStencilState,// const VkPipelineDepthStencilStateCreateInfo* pDepthStencilState
+			&colorBlending,// const VkPipelineColorBlendStateCreateInfo* pColorBlendState
+			nullptr,// const VkPipelineDynamicStateCreateInfo* pDynamicState
+			VK_NULL_HANDLE,// VkPipelineLayout layout
+			VK_NULL_HANDLE,// VkRenderPass renderPass
+			0,// uint32_t subpass
+			// Optional
+				// Vulkan allows you to create a new graphics pipeline by deriving from an existing pipeline. 
+				// The idea of pipeline derivatives is that it is less expensive to set up pipelines when they have much functionality in common with an existing pipeline and switching between pipelines from the same parent can also be done quicker.
+				// You can either specify the handle of an existing pipeline with basePipelineHandle or reference another pipeline that is about to be created by index with basePipelineIndex. 
+				// These are only used if VK_PIPELINE_CREATE_DERIVATIVE_BIT flag is also specified in the flags field of VkGraphicsPipelineCreateInfo.
+				VK_NULL_HANDLE, // basePipelineHandle
+				-1 // basePipelineIndex
+		};
 	public:
 		
 		// Data to draw
@@ -74,15 +98,36 @@ namespace v4d::graphics::vulkan {
 			1.0f, // float maxDepthBounds
 		};
 		
-		VkPipelineVertexInputStateCreateInfo vertexInputInfo {};
+		VkPipelineVertexInputStateCreateInfo vertexInputInfo {VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+			nullptr,//const void* pNext
+			0,//VkPipelineVertexInputStateCreateFlags flags
+			0,//uint32_t vertexBindingDescriptionCount
+			nullptr,//const VkVertexInputBindingDescription* pVertexBindingDescriptions
+			0,//uint32_t vertexAttributeDescriptionCount
+			nullptr//const VkVertexInputAttributeDescription* pVertexAttributeDescriptions
+		};
 		std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments {};
-		VkPipelineColorBlendStateCreateInfo colorBlending {};
-		VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo {};
-		std::vector<VkDynamicState> dynamicStates {}; // Dynamic settings that CAN be changed at runtime but preferably NOT every frame
+		VkPipelineColorBlendStateCreateInfo colorBlending {VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+			nullptr,//const void* pNext
+			0,//VkPipelineColorBlendStateCreateFlags flags
+			VK_FALSE,//VkBool32 logicOpEnable
+			VK_LOGIC_OP_COPY,//VkLogicOp logicOp
+			0,//uint32_t attachmentCount
+			nullptr,//const VkPipelineColorBlendAttachmentState* pAttachments
+			{0,0,0,0}//float blendConstants[4]
+		};
+		VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo {VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+			nullptr,//const void* pNext
+			0,//VkPipelineDynamicStateCreateFlags flags
+			0,//uint32_t dynamicStateCount
+			nullptr//const VkDynamicState* pDynamicStates
+		};
+		
+		std::vector<VkDynamicState> dynamicStates {};
 		std::vector<VkViewport> viewports {};
 		std::vector<VkRect2D> scissors {};
 		
-		RasterShaderPipeline(PipelineLayout& pipelineLayout, const std::vector<ShaderInfo>& shaderInfo, int sortIndex = 0);
+		using ShaderPipeline::ShaderPipeline;
 		virtual ~RasterShaderPipeline();
 		
 		// set what data to draw

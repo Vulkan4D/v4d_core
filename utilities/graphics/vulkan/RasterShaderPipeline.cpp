@@ -2,31 +2,6 @@
 
 using namespace v4d::graphics::vulkan;
 
-RasterShaderPipeline::RasterShaderPipeline(PipelineLayout& pipelineLayout, const std::vector<ShaderInfo>& shaderInfo, int sortIndex)
- : ShaderPipeline(pipelineLayout, shaderInfo, sortIndex) {
-	colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-
-	colorBlending.logicOpEnable = VK_FALSE; // If enabled, will effectively replace and disable blendingAttachmentState.blendEnable
-	colorBlending.logicOp = VK_LOGIC_OP_COPY; // optional, if enabled above
-	colorBlending.blendConstants[0] = 0; // optional
-	colorBlending.blendConstants[1] = 0; // optional
-	colorBlending.blendConstants[2] = 0; // optional
-	colorBlending.blendConstants[3] = 0; // optional
-	
-	pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipelineCreateInfo.pDepthStencilState = &depthStencilState;
-	
-	// Optional
-	// Vulkan allows you to create a new graphics pipeline by deriving from an existing pipeline. 
-	// The idea of pipeline derivatives is that it is less expensive to set up pipelines when they have much functionality in common with an existing pipeline and switching between pipelines from the same parent can also be done quicker.
-	// You can either specify the handle of an existing pipeline with basePipelineHandle or reference another pipeline that is about to be created by index with basePipelineIndex. 
-	// These are only used if VK_PIPELINE_CREATE_DERIVATIVE_BIT flag is also specified in the flags field of VkGraphicsPipelineCreateInfo.
-	pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
-	pipelineCreateInfo.basePipelineIndex = -1;
-}
-
 RasterShaderPipeline::~RasterShaderPipeline() {} // dont delete anything here, we are copying/moving this object in some modules
 
 void RasterShaderPipeline::SetData(VkBuffer vertexBuffer, VkBuffer indexBuffer, uint32_t indexCount) {
@@ -105,13 +80,8 @@ void RasterShaderPipeline::CreatePipeline(Device* device) {
 	pipelineCreateInfo.layout = GetPipelineLayout()->handle;
 
 	// Fixed functions
-	pipelineCreateInfo.pVertexInputState = &vertexInputInfo;
-	pipelineCreateInfo.pInputAssemblyState = &inputAssembly;
-	pipelineCreateInfo.pRasterizationState = &rasterizer;
-	pipelineCreateInfo.pMultisampleState = &multisampling;
 	colorBlending.attachmentCount = colorBlendAttachments.size();
 	colorBlending.pAttachments = colorBlendAttachments.data();
-	pipelineCreateInfo.pColorBlendState = &colorBlending;
 
 	// Shaders
 	pipelineCreateInfo.stageCount = GetStages()->size();

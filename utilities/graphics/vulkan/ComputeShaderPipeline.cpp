@@ -2,11 +2,6 @@
 
 using namespace v4d::graphics::vulkan;
 
-ComputeShaderPipeline::ComputeShaderPipeline(PipelineLayout& pipelineLayout, ShaderInfo shaderInfo)
- : ShaderPipeline(pipelineLayout, {shaderInfo}) {
-	
-}
-
 ComputeShaderPipeline::~ComputeShaderPipeline() {
 	
 }
