@@ -71,31 +71,31 @@ V4DLIB std::ostream& operator<<(std::ostream& stream, std::vector<byte> bytes);
 // MACROS
 
 #ifdef _V4D_CORE
-	#define LOGGER_INSTANCE v4d::Core::coreLogger
-	#ifndef LOGGER_PREFIX
-		#define LOGGER_PREFIX " [V4D Core] "
+	#define V4D_LOGGER_INSTANCE v4d::Core::coreLogger
+	#ifndef V4D_LOGGER_PREFIX
+		#define V4D_LOGGER_PREFIX " [V4D Core] "
 	#endif
 #else
-	#ifndef LOGGER_INSTANCE
-		#define LOGGER_INSTANCE v4d::io::Logger::ConsoleInstance()
+	#ifndef V4D_LOGGER_INSTANCE
+		#define V4D_LOGGER_INSTANCE v4d::io::Logger::ConsoleInstance()
 	#endif
 #endif
 
-#ifndef LOGGER_PREFIX
-	#define LOGGER_PREFIX ""
+#ifndef V4D_LOGGER_PREFIX
+	#define V4D_LOGGER_PREFIX ""
 #endif
 
 // Logging into console only in debug mode
 #ifdef _DEBUG
-	#define __LOG_PREPEND_THREAD_ID__ << (LOGGER_INSTANCE->IsVerbose()? LOGGER_INSTANCE->GetCurrentThreadIdStr() : std::string(""))
-	#define __LOG_APPEND_FILE_AND_LINE__ << " [" << __FILE__ << ":" << __LINE__ << "]"
-	#define DEBUG(msg) LOGGER_INSTANCE->Log(std::ostringstream() << LOGGER_PREFIX << "DEBUG: " __LOG_PREPEND_THREAD_ID__ << msg __LOG_APPEND_FILE_AND_LINE__, "1;33");
-	#define DEBUG_WARN(msg) LOGGER_INSTANCE->LogError(std::ostringstream() << LOGGER_PREFIX << "WARNING(debug): " __LOG_PREPEND_THREAD_ID__ << msg __LOG_APPEND_FILE_AND_LINE__);
-	#define DEBUG_ERROR(msg) LOGGER_INSTANCE->LogError(std::ostringstream() << LOGGER_PREFIX << "ERROR(debug): " __LOG_PREPEND_THREAD_ID__ << msg __LOG_APPEND_FILE_AND_LINE__);
-	#define INVALIDCODE(msg) LOGGER_INSTANCE->LogError(std::ostringstream() << LOGGER_PREFIX << "INVALIDCODE(debug): " __LOG_PREPEND_THREAD_ID__ << msg __LOG_APPEND_FILE_AND_LINE__);
+	#define __V4D__LOG_PREPEND_THREAD_ID__ << (V4D_LOGGER_INSTANCE->IsVerbose()? V4D_LOGGER_INSTANCE->GetCurrentThreadIdStr() : std::string(""))
+	#define __V4D__LOG_APPEND_FILE_AND_LINE__ << " [" << __FILE__ << ":" << __LINE__ << "]"
+	#define DEBUG(msg) V4D_LOGGER_INSTANCE->Log(std::ostringstream() << V4D_LOGGER_PREFIX << "DEBUG: " __V4D__LOG_PREPEND_THREAD_ID__ << msg __V4D__LOG_APPEND_FILE_AND_LINE__, "1;33");
+	#define DEBUG_WARN(msg) V4D_LOGGER_INSTANCE->LogError(std::ostringstream() << V4D_LOGGER_PREFIX << "WARNING(debug): " __V4D__LOG_PREPEND_THREAD_ID__ << msg __V4D__LOG_APPEND_FILE_AND_LINE__);
+	#define DEBUG_ERROR(msg) V4D_LOGGER_INSTANCE->LogError(std::ostringstream() << V4D_LOGGER_PREFIX << "ERROR(debug): " __V4D__LOG_PREPEND_THREAD_ID__ << msg __V4D__LOG_APPEND_FILE_AND_LINE__);
+	#define INVALIDCODE(msg) V4D_LOGGER_INSTANCE->LogError(std::ostringstream() << V4D_LOGGER_PREFIX << "INVALIDCODE(debug): " __V4D__LOG_PREPEND_THREAD_ID__ << msg __V4D__LOG_APPEND_FILE_AND_LINE__);
 #else
-	#define __LOG_PREPEND_THREAD_ID__
-	#define __LOG_APPEND_FILE_AND_LINE__
+	#define __V4D__LOG_PREPEND_THREAD_ID__
+	#define __V4D__LOG_APPEND_FILE_AND_LINE__
 	#define DEBUG(msg)
 	#define DEBUG_WARN(msg)
 	#define DEBUG_ERROR(msg)
@@ -104,32 +104,32 @@ V4DLIB std::ostream& operator<<(std::ostream& stream, std::vector<byte> bytes);
 #define LOG_DEBUG(msg) DEBUG(msg)
 
 // Info in console
-#define LOG(msg) LOGGER_INSTANCE->Log(std::ostringstream() << LOGGER_PREFIX __LOG_PREPEND_THREAD_ID__ << msg, LOGGER_INSTANCE->IsVerbose()? "1":"0");
+#define LOG(msg) V4D_LOGGER_INSTANCE->Log(std::ostringstream() << V4D_LOGGER_PREFIX __V4D__LOG_PREPEND_THREAD_ID__ << msg, V4D_LOGGER_INSTANCE->IsVerbose()? "1":"0");
 
 // Info in console (shown only in verbose mode)
-#define LOG_VERBOSE(msg) {if (LOGGER_INSTANCE->IsVerbose()) LOGGER_INSTANCE->Log(std::ostringstream() << LOGGER_PREFIX __LOG_PREPEND_THREAD_ID__ << msg, "2");}
+#define LOG_VERBOSE(msg) {if (V4D_LOGGER_INSTANCE->IsVerbose()) V4D_LOGGER_INSTANCE->Log(std::ostringstream() << V4D_LOGGER_PREFIX __V4D__LOG_PREPEND_THREAD_ID__ << msg, "2");}
 
 // Success/Warning/Error messages in console
-#define LOG_SUCCESS(msg) LOGGER_INSTANCE->Log(std::ostringstream() << LOGGER_PREFIX __LOG_PREPEND_THREAD_ID__ << msg, "1;36");
-#define LOG_WARN(msg) LOGGER_INSTANCE->Log(std::ostringstream() << LOGGER_PREFIX << "WARNING: " __LOG_PREPEND_THREAD_ID__ << msg __LOG_APPEND_FILE_AND_LINE__, "1;33");
-#define LOG_ERROR(msg) LOGGER_INSTANCE->LogError(std::ostringstream() << LOGGER_PREFIX << "ERROR: " __LOG_PREPEND_THREAD_ID__ << msg __LOG_APPEND_FILE_AND_LINE__);
+#define LOG_SUCCESS(msg) V4D_LOGGER_INSTANCE->Log(std::ostringstream() << V4D_LOGGER_PREFIX __V4D__LOG_PREPEND_THREAD_ID__ << msg, "1;36");
+#define LOG_WARN(msg) V4D_LOGGER_INSTANCE->Log(std::ostringstream() << V4D_LOGGER_PREFIX << "WARNING: " __V4D__LOG_PREPEND_THREAD_ID__ << msg __V4D__LOG_APPEND_FILE_AND_LINE__, "1;33");
+#define LOG_ERROR(msg) V4D_LOGGER_INSTANCE->LogError(std::ostringstream() << V4D_LOGGER_PREFIX << "ERROR: " __V4D__LOG_PREPEND_THREAD_ID__ << msg __V4D__LOG_APPEND_FILE_AND_LINE__);
 // Verbose
-#define LOG_SUCCESS_VERBOSE(msg) {if (LOGGER_INSTANCE->IsVerbose()) LOG_SUCCESS(msg)};
-#define LOG_WARN_VERBOSE(msg) {if (LOGGER_INSTANCE->IsVerbose()) LOG_WARN(msg)};
-#define LOG_ERROR_VERBOSE(msg) {if (LOGGER_INSTANCE->IsVerbose()) LOG_ERROR(msg)};
+#define LOG_SUCCESS_VERBOSE(msg) {if (V4D_LOGGER_INSTANCE->IsVerbose()) LOG_SUCCESS(msg)};
+#define LOG_WARN_VERBOSE(msg) {if (V4D_LOGGER_INSTANCE->IsVerbose()) LOG_WARN(msg)};
+#define LOG_ERROR_VERBOSE(msg) {if (V4D_LOGGER_INSTANCE->IsVerbose()) LOG_ERROR(msg)};
 
 
 // Fatal errors that should Log the event and terminate the application
 
 // error message in console and exit(1)
-// #define FATAL_EXIT(msg) {LOGGER_INSTANCE->LogError(std::ostringstream() << LOGGER_PREFIX << "FATAL(exit): " << msg __LOG_APPEND_FILE_AND_LINE__); std::exit(1);}
+// #define FATAL_EXIT(msg) {V4D_LOGGER_INSTANCE->LogError(std::ostringstream() << V4D_LOGGER_PREFIX << "FATAL(exit): " << msg __V4D__LOG_APPEND_FILE_AND_LINE__); std::exit(1);}
 
 // error message in console and abort() (causes breakpoint in debug)
-// #define FATAL_ABORT(msg) {LOGGER_INSTANCE->LogError(std::ostringstream() << LOGGER_PREFIX << "FATAL(abort): " << msg __LOG_APPEND_FILE_AND_LINE__); std::abort();}
+// #define FATAL_ABORT(msg) {V4D_LOGGER_INSTANCE->LogError(std::ostringstream() << V4D_LOGGER_PREFIX << "FATAL(abort): " << msg __V4D__LOG_APPEND_FILE_AND_LINE__); std::abort();}
 
 // error message in console and raise SIGINT (causes breakpoint in debug)
-#define FATAL(msg) {LOGGER_INSTANCE->LogError(std::ostringstream() << LOGGER_PREFIX << "FATAL(interupt): " __LOG_PREPEND_THREAD_ID__ << msg __LOG_APPEND_FILE_AND_LINE__); raise(SIGINT);}
+#define FATAL(msg) {V4D_LOGGER_INSTANCE->LogError(std::ostringstream() << V4D_LOGGER_PREFIX << "FATAL(interupt): " __V4D__LOG_PREPEND_THREAD_ID__ << msg __V4D__LOG_APPEND_FILE_AND_LINE__); raise(SIGINT);}
 
 // error message in console and raise SIGKILL (emergency kill the application)
-#define FATAL_KILL(msg) {LOGGER_INSTANCE->LogError(std::ostringstream() << LOGGER_PREFIX << "FATAL(kill): " __LOG_PREPEND_THREAD_ID__ << msg __LOG_APPEND_FILE_AND_LINE__); raise(SIGKILL);}
+#define FATAL_KILL(msg) {V4D_LOGGER_INSTANCE->LogError(std::ostringstream() << V4D_LOGGER_PREFIX << "FATAL(kill): " __V4D__LOG_PREPEND_THREAD_ID__ << msg __V4D__LOG_APPEND_FILE_AND_LINE__); raise(SIGKILL);}
 

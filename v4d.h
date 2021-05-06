@@ -69,6 +69,7 @@
 
 // V4D Core class (Compiled into v4d.dll)
 #include "Core.h"
+#include "utilities/io/Logger.h"
 
 #if defined(_V4D_PROJECT)
 	// Initial source code for the Project (App or Game)
@@ -83,6 +84,11 @@
 		bool Init() {
 			ATTACH_SIGNAL_HANDLER(V4D_SIGNAL_HANDLER)
 			if (!v4d::CheckCoreVersion()) return false;
+			#ifdef V4D_CORE_LOGGER_INSTANCE
+				v4d::Core::coreLogger = V4D_CORE_LOGGER_INSTANCE;
+			#else
+				v4d::Core::coreLogger = V4D_LOGGER_INSTANCE;
+			#endif
 			return true;
 		}
 	}

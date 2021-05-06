@@ -93,6 +93,7 @@ namespace v4d::graphics::vulkan {
 
 		virtual void CreatePipeline(Device* device) override;
 		virtual void DestroyPipeline(Device* device) override;
+		virtual void ReloadPipeline(Device* device) override;
 		
 		// assign render pass
 		void SetRenderPass(VkPipelineViewportStateCreateInfo* viewportState, VkRenderPass, uint32_t subpass = 0);

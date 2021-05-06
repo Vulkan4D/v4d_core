@@ -29,7 +29,7 @@ The core consists of the following structure :
 - `utilities/*` Contains subdirectories for utility categories with all their utilities
 - `Core.h/cpp` Core source compiled only in the core library
 - `v4d.h` Main Header file to be included in anything that is part of V4D
-- `V4D_Mod.h/cpp` Modding interface base class
+- `V4D_Mod.h/cpp` Modding interface for V4D
 - `tests.cxx` Core Unit Tests
 - `README.md` this documentation
 - `*.hh` Grouped Header files included in v4d.h
@@ -57,16 +57,18 @@ The core consists of the following structure :
 - Pointers and references (where to place the `*` and `&` symbols) : 
     - Declarations have the symbol sticking on the type
         - Pointer declarations : `int* ptr;`
+        - Reference definitions : `int& a = b;`
         - Pointer type arguments in methods : `void func(int* arg) {`
         - Argument by reference in methods : `void func(int& arg) {`
     - Dereferencing and getting the address have the symbol sticking on the variable name
         - Assigning the referenced value of a pointer variable : `int val = *prt;`
-        - Assigning a variable by reference : `int var2 = &var1;`
+        - Assigning a pointer to the address of a variable : `int* var2 = &var1;`
         - Assigning a value to a dereferenced pointer : `*ptr = 5;`
 
 ### Rules and modern conventions
-- variables initialized using braces `{ }`
-- use `static_cast<>` instead of c-style casting
+- as much as possible, use C++20 features
+- struct/class initialized using braces `{ }` and generic types using `=`
+- use `static_cast<>` instead of c-style casting for struct/class types
 - use verbose types like `uint32_t` instead of `unsigned int`
 - use `using` isntead of `typedef`
 - don't copy-paste code from stack-overflow
@@ -78,19 +80,18 @@ The core consists of the following structure :
 - class names are PascalCase
 - method names are PascalCase
 - class members and variables are camelCase
-- const variables and macros are ALL_CAPS
-- method arguments are camelCase with the same name as an underlying class member that is directly set
-- typedefs are all_lowercase
+- static const variables and macros are ALL_CAPS
+- method arguments are camelCase with the same name as an underlying class member that it constructs
 - file names unrelated to a class are all_lowercase
 - Unsafe/temporary method/member names are surrounded by underscores : \_UnsafeMethod\_()
-- Public method/member names intended only for internal use should start with two underscores : __V4D_SomeMethod()
+- Public method/member names (or macros) intended only for internal use should start with `__V4D_...`
 
 ### File Extensions
-- `.cpp` C++ Source Files compiled via g++, must have a matching .h (except main file)
+- `.cpp` C++ Source Files with a matching .h (except main.cpp)
 - `.hpp` C++ Header-only source files (no matching .cpp)
-- `.h` C++ Header files included from a matching .cpp source file
+- `.h` C++ Header files included from a matching .cpp source file (except v4d.h)
 - `.cxx` C++ source files Reserved for Unit Tests *(Subject to change)*
-- `.hh` C++ header-only files without any associated code (config files, enum, ...)
+- `.hh` C++ header-only files without any associated code (config files, enum, basic structs,...)
 
 ### Critical method names for correct memory management
 - `Create*` must be followed by `Destroy*`
@@ -98,171 +99,8 @@ The core consists of the following structure :
 - `Allocate*` must be followed by `Free*`
 - `Begin*` must be followed by `End*`
 - `Start*` must be followed by `Stop*` or `Restart*`
-- `Load*` must be followed by `Unload*` or `Reload*` (`Load` should not be called more than once, It is preferable to call `Reload` over `Unload`+`Load`)
-- `Init*` must only be called once per instance, and no need to free any memory
-- `Configure*`, `Generate*`, `Make*`, `Build*`, `Read*`, `Write*` may be called any number of times, and no need to free any memory
+- `Load*` must be followed by `Unload*` or `Reload*` (`Load` should not be called more than once unless after an `Unload`)
+- `Init*` must only be called once per instance, and manages its own memory
+- `Configure*`, `Generate*`, `Make*`, `Build*`, `Read*`, `Write*` may be called any number of times, and manages its own memory
 
-
-## Application Method/Modules execution order
-
-#### Start
-- V4D_Mod:: `ModuleLoad` ()
-- V4D_Mod:: `OrderIndex` ()
-- Instantiate Vulkan
-- Create Window
-- Create Renderer
-- Create Scene
-- V4D_Mod:: `LoadScene` ()
-- V4D_Mod:: `InitWindow` ()
-- V4D_Mod:: `InputCallbackName` ()
-- Add Input Callbacks
-- V4D_Mod:: `InitRenderer` ()
-- V4D_Mod:: `InitVulkanLayouts` ()
-- V4D_Mod:: `ConfigureShaders` ()
-- V4D_Mod:: `ReadShaders` ()
-- V4D_Mod:: `ScorePhysicalDeviceSelection` ()
-- V4D_Mod:: `InitVulkanDeviceFeatures` ()
-- V4D_Mod:: `InitRenderingDevice` ()
-- Create Rendering Device
-- Create Allocator
-- V4D_Mod:: `ConfigureRenderer` ()
-- V4D_Mod:: `CreateVulkanSyncObjects` ()
-- Create SwapChain
-- Create Command Pools
-- V4D_Mod:: `AllocateVulkanBuffers` ()
-- V4D_Mod:: `CreateVulkanResources` ()
-- V4D_Mod:: `CreateVulkanResources2` ()
-- Create Descriptor Sets
-- V4D_Mod:: `CreateVulkanPipelines` ()
-- EVENT `v4d::graphics::renderer::event::PipelinesCreate` (Renderer*)
-- V4D_Mod:: `CreateVulkanCommandBuffers` ()
-- EVENT `v4d::graphics::renderer::event::Load` (Renderer*)
-- Start Server
-- Start Client
-- Start threads and game loops
-#### Quit
-- Stop Server
-- EVENT `v4d::graphics::renderer::event::Unload` (Renderer*)
-- V4D_Mod:: `DestroyVulkanCommandBuffers` ()
-- EVENT `v4d::graphics::renderer::event::PipelinesDestroy` (Renderer*)
-- V4D_Mod:: `DestroyVulkanPipelines` ()
-- Destroy Descriptor Sets
-- V4D_Mod:: `DestroyVulkanResources2` ()
-- V4D_Mod:: `DestroyVulkanResources` ()
-- V4D_Mod:: `FreeVulkanBuffers` ()
-- Destroy Command Pools
-- Destroy SwapChain
-- V4D_Mod:: `DestroyVulkanSyncObjects` ()
-- Destroy Allocator
-- Destroy Rendering Device
-- V4D_Mod:: `InputCallbackName` ()
-- Remove Input Callbacks
-- V4D_Mod:: `UnloadScene` ()
-- Destroy Scene
-- Destroy Renderer
-- Destroy Window
-- Destroy Vulkan Instance
-- V4D_Mod:: `ModuleUnload` ()
-#### Reload Renderer
-- EVENT `v4d::graphics::renderer::event::Unload` (Renderer*)
-- V4D_Mod:: `DestroyVulkanCommandBuffers` ()
-- EVENT `v4d::graphics::renderer::event::PipelinesDestroy` (Renderer*)
-- V4D_Mod:: `DestroyVulkanPipelines` ()
-- Destroy Descriptor Sets
-- V4D_Mod:: `DestroyVulkanResources2` ()
-- V4D_Mod:: `DestroyVulkanResources` ()
-- V4D_Mod:: `FreeVulkanBuffers` ()
-- Destroy Command Pools
-- Destroy SwapChain
-- V4D_Mod:: `DestroyVulkanSyncObjects` ()
-- Destroy Allocator
-- Destroy Rendering Device
-- EVENT `v4d::graphics::renderer::event::Reload` (Renderer*)
-- V4D_Mod:: `ReadShaders` ()
-- V4D_Mod:: `ScorePhysicalDeviceSelection` ()
-- V4D_Mod:: `InitVulkanDeviceFeatures` ()
-- V4D_Mod:: `InitRenderingDevice` ()
-- Create Rendering Device
-- Create Allocator
-- V4D_Mod:: `ConfigureRenderer` ()
-- V4D_Mod:: `CreateVulkanSyncObjects` ()
-- Create SwapChain
-- Create Command Pools
-- V4D_Mod:: `AllocateVulkanBuffers` ()
-- V4D_Mod:: `CreateVulkanResources` ()
-- V4D_Mod:: `CreateVulkanResources2` ()
-- Create Descriptor Sets
-- V4D_Mod:: `CreateVulkanPipelines` ()
-- EVENT `v4d::graphics::renderer::event::PipelinesCreate` (Renderer*)
-- V4D_Mod:: `CreateVulkanCommandBuffers` ()
-- EVENT `v4d::graphics::renderer::event::Load` (Renderer*)
-#### Slow Game Loop
-- V4D_Mod:: `SlowLoopUpdate` ()
-#### Game Loop
-- V4D_Mod:: `GameLoopUpdate` ()
-#### Primary Rendering Loop
-- V4D_Mod:: `RenderUpdate` ()  
-    **Main Rendering Module:**
-    - Aquire next swapchain image
-    - Wait for fence signaled by previous frame's Push commands
-    - Set camera options and projection matrix
-    - V4D_Mod:: `RenderFrame_BeforeUpdate` ()  
-        - Modules may create new entities here  
-        - Modules may set the camera's view matrix here  
-    - Generate entities via their generator function
-    - Wait for fence signaled by previous frame's Pull commands
-    - V4D_Mod:: `OnRendererRayCastOut` ()  
-    - V4D_Mod:: `OnRendererRayCastHit` ()  
-    *TODO catch collision events here*
-    - Cleanup destroyed entities
-    - V4D_Mod:: `RenderFrame_Update` ()
-    - Loop through scene objects
-        - Prepare BLAS build if not already built
-        - Apply physics (velocity, collisions, constraints, gravity, forces)
-        - Prepare collision buffer for processing on the GPU via Ray-Tracing
-        - Prepare TLAS instance
-        - Cache important light sources in a buffer
-    - Record Push Commands
-        - Push buffers to GPU
-        - V4D_Mod:: `RenderFrame_Push` ()
-    - Submit Push commands
-    - Record Build Commands
-        - Build Acceleration Structures
-        - V4D_Mod:: `RenderFrame_Build` ()
-    - Submit Build commands
-    - Record Graphics Commands
-        - Run ray-traced rendering
-        - V4D_Mod:: `RenderFrame_Graphics` ()
-        - Run `sg_transparent` shaders (rasterization)
-        - Run `sg_wireframe` shaders (rasterization)
-    - Submit Graphics commands
-    - Record Physics Commands
-        - Run ray-traced collision detection
-        - V4D_Mod:: `RenderFrame_Physics` ()
-    - Submit Physics commands
-    - Record Pull Commands
-        - Pull collision buffer
-        - Pull raycast buffer
-        - V4D_Mod:: `RenderFrame_Pull` ()
-    - Submit Pull commands
-    - Wait for fence signaled by previous frame's Post commands
-    - Record Post Commands
-        - V4D_Mod:: `RenderFrame_Post` ()
-        - Run `sg_present` shaders (rasterization)
-        - Copy render images to history
-        - Generate thumbnail
-    - Submit Post commands
-    - Present image to screen
-#### Secondary Rendering Loop
-- V4D_Mod:: `DrawUi` ()
-- V4D_Mod:: `SecondaryRenderUpdate` ()
-    - Read histogram that was computed in previous frame
-    - V4D_Mod:: `BeginSecondaryFrameUpdate` ()
-    - Begin single time command buffer
-        - Compute histogram from previous frame
-        - V4D_Mod:: `SecondaryFrameCompute` ()
-        - V4D_Mod:: `SecondaryRenderUpdate2` () sorted by `render`
-    - Submit command buffer
-#### Input Loop
-- V4D_Mod:: `InputUpdate` ()
 

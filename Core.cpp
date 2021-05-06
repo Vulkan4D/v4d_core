@@ -1,6 +1,4 @@
 #include <v4d.h>
-#include <Core.h>
-#include "utilities/io/Logger.h"
 
 #ifdef _V4D_CORE
 

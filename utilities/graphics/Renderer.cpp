@@ -10,22 +10,6 @@ using namespace v4d::graphics;
 
 #pragma endregion
 
-#pragma region Configuration Methods
-
-void Renderer::RequiredDeviceExtension(const char* ext) {
-	requiredDeviceExtensions.push_back(std::move(ext));
-}
-
-void Renderer::OptionalDeviceExtension(const char* ext) {
-	optionalDeviceExtensions.push_back(std::move(ext));
-}
-
-bool Renderer::IsDeviceExtensionEnabled(const char* ext) {
-	return enabledDeviceExtensions.find(ext) != enabledDeviceExtensions.end();
-}
-
-#pragma endregion
-
 #pragma region Virtual INIT Methods
 
 void Renderer::CreateDevices() {
@@ -68,6 +52,7 @@ void Renderer::CreateDevices() {
 			LOG("Enabling Device Extension: " << ext)
 		} else {
 			enabledDeviceExtensions[ext] = false;
+			LOG_WARN("Unsupported Device Extension: " << ext)
 		}
 	}
 	
@@ -301,6 +286,26 @@ void Renderer::DestroySwapChain() {
 
 #pragma region Init/Load/Reset Methods
 
+void Renderer::WatchModifiedShadersForReload(const std::vector<ShaderFileWatcher>& shaderWatchers) {
+	shaderWatcherThread = std::make_unique<std::thread>([watchers=shaderWatchers,this]() mutable {
+		while (state != STATE::NONE) {
+			for (auto& watcher : watchers) {
+				if (watcher.mtime == 0) {
+					watcher.mtime = watcher.file.GetLastWriteTime();
+				} else if (watcher.file.GetLastWriteTime() > watcher.mtime) {
+					watcher.mtime = 0;
+					RunSynchronized([watcher, renderingDevice=renderingDevice](){
+						for (auto& s : watcher.shaders) s->ReloadPipeline(renderingDevice);
+					});
+					break;
+				}
+			}
+			SLEEP(100ms)
+		}
+		
+	});
+}
+
 void Renderer::RecreateSwapChain() {
 	UnloadGraphicsFromDevice();
 	v4d::graphics::renderer::event::Resize(this);
@@ -308,6 +313,7 @@ void Renderer::RecreateSwapChain() {
 }
 
 void Renderer::InitRenderer() {
+	state = STATE::INITIALIZED;
 	ConfigureLayouts();
 	ConfigureShaders();
 	ReadShaders();
@@ -320,11 +326,11 @@ void Renderer::LoadRenderer() {
 	CreateCommandPools();
 	LoadGraphicsToDevice();
 	v4d::graphics::renderer::event::Load(this);
-	
-	LOG_SUCCESS("Vulkan Renderer is Ready !")
 }
 
 void Renderer::UnloadRenderer() {
+	renderingDevice->DeviceWaitIdle();
+	
 	v4d::graphics::renderer::event::Unload(this);
 	UnloadGraphicsFromDevice();
 	DestroySwapChain();
@@ -333,8 +339,20 @@ void Renderer::UnloadRenderer() {
 	DestroyDevices();
 }
 
+void Renderer::ReloadPipelines() {
+	LOG("Reloading shaders...")
+	
+	renderingDevice->DeviceWaitIdle();
+	
+	DestroyPipelines();
+	ReadShaders();
+	CreatePipelines();
+}
+
 void Renderer::ReloadRenderer() {
 	LOG("Reloading renderer...")
+	
+	renderingDevice->DeviceWaitIdle();
 	
 	v4d::graphics::renderer::event::Unload(this);
 	UnloadGraphicsFromDevice();
@@ -365,9 +383,13 @@ void Renderer::LoadGraphicsToDevice() {
 	v4d::graphics::renderer::event::PipelinesCreate(this);
 	
 	CreateCommandBuffers();
+	
+	state = STATE::LOADED;
+	LOG_SUCCESS("Vulkan Renderer is Ready !")
 }
 
 void Renderer::UnloadGraphicsFromDevice() {
+	state = STATE::UNLOADED;
 	renderingDevice->DeviceWaitIdle();
 	
 	DestroyCommandBuffers();
@@ -380,12 +402,124 @@ void Renderer::UnloadGraphicsFromDevice() {
 	FreeBuffers();
 }
 
+bool Renderer::BeginFrame(VkSemaphore triggerSemaphore, VkFence triggerFence) {
+	state = STATE::RUNNING;
+	Begin:
+	
+	{// Sync queue
+		std::lock_guard lock(frameSyncMutex);
+		if (!syncQueue.empty()) {
+			renderingDevice->DeviceWaitIdle();
+			while (!syncQueue.empty()) {
+				syncQueue.front()();
+				syncQueue.pop();
+			}
+		}
+	}
+	
+	if (state != STATE::RUNNING) return false;
+	
+	VkResult result = renderingDevice->AcquireNextImageKHR(
+		swapChain->GetHandle(), // swapChain
+		1000UL * 1000 * 1000, // timeout in nanoseconds (using max disables the timeout)
+		triggerSemaphore,
+		triggerFence,
+		&swapChainImageIndex // output the index of the swapchain image in there
+	);
+	switch (result) {
+		case VK_SUCCESS: break;
+		case VK_ERROR_OUT_OF_DATE_KHR:
+		case VK_SUBOPTIMAL_KHR:
+		{
+			RecreateSwapChain();
+			goto Begin;
+		}
+		case VK_TIMEOUT:
+		case VK_NOT_READY:
+		{
+			LOG_WARN("Trying to acquire next swap chain image: " << GetVkResultText(result))
+			break;
+		}
+		default:
+			throw std::runtime_error(std::string("Failed to acquire next swap chain image: ") + GetVkResultText(result));
+	}
+	
+	return true;
+}
+
+void Renderer::RecordAndSubmitCommandBuffer(
+	const VkCommandBuffer& commandBuffer,
+	const std::function<void(VkCommandBuffer)>& commandsToRecord,
+	const std::vector<VkSemaphore>& waitSemaphores,
+	const std::vector<VkPipelineStageFlags>& waitStages,
+	const std::vector<VkSemaphore>& signalSemaphores,
+	const VkFence& triggerFence
+) {
+	assert(waitSemaphores.size() == waitStages.size());
+	
+	VkCommandBufferBeginInfo beginInfo = {};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+	VkSubmitInfo submitInfo {};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.waitSemaphoreCount = waitSemaphores.size();
+		submitInfo.pWaitSemaphores = waitSemaphores.data();
+		submitInfo.pWaitDstStageMask = waitStages.data();
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &commandBuffer;
+		submitInfo.signalSemaphoreCount = signalSemaphores.size();
+		submitInfo.pSignalSemaphores = signalSemaphores.data();
+	
+	ResetFence(triggerFence);
+	CheckVkResult("Reset command buffer", renderingDevice->ResetCommandBuffer(commandBuffer, 0));
+	CheckVkResult("Begin recording command buffer", renderingDevice->BeginCommandBuffer(commandBuffer, &beginInfo));
+	
+	commandsToRecord(commandBuffer);
+	
+	CheckVkResult("End recording command buffer", renderingDevice->EndCommandBuffer(commandBuffer));
+	CheckVkResult("Queue Submit", renderingDevice->QueueSubmit(renderingDevice->GetGraphicsQueue().handle, 1, &submitInfo, triggerFence));
+}
+
+bool Renderer::EndFrame(const std::vector<VkSemaphore>& waitSemaphores) {
+	VkPresentInfoKHR presentInfo = {};
+		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+		presentInfo.waitSemaphoreCount = waitSemaphores.size();
+		presentInfo.pWaitSemaphores = waitSemaphores.data();
+		presentInfo.swapchainCount = 1;
+		presentInfo.pSwapchains = &swapChain->GetHandle();
+		presentInfo.pImageIndices = &swapChainImageIndex;
+		
+	VkResult result = renderingDevice->QueuePresentKHR(renderingDevice->GetPresentQueue().handle, &presentInfo);
+
+	// Check for errors
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+		RecreateSwapChain();
+		return false;
+	} else if (result != VK_SUCCESS) {
+		throw std::runtime_error(std::string("Failed to present: ") + GetVkResultText(result));
+	}
+	
+	currentFrame %= NB_FRAMES_IN_FLIGHT;
+	
+	return true;
+}
+
 #pragma endregion
 
 #pragma region Constructor
 
 Renderer::Renderer(Loader* loader, const char* applicationName, uint applicationVersion)
 : Instance(loader, applicationName, applicationVersion) {}
+
+Renderer::~Renderer() {
+	state = STATE::NONE;
+	if (surface) {
+		DestroySurfaceKHR(surface, nullptr);
+	}
+	if (shaderWatcherThread && shaderWatcherThread->joinable()) {
+		shaderWatcherThread->join();
+	}
+}
 
 #pragma endregion
 

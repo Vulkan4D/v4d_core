@@ -24,7 +24,6 @@ namespace v4d::tests {
 	int V4D_CORE() {
 		int result = 0;
 		{
-			LOGGER_INSTANCE->SetVerbose(false);
 
 			RUN_UNIT_TESTS( ThreadPool )
 			RUN_UNIT_TESTS( Event )
@@ -40,7 +39,6 @@ namespace v4d::tests {
 			RUN_UNIT_TESTS( Networking )
 			RUN_UNIT_TESTS( VulkanInstance )
 			RUN_UNIT_TESTS( EntityComponentSystem )
-
 
 		}
 		LOG_SUCCESS("V4D_CORE tests PASSED");

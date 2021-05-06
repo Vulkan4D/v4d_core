@@ -47,6 +47,10 @@ namespace v4d::graphics::vulkan {
 		// reads the spv files and instantiates all Shaders in the shaders vector
 		void ReadShaders();
 		
+		std::vector<ShaderInfo>& GetShaderFiles() {
+			return shaderFiles;
+		}
+		
 		// clears bindings and attributes
 		void Reset();
 		

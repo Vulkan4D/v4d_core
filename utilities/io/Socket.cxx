@@ -3,7 +3,7 @@
 
 namespace v4d::tests {
 	int Socket() {
-		// LOGGER_INSTANCE->SetVerbose(true);
+		// V4D_LOGGER_INSTANCE->SetVerbose(true);
 
 		{// Test 1 (TCP)
 			// LOG_VERBOSE("    Running Test 1")

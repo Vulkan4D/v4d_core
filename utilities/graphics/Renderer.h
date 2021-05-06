@@ -5,6 +5,7 @@
 #include <thread>
 #include <unordered_map>
 #include <string>
+#include <queue>
 #include "utilities/graphics/vulkan/Loader.h"
 #include "utilities/graphics/vulkan/Instance.h"
 #include "utilities/graphics/vulkan/PhysicalDevice.h"
@@ -14,7 +15,17 @@
 #include "utilities/graphics/vulkan/SwapChain.h"
 #include "utilities/graphics/vulkan/Buffer.h"
 #include "utilities/graphics/vulkan/DescriptorSet.h"
+#include <utilities/graphics/vulkan/RasterShaderPipeline.h>
 #include "utilities/io/Logger.h"
+#include "utilities/io/FilePath.h"
+
+// Useful macro to be used in ConfigureDeviceFeatures()
+#define V4D_ENABLE_DEVICE_FEATURE(F) \
+	([deviceFeaturesToEnable, availableDeviceFeatures] () -> bool {\
+		if (availableDeviceFeatures-> F) {deviceFeaturesToEnable-> F = VK_TRUE; return true;}\
+		else {LOG_WARN("Device feature not available: " << #F); return false;}\
+	})();
+#define V4D_ENABLE_DEVICE_FEATURES(...) FOR_EACH(V4D_ENABLE_DEVICE_FEATURE, __VA_ARGS__)
 
 namespace v4d::graphics {
 	using namespace v4d::graphics::vulkan;
@@ -53,8 +64,7 @@ namespace v4d::graphics {
 	// };
 	
 	class V4DLIB Renderer : public Instance {
-	public: // class members
-
+	protected:
 		// Main Render Surface
 		VkSurfaceKHR surface;
 
@@ -82,17 +92,6 @@ namespace v4d::graphics {
 		uint32_t swapChainImageIndex;
 		static constexpr int NB_FRAMES_IN_FLIGHT = V4D_RENDERER_FRAMEBUFFERS_MAX_FRAMES;
 		uint32_t currentFrame = 0;
-		
-		// Descriptor sets
-		VkDescriptorPool descriptorPool;
-		std::map<std::string, DescriptorSet*> descriptorSets {};
-		std::vector<VkDescriptorSet> vkDescriptorSets {};
-		
-		// Ray-Tracing Shaders
-		static std::unordered_map<std::string, uint32_t> sbtOffsets;
-		
-	public: // Preferences
-
 		std::vector<VkPresentModeKHR> preferredPresentModes {
 			VK_PRESENT_MODE_MAILBOX_KHR,	// TripleBuffering (No Tearing, low latency)
 			VK_PRESENT_MODE_IMMEDIATE_KHR,	// VSync OFF (With Tearing, no latency)
@@ -102,6 +101,29 @@ namespace v4d::graphics {
 			{VK_FORMAT_R16G16B16A16_SFLOAT, VK_COLOR_SPACE_HDR10_HLG_EXT},
 			// {VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR},
 		};
+		
+		// State
+		enum class STATE {NONE = 0, INITIALIZED, UNLOADED, LOADED, RUNNING} state = STATE::NONE;
+		
+		// Synchronized frame execution
+		std::mutex frameSyncMutex;
+		std::queue<std::function<void()>> syncQueue {};
+		std::unique_ptr<std::thread> shaderWatcherThread = nullptr;
+		struct ShaderFileWatcher {
+			v4d::io::FilePath file;
+			std::vector<v4d::graphics::vulkan::ShaderPipeline*> shaders;
+			double mtime;
+			ShaderFileWatcher(v4d::io::FilePath file, std::vector<v4d::graphics::vulkan::ShaderPipeline*>&& shaders)
+			: file(file), shaders(shaders), mtime(0) {}
+		};
+		
+		// Descriptor sets
+		VkDescriptorPool descriptorPool;
+		std::map<std::string, DescriptorSet*> descriptorSets {};
+		std::vector<VkDescriptorSet> vkDescriptorSets {};
+		
+		// Ray-Tracing Shaders
+		static std::unordered_map<std::string, uint32_t> sbtOffsets;
 
 	public: // Device Extensions and features
 		std::vector<const char*> requiredDeviceExtensions {
@@ -115,14 +137,22 @@ namespace v4d::graphics {
 		std::vector<const char*> deviceExtensions {};
 		std::unordered_map<std::string, bool> enabledDeviceExtensions {};
 		
-		void RequiredDeviceExtension(const char* ext);
-		void OptionalDeviceExtension(const char* ext);
-		bool IsDeviceExtensionEnabled(const char* ext);
+		void RequiredDeviceExtension(const char* ext) {
+			requiredDeviceExtensions.push_back(std::move(ext));
+		}
+
+		void OptionalDeviceExtension(const char* ext) {
+			optionalDeviceExtensions.push_back(std::move(ext));
+		}
+
+		bool IsDeviceExtensionEnabled(const char* ext) {
+			return enabledDeviceExtensions.find(ext) != enabledDeviceExtensions.end();
+		}
 
 	public: // Pure virtual methods
-		virtual void ScorePhysicalDeviceSelection(int& score, PhysicalDevice*) = 0;
 		virtual void ConfigureDeviceExtensions() = 0;
-		virtual void ConfigureDeviceFeatures(PhysicalDevice::DeviceFeatures* deviceFeaturesToEnable, const PhysicalDevice::DeviceFeatures* supportedDeviceFeatures) = 0;
+		virtual void ScorePhysicalDeviceSelection(int& score, PhysicalDevice*) = 0;
+		virtual void ConfigureDeviceFeatures(PhysicalDevice::DeviceFeatures* deviceFeaturesToEnable, const PhysicalDevice::DeviceFeatures* availableDeviceFeatures) = 0;
 		virtual void ConfigureRenderer() = 0;
 		virtual void ConfigureLayouts() = 0;
 		virtual void ConfigureShaders() = 0;
@@ -243,40 +273,14 @@ namespace v4d::graphics {
 		virtual void DestroySwapChain();
 		virtual void RecreateSwapChain();
 		
-		virtual void ReloadRenderer();
 		virtual void LoadGraphicsToDevice();
 		virtual void UnloadGraphicsFromDevice();
 		
-		virtual void AquireNextImage(VkSemaphore semaphore, VkFence fence = VK_NULL_HANDLE) {
-			Begin:
-			VkResult result = renderingDevice->AcquireNextImageKHR(
-				swapChain->GetHandle(), // swapChain
-				1000UL * 1000 * 1000, // timeout in nanoseconds (using max disables the timeout)
-				semaphore,
-				fence,
-				&swapChainImageIndex // output the index of the swapchain image in there
-			);
-			switch (result) {
-				case VK_SUCCESS: break;
-				case VK_ERROR_OUT_OF_DATE_KHR:
-				case VK_SUBOPTIMAL_KHR:
-				{
-					RecreateSwapChain();
-					goto Begin;
-				}
-				case VK_TIMEOUT:
-				case VK_NOT_READY:
-				{
-					LOG_WARN("Trying to acquire next swap chain image: " << GetVkResultText(result))
-					break;
-				}
-				default:
-					throw std::runtime_error(std::string("Failed to acquire next swap chain image: ") + GetVkResultText(result));
-			}
-		}
+		[[nodiscard("Must not continue current frame if BeginFrame() returns false")]]
+		virtual bool BeginFrame(VkSemaphore triggerSemaphore, VkFence triggerFence = VK_NULL_HANDLE);
 
-		inline virtual void AquireNextImage(const VkFence& fence) {
-			AquireNextImage(VK_NULL_HANDLE, fence);
+		inline virtual bool BeginFrame(const VkFence& triggerFence) {
+			return BeginFrame(VK_NULL_HANDLE, triggerFence);
 		}
 
 		void WaitForFence(VkFence& fence) {
@@ -296,58 +300,23 @@ namespace v4d::graphics {
 			const std::vector<VkPipelineStageFlags>& waitStages = {},
 			const std::vector<VkSemaphore>& signalSemaphores = {},
 			const VkFence& triggerFence = VK_NULL_HANDLE
-		) {
-			assert(waitSemaphores.size() == waitStages.size());
-			
-			VkCommandBufferBeginInfo beginInfo = {};
-				beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-				beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-			VkSubmitInfo submitInfo {};
-				submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-				submitInfo.waitSemaphoreCount = waitSemaphores.size();
-				submitInfo.pWaitSemaphores = waitSemaphores.data();
-				submitInfo.pWaitDstStageMask = waitStages.data();
-				submitInfo.commandBufferCount = 1;
-				submitInfo.pCommandBuffers = &commandBuffer;
-				submitInfo.signalSemaphoreCount = signalSemaphores.size();
-				submitInfo.pSignalSemaphores = signalSemaphores.data();
-			
-			ResetFence(triggerFence);
-			CheckVkResult("Reset command buffer", renderingDevice->ResetCommandBuffer(commandBuffer, 0));
-			CheckVkResult("Begin recording command buffer", renderingDevice->BeginCommandBuffer(commandBuffer, &beginInfo));
-			
-			commandsToRecord(commandBuffer);
-			
-			CheckVkResult("End recording command buffer", renderingDevice->EndCommandBuffer(commandBuffer));
-			CheckVkResult("Queue Submit", renderingDevice->QueueSubmit(renderingDevice->GetGraphicsQueue().handle, 1, &submitInfo, triggerFence));
-		}
+		);
 		
-		bool Present(const std::vector<VkSemaphore>& waitSemaphores = {}) {
-			VkPresentInfoKHR presentInfo = {};
-				presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-				presentInfo.waitSemaphoreCount = waitSemaphores.size();
-				presentInfo.pWaitSemaphores = waitSemaphores.data();
-				presentInfo.swapchainCount = 1;
-				presentInfo.pSwapchains = &swapChain->GetHandle();
-				presentInfo.pImageIndices = &swapChainImageIndex;
-				
-			VkResult result = renderingDevice->QueuePresentKHR(renderingDevice->GetPresentQueue().handle, &presentInfo);
-
-			// Check for errors
-			if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
-				RecreateSwapChain();
-				return false;
-			} else if (result != VK_SUCCESS) {
-				throw std::runtime_error(std::string("Failed to present: ") + GetVkResultText(result));
-			}
-			
-			currentFrame %= NB_FRAMES_IN_FLIGHT;
-			return true;
-		}
+		// Present
+		bool EndFrame(const std::vector<VkSemaphore>& waitSemaphores = {});
 		
 	public: // Sync methods
 		virtual void UpdateDescriptorSets();
 		virtual void UpdateDescriptorSet(DescriptorSet* set, const std::vector<uint32_t>& bindings = {});
+		
+		/** This is NOT for use every frame, it WILL cause stuttering.
+		 *	Typical use case is for hot-reloading shaders or re-create pipelines when things change drastically.
+		 *	Anything executed with this function will effectively pause the rendering so that nothing is currently in use on the device.
+		 */
+		void RunSynchronized(std::function<void()>&& func) {
+			std::lock_guard lock(frameSyncMutex);
+			syncQueue.emplace(std::move(func));
+		}
 
 	public: // Helper methods
 	
@@ -373,6 +342,9 @@ namespace v4d::graphics {
 		virtual void InitRenderer();
 		virtual void LoadRenderer();
 		virtual void UnloadRenderer();
+		virtual void ReloadRenderer();
+		virtual void ReloadPipelines();
+		void WatchModifiedShadersForReload(const std::vector<ShaderFileWatcher>&);
 		
 		void AssignSurface(const VkSurfaceKHR& surface) {
 			this->surface = surface;
@@ -380,12 +352,7 @@ namespace v4d::graphics {
 		
 	public: // Constructor & Destructor
 		Renderer(Loader* loader, const char* applicationName, uint applicationVersion);
-		
-		virtual ~Renderer() override {
-			if (surface) {
-				DestroySurfaceKHR(surface, nullptr);
-			}
-		}
+		virtual ~Renderer() override;
 		
 	};
 }

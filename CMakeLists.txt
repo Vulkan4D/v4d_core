@@ -65,4 +65,4 @@ else()
 endif()
 
 # OpenSSL
-find_package(OpenSSL 1.1.0 REQUIRED)
+find_package(OpenSSL 1.1.1 REQUIRED)

@@ -68,10 +68,11 @@ void Loader::CheckLayers() {
 void Loader::CheckVulkanVersion() {
 	uint32_t apiVersion = 0;
 	vkEnumerateInstanceVersion(&apiVersion);
-	if (apiVersion < VULKAN_API_VERSION) {
-		uint vMajor = (VULKAN_API_VERSION & (511 << 22)) >> 22;
-		uint vMinor = (VULKAN_API_VERSION & (1023 << 12)) >> 12;
-		uint vPatch = VULKAN_API_VERSION & 4095;
+	auto minVersion = std::min(VULKAN_API_VERSION, VULKAN_API_VERSION_ALTERNATIVE);
+	if (apiVersion < minVersion) {
+		uint vMajor = (minVersion & (511 << 22)) >> 22;
+		uint vMinor = (minVersion & (1023 << 12)) >> 12;
+		uint vPatch = minVersion & 4095;
 		throw std::runtime_error("Vulkan Version " + std::to_string(vMajor) + "." + std::to_string(vMinor) + "." + std::to_string(vPatch) + " is Not supported");
 	}
 }

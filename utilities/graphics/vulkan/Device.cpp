@@ -350,7 +350,7 @@ VkResult Device::CreateAndAllocateBuffer(const VkBufferCreateInfo& bufferCreateI
 			allocInfo.pNext = memoryAllocateFlagsInfo.flags > 0 ? &memoryAllocateFlagsInfo : nullptr;
 			allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 			allocInfo.allocationSize = allocSize;
-			VkMemoryPropertyFlags properties;
+			VkMemoryPropertyFlags properties = 0;
 			switch (memoryUsage) {
 				case MEMORY_USAGE_UNKNOWN: 
 					properties = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;

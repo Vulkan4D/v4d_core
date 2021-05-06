@@ -23,6 +23,11 @@ namespace v4d::graphics::vulkan {
 		
 		virtual void CreatePipeline(Device*) = 0;
 		virtual void DestroyPipeline(Device*) = 0;
+		virtual void ReloadPipeline(Device* device) {
+			DestroyPipeline(device);
+			ReadShaders();
+			CreatePipeline(device);
+		}
 		
 		// Execute() will call Bind() and Render() automatically
 		virtual void Execute(Device* device, VkCommandBuffer cmdBuffer, uint32_t instanceCount, void* pushConstant, int pushConstantIndex = 0);

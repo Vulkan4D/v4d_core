@@ -132,6 +132,13 @@ void RasterShaderPipeline::DestroyPipeline(Device* device) {
 	colorBlendAttachments.clear();
 }
 
+void RasterShaderPipeline::ReloadPipeline(Device* device) {
+	device->DestroyPipeline(pipeline, nullptr);
+	DestroyShaderStages(device);
+	ReadShaders();
+	CreatePipeline(device);
+}
+
 void RasterShaderPipeline::SetRenderPass(VkPipelineViewportStateCreateInfo* viewportState, VkRenderPass renderPass, uint32_t subpass) {
 	pipelineCreateInfo.pViewportState = viewportState;
 	pipelineCreateInfo.renderPass = renderPass;
