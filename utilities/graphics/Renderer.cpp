@@ -325,7 +325,9 @@ void Renderer::LoadRenderer() {
 	CreateSyncObjects();
 	CreateCommandPools();
 	LoadGraphicsToDevice();
+	
 	v4d::graphics::renderer::event::Load(this);
+	LOG_SUCCESS("Vulkan Renderer is Ready !")
 }
 
 void Renderer::UnloadRenderer() {
@@ -370,7 +372,9 @@ void Renderer::ReloadRenderer() {
 	CreateSyncObjects();
 	CreateCommandPools();
 	LoadGraphicsToDevice();
+	
 	v4d::graphics::renderer::event::Load(this);
+	LOG_SUCCESS("Vulkan Renderer is Ready !")
 }
 
 void Renderer::LoadGraphicsToDevice() {
@@ -385,7 +389,6 @@ void Renderer::LoadGraphicsToDevice() {
 	CreateCommandBuffers();
 	
 	state = STATE::LOADED;
-	LOG_SUCCESS("Vulkan Renderer is Ready !")
 }
 
 void Renderer::UnloadGraphicsFromDevice() {
