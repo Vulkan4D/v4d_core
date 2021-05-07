@@ -1,13 +1,10 @@
 #pragma once
 
 // Vulkan4D Core Header
-// This file is the only header to include for anything that is part of V4D
-
 
 #define V4D_VERSION_MAJOR 0
 #define V4D_VERSION_MINOR 0
 #define V4D_VERSION_PATCH 0
-
 
 //////////////////////////////////////////////////////
 #define __V4D_MACRO_STR_(x) #x
@@ -19,10 +16,7 @@
 
 // Config
 #include "../v4dconfig.hh"
-#ifdef _V4D_PROJECT
-	#include "../../config.hh"
-#endif
-#ifdef _V4D_MODULE
+#ifndef _V4D_CORE
 	#include "../../config.hh"
 #endif
 
@@ -48,9 +42,41 @@
 	#define MAXBYTE 0xFF
 #endif
 
+//////////////////////////////////////////////////////////
+// Library import/export
+
+#define EXTERNC extern "C"
+#define EXTERNCPP extern "C++"
+#if defined _WINDOWS
+	#define DLLEXPORT __declspec(dllexport)
+	#define DLLIMPORT __declspec(dllimport)
+#else
+	#define DLLEXPORT
+	#define DLLIMPORT
+#endif
+#ifdef _V4D_CORE
+	#define V4DLIB DLLEXPORT
+	#ifndef IMPORT_OR_EXPORT_COMMON_OBJECT
+		#define IMPORT_OR_EXPORT_COMMON_OBJECT DLLEXPORT
+	#endif
+	#define V4DGAME
+#else// Project/Module
+	#define V4DLIB DLLIMPORT
+	#ifdef _V4D_GAME
+		#define V4DGAME DLLEXPORT
+	#else// Project/Module
+		#define V4DGAME DLLIMPORT
+	#endif
+	#ifndef IMPORT_OR_EXPORT_COMMON_OBJECT
+		#define IMPORT_OR_EXPORT_COMMON_OBJECT DLLIMPORT
+	#endif
+#endif
+
+
 // Helpers (simple header-only files unaware of V4D)
 #include "helpers/types.hpp"
 #include "helpers/macros.hpp"
+#include "helpers/commonObject.hpp"
 #include "helpers/event.hpp"
 #include "helpers/Timer.hpp"
 #include "helpers/String.hpp"

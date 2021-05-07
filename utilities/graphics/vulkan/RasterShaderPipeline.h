@@ -18,6 +18,8 @@
 namespace v4d::graphics::vulkan {
 
 	class V4DLIB RasterShaderPipeline : public ShaderPipeline {
+	public:
+		
 		VkGraphicsPipelineCreateInfo pipelineCreateInfo {VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
 			nullptr,// const void* pNext
 			0,// VkPipelineCreateFlags flags
@@ -43,7 +45,6 @@ namespace v4d::graphics::vulkan {
 				VK_NULL_HANDLE, // basePipelineHandle
 				-1 // basePipelineIndex
 		};
-	public:
 		
 		// Data to draw
 		VkBuffer vertexBuffer = VK_NULL_HANDLE;
@@ -128,7 +129,6 @@ namespace v4d::graphics::vulkan {
 		std::vector<VkRect2D> scissors {};
 		
 		using ShaderPipeline::ShaderPipeline;
-		virtual ~RasterShaderPipeline();
 		
 		// set what data to draw
 		void SetData(VkBuffer vertexBuffer, VkBuffer indexBuffer, uint32_t indexCount);
@@ -136,27 +136,58 @@ namespace v4d::graphics::vulkan {
 		void SetData(VkBuffer vertexBuffer, uint32_t vertexCount);
 		void SetData(uint32_t vertexCount);
 
-		virtual void CreatePipeline(Device* device) override;
-		virtual void DestroyPipeline(Device* device) override;
-		virtual void ReloadPipeline(Device* device) override;
+		virtual void Create(Device* device) override;
+		virtual void Destroy(Device* device) override;
+		virtual void Reload(Device* device) override;
 		
-		// assign render pass
-		void SetRenderPass(VkPipelineViewportStateCreateInfo* viewportState, VkRenderPass, uint32_t subpass = 0);
-		void SetRenderPass(SwapChain*, VkRenderPass, uint32_t subpass = 0);
-		void SetRenderPass(Image* renderTarget, VkRenderPass, uint32_t subpass = 0);
+		void SetViewport(SwapChain* swapChain) {
+			pipelineCreateInfo.pViewportState = &swapChain->viewportState;
+		}
+		void SetViewport(Image* renderTarget) {
+			pipelineCreateInfo.pViewportState = nullptr;
+			viewports = {VkViewport{
+				/*x*/ 0.0f,
+				/*y*/ 0.0f,
+				/*width*/ (float) renderTarget->width,
+				/*height*/ (float) renderTarget->height,
+				/*minDepth*/ 0.0f,
+				/*maxDepth*/ float(renderTarget->imageInfo.extent.depth)
+			}};
+			scissors = {VkRect2D{VkOffset2D{0,0}, VkExtent2D{renderTarget->width, renderTarget->height}}};
+		}
+		void SetViewport(const VkViewport& viewport, const VkRect2D& scissor) {
+			pipelineCreateInfo.pViewportState = nullptr;
+			viewports = {viewport};
+			scissors = {scissor};
+		}
+		void SetRenderPass(VkRenderPass renderPass, uint32_t subpass = 0) {
+			pipelineCreateInfo.renderPass = renderPass;
+			pipelineCreateInfo.subpass = subpass;
+		}
 		
-		void AddColorBlendAttachmentState(
-			VkBool32 blendEnable = VK_TRUE,
-			VkBlendFactor srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
-			VkBlendFactor dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-			VkBlendOp colorBlendOp = VK_BLEND_OP_ADD,
-			VkBlendFactor srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
-			VkBlendFactor dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
-			VkBlendOp alphaBlendOp = VK_BLEND_OP_ADD,
-			VkColorComponentFlags colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
-		);
+		static VkPipelineColorBlendAttachmentState DefaultColorAttachmentBlendState() {
+			return {
+				/*VkBool32 blendEnable*/ VK_TRUE,
+				/*VkBlendFactor srcColorBlendFactor*/ VK_BLEND_FACTOR_SRC_ALPHA,
+				/*VkBlendFactor dstColorBlendFactor*/ VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+				/*VkBlendOp colorBlendOp*/ VK_BLEND_OP_ADD,
+				/*VkBlendFactor srcAlphaBlendFactor*/ VK_BLEND_FACTOR_ONE,
+				/*VkBlendFactor dstAlphaBlendFactor*/ VK_BLEND_FACTOR_ZERO,
+				/*VkBlendOp alphaBlendOp*/ VK_BLEND_OP_ADD,
+				/*VkColorComponentFlags colorWriteMask*/ VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
+			};
+		}
 		
-	public:
+		void SetColorBlendAttachmentStates(int colorAttachmentCount, VkPipelineColorBlendAttachmentState colorAttachmentBlendState = DefaultColorAttachmentBlendState()) {
+			colorBlendAttachments.clear();
+			for (int i = 0; i < colorAttachmentCount; ++i)
+				colorBlendAttachments.push_back(colorAttachmentBlendState);
+		}
+		
+		void SetColorBlendAttachmentStates(const std::vector<VkPipelineColorBlendAttachmentState>& colorAttachmentsBlendings) {
+			colorBlendAttachments = colorAttachmentsBlendings;
+		}
+		
 		// these two methods are called automatically by Execute() from the parent class
 		virtual void Bind(Device* device, VkCommandBuffer cmdBuffer) override;
 		virtual void Render(Device* device, VkCommandBuffer cmdBuffer, uint32_t instanceCount = 1) override;

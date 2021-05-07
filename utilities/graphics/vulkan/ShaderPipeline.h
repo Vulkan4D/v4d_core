@@ -44,31 +44,45 @@ namespace v4d::graphics::vulkan {
 		}
 	};
 
-	class V4DLIB ShaderPipeline : public ShaderProgram {
+	class V4DLIB ShaderPipeline {
+		COMMON_OBJECT (ShaderPipeline, VkPipeline)
+		
+	protected:
 		ShaderPipelineMetaFile shaderPipelineMetaFile;
+		ShaderProgram shaderProgram;
+		PipelineLayout* pipelineLayout = nullptr;
 	public:
-		using ShaderProgram::ShaderProgram; // use parent constructor
+		int sortIndex = 0;
+	
+		ShaderPipeline(PipelineLayout* pipelineLayout, const char* shaderFile, int sortIndex = 0)
+		: shaderPipelineMetaFile(shaderFile, this), shaderProgram(shaderPipelineMetaFile), pipelineLayout(pipelineLayout), sortIndex(sortIndex) {}
 		
-		explicit ShaderPipeline(PipelineLayout& pipelineLayout, const std::string& shaderProgram, int sortIndex = 0)
-		: ShaderProgram(pipelineLayout, ShaderPipelineMetaFile(shaderProgram, this), sortIndex), shaderPipelineMetaFile(shaderProgram, this) {}
-		
-		ShaderPipeline(PipelineLayout& pipelineLayout, const char* shaderProgram, int sortIndex = 0)
-		: ShaderPipeline(pipelineLayout, std::string(shaderProgram), sortIndex) {}
-		
-		virtual ~ShaderPipeline();
+		virtual ~ShaderPipeline() = default;
 		
 		operator ShaderPipelineMetaFile() {
 			return shaderPipelineMetaFile;
 		}
 		
-		virtual void CreatePipeline(Device*) = 0;
-		virtual void DestroyPipeline(Device*) = 0;
-		virtual void ReloadPipeline(Device* device) {
-			DestroyPipeline(device);
-			ReadShaders();
-			CreatePipeline(device);
+		inline void ReadShaders() {
+			shaderProgram.ReadShaders();
 		}
 		
+		virtual void Create(Device*) = 0;
+		virtual void Destroy(Device*) = 0;
+		virtual void Reload(Device* device) {
+			Destroy(device);
+			shaderProgram.ReadShaders();
+			Create(device);
+		}
+		
+		void SetPipelineLayout(PipelineLayout* layout) {
+			this->pipelineLayout = layout;
+		}
+
+		PipelineLayout* GetPipelineLayout() const {
+			return pipelineLayout;
+		}
+
 		// Execute() will call Bind() and Render() automatically
 		virtual void Execute(Device* device, VkCommandBuffer cmdBuffer, uint32_t instanceCount, void* pushConstant, int pushConstantIndex = 0);
 		virtual void Execute(Device* device, VkCommandBuffer cmdBuffer);
@@ -83,7 +97,6 @@ namespace v4d::graphics::vulkan {
 		std::string GetShaderPath(std::string type) const;
 		
 	protected:
-		VkPipeline pipeline = VK_NULL_HANDLE;
 		
 		// binds the pipeline (to be implemented in child classes)
 		virtual void Bind(Device*, VkCommandBuffer) = 0;

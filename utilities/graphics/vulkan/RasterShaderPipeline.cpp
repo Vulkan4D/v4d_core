@@ -2,8 +2,6 @@
 
 using namespace v4d::graphics::vulkan;
 
-RasterShaderPipeline::~RasterShaderPipeline() {} // dont delete anything here, we are copying/moving this object in some modules
-
 void RasterShaderPipeline::SetData(VkBuffer vertexBuffer, VkBuffer indexBuffer, uint32_t indexCount) {
 	this->vertexBuffer = vertexBuffer;
 	this->indexBuffer = indexBuffer;
@@ -40,8 +38,8 @@ void RasterShaderPipeline::SetData(uint32_t vertexCount) {
 	this->indexOffset = 0;
 }
 
-void RasterShaderPipeline::CreatePipeline(Device* device) {
-	CreateShaderStages(device);
+void RasterShaderPipeline::Create(Device* device) {
+	shaderProgram.CreateShaderStages(device);
 	
 	VkPipelineViewportStateCreateInfo viewportState {};
 	
@@ -63,10 +61,10 @@ void RasterShaderPipeline::CreatePipeline(Device* device) {
 	// }
 	
 	// Bindings and Attributes
-	vertexInputInfo.vertexBindingDescriptionCount = GetBindings()->size();
-	vertexInputInfo.pVertexBindingDescriptions = GetBindings()->data();
-	vertexInputInfo.vertexAttributeDescriptionCount = GetAttributes()->size();
-	vertexInputInfo.pVertexAttributeDescriptions = GetAttributes()->data();
+	vertexInputInfo.vertexBindingDescriptionCount = shaderProgram.GetBindings()->size();
+	vertexInputInfo.pVertexBindingDescriptions = shaderProgram.GetBindings()->data();
+	vertexInputInfo.vertexAttributeDescriptionCount = shaderProgram.GetAttributes()->size();
+	vertexInputInfo.pVertexAttributeDescriptions = shaderProgram.GetAttributes()->data();
 
 	// Dynamic states
 	if (dynamicStates.size() > 0) {
@@ -77,91 +75,39 @@ void RasterShaderPipeline::CreatePipeline(Device* device) {
 		pipelineCreateInfo.pDynamicState = nullptr;
 	}
 	
-	pipelineCreateInfo.layout = GetPipelineLayout()->handle;
+	pipelineCreateInfo.layout = *GetPipelineLayout();
 
 	// Fixed functions
 	colorBlending.attachmentCount = colorBlendAttachments.size();
 	colorBlending.pAttachments = colorBlendAttachments.data();
 
 	// Shaders
-	pipelineCreateInfo.stageCount = GetStages()->size();
-	pipelineCreateInfo.pStages = GetStages()->data();
+	pipelineCreateInfo.stageCount = shaderProgram.GetStages()->size();
+	pipelineCreateInfo.pStages = shaderProgram.GetStages()->data();
 	
 	// Create the actual pipeline
-	if (device->CreateGraphicsPipelines(VK_NULL_HANDLE/*pipelineCache*/, 1, &pipelineCreateInfo, nullptr, &pipeline) != VK_SUCCESS) {
+	if (device->CreateGraphicsPipelines(VK_NULL_HANDLE/*pipelineCache*/, 1, &pipelineCreateInfo, nullptr, obj) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create Graphics Pipeline");
 	}
 }
 
-void RasterShaderPipeline::DestroyPipeline(Device* device) {
+void RasterShaderPipeline::Destroy(Device* device) {
 	dynamicStates.clear();
 	viewports.clear();
 	scissors.clear();
-	device->DestroyPipeline(pipeline, nullptr);
-	DestroyShaderStages(device);
-	colorBlendAttachments.clear();
+	device->DestroyPipeline(obj, nullptr);
+	shaderProgram.DestroyShaderStages(device);
 }
 
-void RasterShaderPipeline::ReloadPipeline(Device* device) {
-	device->DestroyPipeline(pipeline, nullptr);
-	DestroyShaderStages(device);
+void RasterShaderPipeline::Reload(Device* device) {
+	device->DestroyPipeline(obj, nullptr);
+	shaderProgram.DestroyShaderStages(device);
 	ReadShaders();
-	CreatePipeline(device);
-}
-
-void RasterShaderPipeline::SetRenderPass(VkPipelineViewportStateCreateInfo* viewportState, VkRenderPass renderPass, uint32_t subpass) {
-	pipelineCreateInfo.pViewportState = viewportState;
-	pipelineCreateInfo.renderPass = renderPass;
-	pipelineCreateInfo.subpass = subpass;
-}
-
-void RasterShaderPipeline::SetRenderPass(SwapChain* swapChain, VkRenderPass renderPass, uint32_t subpass) {
-	pipelineCreateInfo.pViewportState = &swapChain->viewportState;
-	pipelineCreateInfo.renderPass = renderPass;
-	pipelineCreateInfo.subpass = subpass;
-}
-
-void RasterShaderPipeline::SetRenderPass(Image* renderTarget, VkRenderPass renderPass, uint32_t subpass) {
-	
-	viewports.emplace_back(
-		/*x*/ 0,
-		/*y*/ 0,
-		/*width*/ (float) renderTarget->width,
-		/*height*/ (float) renderTarget->height,
-		/*minDepth*/ 0,
-		/*maxDepth*/ renderTarget->imageInfo.extent.depth
-	);
-	scissors.emplace_back(VkOffset2D{0,0}, VkExtent2D{renderTarget->width, renderTarget->height});
-	
-	pipelineCreateInfo.pViewportState = nullptr;
-	pipelineCreateInfo.renderPass = renderPass;
-	pipelineCreateInfo.subpass = subpass;
-}
-
-void RasterShaderPipeline::AddColorBlendAttachmentState(
-	VkBool32 blendEnable,
-	VkBlendFactor srcColorBlendFactor,
-	VkBlendFactor dstColorBlendFactor,
-	VkBlendOp colorBlendOp,
-	VkBlendFactor srcAlphaBlendFactor,
-	VkBlendFactor dstAlphaBlendFactor,
-	VkBlendOp alphaBlendOp,
-	VkColorComponentFlags colorWriteMask
-) {
-	colorBlendAttachments.push_back({
-		blendEnable, // VkBool32
-		srcColorBlendFactor, // VkBlendFactor
-		dstColorBlendFactor, // VkBlendFactor
-		colorBlendOp, // VkBlendOp
-		srcAlphaBlendFactor, // VkBlendFactor
-		dstAlphaBlendFactor, // VkBlendFactor
-		alphaBlendOp, // VkBlendOp
-		colorWriteMask // VkColorComponentFlags
-	});
+	Create(device);
 }
 
 void RasterShaderPipeline::Bind(Device* device, VkCommandBuffer cmdBuffer) {
-	device->CmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+	device->CmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj);
 	GetPipelineLayout()->Bind(device, cmdBuffer);
 }
 

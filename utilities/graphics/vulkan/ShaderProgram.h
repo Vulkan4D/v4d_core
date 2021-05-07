@@ -31,14 +31,10 @@ namespace v4d::graphics::vulkan {
 		std::vector<VkVertexInputBindingDescription> bindings;
 		std::vector<VkVertexInputAttributeDescription> attributes;
 		
-		PipelineLayout* pipelineLayout = nullptr;
-		
 	public:
 
-		ShaderProgram(PipelineLayout& pipelineLayout, const std::vector<ShaderInfo>& infos, int sortIndex = 0);
+		ShaderProgram(const std::vector<ShaderInfo>& infos);
 		virtual ~ShaderProgram();
-		
-		int sortIndex = 0;
 		
 		// sets up bindings
 		void AddVertexInputBinding(uint32_t binding, uint32_t stride, VkVertexInputRate inputRate, std::vector<VertexInputAttributeDescription> attrs);
@@ -47,22 +43,27 @@ namespace v4d::graphics::vulkan {
 		// reads the spv files and instantiates all Shaders in the shaders vector
 		void ReadShaders();
 		
-		std::vector<ShaderInfo>& GetShaderFiles() {
-			return shaderFiles;
-		}
-		
 		// clears bindings and attributes
-		void Reset();
+		void Reset() {
+			bindings.clear();
+			attributes.clear();
+		}
 		
 		void CreateShaderStages(Device* device);
 		void DestroyShaderStages(Device* device);
 		
-		void SetPipelineLayout(PipelineLayout* layout);
-		PipelineLayout* GetPipelineLayout() const;
-		
-		std::vector<VkPipelineShaderStageCreateInfo>* GetStages();
-		std::vector<VkVertexInputBindingDescription>* GetBindings();
-		std::vector<VkVertexInputAttributeDescription>* GetAttributes();
+		const std::vector<ShaderInfo>& GetShaderFiles() const {
+			return shaderFiles;
+		}
+		std::vector<VkPipelineShaderStageCreateInfo>* GetStages() {
+			return &stages;
+		}
+		std::vector<VkVertexInputBindingDescription>* GetBindings() {
+			return &bindings;
+		}
+		std::vector<VkVertexInputAttributeDescription>* GetAttributes() {
+			return &attributes;
+		}
 		
 	};
 	

@@ -2,13 +2,15 @@
 
 using namespace v4d::graphics::vulkan;
 
+COMMON_OBJECT_CPP(PipelineLayout, VkPipelineLayout)
+
 std::vector<VkDescriptorSetLayout>* PipelineLayout::GetDescriptorSetLayouts() {
 	return &layouts;
 }
 
-void PipelineLayout::AddDescriptorSet(DescriptorSet* descriptorSet) {
-	descriptorSets.push_back(descriptorSet);
-}
+// void PipelineLayout::AddDescriptorSet(DescriptorSet* descriptorSet) {
+// 	descriptorSets.push_back(descriptorSet);
+// }
 
 int PipelineLayout::AddPushConstant(const VkPushConstantRange& pushConstant) {
 	int newIndex = pushConstants.size();
@@ -17,9 +19,9 @@ int PipelineLayout::AddPushConstant(const VkPushConstantRange& pushConstant) {
 }
 
 void PipelineLayout::Create(Device* device) {
-	for (auto* set : descriptorSets) {
-		layouts.push_back(set->GetDescriptorSetLayout());
-	}
+	// for (auto* set : descriptorSets) {
+	// 	layouts.push_back(set->GetDescriptorSetLayout());
+	// }
 	
 	// Pipeline Layout
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo {};
@@ -37,29 +39,29 @@ void PipelineLayout::Create(Device* device) {
 		pipelineLayoutInfo.pPushConstantRanges = pushConstants.data();
 	}
 
-	if (device->CreatePipelineLayout(&pipelineLayoutInfo, nullptr, &handle) != VK_SUCCESS) {
+	if (device->CreatePipelineLayout(&pipelineLayoutInfo, nullptr, obj) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create pipeline layout");
 	}
 	
-	// Descriptor sets array
-	vkDescriptorSets.reserve(descriptorSets.size());
-	for (auto* set : descriptorSets) {
-		vkDescriptorSets.push_back(set->descriptorSet);
-	}
+	// // Descriptor sets array
+	// vkDescriptorSets.reserve(descriptorSets.size());
+	// for (auto* set : descriptorSets) {
+	// 	vkDescriptorSets.push_back(set->descriptorSet);
+	// }
 }
 
 void PipelineLayout::Destroy(Device* device) {
 	vkDescriptorSets.clear();
-	device->DestroyPipelineLayout(handle, nullptr);
+	device->DestroyPipelineLayout(obj, nullptr);
 	layouts.clear();
 }
 
 void PipelineLayout::Bind(Device* device, VkCommandBuffer commandBuffer, VkPipelineBindPoint bindPoint) {
 	if (vkDescriptorSets.size() > 0) 
-		device->CmdBindDescriptorSets(commandBuffer, bindPoint, handle, 0, (uint)vkDescriptorSets.size(), vkDescriptorSets.data(), 0, nullptr);
+		device->CmdBindDescriptorSets(commandBuffer, bindPoint, obj, 0, (uint)vkDescriptorSets.size(), vkDescriptorSets.data(), 0, nullptr);
 }
 
 void PipelineLayout::Reset() {
-	descriptorSets.clear();
+	// descriptorSets.clear();
 	pushConstants.clear();
 }

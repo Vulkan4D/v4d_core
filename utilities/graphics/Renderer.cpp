@@ -1,5 +1,4 @@
 #include "Renderer.h"
-#include "utilities/io/Logger.h"
 
 using namespace v4d::graphics;
 
@@ -103,88 +102,88 @@ void Renderer::DestroyCommandPools() {
 	}
 }
 
-void Renderer::CreateDescriptorSets() {
+// void Renderer::CreateDescriptorSets() {
 	
-	for (auto&[name,set] : descriptorSets) {
-		set->CreateDescriptorSetLayout(renderingDevice);
-	}
+// 	for (auto&[name,set] : descriptorSets) {
+// 		set->CreateDescriptorSetLayout(renderingDevice);
+// 	}
 	
-	// Descriptor sets / pool
-	std::map<VkDescriptorType, uint> descriptorTypes {};
-	for (auto&[name,set] : descriptorSets) {
-		for (auto&[binding, descriptor] : set->GetBindings()) {
-			if (descriptorTypes.find(descriptor.descriptorType) == descriptorTypes.end()) {
-				descriptorTypes[descriptor.descriptorType] = 1;
-			} else {
-				descriptorTypes[descriptor.descriptorType]++;
-			}
-		}
-	}
+// 	// Descriptor sets / pool
+// 	std::map<VkDescriptorType, uint> descriptorTypes {};
+// 	for (auto&[name,set] : descriptorSets) {
+// 		for (auto&[binding, descriptor] : set->GetBindings()) {
+// 			if (descriptorTypes.find(descriptor.descriptorType) == descriptorTypes.end()) {
+// 				descriptorTypes[descriptor.descriptorType] = 1;
+// 			} else {
+// 				descriptorTypes[descriptor.descriptorType]++;
+// 			}
+// 		}
+// 	}
 	
-	if (descriptorSets.size() > 0) {
-		renderingDevice->CreateDescriptorPool(
-			descriptorTypes,
-			descriptorPool,
-			VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT
-		);
+// 	if (descriptorSets.size() > 0) {
+// 		renderingDevice->CreateDescriptorPool(
+// 			descriptorTypes,
+// 			descriptorPool,
+// 			VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT
+// 		);
 		
-		// Allocate descriptor sets
-		std::vector<VkDescriptorSetLayout> setLayouts {};
-		vkDescriptorSets.resize(descriptorSets.size());
-		setLayouts.reserve(descriptorSets.size());
-		for (auto&[name,set] : descriptorSets) {
-			setLayouts.push_back(set->GetDescriptorSetLayout());
-		}
-		VkDescriptorSetAllocateInfo allocInfo = {};
-			allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-			allocInfo.descriptorPool = descriptorPool;
-			allocInfo.descriptorSetCount = (uint)setLayouts.size();
-			allocInfo.pSetLayouts = setLayouts.data();
-		if (renderingDevice->AllocateDescriptorSets(&allocInfo, vkDescriptorSets.data()) != VK_SUCCESS) {
-			throw std::runtime_error("Failed to allocate descriptor sets");
-		}
-		int i = 0;
-		for (auto&[name,set] : descriptorSets) {
-			descriptorSets[name]->descriptorSet = vkDescriptorSets[i++];
-		}
-	}
+// 		// Allocate descriptor sets
+// 		std::vector<VkDescriptorSetLayout> setLayouts {};
+// 		vkDescriptorSets.resize(descriptorSets.size());
+// 		setLayouts.reserve(descriptorSets.size());
+// 		for (auto&[name,set] : descriptorSets) {
+// 			setLayouts.push_back(set->GetDescriptorSetLayout());
+// 		}
+// 		VkDescriptorSetAllocateInfo allocInfo = {};
+// 			allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+// 			allocInfo.descriptorPool = descriptorPool;
+// 			allocInfo.descriptorSetCount = (uint)setLayouts.size();
+// 			allocInfo.pSetLayouts = setLayouts.data();
+// 		if (renderingDevice->AllocateDescriptorSets(&allocInfo, vkDescriptorSets.data()) != VK_SUCCESS) {
+// 			throw std::runtime_error("Failed to allocate descriptor sets");
+// 		}
+// 		int i = 0;
+// 		for (auto&[name,set] : descriptorSets) {
+// 			descriptorSets[name]->descriptorSet = vkDescriptorSets[i++];
+// 		}
+// 	}
 	
-	UpdateDescriptorSets();
-}
+// 	UpdateDescriptorSets();
+// }
 
-void Renderer::DestroyDescriptorSets() {
-	// Descriptor Sets
-	if (descriptorSets.size() > 0) {
-		renderingDevice->FreeDescriptorSets(descriptorPool, (uint)vkDescriptorSets.size(), vkDescriptorSets.data());
-		for (auto&[name,set] : descriptorSets) set->DestroyDescriptorSetLayout(renderingDevice);
-		// Descriptor pools
-		renderingDevice->DestroyDescriptorPool(descriptorPool, nullptr);
-	}
-}
+// void Renderer::DestroyDescriptorSets() {
+// 	// Descriptor Sets
+// 	if (descriptorSets.size() > 0) {
+// 		renderingDevice->FreeDescriptorSets(descriptorPool, (uint)vkDescriptorSets.size(), vkDescriptorSets.data());
+// 		for (auto&[name,set] : descriptorSets) set->DestroyDescriptorSetLayout(renderingDevice);
+// 		// Descriptor pools
+// 		renderingDevice->DestroyDescriptorPool(descriptorPool, nullptr);
+// 	}
+// }
 
-void Renderer::UpdateDescriptorSets() {
-	if (descriptorSets.size() > 0) {
-		std::vector<VkWriteDescriptorSet> descriptorWrites {};
-		for (auto&[name,set] : descriptorSets) {
-			for (auto&[binding, descriptor] : set->GetBindings()) {
-				if (descriptor.IsWriteDescriptorSetValid()) {
-					descriptorWrites.push_back(descriptor.GetWriteDescriptorSet(set->descriptorSet));
-				}
-			}
-		}
-		renderingDevice->UpdateDescriptorSets((uint)descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
-	}
-}
+// void Renderer::UpdateDescriptorSets() {
+// 	if (descriptorSets.size() > 0) {
+// 		std::vector<VkWriteDescriptorSet> descriptorWrites {};
+// 		for (auto&[name,set] : descriptorSets) {
+// 			for (auto&[binding, descriptor] : set->GetBindings()) {
+// 				if (descriptor.IsWriteDescriptorSetValid()) {
+// 					descriptorWrites.push_back(descriptor.GetWriteDescriptorSet(set->descriptorSet));
+// 				}
+// 			}
+// 		}
+// 		renderingDevice->UpdateDescriptorSets((uint)descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+// 	}
+// }
 
-void Renderer::UpdateDescriptorSet(DescriptorSet* set, const std::vector<uint32_t>& bindings) {
-	std::vector<VkWriteDescriptorSet> descriptorWrites {};
-	for (auto&[binding, descriptor] : set->GetBindings()) if (bindings.size() == 0 || std::find(bindings.begin(), bindings.end(), binding) != bindings.end()) {
-		if (descriptor.IsWriteDescriptorSetValid()) {
-			descriptorWrites.push_back(descriptor.GetWriteDescriptorSet(set->descriptorSet));
-		}
-	}
-	renderingDevice->UpdateDescriptorSets((uint)descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
-}
+// void Renderer::UpdateDescriptorSet(DescriptorSet* set, const std::vector<uint32_t>& bindings) {
+// 	std::vector<VkWriteDescriptorSet> descriptorWrites {};
+// 	for (auto&[binding, descriptor] : set->GetBindings()) if (bindings.size() == 0 || std::find(bindings.begin(), bindings.end(), binding) != bindings.end()) {
+// 		if (descriptor.IsWriteDescriptorSetValid()) {
+// 			descriptorWrites.push_back(descriptor.GetWriteDescriptorSet(set->descriptorSet));
+// 		}
+// 	}
+// 	renderingDevice->UpdateDescriptorSets((uint)descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+// }
 
 void Renderer::CreateSwapChain() {
 	
@@ -234,56 +233,6 @@ void Renderer::DestroySwapChain() {
 
 #pragma endregion
 
-#pragma region Helper methods
-
-// void Renderer::AllocateBufferStaged(const Queue& queue, Buffer& buffer) {
-// 	auto cmdBuffer = BeginSingleTimeCommands(queue);
-// 	Buffer stagingBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-// 	stagingBuffer.srcDataPointers = std::ref(buffer.srcDataPointers);
-// 	stagingBuffer.Allocate(renderingDevice, MEMORY_USAGE_CPU_ONLY, true);
-// 	buffer.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-// 	buffer.Allocate(renderingDevice, MEMORY_USAGE_GPU_ONLY, false);
-// 	Buffer::Copy(renderingDevice, cmdBuffer, stagingBuffer.buffer, buffer.buffer, buffer.size);
-// 	EndSingleTimeCommands(queue, cmdBuffer);
-// 	stagingBuffer.Free(renderingDevice);
-// }
-// void Renderer::AllocateBuffersStaged(const Queue& queue, std::vector<Buffer>& buffers) {
-// 	auto cmdBuffer = BeginSingleTimeCommands(queue);
-// 	std::vector<Buffer> stagingBuffers {};
-// 	stagingBuffers.reserve(buffers.size());
-// 	for (auto& buffer : buffers) {
-// 		auto& stagingBuffer = stagingBuffers.emplace_back(VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-// 		stagingBuffer.srcDataPointers = std::ref(buffer.srcDataPointers);
-// 		stagingBuffer.Allocate(renderingDevice, MEMORY_USAGE_CPU_ONLY, true);
-// 		buffer.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-// 		buffer.Allocate(renderingDevice, MEMORY_USAGE_GPU_ONLY, false);
-// 		Buffer::Copy(renderingDevice, cmdBuffer, stagingBuffer.buffer, buffer.buffer, buffer.size);
-// 	}
-// 	EndSingleTimeCommands(queue, cmdBuffer);
-// 	for (auto& stagingBuffer : stagingBuffers) {
-// 		stagingBuffer.Free(renderingDevice);
-// 	}
-// }
-// void Renderer::AllocateBuffersStaged(const Queue& queue, std::vector<Buffer*>& buffers) {
-// 	auto cmdBuffer = BeginSingleTimeCommands(queue);
-// 	std::vector<Buffer> stagingBuffers {};
-// 	stagingBuffers.reserve(buffers.size());
-// 	for (auto& buffer : buffers) {
-// 		auto& stagingBuffer = stagingBuffers.emplace_back(VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-// 		stagingBuffer.srcDataPointers = std::ref(buffer->srcDataPointers);
-// 		stagingBuffer.Allocate(renderingDevice, MEMORY_USAGE_CPU_ONLY, true);
-// 		buffer->usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-// 		buffer->Allocate(renderingDevice, MEMORY_USAGE_GPU_ONLY, false);
-// 		Buffer::Copy(renderingDevice, cmdBuffer, stagingBuffer.buffer, buffer->buffer, buffer->size);
-// 	}
-// 	EndSingleTimeCommands(queue, cmdBuffer);
-// 	for (auto& stagingBuffer : stagingBuffers) {
-// 		stagingBuffer.Free(renderingDevice);
-// 	}
-// }
-
-#pragma endregion
-
 #pragma region Init/Load/Reset Methods
 
 void Renderer::WatchModifiedShadersForReload(const std::vector<ShaderPipelineMetaFile>& shaderWatchers) {
@@ -295,7 +244,7 @@ void Renderer::WatchModifiedShadersForReload(const std::vector<ShaderPipelineMet
 				} else if (watcher.file.GetLastWriteTime() > watcher.mtime) {
 					watcher.mtime = 0;
 					RunSynchronized([watcher, renderingDevice=renderingDevice](){
-						for (auto& s : watcher.shaders) s->ReloadPipeline(renderingDevice);
+						for (auto& s : watcher.shaders) s->Reload(renderingDevice);
 					});
 					break;
 				}
@@ -341,14 +290,14 @@ void Renderer::UnloadRenderer() {
 	DestroyDevices();
 }
 
-void Renderer::ReloadPipelines() {
+void Renderer::ReloadShaderPipelines() {
 	LOG("Reloading shaders...")
 	
 	renderingDevice->DeviceWaitIdle();
 	
-	DestroyPipelines();
+	DestroyShaderPipelines();
 	ReadShaders();
-	CreatePipelines();
+	CreateShaderPipelines();
 }
 
 void Renderer::ReloadRenderer() {
@@ -379,10 +328,12 @@ void Renderer::ReloadRenderer() {
 
 void Renderer::LoadGraphicsToDevice() {
 	CreateSwapChain();
-	AllocateBuffers();
-	CreateResources();
-	CreateDescriptorSets();
-	CreatePipelines();
+	AllocateResources();
+	// CreateDescriptorSets();
+	CreatePipelineLayouts();
+	ConfigureRenderPasses();
+	CreateRenderPasses();
+	CreateShaderPipelines();
 	
 	v4d::graphics::renderer::event::PipelinesCreate(this);
 	
@@ -399,10 +350,11 @@ void Renderer::UnloadGraphicsFromDevice() {
 	
 	v4d::graphics::renderer::event::PipelinesDestroy(this);
 	
-	DestroyPipelines();
-	DestroyDescriptorSets();
-	DestroyResources();
-	FreeBuffers();
+	DestroyShaderPipelines();
+	DestroyRenderPasses();
+	DestroyPipelineLayouts();
+	// DestroyDescriptorSets();
+	FreeResources();
 }
 
 bool Renderer::BeginFrame(VkSemaphore triggerSemaphore, VkFence triggerFence) {
@@ -604,3 +556,8 @@ namespace v4d::graphics {
 	}
 }
 #pragma endregion
+
+// Helper classes
+COMMON_OBJECT_CPP(Renderer::Semaphore, VkSemaphore)
+COMMON_OBJECT_CPP(Renderer::Fence, VkFence)
+COMMON_OBJECT_CPP(Renderer::CommandBuffer, VkCommandBuffer)

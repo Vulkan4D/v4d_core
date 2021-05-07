@@ -2,9 +2,7 @@
 
 using namespace v4d::graphics::vulkan;
 
-ShaderPipeline::~ShaderPipeline() {
-	
-};
+COMMON_OBJECT_CPP (ShaderPipeline, VkPipeline)
 
 void ShaderPipeline::Execute(Device* device, VkCommandBuffer cmdBuffer, uint32_t instanceCount, void* pushConstant, int pushConstantIndex) {
 	Bind(device, cmdBuffer);
@@ -19,7 +17,7 @@ void ShaderPipeline::Execute(Device* device, VkCommandBuffer cmdBuffer) {
 
 void ShaderPipeline::PushConstant(Device* device, VkCommandBuffer cmdBuffer, void* pushConstant, int pushConstantIndex) {
 	auto& pushConstantRange = GetPipelineLayout()->pushConstants[pushConstantIndex];
-	device->CmdPushConstants(cmdBuffer, GetPipelineLayout()->handle, pushConstantRange.stageFlags, pushConstantRange.offset, pushConstantRange.size, pushConstant);
+	device->CmdPushConstants(cmdBuffer, *GetPipelineLayout(), pushConstantRange.stageFlags, pushConstantRange.offset, pushConstantRange.size, pushConstant);
 }
 
 uint ShaderPipeline::CompactIVec4ToUint(uint r, uint g, uint b, uint a) {
@@ -48,7 +46,7 @@ float ShaderPipeline::CompactVec3rgb10ToFloat(float x, float y, float z) {
 }
 
 std::string ShaderPipeline::GetShaderPath(std::string type) const {
-	for (auto& s : shaderFiles) {
+	for (auto& s : shaderProgram.GetShaderFiles()) {
 		if (s.filepath.substr(s.filepath.length()-type.length(), type.length()) == type) {
 			return s.filepath;
 		}

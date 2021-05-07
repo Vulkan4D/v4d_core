@@ -9,25 +9,24 @@
 #include <vector>
 #include "utilities/graphics/vulkan/Loader.h"
 #include "utilities/graphics/vulkan/Device.h"
-#include "utilities/graphics/vulkan/DescriptorSet.h"
+// #include "utilities/graphics/vulkan/DescriptorSet.h"
 
 namespace v4d::graphics::vulkan {
 
 	struct V4DLIB PipelineLayout {
+		COMMON_OBJECT(PipelineLayout, VkPipelineLayout)
 		
-		std::vector<DescriptorSet*> descriptorSets {};
+		// std::vector<DescriptorSet*> descriptorSets {};
 		std::vector<VkDescriptorSetLayout> layouts {};
 		std::vector<VkDescriptorSet> vkDescriptorSets {};
 		std::vector<VkPushConstantRange> pushConstants {};
 
-		VkPipelineLayout handle = VK_NULL_HANDLE;
-		
 		std::vector<VkDescriptorSetLayout>* GetDescriptorSetLayouts();
 
 		void Create(Device* device);
 		void Destroy(Device* device);
 		
-		void AddDescriptorSet(DescriptorSet* descriptorSet);
+		// void AddDescriptorSet(DescriptorSet* descriptorSet);
 		
 		int AddPushConstant(const VkPushConstantRange&);
 		template<class T>

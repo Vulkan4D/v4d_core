@@ -2,7 +2,7 @@
 
 using namespace v4d::graphics::vulkan;
 
-ShaderProgram::ShaderProgram(PipelineLayout& pipelineLayout, const std::vector<ShaderInfo>& infos, int sortIndex) : pipelineLayout(&pipelineLayout), sortIndex(sortIndex) {
+ShaderProgram::ShaderProgram(const std::vector<ShaderInfo>& infos) {
 	for (auto& info : infos)
 		shaderFiles.push_back(info);
 }
@@ -27,11 +27,6 @@ void ShaderProgram::ReadShaders() {
 	}
 }
 
-void ShaderProgram::Reset() {
-	bindings.clear();
-	attributes.clear();
-}
-
 void ShaderProgram::CreateShaderStages(Device* device) {
 	if (stages.size() == 0) {
 		for (auto& shader : shaders) {
@@ -48,24 +43,4 @@ void ShaderProgram::DestroyShaderStages(Device* device) {
 			shader.DestroyShaderModule(device);
 		}
 	}
-}
-
-void ShaderProgram::SetPipelineLayout(PipelineLayout* layout) {
-	this->pipelineLayout = layout;
-}
-
-PipelineLayout* ShaderProgram::GetPipelineLayout() const {
-	return pipelineLayout;
-}
-
-std::vector<VkPipelineShaderStageCreateInfo>* ShaderProgram::GetStages() {
-	return &stages;
-}
-
-std::vector<VkVertexInputBindingDescription>* ShaderProgram::GetBindings() {
-	return &bindings;
-}
-
-std::vector<VkVertexInputAttributeDescription>* ShaderProgram::GetAttributes() {
-	return &attributes;
 }

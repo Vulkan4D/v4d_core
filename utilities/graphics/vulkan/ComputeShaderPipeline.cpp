@@ -2,27 +2,23 @@
 
 using namespace v4d::graphics::vulkan;
 
-ComputeShaderPipeline::~ComputeShaderPipeline() {
-	
-}
-
-void ComputeShaderPipeline::CreatePipeline(Device* device) {
-	CreateShaderStages(device);
+void ComputeShaderPipeline::Create(Device* device) {
+	shaderProgram.CreateShaderStages(device);
 	VkComputePipelineCreateInfo computeCreateInfo {
 		VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,// VkStructureType sType
 		nullptr,// const void* pNext
 		0,// VkPipelineCreateFlags flags
-		GetStages()->at(0),// VkPipelineShaderStageCreateInfo stage
-		GetPipelineLayout()->handle,// VkPipelineLayout layout
+		shaderProgram.GetStages()->at(0),// VkPipelineShaderStageCreateInfo stage
+		*GetPipelineLayout(),// VkPipelineLayout layout
 		VK_NULL_HANDLE,// VkPipeline basePipelineHandle
 		0// int32_t basePipelineIndex
 	};
-	device->CreateComputePipelines(VK_NULL_HANDLE, 1, &computeCreateInfo, nullptr, &pipeline);
+	device->CreateComputePipelines(VK_NULL_HANDLE, 1, &computeCreateInfo, nullptr, obj);
 }
 
-void ComputeShaderPipeline::DestroyPipeline(Device* device) {
-	device->DestroyPipeline(pipeline, nullptr);
-	DestroyShaderStages(device);
+void ComputeShaderPipeline::Destroy(Device* device) {
+	device->DestroyPipeline(obj, nullptr);
+	shaderProgram.DestroyShaderStages(device);
 }
 
 void ComputeShaderPipeline::SetGroupCounts(uint32_t x, uint32_t y, uint32_t z) {
@@ -32,8 +28,8 @@ void ComputeShaderPipeline::SetGroupCounts(uint32_t x, uint32_t y, uint32_t z) {
 }
 
 void ComputeShaderPipeline::Bind(Device* device, VkCommandBuffer cmdBuffer) {
-	device->CmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
-	device->CmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, GetPipelineLayout()->handle, 0, GetPipelineLayout()->vkDescriptorSets.size(), GetPipelineLayout()->vkDescriptorSets.data(), 0, nullptr);
+	device->CmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, obj);
+	device->CmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, *GetPipelineLayout(), 0, GetPipelineLayout()->vkDescriptorSets.size(), GetPipelineLayout()->vkDescriptorSets.data(), 0, nullptr);
 }
 
 void ComputeShaderPipeline::Render(Device* device, VkCommandBuffer cmdBuffer, uint32_t /*unused_arg*/) {

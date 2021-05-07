@@ -12,10 +12,12 @@
 #include "utilities/graphics/vulkan/Image.h"
 #include "utilities/graphics/vulkan/Instance.h"
 #include "utilities/graphics/vulkan/SwapChain.h"
+#include "utilities/graphics/vulkan/RasterShaderPipeline.h"
 
 namespace v4d::graphics::vulkan {
 	
 	class RenderPass {
+		COMMON_OBJECT(RenderPass, VkRenderPass)
 	
 		VkRenderPassCreateInfo renderPassInfo {
 			VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
@@ -35,18 +37,18 @@ namespace v4d::graphics::vulkan {
 		std::vector<VkClearValue> clearValues {};
 		std::vector<VkFramebuffer> frameBuffers {};
 		std::vector<std::vector<VkImageView>> imageViews {};
+		std::vector<std::tuple<RasterShaderPipeline*, uint32_t/*subpass*/>> shaders {};
 
 		Device* device = nullptr;
+		
 		uint32_t renderWidth = 0;
 		uint32_t renderHeight = 0;
+		uint32_t renderLayers = 0;
 		
 	public:
-		VkRenderPass handle = VK_NULL_HANDLE;
-		
-		void Create(Device* device, uint32_t width, uint32_t height, uint32_t layers = 1) {
+	
+		void Create(Device* device) {
 			this->device = device;
-			this->renderWidth = width;
-			this->renderHeight = height;
 			
 			renderPassInfo.attachmentCount = attachments.size();
 			renderPassInfo.pAttachments = attachments.data();
@@ -57,18 +59,22 @@ namespace v4d::graphics::vulkan {
 			renderPassInfo.dependencyCount = subpassDependencies.size();
 			renderPassInfo.pDependencies = subpassDependencies.data();
 			
-			if (device->CreateRenderPass(&renderPassInfo, nullptr, &handle) != VK_SUCCESS) {
+			if (device->CreateRenderPass(&renderPassInfo, nullptr, obj) != VK_SUCCESS) {
 				throw std::runtime_error("Failed to create render pass!");
+			}
+			
+			for (auto&[shader, subpass] : shaders) {
+				shader->SetRenderPass(obj, subpass);
 			}
 			
 			// Create FrameBuffers
 			VkFramebufferCreateInfo framebufferCreateInfo = {};
 				framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-				framebufferCreateInfo.renderPass = handle;
+				framebufferCreateInfo.renderPass = obj;
 				framebufferCreateInfo.attachmentCount = renderPassInfo.attachmentCount;
-				framebufferCreateInfo.width = width;
-				framebufferCreateInfo.height = height;
-				framebufferCreateInfo.layers = layers;
+				framebufferCreateInfo.width = renderWidth;
+				framebufferCreateInfo.height = renderHeight;
+				framebufferCreateInfo.layers = renderLayers;
 			
 			for (size_t i = 0; i < frameBuffers.size(); ++i) {
 				framebufferCreateInfo.pAttachments = imageViews[i].data();
@@ -83,7 +89,7 @@ namespace v4d::graphics::vulkan {
 				device->DestroyFramebuffer(framebuffer, nullptr);
 			}
 			
-			device->DestroyRenderPass(handle, nullptr);
+			device->DestroyRenderPass(obj, nullptr);
 			frameBuffers.clear();
 			subpasses.clear();
 			subpassDependencies.clear();
@@ -97,12 +103,25 @@ namespace v4d::graphics::vulkan {
 			preserveAttachmentRefs.clear();
 			depthStencilAttachmentRefs.clear();
 			
+			shaders.clear();
+			
 			device = nullptr;
 		}
 		
-		void SetFrameBufferCount(uint n) {
-			frameBuffers.resize(n);
-			imageViews.resize(n);
+		void ConfigureFrameBuffers(uint frameBufferCount, uint32_t width, uint32_t height, uint32_t layers = 1) {
+			renderWidth = width;
+			renderHeight = height;
+			renderLayers = layers;
+			frameBuffers.resize(frameBufferCount);
+			imageViews.resize(frameBufferCount);
+		}
+		
+		void ConfigureFrameBuffers(SwapChain* swapChainAsRenderTarget, uint32_t layers = 1) {
+			renderWidth = swapChainAsRenderTarget->extent.width;
+			renderHeight = swapChainAsRenderTarget->extent.height;
+			renderLayers = layers;
+			frameBuffers.resize(swapChainAsRenderTarget->images.size());
+			imageViews.resize(swapChainAsRenderTarget->images.size());
 		}
 		
 		struct Subpass {
@@ -150,6 +169,21 @@ namespace v4d::graphics::vulkan {
 		}
 		VkAttachmentReference* AddPreserveAttachmentRefs(const VkAttachmentReference& ref) {
 			return depthStencilAttachmentRefs.emplace_back(new VkAttachmentReference{ref.attachment, ref.layout}).get();
+		}
+		
+		void AddShader(RasterShaderPipeline* shader, SwapChain* swapChain, uint32_t subpassIndex = 0) {
+			shader->SetViewport(swapChain);
+			shaders.emplace_back(shader, subpassIndex);
+		}
+
+		void AddShader(RasterShaderPipeline* shader, Image* renderTarget, uint32_t subpassIndex = 0) {
+			shader->SetViewport(renderTarget);
+			shaders.emplace_back(shader, subpassIndex);
+		}
+
+		void AddShader(RasterShaderPipeline* shader, const VkViewport& viewport, const VkRect2D& scissor, uint32_t subpassIndex = 0) {
+			shader->SetViewport(viewport, scissor);
+			shaders.emplace_back(shader, subpassIndex);
 		}
 
 		uint32_t AddSubpass(const VkSubpassDescription& subpass, int32_t srcSubpassDependency = -1, 
@@ -285,7 +319,7 @@ namespace v4d::graphics::vulkan {
 		void Begin(const VkCommandBuffer& commandBuffer, int imageIndex = 0, VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE) {
 			VkRenderPassBeginInfo renderPassInfo = {};
 				renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-				renderPassInfo.renderPass = handle;
+				renderPassInfo.renderPass = obj;
 				renderPassInfo.framebuffer = frameBuffers.size()>size_t(imageIndex)? frameBuffers[imageIndex] : frameBuffers[imageIndex % frameBuffers.size()];
 				renderPassInfo.renderArea.offset = {0,0};
 				renderPassInfo.renderArea.extent = {renderWidth, renderHeight};

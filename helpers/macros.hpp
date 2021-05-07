@@ -50,31 +50,6 @@
 
 
 //////////////////////////////////////////////////////////
-// Library import/export
-
-#define EXTERNC extern "C"
-#define EXTERNCPP extern "C++"
-#if defined _WINDOWS
-	#define DLLEXPORT __declspec(dllexport)
-	#define DLLIMPORT __declspec(dllimport)
-#else
-	#define DLLEXPORT
-	#define DLLIMPORT
-#endif
-#ifdef _V4D_CORE
-	#define V4DLIB DLLEXPORT
-	#define V4DGAME
-#else// Project/Module
-	#define V4DLIB DLLIMPORT
-	#ifdef _V4D_GAME
-		#define V4DGAME DLLEXPORT
-	#else// Project/Module
-		#define V4DGAME DLLIMPORT
-	#endif
-#endif
-
-
-//////////////////////////////////////////////////////////
 // Signal Handling
 
 #ifdef _LINUX

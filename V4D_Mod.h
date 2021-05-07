@@ -32,6 +32,8 @@
 
 class V4DLIB V4D_Mod {
 	V4D_MODULE_CLASS_HEADER(V4D_Mod
+		,RunFromConsole
+		
 		,OrderIndex
 		,InitRenderer
 		,InitWindow
@@ -117,9 +119,11 @@ class V4DLIB V4D_Mod {
 		// ,ServerReceiveAction
 		// ,ServerReceiveBurst
 		
-		// ,RunFromConsole
 	)
 	
+// Console
+	V4D_MODULE_FUNC_DECLARE(int, RunFromConsole, const int argc, const char** argv)
+
 // // Init
 	V4D_MODULE_FUNC_DECLARE(int, OrderIndex)
 	V4D_MODULE_FUNC_DECLARE(void, InitRenderer, v4d::graphics::Renderer*)
@@ -221,8 +225,5 @@ class V4DLIB V4D_Mod {
 // 	V4D_MODULE_FUNC_DECLARE(void, ServerSendBursts, v4d::io::SocketPtr stream, v4d::networking::IncomingClientPtr client, uint64_t frame)
 // 	V4D_MODULE_FUNC_DECLARE(void, ServerReceiveAction, v4d::io::SocketPtr stream, v4d::networking::IncomingClientPtr client)
 // 	V4D_MODULE_FUNC_DECLARE(void, ServerReceiveBurst, v4d::io::SocketPtr stream, v4d::networking::IncomingClientPtr client)
-
-// // Console
-// 	V4D_MODULE_FUNC_DECLARE(int, RunFromConsole, const int argc, const char** argv)
 
 };

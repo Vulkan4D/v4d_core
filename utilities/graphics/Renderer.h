@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <string>
 #include <queue>
+
 #include "utilities/graphics/vulkan/Loader.h"
 #include "utilities/graphics/vulkan/Instance.h"
 #include "utilities/graphics/vulkan/PhysicalDevice.h"
@@ -13,10 +14,8 @@
 #include "utilities/graphics/vulkan/Device.h"
 #include "utilities/graphics/vulkan/Image.h"
 #include "utilities/graphics/vulkan/SwapChain.h"
-#include "utilities/graphics/vulkan/Buffer.h"
-#include "utilities/graphics/vulkan/DescriptorSet.h"
-#include <utilities/graphics/vulkan/RasterShaderPipeline.h>
-#include "utilities/io/Logger.h"
+#include "utilities/graphics/vulkan/ShaderPipeline.h"
+#include "utilities/graphics/vulkan/RenderPass.h"
 
 // Useful macro to be used in ConfigureDeviceFeatures()
 #define V4D_ENABLE_DEVICE_FEATURE(F) \
@@ -109,10 +108,10 @@ namespace v4d::graphics {
 		std::queue<std::function<void()>> syncQueue {};
 		std::unique_ptr<std::thread> shaderWatcherThread = nullptr;
 		
-		// Descriptor sets
-		VkDescriptorPool descriptorPool;
-		std::map<std::string, DescriptorSet*> descriptorSets {};
-		std::vector<VkDescriptorSet> vkDescriptorSets {};
+		// // Descriptor sets
+		// VkDescriptorPool descriptorPool;
+		// std::map<std::string, DescriptorSet*> descriptorSets {};
+		// std::vector<VkDescriptorSet> vkDescriptorSets {};
 		
 		// Ray-Tracing Shaders
 		static std::unordered_map<std::string, uint32_t> sbtOffsets;
@@ -148,69 +147,121 @@ namespace v4d::graphics {
 		virtual void ConfigureRenderer() = 0;
 		virtual void ConfigureLayouts() = 0;
 		virtual void ConfigureShaders() = 0;
-		virtual void ReadShaders() = 0;
-		virtual void CreateResources() = 0;
-		virtual void DestroyResources() = 0;
-		virtual void AllocateBuffers() = 0;
-		virtual void FreeBuffers() = 0;
-		virtual void CreatePipelines() = 0;
-		virtual void DestroyPipelines() = 0;
-		virtual void CreateSyncObjects() = 0;
-		virtual void DestroySyncObjects() = 0;
-		virtual void CreateCommandBuffers() = 0;
-		virtual void DestroyCommandBuffers() = 0;
+		virtual void ConfigureRenderPasses() = 0;
+		virtual void AllocateResources() = 0;
+		virtual void FreeResources() = 0;
 		virtual void Render() = 0;
 		
-	protected: // FrameBuffered classes
+		// Command buffers
+		virtual void CreateCommandBuffers() {
+			CommandBuffer::ForEach([this](CommandBuffer*o){o->Allocate(renderingDevice);});
+		}
+		virtual void DestroyCommandBuffers() {
+			CommandBuffer::ForEach([this](CommandBuffer*o){o->Free(renderingDevice);});
+		}
+		// Synchronization objects
+		virtual void CreateSyncObjects() {
+			Semaphore::ForEach([this](Semaphore*o){o->Create(renderingDevice);});
+			Fence::ForEach([this](Fence*o){o->Create(renderingDevice);});
+		}
+		virtual void DestroySyncObjects() {
+			Semaphore::ForEach([this](Semaphore*o){o->Destroy(renderingDevice);});
+			Fence::ForEach([this](Fence*o){o->Destroy(renderingDevice);});
+		}
+		// Pipeline layouts
+		virtual void CreatePipelineLayouts() {
+			PipelineLayout::ForEach([this](PipelineLayout*o){o->Create(renderingDevice);});
+		}
+		virtual void DestroyPipelineLayouts() {
+			PipelineLayout::ForEach([this](PipelineLayout*o){o->Destroy(renderingDevice);});
+		}
+		// Shader Pipelines
+		virtual void CreateShaderPipelines() {
+			ShaderPipeline::ForEach([this](ShaderPipeline*o){o->Create(renderingDevice);});
+		}
+		virtual void DestroyShaderPipelines() {
+			ShaderPipeline::ForEach([this](ShaderPipeline*o){o->Destroy(renderingDevice);});
+		}
+		virtual void ReadShaders() {
+			ShaderPipeline::ForEach([](ShaderPipeline*o){o->ReadShaders();});
+		}
+		// Render Passes
+		virtual void CreateRenderPasses() {
+			RenderPass::ForEach([this](RenderPass*o){o->Create(renderingDevice);});
+		}
+		virtual void DestroyRenderPasses() {
+			RenderPass::ForEach([](RenderPass*o){o->Destroy();});
+		}
+		
+		
+	protected: // Helper classes
 	
+		class Semaphore {
+			COMMON_OBJECT(Semaphore, VkSemaphore)
+			
+			void Create(Device* device) {
+				VkSemaphoreCreateInfo semaphoreInfo {};
+				semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+				Renderer::CheckVkResult("Create Semaphore", device->CreateSemaphore(&semaphoreInfo, nullptr, obj));
+			}
+			void Destroy(Device* device) {
+				device->DestroySemaphore(obj, nullptr);
+			}
+		};
+		
+		class Fence {
+			COMMON_OBJECT(Fence, VkFence)
+			
+			bool signaled = true;
+			explicit Fence(bool signaled) : obj(), signaled(signaled) {}
+			
+			void Create(Device* device) {
+				VkFenceCreateInfo fenceInfo = {};
+					fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+					fenceInfo.flags = signaled? VK_FENCE_CREATE_SIGNALED_BIT : 0; // Initialize in the signaled state so that we dont get stuck on the first frame
+				Renderer::CheckVkResult("Create Fence", device->CreateFence(&fenceInfo, nullptr, obj));
+			}
+			void Destroy(Device* device) {
+				device->DestroyFence(obj, nullptr);
+			}
+		};
+		
+		class CommandBuffer {
+			COMMON_OBJECT(CommandBuffer, VkCommandBuffer)
+			
+			VkQueueFlags queueFlags = VK_QUEUE_GRAPHICS_BIT;
+			uint queueIndex = 0;
+			VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+			
+			CommandBuffer(VkQueueFlags queueFlags = VK_QUEUE_GRAPHICS_BIT, uint queueIndex = 0, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY)
+			: obj(), queueFlags(queueFlags), queueIndex(queueIndex), level(level) {}
+			
+			void Allocate(Device* device) {
+				VkCommandBufferAllocateInfo allocInfo = {};
+					allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+					allocInfo.commandBufferCount = 1;
+					allocInfo.level = level;
+					allocInfo.commandPool = device->GetQueue(queueFlags, queueIndex).commandPool;
+				Renderer::CheckVkResult("Allocate CommandBuffer", device->AllocateCommandBuffers(&allocInfo, obj));
+			}
+			void Free(Device* device) {
+				device->FreeCommandBuffers(device->GetGraphicsQueue().commandPool, 1, obj);
+			}
+		};
+		
+
 		template<class T>
 		struct FrameBufferedObject {
 			std::array<T, NB_FRAMES_IN_FLIGHT> objArray;
 			T& operator[](size_t i) {return objArray[i];}
-		};
-		
-		struct FrameBuffered_Semaphore : FrameBufferedObject<VkSemaphore> {
-			void Create(Device* device) {
-				VkSemaphoreCreateInfo semaphoreInfo {};
-					semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-				for (auto&s : objArray) {
-					Renderer::CheckVkResult("Create Semaphore", device->CreateSemaphore(&semaphoreInfo, nullptr, &s));
-				}
-			}
-			void Destroy(Device* device) {
-				for (auto&s : objArray) {
-					device->DestroySemaphore(s, nullptr);
-				}
+			FrameBufferedObject() {
+				for (auto& obj : objArray) obj = {};
 			}
 		};
 		
-		struct FrameBuffered_Fence : FrameBufferedObject<VkFence> {
-			void Create(Device* device, bool signaled = true) {
-				VkFenceCreateInfo fenceInfo = {};
-					fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-					fenceInfo.flags = signaled? VK_FENCE_CREATE_SIGNALED_BIT : 0; // Initialize in the signaled state so that we dont get stuck on the first frame
-				for (auto&f : objArray) {
-					Renderer::CheckVkResult("Create Fence", device->CreateFence(&fenceInfo, nullptr, &f));
-				}
-			}
-			void Destroy(Device* device) {
-				for (auto&f : objArray) device->DestroyFence(f, nullptr);
-			}
-		};
-		
-		struct FrameBuffered_CommandBuffer : FrameBufferedObject<VkCommandBuffer> {
-			void Allocate(Device* device, VkQueueFlags queueFlags = VK_QUEUE_GRAPHICS_BIT, uint queueIndex = 0, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
-				VkCommandBufferAllocateInfo allocInfo = {};
-					allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-					allocInfo.commandBufferCount = objArray.size();
-					allocInfo.level = level;
-					allocInfo.commandPool = device->GetQueue(queueFlags, queueIndex).commandPool;
-				Renderer::CheckVkResult("Allocate CommandBuffer", device->AllocateCommandBuffers(&allocInfo, objArray.data()));
-			}
-			void Free(Device* device) {
-				device->FreeCommandBuffers(device->GetGraphicsQueue().commandPool, objArray.size(), objArray.data());
-			}
-		};
+		struct FrameBuffered_Semaphore : FrameBufferedObject<Semaphore> {};
+		struct FrameBuffered_Fence : FrameBufferedObject<Fence> {};
+		struct FrameBuffered_CommandBuffer : FrameBufferedObject<CommandBuffer> {};
 		
 		struct FrameBuffered_Image : FrameBufferedObject<Image> {
 			VkImageUsageFlags usage;
@@ -258,8 +309,8 @@ namespace v4d::graphics {
 		virtual void CreateCommandPools();
 		virtual void DestroyCommandPools();
 		
-		virtual void CreateDescriptorSets();
-		virtual void DestroyDescriptorSets();
+		// virtual void CreateDescriptorSets();
+		// virtual void DestroyDescriptorSets();
 
 		virtual void CreateSwapChain();
 		virtual void DestroySwapChain();
@@ -298,8 +349,8 @@ namespace v4d::graphics {
 		bool EndFrame(const std::vector<VkSemaphore>& waitSemaphores = {});
 		
 	public: // Sync methods
-		virtual void UpdateDescriptorSets();
-		virtual void UpdateDescriptorSet(DescriptorSet* set, const std::vector<uint32_t>& bindings = {});
+		// virtual void UpdateDescriptorSets();
+		// virtual void UpdateDescriptorSet(DescriptorSet* set, const std::vector<uint32_t>& bindings = {});
 		
 		/** This is NOT for use every frame, it WILL cause stuttering.
 		 *	Typical use case is for hot-reloading shaders or re-create pipelines when things change drastically.
@@ -324,18 +375,13 @@ namespace v4d::graphics {
 			renderingDevice->RunSingleTimeCommands(queue, std::forward<std::function<void(VkCommandBuffer)>>(func));
 		}
 		
-
-		// void AllocateBufferStaged(const Queue&, Buffer&);
-		// void AllocateBuffersStaged(const Queue&, std::vector<Buffer>&);
-		// void AllocateBuffersStaged(const Queue&, std::vector<Buffer*>&);
-
 	public: // Init//LoadReset Methods
 		
 		virtual void InitRenderer();
 		virtual void LoadRenderer();
 		virtual void UnloadRenderer();
 		virtual void ReloadRenderer();
-		virtual void ReloadPipelines();
+		virtual void ReloadShaderPipelines();
 		void WatchModifiedShadersForReload(const std::vector<ShaderPipelineMetaFile>&);
 		
 		void AssignSurface(const VkSurfaceKHR& surface) {

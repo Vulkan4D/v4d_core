@@ -22,10 +22,9 @@ namespace v4d::graphics::vulkan {
 		
 	public:
 		using ShaderPipeline::ShaderPipeline;
-		virtual ~ComputeShaderPipeline();
 		
-		virtual void CreatePipeline(Device* device) override;
-		virtual void DestroyPipeline(Device* device) override;
+		virtual void Create(Device* device) override;
+		virtual void Destroy(Device* device) override;
 		
 		void SetGroupCounts(uint32_t x, uint32_t y, uint32_t z);
 		
