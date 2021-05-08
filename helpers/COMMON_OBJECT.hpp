@@ -28,13 +28,18 @@ Usage:
 	class MyObject {
 		COMMON_OBJECT (MyObject, UnderlyingObject) // MUST be the first definition of the class, unless you define the option COMMON_OBJECTS_ENABLE_FLEXIBLE_PTR_OFFSET
 		
-		COMMON_OBJECT_MOVEABLE(MyObject) // only if object is moveable
-		COMMON_OBJECT_COPYABLE(MyObject) // only if object is copyable
+		// If your object is moveable/copyable:
+		COMMON_OBJECT_DEFAULT_MOVEABLE(MyObject)
+		COMMON_OBJECT_DEFAULT_COPYABLE(MyObject)
 		// You may also want to implement your own a Copy/Move constructor and assignment operators instead, just don't forget to copy/move the 'obj' member (refer to the macro's body for an example)
 		
 		// OR if your object is NOT moveable/copyable:
 		COMMON_OBJECT_NOT_MOVEABLE(MyObject)
 		COMMON_OBJECT_NOT_COPYABLE(MyObject)
+		
+		// OR if you only want the underlying object to be moved/copied:
+		COMMON_OBJECT_MOVEABLE(MyObject)
+		COMMON_OBJECT_COPYABLE(MyObject)
 		
 		// following members will automatically have public accessibility, you may of course change that if you wish...
 		
@@ -180,18 +185,28 @@ Usage:
 #define COMMON_OBJECT_MOVEABLE(ObjClass)\
 	ObjClass(ObjClass&& other) {*this = std::move(other);}\
 	ObjClass& operator= (ObjClass&& other) {\
-		if (this != &other)\
+		if (this != &other) {\
 			obj = std::move(other.obj);\
+		}\
 		return *this;\
 	}
 
 #define COMMON_OBJECT_COPYABLE(ObjClass)\
 	ObjClass(const ObjClass& other) {*this = other;}\
 	ObjClass& operator= (const ObjClass& other) {\
-		if (this != &other)\
+		if (this != &other) {\
 			obj = other.obj;\
+		}\
 		return *this;\
 	}
+	
+#define COMMON_OBJECT_DEFAULT_MOVEABLE(ObjClass)\
+	ObjClass(ObjClass&& other) = default;\
+	ObjClass& operator= (ObjClass&& other) = default;
+
+#define COMMON_OBJECT_DEFAULT_COPYABLE(ObjClass)\
+	ObjClass(const ObjClass& other) = default;\
+	ObjClass& operator= (const ObjClass& other) = default;
 	
 #define COMMON_OBJECT_NOT_MOVEABLE(ObjClass)\
 	ObjClass(ObjClass&& other) = delete;\
