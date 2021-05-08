@@ -28,6 +28,14 @@ Usage:
 	class MyObject {
 		COMMON_OBJECT (MyObject, UnderlyingObject) // MUST be the first definition of the class, unless you define the option COMMON_OBJECTS_ENABLE_FLEXIBLE_PTR_OFFSET
 		
+		COMMON_OBJECT_MOVEABLE(MyObject) // only if object is moveable
+		COMMON_OBJECT_COPYABLE(MyObject) // only if object is copyable
+		// You may also want to implement your own a Copy/Move constructor and assignment operators instead, just don't forget to copy/move the 'obj' member (refer to the macro's body for an example)
+		
+		// OR if your object is NOT moveable/copyable:
+		COMMON_OBJECT_NOT_MOVEABLE(MyObject)
+		COMMON_OBJECT_NOT_COPYABLE(MyObject)
+		
 		// following members will automatically have public accessibility, you may of course change that if you wish...
 		
 		int a;
@@ -41,7 +49,7 @@ Usage:
 			//...
 		}
 		
-		// You may NOT overload operator= and operator-> because this implementation already overloaded them to access the underlying type
+		// You may NOT overload operator-> because this implementation already overloaded it to access the underlying type
 	};
 	
 	// You cannot extend or derive a common object class (nor have virtual methods) unless you define the option COMMON_OBJECTS_ENABLE_FLEXIBLE_PTR_OFFSET
@@ -107,7 +115,7 @@ Usage:
 #endif
 
 #define COMMON_OBJECT(ObjClass, UnderlyingClass, .../* may optionally have a 3rd argument with either __declspec(dllexport) or __declspec(dllimport) */) \
-	protected:\
+	public:\
 	class __VA_ARGS__ UnderlyingCommonObjectContainer {\
 		friend class ObjClass;\
 		UnderlyingClass obj;\
@@ -131,16 +139,18 @@ Usage:
 				std::erase(objs, reinterpret_cast<ObjClass*>( reinterpret_cast<char*>(this) - _ptrOffset ));\
 		}\
 		public:\
+		template<typename T>\
+		UnderlyingClass& operator=(const T& other) {return obj = other;}\
+		template<typename T>\
+		UnderlyingClass& operator=(T&& other) {return obj = std::move(other);}\
+		UnderlyingClass* operator->() {return &obj;}\
 		operator UnderlyingClass&() {return obj;}\
 		operator UnderlyingClass*() {return &obj;}\
 	} obj;\
-	public:\
 	template<typename...Args>\
 	ObjClass(Args&&...args) : obj(std::forward<Args>(args)...) {}\
-	template<typename T>\
-	UnderlyingClass& operator=(const T& other) {return obj.obj = other;}\
-	template<typename T>\
-	UnderlyingClass& operator=(T&& other) {return obj.obj = std::move(other);}\
+	ObjClass& operator=(const UnderlyingClass& other) {obj.obj = other; return *this;}\
+	ObjClass& operator=(UnderlyingClass&& other) {obj.obj = std::move(other); return *this;}\
 	UnderlyingClass* operator->() {return &obj.obj;}\
 	operator UnderlyingClass&() {return obj.obj;}\
 	operator UnderlyingClass*() {return &obj.obj;}\
@@ -152,6 +162,10 @@ Usage:
 			std::forward<std::function<bool(ObjClass*,ObjClass*)>>(f)\
 		);\
 	}\
+	static size_t Count() {\
+		std::lock_guard lock(UnderlyingCommonObjectContainer::mu);\
+		return UnderlyingCommonObjectContainer::objs.size();\
+	}\
 	static void ForEach(std::function<void(ObjClass*)>&& f) {\
 		std::lock_guard lock(UnderlyingCommonObjectContainer::mu);\
 		for (auto* o : UnderlyingCommonObjectContainer::objs) f(o);\
@@ -162,8 +176,39 @@ Usage:
 			if(!f(o)) break;\
 		}\
 	}
+
+#define COMMON_OBJECT_MOVEABLE(ObjClass)\
+	ObjClass(ObjClass&& other) {*this = std::move(other);}\
+	ObjClass& operator= (ObjClass&& other) {\
+		if (this != &other)\
+			obj = std::move(other.obj);\
+		return *this;\
+	}
+
+#define COMMON_OBJECT_COPYABLE(ObjClass)\
+	ObjClass(const ObjClass& other) {*this = other;}\
+	ObjClass& operator= (const ObjClass& other) {\
+		if (this != &other)\
+			obj = other.obj;\
+		return *this;\
+	}
+	
+#define COMMON_OBJECT_NOT_MOVEABLE(ObjClass)\
+	ObjClass(ObjClass&& other) = delete;\
+	ObjClass& operator= (ObjClass&& other) = delete;
+
+#define COMMON_OBJECT_NOT_COPYABLE(ObjClass)\
+	ObjClass(const ObjClass& other) = delete;\
+	ObjClass& operator= (const ObjClass& other) = delete;
+	
 #define COMMON_OBJECT_CLASS(ObjClass, UnderlyingClass, .../* may optionally have a 3rd argument with either __declspec(dllexport) or __declspec(dllimport) */) \
-	class ObjClass { COMMON_OBJECT(ObjClass, UnderlyingClass, __VA_ARGS__) };
+	class ObjClass {\
+		COMMON_OBJECT(ObjClass, UnderlyingClass, __VA_ARGS__)\
+		COMMON_OBJECT_MOVEABLE(ObjClass)\
+		COMMON_OBJECT_COPYABLE(ObjClass)\
+	};
+
 #define COMMON_OBJECT_CPP(ObjClass, UnderlyingClass) \
 	std::mutex ObjClass::UnderlyingCommonObjectContainer::mu {};\
 	std::vector<ObjClass*> ObjClass::UnderlyingCommonObjectContainer::objs {};
+

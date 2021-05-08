@@ -25,6 +25,47 @@ endif()
 # Compiler optimizations and CPU Extensions
 set(BUILD_FLAGS "-mavx2")
 
+# Compiler Warnings
+if(WIN32)
+	set(BUILD_FLAGS "${BUILD_FLAGS} -W")
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Wno-attribute-warning")
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Wno-cast-function-type")
+else()
+	# Warnings		https://gcc.gnu.org/onlinedocs/gcc-9.2.0/gcc/Warning-Options.html
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Wall")
+	set(BUILD_FLAGS "${BUILD_FLAGS} -fmax-errors=1")
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Wfatal-errors")
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Wextra")
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Wunused")
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Wnon-virtual-dtor")
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Wcast-align")
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Woverloaded-virtual")
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Wnull-dereference")
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Wpessimizing-move")
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Wredundant-move")
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Wlogical-op")
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Wdisabled-optimization")
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Wfloat-conversion")
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Wno-unused-parameter")
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Wno-sign-compare")
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Wno-unknown-pragmas")
+	# set(BUILD_FLAGS "${BUILD_FLAGS} -Wconversion")
+	# set(BUILD_FLAGS "${BUILD_FLAGS} -Wsign-conversion")
+	# set(BUILD_FLAGS "${BUILD_FLAGS} -Wshadow")
+endif()
+
+# Remove compiler warnings caused by COMMON_OBJECT
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Wno-invalid-offsetof")
+
+# Remove compiler Warnings from VMA...
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Wno-missing-field-initializers")
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Wno-type-limits")
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Wno-unused-variable")
+	
+# Remove compiler Warnings from tinygltfloader...
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Wno-ignored-qualifiers")
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Wno-switch")
+
 # Release / Debug
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 	set(DEBUG 1)
@@ -71,6 +112,7 @@ function(SubModule _ModuleClass)
 	)
 	set_target_properties(${_SubModuleName}
 		PROPERTIES
+			COMPILE_FLAGS ${BUILD_FLAGS}
 			LIBRARY_OUTPUT_DIRECTORY_DEBUG "${V4D_PROJECT_BUILD_DIR}/debug/modules/${_ModuleVendor}_${_ModuleName}"
 			RUNTIME_OUTPUT_DIRECTORY_DEBUG "${V4D_PROJECT_BUILD_DIR}/debug/modules/${_ModuleVendor}_${_ModuleName}"
 			LIBRARY_OUTPUT_DIRECTORY_RELEASE "${V4D_PROJECT_BUILD_DIR}/release/modules/${_ModuleVendor}_${_ModuleName}"
