@@ -17,7 +17,7 @@
 namespace v4d::graphics::vulkan {
 	
 	class RenderPassObject {
-		COMMON_OBJECT(RenderPassObject, VkRenderPass)
+		COMMON_OBJECT(RenderPassObject, VkRenderPass, V4DLIB)
 	
 		VkRenderPassCreateInfo renderPassInfo {
 			VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,

@@ -7,7 +7,7 @@
 namespace v4d::graphics::vulkan {
 
 	class SemaphoreObject {
-		COMMON_OBJECT(SemaphoreObject, VkSemaphore)
+		COMMON_OBJECT(SemaphoreObject, VkSemaphore, V4DLIB)
 		
 		void Create(Device* device) {
 			VkSemaphoreCreateInfo semaphoreInfo {};
@@ -20,7 +20,7 @@ namespace v4d::graphics::vulkan {
 	};
 
 	class FenceObject {
-		COMMON_OBJECT(FenceObject, VkFence)
+		COMMON_OBJECT(FenceObject, VkFence, V4DLIB)
 		
 		bool signaled = true;
 		explicit FenceObject(bool signaled) : obj(), signaled(signaled) {}
@@ -37,7 +37,7 @@ namespace v4d::graphics::vulkan {
 	};
 
 	class CommandBufferObject {
-		COMMON_OBJECT(CommandBufferObject, VkCommandBuffer)
+		COMMON_OBJECT(CommandBufferObject, VkCommandBuffer, V4DLIB)
 		
 		VkQueueFlags queueFlags = VK_QUEUE_GRAPHICS_BIT;
 		uint queueIndex = 0;

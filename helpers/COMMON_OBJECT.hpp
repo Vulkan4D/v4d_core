@@ -1,0 +1,169 @@
+/*
+
+CommonObject macro v1.0
+Author: Olivier St-Laurent, May 2021
+
+Common Objects are practical to be able to loop through all existing objects of a certain type
+
+All Common Objects that are constructed at ay point during execution, will automatically be added to a global list containing all common objects of that type, and will be removed from that list upon destruction.
+Constructing, Destructing, Sorting and Looping are synchronized operations and thread safe, locked via a global mutex for that type.
+Common objects also implicitly cast to the underlying type's reference or pointer, and can be assigned (=) directly to their underlying type.
+Common objects also automatically forward all constructor arguments to the underlying type's constructor, unless you define your own constructor, in which case you may construct obj() for the underlying type.
+The underlying types are stored inline on the stack and a Common Object will not take more memory than the underlying type itself, unless you define your own wrapper class of course.
+The global object lists are stored statically and they store pointers to the underlying types, so the raw underlying objects are not necessarily all contiguous in memory.
+
+Usage:
+
+
+// Options
+	#define COMMON_OBJECTS_ENABLE_FLEXIBLE_PTR_OFFSET // requires a compiler that supports offsetof() on non-standard-layout types, and may require compiling with -Wno-invalid-offsetof
+
+
+// MyObject.h
+	
+	// If you don't need any additional members, a one-liner will do:
+	COMMON_OBJECT_CLASS (MyObject, UnderlyingObject)
+	
+	// OR, if you need custom members and/or constructors/destructor, you may wrap it in a class like so:
+	class MyObject {
+		COMMON_OBJECT (MyObject, UnderlyingObject) // MUST be the first definition of the class, unless you define the option COMMON_OBJECTS_ENABLE_FLEXIBLE_PTR_OFFSET
+		
+		// following members will automatically have public accessibility, you may of course change that if you wish...
+		
+		int a;
+		int b;
+		
+		MyObject(int a, int b) : obj(), a(a), b(b) { // always initialize obj first (or don't initialize it and it will call its default () constructor)
+			// in member functions, use the predefined member 'obj' to access the underlying type's reference or pointer (implicitly cast)
+		}
+		
+		~MyObject() {
+			//...
+		}
+		
+		// You may NOT overload operator= and operator-> because this implementation already overloaded them to access the underlying type
+	};
+	
+	// You cannot extend or derive a common object class (nor have virtual methods) unless you define the option COMMON_OBJECTS_ENABLE_FLEXIBLE_PTR_OFFSET
+	// however, the underlying object may be a derived class.
+	
+	
+// MyObject.cpp
+	
+	COMMON_OBJECT_CPP (MyObject, UnderlyingObject)
+	
+	// And any other member definitions...
+
+
+// main.cpp
+
+	MyObject obj1;
+	MyObject obj2 {arg1,arg2}; // constructor args will be automatically forwarded to the underlying type's constructor, unless you have defined your own
+
+	int main() {
+		
+		// using obj1 directly as an argument to a function can be implicitly cast to the underlying type's reference or pointer
+		
+		// operator-> is overloaded, so that you can use obj1->someMemberOfUnderlyingType
+		
+		// You may sort the global list before looping through it, with your own sort lambda
+		MyObject::Sort([](MyObject* a, MyObject* b){return a->sortValue < b->sortValue;});
+		
+		// You may loop through all existing MyObject objects using your own lambda
+		MyObject::ForEach([](MyObject* myObjectPtr){
+			// use myObjectPtr->obj to access the underlying type
+			// or simply dereference myObjectPtr directly as it will automatically cast to the underlying type's reference or pointer as needed
+			// if it is dereferenced, you may also use myObject->someMemberOfUnderlyingType
+			// you may return false to break the loop at any point (or return true to continue to the next object)
+		});
+		
+	}
+
+
+// Special usage:
+
+	// Compiling a shared library (DLL) on windows to store the global object list:
+	// you may optionally add a 3rd argument to the macros COMMON_OBJECT_CLASS or COMMON_OBJECT with either __declspec(dllexport) or __declspec(dllimport)
+	// depending on whether you are compiling the shared library or the executable, respectively.
+
+
+*/
+
+#pragma once
+
+#include <mutex>
+#include <vector>
+#include <functional>
+#include <utility>
+#include <algorithm>
+
+#ifndef _COMMON_OBJECT_FLEXIBLE_PTR_OFFSET_OF_
+	#ifdef COMMON_OBJECTS_ENABLE_FLEXIBLE_PTR_OFFSET
+		#include <cstddef>
+		#define _COMMON_OBJECT_FLEXIBLE_PTR_OFFSET_OF_(Object,Member) offsetof(Object,Member)
+	#else
+		#define _COMMON_OBJECT_FLEXIBLE_PTR_OFFSET_OF_(Object,Member) 0
+	#endif
+#endif
+
+#define COMMON_OBJECT(ObjClass, UnderlyingClass, .../* may optionally have a 3rd argument with either __declspec(dllexport) or __declspec(dllimport) */) \
+	protected:\
+	class __VA_ARGS__ UnderlyingCommonObjectContainer {\
+		friend class ObjClass;\
+		UnderlyingClass obj;\
+		static std::mutex mu;\
+		static std::vector<ObjClass*> objs;\
+		template<typename...Args>\
+		UnderlyingCommonObjectContainer(Args&&...args) : obj(std::forward<Args>(args)...) {\
+			constexpr int64_t _ptrOffset = _COMMON_OBJECT_FLEXIBLE_PTR_OFFSET_OF_(ObjClass, obj);\
+			std::lock_guard lock(mu);\
+			if constexpr (_ptrOffset == 0)\
+				objs.emplace_back(reinterpret_cast<ObjClass*>(this));\
+			else\
+				objs.emplace_back(reinterpret_cast<ObjClass*>( reinterpret_cast<char*>(this) - _ptrOffset ));\
+		}\
+		~UnderlyingCommonObjectContainer() {\
+			constexpr int64_t _ptrOffset = _COMMON_OBJECT_FLEXIBLE_PTR_OFFSET_OF_(ObjClass, obj);\
+			std::lock_guard lock(mu);\
+			if constexpr (_ptrOffset == 0)\
+				std::erase(objs, reinterpret_cast<ObjClass*>(this));\
+			else\
+				std::erase(objs, reinterpret_cast<ObjClass*>( reinterpret_cast<char*>(this) - _ptrOffset ));\
+		}\
+		public:\
+		operator UnderlyingClass&() {return obj;}\
+		operator UnderlyingClass*() {return &obj;}\
+	} obj;\
+	public:\
+	template<typename...Args>\
+	ObjClass(Args&&...args) : obj(std::forward<Args>(args)...) {}\
+	template<typename T>\
+	UnderlyingClass& operator=(const T& other) {return obj.obj = other;}\
+	template<typename T>\
+	UnderlyingClass& operator=(T&& other) {return obj.obj = std::move(other);}\
+	UnderlyingClass* operator->() {return &obj.obj;}\
+	operator UnderlyingClass&() {return obj.obj;}\
+	operator UnderlyingClass*() {return &obj.obj;}\
+	static void Sort(std::function<bool(ObjClass*,ObjClass*)>&& f) {\
+		std::lock_guard lock(UnderlyingCommonObjectContainer::mu);\
+		std::sort(\
+			UnderlyingCommonObjectContainer::objs.begin(),\
+			UnderlyingCommonObjectContainer::objs.end(),\
+			std::forward<std::function<bool(ObjClass*,ObjClass*)>>(f)\
+		);\
+	}\
+	static void ForEach(std::function<void(ObjClass*)>&& f) {\
+		std::lock_guard lock(UnderlyingCommonObjectContainer::mu);\
+		for (auto* o : UnderlyingCommonObjectContainer::objs) f(o);\
+	}\
+	static void ForEach(std::function<bool(ObjClass*)>&& f) {\
+		std::lock_guard lock(UnderlyingCommonObjectContainer::mu);\
+		for (auto* o : UnderlyingCommonObjectContainer::objs) {\
+			if(!f(o)) break;\
+		}\
+	}
+#define COMMON_OBJECT_CLASS(ObjClass, UnderlyingClass, .../* may optionally have a 3rd argument with either __declspec(dllexport) or __declspec(dllimport) */) \
+	class ObjClass { COMMON_OBJECT(ObjClass, UnderlyingClass, __VA_ARGS__) };
+#define COMMON_OBJECT_CPP(ObjClass, UnderlyingClass) \
+	std::mutex ObjClass::UnderlyingCommonObjectContainer::mu {};\
+	std::vector<ObjClass*> ObjClass::UnderlyingCommonObjectContainer::objs {};

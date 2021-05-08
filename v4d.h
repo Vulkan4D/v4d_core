@@ -56,9 +56,6 @@
 #endif
 #ifdef _V4D_CORE
 	#define V4DLIB DLLEXPORT
-	#ifndef IMPORT_OR_EXPORT_COMMON_OBJECT
-		#define IMPORT_OR_EXPORT_COMMON_OBJECT DLLEXPORT
-	#endif
 	#define V4DGAME
 #else// Project/Module
 	#define V4DLIB DLLIMPORT
@@ -67,16 +64,11 @@
 	#else// Project/Module
 		#define V4DGAME DLLIMPORT
 	#endif
-	#ifndef IMPORT_OR_EXPORT_COMMON_OBJECT
-		#define IMPORT_OR_EXPORT_COMMON_OBJECT DLLIMPORT
-	#endif
 #endif
 
-
-// Helpers (simple header-only files unaware of V4D)
+// Helpers (standalone header-only files unaware of V4D)
 #include "helpers/types.hpp"
 #include "helpers/macros.hpp"
-#include "helpers/commonObject.hpp"
 #include "helpers/event.hpp"
 #include "helpers/Timer.hpp"
 #include "helpers/String.hpp"
@@ -87,6 +79,7 @@
 #include "helpers/modular.hpp"
 #include "helpers/EntityComponentSystem.hpp"
 #include "helpers/FPSCounter.hpp"
+#include "helpers/COMMON_OBJECT.hpp"
 
 // Automatically use vulkan validation layers if we are in debug mode on linux, unless we have defined V4D_VULKAN_NO_VALIDATION_LAYERS
 #if !defined(V4D_VULKAN_USE_VALIDATION_LAYERS) && (defined(_DEBUG) && defined(_LINUX) && !defined(V4D_VULKAN_NO_VALIDATION_LAYERS))
