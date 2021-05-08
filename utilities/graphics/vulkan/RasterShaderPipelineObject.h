@@ -3,7 +3,7 @@
  * Part of the Vulkan4D open-source game engine under the LGPL license - https://github.com/Vulkan4D
  * @author Olivier St-Laurent <olivier@xenon3d.com>
  * 
- * This class extends from ShaderPipeline with specific functionality for rasterization
+ * This class extends from ShaderPipelineObject with specific functionality for rasterization
  */
 #pragma once
 
@@ -13,11 +13,11 @@
 #include "utilities/graphics/vulkan/Device.h"
 #include "utilities/graphics/vulkan/Image.h"
 #include "utilities/graphics/vulkan/SwapChain.h"
-#include "utilities/graphics/vulkan/ShaderPipeline.h"
+#include "utilities/graphics/vulkan/ShaderPipelineObject.h"
 
 namespace v4d::graphics::vulkan {
 
-	class V4DLIB RasterShaderPipeline : public ShaderPipeline {
+	class V4DLIB RasterShaderPipelineObject : public ShaderPipelineObject {
 	public:
 		
 		VkGraphicsPipelineCreateInfo pipelineCreateInfo {VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
@@ -128,7 +128,7 @@ namespace v4d::graphics::vulkan {
 		std::vector<VkViewport> viewports {};
 		std::vector<VkRect2D> scissors {};
 		
-		using ShaderPipeline::ShaderPipeline;
+		using ShaderPipelineObject::ShaderPipelineObject;
 		
 		// set what data to draw
 		void SetData(VkBuffer vertexBuffer, VkBuffer indexBuffer, uint32_t indexCount);

@@ -13,8 +13,8 @@
 
 namespace v4d::graphics::vulkan {
 
-	struct V4DLIB PipelineLayout {
-		COMMON_OBJECT(PipelineLayout, VkPipelineLayout)
+	struct V4DLIB PipelineLayoutObject {
+		COMMON_OBJECT(PipelineLayoutObject, VkPipelineLayout)
 		
 		// std::vector<DescriptorSet*> descriptorSets {};
 		std::vector<VkDescriptorSetLayout> layouts {};

@@ -1,24 +1,24 @@
-#include "PipelineLayout.h"
+#include "PipelineLayoutObject.h"
 
 using namespace v4d::graphics::vulkan;
 
-COMMON_OBJECT_CPP(PipelineLayout, VkPipelineLayout)
+COMMON_OBJECT_CPP(PipelineLayoutObject, VkPipelineLayout)
 
-std::vector<VkDescriptorSetLayout>* PipelineLayout::GetDescriptorSetLayouts() {
+std::vector<VkDescriptorSetLayout>* PipelineLayoutObject::GetDescriptorSetLayouts() {
 	return &layouts;
 }
 
-// void PipelineLayout::AddDescriptorSet(DescriptorSet* descriptorSet) {
+// void PipelineLayoutObject::AddDescriptorSet(DescriptorSet* descriptorSet) {
 // 	descriptorSets.push_back(descriptorSet);
 // }
 
-int PipelineLayout::AddPushConstant(const VkPushConstantRange& pushConstant) {
+int PipelineLayoutObject::AddPushConstant(const VkPushConstantRange& pushConstant) {
 	int newIndex = pushConstants.size();
 	pushConstants.push_back(pushConstant);
 	return newIndex;
 }
 
-void PipelineLayout::Create(Device* device) {
+void PipelineLayoutObject::Create(Device* device) {
 	// for (auto* set : descriptorSets) {
 	// 	layouts.push_back(set->GetDescriptorSetLayout());
 	// }
@@ -50,18 +50,18 @@ void PipelineLayout::Create(Device* device) {
 	// }
 }
 
-void PipelineLayout::Destroy(Device* device) {
+void PipelineLayoutObject::Destroy(Device* device) {
 	vkDescriptorSets.clear();
 	device->DestroyPipelineLayout(obj, nullptr);
 	layouts.clear();
 }
 
-void PipelineLayout::Bind(Device* device, VkCommandBuffer commandBuffer, VkPipelineBindPoint bindPoint) {
+void PipelineLayoutObject::Bind(Device* device, VkCommandBuffer commandBuffer, VkPipelineBindPoint bindPoint) {
 	if (vkDescriptorSets.size() > 0) 
 		device->CmdBindDescriptorSets(commandBuffer, bindPoint, obj, 0, (uint)vkDescriptorSets.size(), vkDescriptorSets.data(), 0, nullptr);
 }
 
-void PipelineLayout::Reset() {
+void PipelineLayoutObject::Reset() {
 	// descriptorSets.clear();
 	pushConstants.clear();
 }

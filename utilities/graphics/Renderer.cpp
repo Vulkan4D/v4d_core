@@ -557,7 +557,3 @@ namespace v4d::graphics {
 }
 #pragma endregion
 
-// Helper classes
-COMMON_OBJECT_CPP(Renderer::Semaphore, VkSemaphore)
-COMMON_OBJECT_CPP(Renderer::Fence, VkFence)
-COMMON_OBJECT_CPP(Renderer::CommandBuffer, VkCommandBuffer)

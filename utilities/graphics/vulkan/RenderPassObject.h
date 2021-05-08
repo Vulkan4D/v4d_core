@@ -12,12 +12,12 @@
 #include "utilities/graphics/vulkan/Image.h"
 #include "utilities/graphics/vulkan/Instance.h"
 #include "utilities/graphics/vulkan/SwapChain.h"
-#include "utilities/graphics/vulkan/RasterShaderPipeline.h"
+#include "utilities/graphics/vulkan/RasterShaderPipelineObject.h"
 
 namespace v4d::graphics::vulkan {
 	
-	class RenderPass {
-		COMMON_OBJECT(RenderPass, VkRenderPass)
+	class RenderPassObject {
+		COMMON_OBJECT(RenderPassObject, VkRenderPass)
 	
 		VkRenderPassCreateInfo renderPassInfo {
 			VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
@@ -37,7 +37,7 @@ namespace v4d::graphics::vulkan {
 		std::vector<VkClearValue> clearValues {};
 		std::vector<VkFramebuffer> frameBuffers {};
 		std::vector<std::vector<VkImageView>> imageViews {};
-		std::vector<std::tuple<RasterShaderPipeline*, uint32_t/*subpass*/>> shaders {};
+		std::vector<std::tuple<RasterShaderPipelineObject*, uint32_t/*subpass*/>> shaders {};
 
 		Device* device = nullptr;
 		
@@ -171,17 +171,17 @@ namespace v4d::graphics::vulkan {
 			return depthStencilAttachmentRefs.emplace_back(new VkAttachmentReference{ref.attachment, ref.layout}).get();
 		}
 		
-		void AddShader(RasterShaderPipeline* shader, SwapChain* swapChain, uint32_t subpassIndex = 0) {
+		void AddShader(RasterShaderPipelineObject* shader, SwapChain* swapChain, uint32_t subpassIndex = 0) {
 			shader->SetViewport(swapChain);
 			shaders.emplace_back(shader, subpassIndex);
 		}
 
-		void AddShader(RasterShaderPipeline* shader, Image* renderTarget, uint32_t subpassIndex = 0) {
+		void AddShader(RasterShaderPipelineObject* shader, Image* renderTarget, uint32_t subpassIndex = 0) {
 			shader->SetViewport(renderTarget);
 			shaders.emplace_back(shader, subpassIndex);
 		}
 
-		void AddShader(RasterShaderPipeline* shader, const VkViewport& viewport, const VkRect2D& scissor, uint32_t subpassIndex = 0) {
+		void AddShader(RasterShaderPipelineObject* shader, const VkViewport& viewport, const VkRect2D& scissor, uint32_t subpassIndex = 0) {
 			shader->SetViewport(viewport, scissor);
 			shaders.emplace_back(shader, subpassIndex);
 		}

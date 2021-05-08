@@ -14,8 +14,11 @@
 #include "utilities/graphics/vulkan/Device.h"
 #include "utilities/graphics/vulkan/Image.h"
 #include "utilities/graphics/vulkan/SwapChain.h"
-#include "utilities/graphics/vulkan/ShaderPipeline.h"
-#include "utilities/graphics/vulkan/RenderPass.h"
+#include "utilities/graphics/vulkan/PipelineLayoutObject.h"
+#include "utilities/graphics/vulkan/ShaderPipelineObject.h"
+#include "utilities/graphics/vulkan/RenderPassObject.h"
+#include <utilities/graphics/vulkan/RasterShaderPipelineObject.h>
+#include "utilities/graphics/vulkan/CommonObjects.h"
 
 // Useful macro to be used in ConfigureDeviceFeatures()
 #define V4D_ENABLE_DEVICE_FEATURE(F) \
@@ -154,101 +157,47 @@ namespace v4d::graphics {
 		
 		// Command buffers
 		virtual void CreateCommandBuffers() {
-			CommandBuffer::ForEach([this](CommandBuffer*o){o->Allocate(renderingDevice);});
+			CommandBufferObject::ForEach([this](CommandBufferObject*o){o->Allocate(renderingDevice);});
 		}
 		virtual void DestroyCommandBuffers() {
-			CommandBuffer::ForEach([this](CommandBuffer*o){o->Free(renderingDevice);});
+			CommandBufferObject::ForEach([this](CommandBufferObject*o){o->Free(renderingDevice);});
 		}
 		// Synchronization objects
 		virtual void CreateSyncObjects() {
-			Semaphore::ForEach([this](Semaphore*o){o->Create(renderingDevice);});
-			Fence::ForEach([this](Fence*o){o->Create(renderingDevice);});
+			SemaphoreObject::ForEach([this](SemaphoreObject*o){o->Create(renderingDevice);});
+			FenceObject::ForEach([this](FenceObject*o){o->Create(renderingDevice);});
 		}
 		virtual void DestroySyncObjects() {
-			Semaphore::ForEach([this](Semaphore*o){o->Destroy(renderingDevice);});
-			Fence::ForEach([this](Fence*o){o->Destroy(renderingDevice);});
+			SemaphoreObject::ForEach([this](SemaphoreObject*o){o->Destroy(renderingDevice);});
+			FenceObject::ForEach([this](FenceObject*o){o->Destroy(renderingDevice);});
 		}
 		// Pipeline layouts
 		virtual void CreatePipelineLayouts() {
-			PipelineLayout::ForEach([this](PipelineLayout*o){o->Create(renderingDevice);});
+			PipelineLayoutObject::ForEach([this](PipelineLayoutObject*o){o->Create(renderingDevice);});
 		}
 		virtual void DestroyPipelineLayouts() {
-			PipelineLayout::ForEach([this](PipelineLayout*o){o->Destroy(renderingDevice);});
+			PipelineLayoutObject::ForEach([this](PipelineLayoutObject*o){o->Destroy(renderingDevice);});
 		}
 		// Shader Pipelines
 		virtual void CreateShaderPipelines() {
-			ShaderPipeline::ForEach([this](ShaderPipeline*o){o->Create(renderingDevice);});
+			ShaderPipelineObject::ForEach([this](ShaderPipelineObject*o){o->Create(renderingDevice);});
 		}
 		virtual void DestroyShaderPipelines() {
-			ShaderPipeline::ForEach([this](ShaderPipeline*o){o->Destroy(renderingDevice);});
+			ShaderPipelineObject::ForEach([this](ShaderPipelineObject*o){o->Destroy(renderingDevice);});
 		}
 		virtual void ReadShaders() {
-			ShaderPipeline::ForEach([](ShaderPipeline*o){o->ReadShaders();});
+			ShaderPipelineObject::ForEach([](ShaderPipelineObject*o){o->ReadShaders();});
 		}
 		// Render Passes
 		virtual void CreateRenderPasses() {
-			RenderPass::ForEach([this](RenderPass*o){o->Create(renderingDevice);});
+			RenderPassObject::ForEach([this](RenderPassObject*o){o->Create(renderingDevice);});
 		}
 		virtual void DestroyRenderPasses() {
-			RenderPass::ForEach([](RenderPass*o){o->Destroy();});
+			RenderPassObject::ForEach([](RenderPassObject*o){o->Destroy();});
 		}
 		
 		
 	protected: // Helper classes
-	
-		class Semaphore {
-			COMMON_OBJECT(Semaphore, VkSemaphore)
-			
-			void Create(Device* device) {
-				VkSemaphoreCreateInfo semaphoreInfo {};
-				semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-				Renderer::CheckVkResult("Create Semaphore", device->CreateSemaphore(&semaphoreInfo, nullptr, obj));
-			}
-			void Destroy(Device* device) {
-				device->DestroySemaphore(obj, nullptr);
-			}
-		};
-		
-		class Fence {
-			COMMON_OBJECT(Fence, VkFence)
-			
-			bool signaled = true;
-			explicit Fence(bool signaled) : obj(), signaled(signaled) {}
-			
-			void Create(Device* device) {
-				VkFenceCreateInfo fenceInfo = {};
-					fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-					fenceInfo.flags = signaled? VK_FENCE_CREATE_SIGNALED_BIT : 0; // Initialize in the signaled state so that we dont get stuck on the first frame
-				Renderer::CheckVkResult("Create Fence", device->CreateFence(&fenceInfo, nullptr, obj));
-			}
-			void Destroy(Device* device) {
-				device->DestroyFence(obj, nullptr);
-			}
-		};
-		
-		class CommandBuffer {
-			COMMON_OBJECT(CommandBuffer, VkCommandBuffer)
-			
-			VkQueueFlags queueFlags = VK_QUEUE_GRAPHICS_BIT;
-			uint queueIndex = 0;
-			VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-			
-			CommandBuffer(VkQueueFlags queueFlags = VK_QUEUE_GRAPHICS_BIT, uint queueIndex = 0, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY)
-			: obj(), queueFlags(queueFlags), queueIndex(queueIndex), level(level) {}
-			
-			void Allocate(Device* device) {
-				VkCommandBufferAllocateInfo allocInfo = {};
-					allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-					allocInfo.commandBufferCount = 1;
-					allocInfo.level = level;
-					allocInfo.commandPool = device->GetQueue(queueFlags, queueIndex).commandPool;
-				Renderer::CheckVkResult("Allocate CommandBuffer", device->AllocateCommandBuffers(&allocInfo, obj));
-			}
-			void Free(Device* device) {
-				device->FreeCommandBuffers(device->GetGraphicsQueue().commandPool, 1, obj);
-			}
-		};
-		
 
 		template<class T>
 		struct FrameBufferedObject {
@@ -258,10 +207,6 @@ namespace v4d::graphics {
 				for (auto& obj : objArray) obj = {};
 			}
 		};
-		
-		struct FrameBuffered_Semaphore : FrameBufferedObject<Semaphore> {};
-		struct FrameBuffered_Fence : FrameBufferedObject<Fence> {};
-		struct FrameBuffered_CommandBuffer : FrameBufferedObject<CommandBuffer> {};
 		
 		struct FrameBuffered_Image : FrameBufferedObject<Image> {
 			VkImageUsageFlags usage;

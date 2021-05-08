@@ -3,7 +3,7 @@
  * Part of the Vulkan4D open-source game engine under the LGPL license - https://github.com/Vulkan4D
  * @author Olivier St-Laurent <olivier@xenon3d.com>
  * 
- * This class extends from ShaderPipeline with specific functionality for compute shaders
+ * This class extends from ShaderPipelineObject with specific functionality for compute shaders
  */
 #pragma once
 
@@ -11,17 +11,17 @@
 #include <vector>
 #include "utilities/graphics/vulkan/Loader.h"
 #include "utilities/graphics/vulkan/Device.h"
-#include "utilities/graphics/vulkan/PipelineLayout.h"
+#include "utilities/graphics/vulkan/PipelineLayoutObject.h"
 #include "utilities/graphics/vulkan/Shader.h"
-#include "utilities/graphics/vulkan/ShaderPipeline.h"
+#include "utilities/graphics/vulkan/ShaderPipelineObject.h"
 
 namespace v4d::graphics::vulkan {
 	
-	class V4DLIB ComputeShaderPipeline : public ShaderPipeline {
+	class V4DLIB ComputeShaderPipelineObject : public ShaderPipelineObject {
 		uint32_t groupCountX = 0, groupCountY = 0, groupCountZ = 0;
 		
 	public:
-		using ShaderPipeline::ShaderPipeline;
+		using ShaderPipelineObject::ShaderPipelineObject;
 		
 		virtual void Create(Device* device) override;
 		virtual void Destroy(Device* device) override;

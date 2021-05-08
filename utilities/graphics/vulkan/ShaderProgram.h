@@ -11,7 +11,7 @@
 #include <vector>
 #include "utilities/graphics/vulkan/Loader.h"
 #include "utilities/graphics/vulkan/Device.h"
-#include "utilities/graphics/vulkan/PipelineLayout.h"
+#include "utilities/graphics/vulkan/PipelineLayoutObject.h"
 #include "utilities/graphics/vulkan/Shader.h"
 
 namespace v4d::graphics::vulkan {

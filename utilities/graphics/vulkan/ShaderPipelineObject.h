@@ -19,17 +19,17 @@
 
 namespace v4d::graphics::vulkan {
 
-	class ShaderPipeline;
+	class ShaderPipelineObject;
 	
 	struct ShaderPipelineMetaFile {
 		v4d::io::FilePath file;
-		std::vector<v4d::graphics::vulkan::ShaderPipeline*> shaders;
+		std::vector<v4d::graphics::vulkan::ShaderPipelineObject*> shaders;
 		double mtime;
 		
-		ShaderPipelineMetaFile(v4d::io::FilePath metaFile, std::vector<v4d::graphics::vulkan::ShaderPipeline*>&& shaders)
+		ShaderPipelineMetaFile(v4d::io::FilePath metaFile, std::vector<v4d::graphics::vulkan::ShaderPipelineObject*>&& shaders)
 		: file(metaFile), shaders(shaders), mtime(0) {}
 		
-		ShaderPipelineMetaFile(const std::string& shaderProgram, ShaderPipeline* shaderPipeline)
+		ShaderPipelineMetaFile(const std::string& shaderProgram, ShaderPipelineObject* shaderPipeline)
 		: file(shaderProgram+".meta"), shaders({shaderPipeline}), mtime(0) {}
 		
 		operator const std::vector<ShaderInfo> () const {
@@ -44,20 +44,20 @@ namespace v4d::graphics::vulkan {
 		}
 	};
 
-	class V4DLIB ShaderPipeline {
-		COMMON_OBJECT (ShaderPipeline, VkPipeline)
+	class V4DLIB ShaderPipelineObject {
+		COMMON_OBJECT (ShaderPipelineObject, VkPipeline)
 		
 	protected:
 		ShaderPipelineMetaFile shaderPipelineMetaFile;
 		ShaderProgram shaderProgram;
-		PipelineLayout* pipelineLayout = nullptr;
+		PipelineLayoutObject* pipelineLayout = nullptr;
 	public:
 		int sortIndex = 0;
 	
-		ShaderPipeline(PipelineLayout* pipelineLayout, const char* shaderFile, int sortIndex = 0)
+		ShaderPipelineObject(PipelineLayoutObject* pipelineLayout, const char* shaderFile, int sortIndex = 0)
 		: shaderPipelineMetaFile(shaderFile, this), shaderProgram(shaderPipelineMetaFile), pipelineLayout(pipelineLayout), sortIndex(sortIndex) {}
 		
-		virtual ~ShaderPipeline() = default;
+		virtual ~ShaderPipelineObject() = default;
 		
 		operator ShaderPipelineMetaFile() {
 			return shaderPipelineMetaFile;
@@ -75,11 +75,11 @@ namespace v4d::graphics::vulkan {
 			Create(device);
 		}
 		
-		void SetPipelineLayout(PipelineLayout* layout) {
+		void SetPipelineLayout(PipelineLayoutObject* layout) {
 			this->pipelineLayout = layout;
 		}
 
-		PipelineLayout* GetPipelineLayout() const {
+		PipelineLayoutObject* GetPipelineLayout() const {
 			return pipelineLayout;
 		}
 

@@ -1,8 +1,8 @@
-#include "RasterShaderPipeline.h"
+#include "RasterShaderPipelineObject.h"
 
 using namespace v4d::graphics::vulkan;
 
-void RasterShaderPipeline::SetData(VkBuffer vertexBuffer, VkBuffer indexBuffer, uint32_t indexCount) {
+void RasterShaderPipelineObject::SetData(VkBuffer vertexBuffer, VkBuffer indexBuffer, uint32_t indexCount) {
 	this->vertexBuffer = vertexBuffer;
 	this->indexBuffer = indexBuffer;
 	this->vertexCount = 0;
@@ -11,7 +11,7 @@ void RasterShaderPipeline::SetData(VkBuffer vertexBuffer, VkBuffer indexBuffer, 
 	this->indexOffset = 0;
 }
 
-void RasterShaderPipeline::SetData(VkBuffer vertexBuffer, VkDeviceSize vertexOffset, VkBuffer indexBuffer, VkDeviceSize indexOffset, uint32_t indexCount) {
+void RasterShaderPipelineObject::SetData(VkBuffer vertexBuffer, VkDeviceSize vertexOffset, VkBuffer indexBuffer, VkDeviceSize indexOffset, uint32_t indexCount) {
 	this->vertexBuffer = vertexBuffer;
 	this->indexBuffer = indexBuffer;
 	this->vertexCount = 0;
@@ -20,7 +20,7 @@ void RasterShaderPipeline::SetData(VkBuffer vertexBuffer, VkDeviceSize vertexOff
 	this->indexOffset = indexOffset;
 }
 
-void RasterShaderPipeline::SetData(VkBuffer vertexBuffer, uint32_t vertexCount) {
+void RasterShaderPipelineObject::SetData(VkBuffer vertexBuffer, uint32_t vertexCount) {
 	this->vertexBuffer = vertexBuffer;
 	this->indexBuffer = nullptr;
 	this->vertexCount = vertexCount;
@@ -29,7 +29,7 @@ void RasterShaderPipeline::SetData(VkBuffer vertexBuffer, uint32_t vertexCount) 
 	this->indexOffset = 0;
 }
 
-void RasterShaderPipeline::SetData(uint32_t vertexCount) {
+void RasterShaderPipelineObject::SetData(uint32_t vertexCount) {
 	this->vertexBuffer = nullptr;
 	this->indexBuffer = nullptr;
 	this->vertexCount = vertexCount;
@@ -38,7 +38,7 @@ void RasterShaderPipeline::SetData(uint32_t vertexCount) {
 	this->indexOffset = 0;
 }
 
-void RasterShaderPipeline::Create(Device* device) {
+void RasterShaderPipelineObject::Create(Device* device) {
 	shaderProgram.CreateShaderStages(device);
 	
 	VkPipelineViewportStateCreateInfo viewportState {};
@@ -91,7 +91,7 @@ void RasterShaderPipeline::Create(Device* device) {
 	}
 }
 
-void RasterShaderPipeline::Destroy(Device* device) {
+void RasterShaderPipelineObject::Destroy(Device* device) {
 	dynamicStates.clear();
 	viewports.clear();
 	scissors.clear();
@@ -99,19 +99,19 @@ void RasterShaderPipeline::Destroy(Device* device) {
 	shaderProgram.DestroyShaderStages(device);
 }
 
-void RasterShaderPipeline::Reload(Device* device) {
+void RasterShaderPipelineObject::Reload(Device* device) {
 	device->DestroyPipeline(obj, nullptr);
 	shaderProgram.DestroyShaderStages(device);
 	ReadShaders();
 	Create(device);
 }
 
-void RasterShaderPipeline::Bind(Device* device, VkCommandBuffer cmdBuffer) {
+void RasterShaderPipelineObject::Bind(Device* device, VkCommandBuffer cmdBuffer) {
 	device->CmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj);
 	GetPipelineLayout()->Bind(device, cmdBuffer);
 }
 
-void RasterShaderPipeline::Render(Device* device, VkCommandBuffer cmdBuffer, uint32_t instanceCount) {
+void RasterShaderPipelineObject::Render(Device* device, VkCommandBuffer cmdBuffer, uint32_t instanceCount) {
 	if (vertexBuffer == VK_NULL_HANDLE) {
 		device->CmdDraw(cmdBuffer,
 			vertexCount, // vertexCount
