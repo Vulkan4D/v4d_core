@@ -18,8 +18,8 @@ namespace v4d::graphics::vulkan {
 	
 	class RenderPassObject {
 		COMMON_OBJECT(RenderPassObject, VkRenderPass, V4DLIB)
-		COMMON_OBJECT_DEFAULT_MOVEABLE(RenderPassObject)
-		COMMON_OBJECT_DEFAULT_COPYABLE(RenderPassObject)
+		COMMON_OBJECT_MOVEABLE(RenderPassObject)
+		COMMON_OBJECT_COPYABLE(RenderPassObject)
 	
 		VkRenderPassCreateInfo renderPassInfo {
 			VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,

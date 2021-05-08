@@ -46,8 +46,8 @@ namespace v4d::graphics::vulkan {
 
 	class V4DLIB ShaderPipelineObject {
 		COMMON_OBJECT (ShaderPipelineObject, VkPipeline, V4DLIB)
-		COMMON_OBJECT_DEFAULT_MOVEABLE(ShaderPipelineObject)
-		COMMON_OBJECT_DEFAULT_COPYABLE(ShaderPipelineObject)
+		COMMON_OBJECT_MOVEABLE(ShaderPipelineObject)
+		COMMON_OBJECT_COPYABLE(ShaderPipelineObject)
 		
 	protected:
 		ShaderPipelineMetaFile shaderPipelineMetaFile;

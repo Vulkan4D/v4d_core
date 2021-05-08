@@ -75,7 +75,7 @@ void RasterShaderPipelineObject::Create(Device* device) {
 		pipelineCreateInfo.pDynamicState = nullptr;
 	}
 	
-	pipelineCreateInfo.layout = *GetPipelineLayout();
+	pipelineCreateInfo.layout = GetPipelineLayout()->obj;
 
 	// Fixed functions
 	colorBlending.attachmentCount = colorBlendAttachments.size();

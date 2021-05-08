@@ -17,7 +17,7 @@ void ShaderPipelineObject::Execute(Device* device, VkCommandBuffer cmdBuffer) {
 
 void ShaderPipelineObject::PushConstant(Device* device, VkCommandBuffer cmdBuffer, void* pushConstant, int pushConstantIndex) {
 	auto& pushConstantRange = GetPipelineLayout()->pushConstants[pushConstantIndex];
-	device->CmdPushConstants(cmdBuffer, *GetPipelineLayout(), pushConstantRange.stageFlags, pushConstantRange.offset, pushConstantRange.size, pushConstant);
+	device->CmdPushConstants(cmdBuffer, GetPipelineLayout()->obj, pushConstantRange.stageFlags, pushConstantRange.offset, pushConstantRange.size, pushConstant);
 }
 
 uint ShaderPipelineObject::CompactIVec4ToUint(uint r, uint g, uint b, uint a) {
