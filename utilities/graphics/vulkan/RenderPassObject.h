@@ -16,7 +16,7 @@
 
 namespace v4d::graphics::vulkan {
 	
-	class RenderPassObject {
+	class V4DLIB RenderPassObject {
 		COMMON_OBJECT(RenderPassObject, VkRenderPass, V4DLIB)
 		COMMON_OBJECT_MOVEABLE(RenderPassObject)
 		COMMON_OBJECT_COPYABLE(RenderPassObject)
