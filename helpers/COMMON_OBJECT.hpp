@@ -105,6 +105,8 @@ Usage:
 #include <functional>
 #include <utility>
 #include <algorithm>
+#include <concepts>
+#include <type_traits>
 
 #ifndef _COMMON_OBJECT_FLEXIBLE_PTR_OFFSET_OF_
 	#ifdef COMMON_OBJECTS_ENABLE_FLEXIBLE_PTR_OFFSET
@@ -122,36 +124,37 @@ Usage:
 		UnderlyingClass obj;\
 		static std::mutex mu;\
 		static std::vector<ObjClass*> objs;\
-		template<typename...Args>\
+		template<typename...Args> requires std::is_constructible_v<UnderlyingClass, Args...>\
 		UnderlyingCommonObjectContainer(Args&&...args) : obj(std::forward<Args>(args)...) {\
 			Insert();\
 		}\
 		void Insert() {\
+			ObjClass* ptr;\
 			constexpr int64_t _ptrOffset = _COMMON_OBJECT_FLEXIBLE_PTR_OFFSET_OF_(ObjClass, obj);\
-			std::lock_guard lock(mu);\
 			if constexpr (_ptrOffset == 0)\
-				objs.emplace_back(reinterpret_cast<ObjClass*>(this));\
+				ptr = reinterpret_cast<ObjClass*>(this);\
 			else\
-				objs.emplace_back(reinterpret_cast<ObjClass*>( reinterpret_cast<char*>(this) - _ptrOffset ));\
+				ptr = reinterpret_cast<ObjClass*>( reinterpret_cast<char*>(this) - _ptrOffset );\
+			std::lock_guard lock(mu);\
+			if (std::count(objs.begin(), objs.end(), ptr) == 0) objs.emplace_back(ptr);\
 		}\
 		void Erase() {\
+			ObjClass* ptr;\
 			constexpr int64_t _ptrOffset = _COMMON_OBJECT_FLEXIBLE_PTR_OFFSET_OF_(ObjClass, obj);\
-			std::lock_guard lock(mu);\
 			if constexpr (_ptrOffset == 0)\
-				std::erase(objs, reinterpret_cast<ObjClass*>(this));\
+				ptr = reinterpret_cast<ObjClass*>(this);\
 			else\
-				std::erase(objs, reinterpret_cast<ObjClass*>( reinterpret_cast<char*>(this) - _ptrOffset ));\
+				ptr = reinterpret_cast<ObjClass*>( reinterpret_cast<char*>(this) - _ptrOffset );\
+			std::lock_guard lock(mu);\
+			std::erase(objs, ptr);\
 		}\
 		~UnderlyingCommonObjectContainer() {Erase();}\
 		public:\
-		template<typename T>\
-		UnderlyingClass& operator=(const T& other) {return obj = other;}\
-		template<typename T>\
-		UnderlyingClass& operator=(T&& other) {return obj = std::move(other);}\
+		UnderlyingClass& operator=(const UnderlyingClass& other) {return obj = other;}\
 		UnderlyingClass* operator->() {return &obj;}\
 		operator UnderlyingClass&() {return obj;}\
 		operator UnderlyingClass*() {return &obj;}\
-		explicit UnderlyingCommonObjectContainer(UnderlyingCommonObjectContainer&& other) {*this = std::move(other);}\
+		UnderlyingCommonObjectContainer(UnderlyingCommonObjectContainer&& other) {*this = std::move(other);}\
 		UnderlyingCommonObjectContainer& operator= (UnderlyingCommonObjectContainer&& other) {\
 			if (this != &other) {\
 				obj = std::move(other.obj);\
@@ -160,7 +163,7 @@ Usage:
 			}\
 			return *this;\
 		}\
-		explicit UnderlyingCommonObjectContainer(const UnderlyingCommonObjectContainer& other) {*this = other;}\
+		UnderlyingCommonObjectContainer(const UnderlyingCommonObjectContainer& other) {*this = other;}\
 		UnderlyingCommonObjectContainer& operator= (const UnderlyingCommonObjectContainer& other) {\
 			if (this != &other) {\
 				obj = other.obj;\
@@ -169,10 +172,10 @@ Usage:
 			return *this;\
 		}\
 	} obj;\
-	template<typename...Args>\
+	template<typename...Args> requires std::is_constructible_v<UnderlyingClass, Args...>\
 	ObjClass(Args&&...args) : obj(std::forward<Args>(args)...) {}\
-	ObjClass& operator=(const UnderlyingClass& other) {obj.obj = other; return *this;}\
-	ObjClass& operator=(UnderlyingClass&& other) {obj.obj = std::move(other); return *this;}\
+	ObjClass& operator=(const UnderlyingClass& other) {obj = other; return *this;}\
+	ObjClass& operator=(UnderlyingClass&& other) {obj = std::move(other); return *this;}\
 	UnderlyingClass* operator->() {return &obj.obj;}\
 	operator UnderlyingClass&() {return obj.obj;}\
 	operator UnderlyingClass*() {return &obj.obj;}\
@@ -199,25 +202,29 @@ Usage:
 		}\
 	}
 
-#define COMMON_OBJECT_CLASS(ObjClass, UnderlyingClass, .../* may optionally have a 3rd argument with either __declspec(dllexport) or __declspec(dllimport) */) \
-	class ObjClass {COMMON_OBJECT(ObjClass, UnderlyingClass, __VA_ARGS__)};
-
 #define COMMON_OBJECT_MOVEABLE(ObjClass)\
-	explicit ObjClass(ObjClass&& other) = default;\
+	ObjClass(ObjClass&& other) = default;\
 	ObjClass& operator= (ObjClass&& other) = default;
 
 #define COMMON_OBJECT_COPYABLE(ObjClass)\
-	explicit ObjClass(const ObjClass& other) = default;\
+	ObjClass(const ObjClass& other) = default;\
 	ObjClass& operator= (const ObjClass& other) = default;
 	
 #define COMMON_OBJECT_NOT_MOVEABLE(ObjClass)\
-	explicit ObjClass(ObjClass&& other) = delete;\
+	ObjClass(ObjClass&& other) = delete;\
 	ObjClass& operator= (ObjClass&& other) = delete;
 
 #define COMMON_OBJECT_NOT_COPYABLE(ObjClass)\
-	explicit ObjClass(const ObjClass& other) = delete;\
+	ObjClass(const ObjClass& other) = delete;\
 	ObjClass& operator= (const ObjClass& other) = delete;
 	
+#define COMMON_OBJECT_CLASS(ObjClass, UnderlyingClass, .../* may optionally have a 3rd argument with either __declspec(dllexport) or __declspec(dllimport) */) \
+	class ObjClass {\
+		COMMON_OBJECT(ObjClass, UnderlyingClass, __VA_ARGS__)\
+		COMMON_OBJECT_MOVEABLE(ObjClass)\
+		COMMON_OBJECT_COPYABLE(ObjClass)\
+	};
+
 #define COMMON_OBJECT_CPP(ObjClass, UnderlyingClass) \
 	std::mutex ObjClass::UnderlyingCommonObjectContainer::mu {};\
 	std::vector<ObjClass*> ObjClass::UnderlyingCommonObjectContainer::objs {};

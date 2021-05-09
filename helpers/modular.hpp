@@ -129,6 +129,10 @@ namespace v4d::modular {
 			}\
 		}\
 	}\
+	size_t moduleClassName::Count() {\
+		std::lock_guard lock(_mutexForLoadedModules);\
+		return _loadedModules.size();\
+	}\
 	void moduleClassName::ForEachModule(const callback&& func) {\
 		std::lock_guard lock(_mutexForLoadedModules);\
 		for (auto[mod, modulePtr] : _loadedModules) {\
@@ -218,6 +222,7 @@ namespace v4d::modular {
 		static moduleClassName* LoadModule(const std::string& mod, bool triggerErrorOnFailure = false);\
 		static moduleClassName* GetModule(const std::string& mod);\
 		static void UnloadModule(const std::string& mod);\
+		static size_t Count();\
 		static void ForEachModule(const callback&& func);\
 		static void ForEachSortedModule(const callback&& func, const std::string& sortedListKey = "");\
 		static void SortModules(const std::function<bool(moduleClassName*, moduleClassName*)>& func, const std::string& sortedListKey = "");\

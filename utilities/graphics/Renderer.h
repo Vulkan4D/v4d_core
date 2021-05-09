@@ -109,7 +109,7 @@ namespace v4d::graphics {
 		// Synchronized frame execution
 		std::mutex frameSyncMutex;
 		std::queue<std::function<void()>> syncQueue {};
-		std::unique_ptr<std::thread> shaderWatcherThread = nullptr;
+		std::vector<std::unique_ptr<std::thread>> shaderWatcherThreads {};
 		
 		// // Descriptor sets
 		// VkDescriptorPool descriptorPool;
@@ -160,7 +160,7 @@ namespace v4d::graphics {
 			CommandBufferObject::ForEach([this](CommandBufferObject*o){o->Allocate(renderingDevice);});
 		}
 		virtual void DestroyCommandBuffers() {
-			CommandBufferObject::ForEach([this](CommandBufferObject*o){o->Free(renderingDevice);});
+			CommandBufferObject::ForEach([this](CommandBufferObject*o){o->Free();});
 		}
 		// Synchronization objects
 		virtual void CreateSyncObjects() {
@@ -168,22 +168,22 @@ namespace v4d::graphics {
 			FenceObject::ForEach([this](FenceObject*o){o->Create(renderingDevice);});
 		}
 		virtual void DestroySyncObjects() {
-			SemaphoreObject::ForEach([this](SemaphoreObject*o){o->Destroy(renderingDevice);});
-			FenceObject::ForEach([this](FenceObject*o){o->Destroy(renderingDevice);});
+			SemaphoreObject::ForEach([this](SemaphoreObject*o){o->Destroy();});
+			FenceObject::ForEach([this](FenceObject*o){o->Destroy();});
 		}
 		// Pipeline layouts
 		virtual void CreatePipelineLayouts() {
 			PipelineLayoutObject::ForEach([this](PipelineLayoutObject*o){o->Create(renderingDevice);});
 		}
 		virtual void DestroyPipelineLayouts() {
-			PipelineLayoutObject::ForEach([this](PipelineLayoutObject*o){o->Destroy(renderingDevice);});
+			PipelineLayoutObject::ForEach([this](PipelineLayoutObject*o){o->Destroy();});
 		}
 		// Shader Pipelines
 		virtual void CreateShaderPipelines() {
 			ShaderPipelineObject::ForEach([this](ShaderPipelineObject*o){o->Create(renderingDevice);});
 		}
 		virtual void DestroyShaderPipelines() {
-			ShaderPipelineObject::ForEach([this](ShaderPipelineObject*o){o->Destroy(renderingDevice);});
+			ShaderPipelineObject::ForEach([this](ShaderPipelineObject*o){o->Destroy();});
 		}
 		virtual void ReadShaders() {
 			ShaderPipelineObject::ForEach([](ShaderPipelineObject*o){o->ReadShaders();});
@@ -203,8 +203,9 @@ namespace v4d::graphics {
 		struct FrameBufferedObject {
 			std::array<T, NB_FRAMES_IN_FLIGHT> objArray;
 			T& operator[](size_t i) {return objArray[i];}
-			FrameBufferedObject() {
-				for (auto& obj : objArray) obj = {};
+			template<typename...Args> requires std::is_constructible_v<T, Args...>
+			FrameBufferedObject(Args&&...args) {
+				objArray.fill({std::forward<Args>(args)...});
 			}
 		};
 		

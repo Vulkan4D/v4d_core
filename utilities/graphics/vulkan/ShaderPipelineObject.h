@@ -55,6 +55,7 @@ namespace v4d::graphics::vulkan {
 		PipelineLayoutObject* pipelineLayout = nullptr;
 	public:
 		int sortIndex = 0;
+		Device* device = nullptr;
 	
 		ShaderPipelineObject(PipelineLayoutObject* pipelineLayout, const char* shaderFile, int sortIndex = 0)
 		: shaderPipelineMetaFile(shaderFile, this), shaderProgram(shaderPipelineMetaFile), pipelineLayout(pipelineLayout), sortIndex(sortIndex) {}
@@ -70,9 +71,10 @@ namespace v4d::graphics::vulkan {
 		}
 		
 		virtual void Create(Device*) = 0;
-		virtual void Destroy(Device*) = 0;
-		virtual void Reload(Device* device) {
-			Destroy(device);
+		virtual void Destroy() = 0;
+		virtual void Reload() {
+			assert(device);
+			Destroy();
 			shaderProgram.ReadShaders();
 			Create(device);
 		}
@@ -86,11 +88,11 @@ namespace v4d::graphics::vulkan {
 		}
 
 		// Execute() will call Bind() and Render() automatically
-		virtual void Execute(Device* device, VkCommandBuffer cmdBuffer, uint32_t instanceCount, void* pushConstant, int pushConstantIndex = 0);
-		virtual void Execute(Device* device, VkCommandBuffer cmdBuffer);
+		virtual void Execute(VkCommandBuffer cmdBuffer, uint32_t instanceCount, void* pushConstant, int pushConstantIndex = 0);
+		virtual void Execute(VkCommandBuffer cmdBuffer);
 		
 		// sends a push constant to the shader now
-		void PushConstant(Device* device, VkCommandBuffer cmdBuffer, void* pushConstant, int pushConstantIndex = 0);
+		void PushConstant(VkCommandBuffer cmdBuffer, void* pushConstant, int pushConstantIndex = 0);
 			
 		static uint CompactIVec4ToUint(uint r, uint g, uint b, uint a);
 		static uint CompactVec4ToUint(float r, float g, float b, float a);
@@ -101,10 +103,10 @@ namespace v4d::graphics::vulkan {
 	protected:
 		
 		// binds the pipeline (to be implemented in child classes)
-		virtual void Bind(Device*, VkCommandBuffer) = 0;
+		virtual void Bind(VkCommandBuffer) = 0;
 		
 		// issues the draw calls (to be implemented in child classes)
-		virtual void Render(Device*, VkCommandBuffer, uint32_t instanceCount) = 0;
+		virtual void Render(VkCommandBuffer, uint32_t instanceCount) = 0;
 		
 	};
 	

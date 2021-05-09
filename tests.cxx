@@ -15,6 +15,7 @@
 #include "utilities/io/Socket.cxx"
 #include "utilities/graphics/VulkanInstance.cxx"
 #include "helpers/EntityComponentSystem.cxx"
+#include "helpers/COMMON_OBJECT.cxx"
 
 #define RUN_UNIT_TESTS(funcName, ...) { LOG("Running tests for " << #funcName << " ..."); result += funcName(__VA_ARGS__); if (result != 0) { LOG_ERROR("UNIT TESTS FAILED"); return result; } }
 #define START_UNIT_TESTS using namespace v4d::tests; int main() { LOG("Started unit tests"); int result = 0; { if (!v4d::Init()) return -1;
@@ -39,6 +40,7 @@ namespace v4d::tests {
 			RUN_UNIT_TESTS( Networking )
 			RUN_UNIT_TESTS( VulkanInstance )
 			RUN_UNIT_TESTS( EntityComponentSystem )
+			RUN_UNIT_TESTS( CommonObjects )
 
 		}
 		LOG_SUCCESS("V4D_CORE tests PASSED");

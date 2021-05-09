@@ -128,23 +128,26 @@ namespace v4d::graphics::vulkan {
 		inline std::unordered_map<VkQueueFlags, std::vector<Queue>>& GetQueues() {return queues;}
 		
 		inline Queue& GetPresentQueue(uint index = 0) {
+			if (index >= queues[0].size()) index = 0;
 			return queues[0][index];
 		}
 		
 		inline Queue& GetQueue(VkQueueFlags flags, uint index = 0) {
+			if (!queues.contains(flags)) flags = VK_QUEUE_GRAPHICS_BIT;
+			if (index >= queues[flags].size()) index = 0;
 			return queues[flags][index];
 		}
 		
 		inline Queue& GetGraphicsQueue(uint index = 0) {
-			return queues[VK_QUEUE_GRAPHICS_BIT][index];
+			return GetQueue(VK_QUEUE_GRAPHICS_BIT, index);
 		}
 		
 		inline Queue& GetTransferQueue(uint index = 0) {
-			return queues[VK_QUEUE_TRANSFER_BIT][index];
+			return GetQueue(VK_QUEUE_TRANSFER_BIT, index);
 		}
 		
 		inline Queue& GetComputeQueue(uint index = 0) {
-			return queues[VK_QUEUE_COMPUTE_BIT][index];
+			return GetQueue(VK_QUEUE_COMPUTE_BIT, index);
 		}
 
 		// overloads native vulkan command with different arguments

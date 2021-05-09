@@ -4,18 +4,21 @@ using namespace v4d::graphics::vulkan;
 
 COMMON_OBJECT_CPP (ShaderPipelineObject, VkPipeline)
 
-void ShaderPipelineObject::Execute(Device* device, VkCommandBuffer cmdBuffer, uint32_t instanceCount, void* pushConstant, int pushConstantIndex) {
-	Bind(device, cmdBuffer);
-	if (pushConstant) PushConstant(device, cmdBuffer, pushConstant, pushConstantIndex);
-	Render(device, cmdBuffer, instanceCount);
+void ShaderPipelineObject::Execute(VkCommandBuffer cmdBuffer, uint32_t instanceCount, void* pushConstant, int pushConstantIndex) {
+	assert(device);
+	Bind(cmdBuffer);
+	if (pushConstant) PushConstant(cmdBuffer, pushConstant, pushConstantIndex);
+	Render(cmdBuffer, instanceCount);
 }
 
-void ShaderPipelineObject::Execute(Device* device, VkCommandBuffer cmdBuffer) {
-	Bind(device, cmdBuffer);
-	Render(device, cmdBuffer, 1);
+void ShaderPipelineObject::Execute(VkCommandBuffer cmdBuffer) {
+	assert(device);
+	Bind(cmdBuffer);
+	Render(cmdBuffer, 1);
 }
 
-void ShaderPipelineObject::PushConstant(Device* device, VkCommandBuffer cmdBuffer, void* pushConstant, int pushConstantIndex) {
+void ShaderPipelineObject::PushConstant(VkCommandBuffer cmdBuffer, void* pushConstant, int pushConstantIndex) {
+	assert(device);
 	auto& pushConstantRange = GetPipelineLayout()->pushConstants[pushConstantIndex];
 	device->CmdPushConstants(cmdBuffer, GetPipelineLayout()->obj, pushConstantRange.stageFlags, pushConstantRange.offset, pushConstantRange.size, pushConstant);
 }

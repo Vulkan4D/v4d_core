@@ -131,15 +131,50 @@ namespace v4d::graphics::vulkan {
 		using ShaderPipelineObject::ShaderPipelineObject;
 		
 		// set what data to draw
-		void SetData(VkBuffer vertexBuffer, VkBuffer indexBuffer, uint32_t indexCount);
-		void SetData(VkBuffer vertexBuffer, VkDeviceSize vertexOffset, VkBuffer indexBuffer, VkDeviceSize indexOffset, uint32_t indexCount);
-		void SetData(VkBuffer vertexBuffer, uint32_t vertexCount);
-		void SetData(uint32_t vertexCount);
+		void SetData(VkBuffer vertexBuffer, VkBuffer indexBuffer, uint32_t indexCount) {
+			this->vertexBuffer = vertexBuffer;
+			this->indexBuffer = indexBuffer;
+			this->vertexCount = 0;
+			this->vertexOffset = 0;
+			this->indexCount = indexCount;
+			this->indexOffset = 0;
+		}
+		void SetData(VkBuffer vertexBuffer, VkDeviceSize vertexOffset, VkBuffer indexBuffer, VkDeviceSize indexOffset, uint32_t indexCount) {
+			this->vertexBuffer = vertexBuffer;
+			this->indexBuffer = indexBuffer;
+			this->vertexCount = 0;
+			this->vertexOffset = vertexOffset;
+			this->indexCount = indexCount;
+			this->indexOffset = indexOffset;
+		}
+		void SetData(VkBuffer vertexBuffer, uint32_t vertexCount) {
+			this->vertexBuffer = vertexBuffer;
+			this->indexBuffer = nullptr;
+			this->vertexCount = vertexCount;
+			this->vertexOffset = 0;
+			this->indexCount = 0;
+			this->indexOffset = 0;
+		}
+		void SetData(uint32_t vertexCount) {
+			this->vertexBuffer = nullptr;
+			this->indexBuffer = nullptr;
+			this->vertexCount = vertexCount;
+			this->vertexOffset = 0;
+			this->indexCount = 0;
+			this->indexOffset = 0;
+		}
 
 		virtual void Create(Device* device) override;
-		virtual void Destroy(Device* device) override;
-		virtual void Reload(Device* device) override;
+		virtual void Destroy() override;
 		
+		void Reload() {
+			assert(device);
+			device->DestroyPipeline(obj, nullptr);
+			shaderProgram.DestroyShaderStages(device);
+			ReadShaders();
+			Create(device);
+		}
+
 		void SetViewport(SwapChain* swapChain) {
 			pipelineCreateInfo.pViewportState = &swapChain->viewportState;
 		}
@@ -189,8 +224,12 @@ namespace v4d::graphics::vulkan {
 		}
 		
 		// these two methods are called automatically by Execute() from the parent class
-		virtual void Bind(Device* device, VkCommandBuffer cmdBuffer) override;
-		virtual void Render(Device* device, VkCommandBuffer cmdBuffer, uint32_t instanceCount = 1) override;
+		virtual void Bind(VkCommandBuffer cmdBuffer) override {
+			assert(device);
+			device->CmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj);
+			GetPipelineLayout()->Bind(cmdBuffer);
+		}
+		virtual void Render(VkCommandBuffer cmdBuffer, uint32_t instanceCount = 1) override;
 	};
 	
 }

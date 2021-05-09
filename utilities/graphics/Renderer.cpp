@@ -236,15 +236,15 @@ void Renderer::DestroySwapChain() {
 #pragma region Init/Load/Reset Methods
 
 void Renderer::WatchModifiedShadersForReload(const std::vector<ShaderPipelineMetaFile>& shaderWatchers) {
-	shaderWatcherThread = std::make_unique<std::thread>([watchers=shaderWatchers,this]() mutable {
+	shaderWatcherThreads.emplace_back(std::make_unique<std::thread>([watchers=shaderWatchers,this]() mutable {
 		while (state != STATE::NONE) {
 			for (auto& watcher : watchers) {
 				if (watcher.mtime == 0) {
 					watcher.mtime = watcher.file.GetLastWriteTime();
 				} else if (watcher.file.GetLastWriteTime() > watcher.mtime) {
 					watcher.mtime = 0;
-					RunSynchronized([watcher, renderingDevice=renderingDevice](){
-						for (auto& s : watcher.shaders) s->Reload(renderingDevice);
+					RunSynchronized([watcher](){
+						for (auto& s : watcher.shaders) s->Reload();
 					});
 					break;
 				}
@@ -252,7 +252,7 @@ void Renderer::WatchModifiedShadersForReload(const std::vector<ShaderPipelineMet
 			SLEEP(100ms)
 		}
 		
-	});
+	}));
 }
 
 void Renderer::RecreateSwapChain() {
@@ -454,7 +454,7 @@ bool Renderer::EndFrame(const std::vector<VkSemaphore>& waitSemaphores) {
 		throw std::runtime_error(std::string("Failed to present: ") + GetVkResultText(result));
 	}
 	
-	currentFrame %= NB_FRAMES_IN_FLIGHT;
+	currentFrame = (currentFrame+1) % NB_FRAMES_IN_FLIGHT;
 	
 	return true;
 }
@@ -471,8 +471,11 @@ Renderer::~Renderer() {
 	if (surface) {
 		DestroySurfaceKHR(surface, nullptr);
 	}
-	if (shaderWatcherThread && shaderWatcherThread->joinable()) {
-		shaderWatcherThread->join();
+	for (auto& shaderWatcherThread : shaderWatcherThreads) {
+		if (shaderWatcherThread && shaderWatcherThread->joinable()) {
+			shaderWatcherThread->join();
+			shaderWatcherThread.reset();
+		}
 	}
 }
 

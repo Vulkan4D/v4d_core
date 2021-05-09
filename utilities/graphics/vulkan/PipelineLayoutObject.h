@@ -23,23 +23,39 @@ namespace v4d::graphics::vulkan {
 		std::vector<VkDescriptorSet> vkDescriptorSets {};
 		std::vector<VkPushConstantRange> pushConstants {};
 
-		std::vector<VkDescriptorSetLayout>* GetDescriptorSetLayouts();
+		Device* device = nullptr;
 
 		void Create(Device* device);
-		void Destroy(Device* device);
+		void Destroy();
 		
-		// void AddDescriptorSet(DescriptorSet* descriptorSet);
-		
-		int AddPushConstant(const VkPushConstantRange&);
+		// void AddDescriptorSet(DescriptorSet* descriptorSet) {
+		// 	descriptorSets.push_back(descriptorSet);
+		// }
+
+		int AddPushConstant(const VkPushConstantRange& pushConstant) {
+			int newIndex = pushConstants.size();
+			pushConstants.push_back(pushConstant);
+			return newIndex;
+		}
 		template<class T>
 		int AddPushConstant(VkShaderStageFlags flags) {
 			return AddPushConstant({flags, 0, sizeof(T)});
 		}
 		
-		// clears descriptor sets and push constants
-		void Reset();
-		
-		void Bind(Device* device, VkCommandBuffer commandBuffer, VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS);
+		std::vector<VkDescriptorSetLayout>* GetDescriptorSetLayouts() {
+			return &layouts;
+		}
+
+		void Bind(VkCommandBuffer commandBuffer, VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS) {
+			assert(device);
+			if (vkDescriptorSets.size() > 0) 
+				device->CmdBindDescriptorSets(commandBuffer, bindPoint, obj, 0, (uint)vkDescriptorSets.size(), vkDescriptorSets.data(), 0, nullptr);
+		}
+
+		void Reset() {
+			// descriptorSets.clear();
+			pushConstants.clear();
+		}
 		
 	};
 }

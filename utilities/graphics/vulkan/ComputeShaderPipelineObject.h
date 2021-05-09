@@ -24,14 +24,25 @@ namespace v4d::graphics::vulkan {
 		using ShaderPipelineObject::ShaderPipelineObject;
 		
 		virtual void Create(Device* device) override;
-		virtual void Destroy(Device* device) override;
+		virtual void Destroy() override;
 		
-		void SetGroupCounts(uint32_t x, uint32_t y, uint32_t z);
+		void SetGroupCounts(uint32_t x, uint32_t y, uint32_t z) {
+			groupCountX = x;
+			groupCountY = y;
+			groupCountZ = z;
+		}
 		
 	protected:
 		// these two methods are called automatically by Execute() from the parent class
-		virtual void Bind(Device* device, VkCommandBuffer cmdBuffer) override;
-		virtual void Render(Device* device, VkCommandBuffer cmdBuffer, uint32_t _unused_arg_ = 0) override;
+		virtual void Bind(VkCommandBuffer cmdBuffer) override {
+			assert(device);
+			device->CmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, obj);
+			device->CmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, GetPipelineLayout()->obj, 0, GetPipelineLayout()->vkDescriptorSets.size(), GetPipelineLayout()->vkDescriptorSets.data(), 0, nullptr);
+		}
+		virtual void Render(VkCommandBuffer cmdBuffer, uint32_t /*unused_arg*/ = 0) {
+			assert(device);
+			device->CmdDispatch(cmdBuffer, groupCountX, groupCountY, groupCountZ);
+		}
 	};
 	
 }
