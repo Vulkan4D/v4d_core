@@ -16,7 +16,7 @@
 
 // Config
 #include "../v4dconfig.hh"
-#ifndef _V4D_CORE
+#if defined(_V4D_APP) || defined(_V4D_GAME)
 	#include "../../config.hh"
 #endif
 
@@ -90,7 +90,7 @@
 #include "Core.h"
 #include "utilities/io/Logger.h"
 
-#if defined(_V4D_PROJECT)
+#if defined(_V4D_APP)
 	// Initial source code for the Project (App or Game)
 	namespace v4d {
 		bool CheckCoreVersion() {

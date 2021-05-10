@@ -66,12 +66,46 @@ namespace v4d::graphics {
 	
 	class V4DLIB Renderer : public Instance {
 	protected:
+	
 		// Main Render Surface
 		VkSurfaceKHR surface;
-
+		
+		// Synchronized frame execution
+		std::mutex frameSyncMutex;
+		std::queue<std::function<void()>> syncQueue {};
+		std::vector<std::unique_ptr<std::thread>> shaderWatcherThreads {};
+		
+		std::vector<const char*> requiredDeviceExtensions {
+			VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+			#ifdef V4D_VULKAN_USE_VMA
+				VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+				VK_KHR_BIND_MEMORY_2_EXTENSION_NAME,
+			#endif
+		};
+		std::vector<const char*> optionalDeviceExtensions {};
+		std::vector<const char*> deviceExtensions {};
+		std::unordered_map<std::string, bool> enabledDeviceExtensions {};
+		
+	public:
+	
 		// Main Graphics Card
 		PhysicalDevice* renderingPhysicalDevice = nullptr;
 		Device* renderingDevice = nullptr;
+		
+		// Swap Chains
+		SwapChain* swapChain = nullptr;
+		uint32_t swapChainImageIndex;
+		static constexpr int NB_FRAMES_IN_FLIGHT = V4D_RENDERER_FRAMEBUFFERS_MAX_FRAMES;
+		uint32_t currentFrame = 0;
+		std::vector<VkPresentModeKHR> preferredPresentModes {
+			VK_PRESENT_MODE_MAILBOX_KHR,	// TripleBuffering (No Tearing, low latency)
+			VK_PRESENT_MODE_IMMEDIATE_KHR,	// VSync OFF (With Tearing, no latency)
+			VK_PRESENT_MODE_FIFO_KHR,	// VSync ON (No Tearing, more latency)
+		};
+		std::vector<VkSurfaceFormatKHR> preferredFormats {
+			{VK_FORMAT_R16G16B16A16_SFLOAT, VK_COLOR_SPACE_HDR10_HLG_EXT},
+			// {VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR},
+		};
 		
 		std::vector<DeviceQueueInfo> queuesInfo {
 			{
@@ -88,28 +122,8 @@ namespace v4d::graphics {
 			// },
 		};
 
-		// Swap Chains
-		SwapChain* swapChain = nullptr;
-		uint32_t swapChainImageIndex;
-		static constexpr int NB_FRAMES_IN_FLIGHT = V4D_RENDERER_FRAMEBUFFERS_MAX_FRAMES;
-		uint32_t currentFrame = 0;
-		std::vector<VkPresentModeKHR> preferredPresentModes {
-			VK_PRESENT_MODE_MAILBOX_KHR,	// TripleBuffering (No Tearing, low latency)
-			VK_PRESENT_MODE_IMMEDIATE_KHR,	// VSync OFF (With Tearing, no latency)
-			VK_PRESENT_MODE_FIFO_KHR,	// VSync ON (No Tearing, more latency)
-		};
-		std::vector<VkSurfaceFormatKHR> preferredFormats {
-			{VK_FORMAT_R16G16B16A16_SFLOAT, VK_COLOR_SPACE_HDR10_HLG_EXT},
-			// {VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR},
-		};
-		
 		// State
 		enum class STATE {NONE = 0, INITIALIZED, UNLOADED, LOADED, RUNNING} state = STATE::NONE;
-		
-		// Synchronized frame execution
-		std::mutex frameSyncMutex;
-		std::queue<std::function<void()>> syncQueue {};
-		std::vector<std::unique_ptr<std::thread>> shaderWatcherThreads {};
 		
 		// // Descriptor sets
 		// VkDescriptorPool descriptorPool;
@@ -120,17 +134,7 @@ namespace v4d::graphics {
 		static std::unordered_map<std::string, uint32_t> sbtOffsets;
 
 	public: // Device Extensions and features
-		std::vector<const char*> requiredDeviceExtensions {
-			VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-			#ifdef V4D_VULKAN_USE_VMA
-				VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
-				VK_KHR_BIND_MEMORY_2_EXTENSION_NAME,
-			#endif
-		};
-		std::vector<const char*> optionalDeviceExtensions {};
-		std::vector<const char*> deviceExtensions {};
-		std::unordered_map<std::string, bool> enabledDeviceExtensions {};
-		
+	
 		void RequiredDeviceExtension(const char* ext) {
 			requiredDeviceExtensions.push_back(std::move(ext));
 		}
@@ -143,7 +147,8 @@ namespace v4d::graphics {
 			return enabledDeviceExtensions.find(ext) != enabledDeviceExtensions.end();
 		}
 
-	public: // Pure virtual methods
+	protected: // Pure virtual methods
+	
 		virtual void ConfigureDeviceExtensions() = 0;
 		virtual void ScorePhysicalDeviceSelection(int& score, PhysicalDevice*) = 0;
 		virtual void ConfigureDeviceFeatures(PhysicalDevice::DeviceFeatures* deviceFeaturesToEnable, const PhysicalDevice::DeviceFeatures* availableDeviceFeatures) = 0;
@@ -196,9 +201,8 @@ namespace v4d::graphics {
 			RenderPassObject::ForEach([](RenderPassObject*o){o->Destroy();});
 		}
 		
+	public:
 		
-	protected: // Helper classes
-
 		template<class T>
 		struct FrameBufferedObject {
 			std::array<T, NB_FRAMES_IN_FLIGHT> objArray;
@@ -246,7 +250,6 @@ namespace v4d::graphics {
 		};
 		
 		
-		
 	protected: // Virtual INIT Methods
 
 		virtual void CreateDevices();
@@ -282,21 +285,13 @@ namespace v4d::graphics {
 			CheckVkResult("Reset Fence", renderingDevice->ResetFences(1, &fence));
 		}
 		
-		void RecordAndSubmitCommandBuffer(
-			const VkCommandBuffer& commandBuffer,
-			const std::function<void(VkCommandBuffer)>& commandsToRecord,
-			const std::vector<VkSemaphore>& waitSemaphores = {},
-			const std::vector<VkPipelineStageFlags>& waitStages = {},
-			const std::vector<VkSemaphore>& signalSemaphores = {},
-			const VkFence& triggerFence = VK_NULL_HANDLE
-		);
-		
 		// Present
 		bool EndFrame(const std::vector<VkSemaphore>& waitSemaphores = {});
 		
-	public: // Sync methods
 		// virtual void UpdateDescriptorSets();
 		// virtual void UpdateDescriptorSet(DescriptorSet* set, const std::vector<uint32_t>& bindings = {});
+		
+	public: // Sync methods
 		
 		/** This is NOT for use every frame, it WILL cause stuttering.
 		 *	Typical use case is for hot-reloading shaders or re-create pipelines when things change drastically.
@@ -307,8 +302,17 @@ namespace v4d::graphics {
 			syncQueue.emplace(std::move(func));
 		}
 
-	public: // Helper methods
+	public: // Commands
 	
+		void RecordAndSubmitCommandBuffer(
+			const VkCommandBuffer& commandBuffer,
+			const std::function<void(VkCommandBuffer)>& commandsToRecord,
+			const std::vector<VkSemaphore>& waitSemaphores = {},
+			const std::vector<VkPipelineStageFlags>& waitStages = {},
+			const std::vector<VkSemaphore>& signalSemaphores = {},
+			const VkFence& triggerFence = VK_NULL_HANDLE
+		);
+		
 		VkCommandBuffer BeginSingleTimeCommands(const Queue& queue) {
 			return renderingDevice->BeginSingleTimeCommands(queue);
 		}

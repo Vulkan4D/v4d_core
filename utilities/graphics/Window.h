@@ -30,12 +30,14 @@ namespace v4d::graphics {
 		std::map<std::string, std::function<void(int,int,int)>> mouseButtonCallbacks {};
 		std::map<std::string, std::function<void(double,double)>> scrollCallbacks {};
 		std::map<std::string, std::function<void(unsigned int)>> charCallbacks {};
+		std::map<std::string, std::function<void()>> windowCloseCallbacks {};
 
 		static void ResizeCallback(GLFWwindow* handle, int newWidth, int newHeight);
 		static void KeyCallback(GLFWwindow* handle, int key, int scancode, int action, int mods);
 		static void MouseButtonCallback(GLFWwindow* handle, int button, int action, int mods);
 		static void ScrollCallback(GLFWwindow* handle, double x, double y);
 		static void CharCallback(GLFWwindow* handle, unsigned int c);
+		static void WindowCloseCallback(GLFWwindow* handle);
 
 		static int GetNextIndex();
 
@@ -64,6 +66,9 @@ namespace v4d::graphics {
 		
 		void AddCharCallback(std::string name, std::function<void(unsigned int)>&& callback);
 		void RemoveCharCallback(std::string name);
+		
+		void AddWindowCloseCallback(std::string name, std::function<void()>&& callback);
+		void RemoveWindowCloseCallback(std::string name);
 		
 		bool IsActive();
 

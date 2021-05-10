@@ -64,6 +64,13 @@ void Window::CharCallback(GLFWwindow* handle, unsigned int c) {
 	}
 }
 
+void Window::WindowCloseCallback(GLFWwindow* handle) {
+	auto window = reinterpret_cast<Window*>(glfwGetWindowUserPointer(handle));
+	for (auto&[name, callback] : window->windowCloseCallbacks) {
+		callback();
+	}
+}
+
 Window::Window(const std::string& title, int width, int height, GLFWmonitor* monitor, GLFWwindow* share) : index(GetNextIndex()), width(width), height(height) {
 	if (windows.size() == 0) ActivateWindowSystem();
 	windows.emplace(index, this);
@@ -74,6 +81,7 @@ Window::Window(const std::string& title, int width, int height, GLFWmonitor* mon
 	glfwSetMouseButtonCallback(handle, MouseButtonCallback);
 	glfwSetScrollCallback(handle, ScrollCallback);
 	glfwSetCharCallback(handle, CharCallback);
+	glfwSetWindowCloseCallback(handle, WindowCloseCallback);
 }
 
 Window::~Window() {
@@ -140,6 +148,15 @@ void Window::AddCharCallback(std::string name, std::function<void(unsigned int)>
 void Window::RemoveCharCallback(std::string name) {
 	charCallbacks.erase(name);
 }
+
+void Window::AddWindowCloseCallback(std::string name, std::function<void()>&& callback) {
+	windowCloseCallbacks[name] = std::forward<std::function<void()>>(callback);
+}
+
+void Window::RemoveWindowCloseCallback(std::string name) {
+	windowCloseCallbacks.erase(name);
+}
+
 
 bool Window::IsActive() {
 	return !glfwWindowShouldClose(handle);

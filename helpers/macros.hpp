@@ -74,11 +74,12 @@
 #define STATIC_CLASS_INSTANCES_CPP(key, className, ...) { \
 	static std::mutex staticMu; \
 	std::lock_guard staticLock(staticMu); \
-	static std::unordered_map<std::decay<decltype(key)>::type, std::shared_ptr<className>> instances {}; \
-	if (instances.count(key) == 0) { \
-		instances.emplace(key, std::make_shared<className>(__VA_ARGS__)); \
+	static std::unordered_map<std::decay<decltype(key)>::type, std::weak_ptr<className>> instances {}; \
+	auto ptr = instances[key].lock(); \
+	if (!ptr) { \
+		instances[key] = ptr = std::make_shared<className>(__VA_ARGS__); \
 	} \
-	return instances.at(key); \
+	return ptr; \
 }
 
 
