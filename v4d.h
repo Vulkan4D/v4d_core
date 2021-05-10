@@ -16,7 +16,7 @@
 
 // Config
 #include "../v4dconfig.hh"
-#if defined(_V4D_APP) || defined(_V4D_GAME)
+#if defined(_V4D_APP) || defined(_V4D_GAME) || defined(_V4D_MODULE)
 	#include "../../config.hh"
 #endif
 
