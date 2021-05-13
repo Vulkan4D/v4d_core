@@ -152,11 +152,11 @@ void Renderer::CreateSwapChain() {
 	do {
 		if (swapChain) {
 			delete swapChain;
-			#ifdef XVK_INCLUDE_GLFW
-				glfwWaitEvents();
-			#else
+			// #ifdef XVK_INCLUDE_GLFW
+			// 	glfwWaitEvents(); // must run on main thread...
+			// #else
 				SLEEP(20ms)
-			#endif
+			// #endif
 		}
 		
 		VkSurfaceCapabilitiesKHR capabilities;
@@ -436,6 +436,68 @@ bool Renderer::EndFrame(const std::vector<VkSemaphore>& waitSemaphores) {
 }
 
 #pragma endregion
+
+#ifdef _ENABLE_IMGUI
+	void Renderer::InitImGui(GLFWwindow* window) {
+		imGuiGlfwWindow = window;
+		IMGUI_CHECKVERSION();
+		ImGui::CreateContext();
+		imGuiIO = &ImGui::GetIO();
+		imGuiIO->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+		ImGui::StyleColorsDark();
+		ImGui::GetStyle().Alpha = 0.8f;
+		ImGui_ImplGlfw_InitForVulkan(window, true);
+	}
+	void Renderer::LoadImGui(VkRenderPass renderPass) {
+		static ImGui_ImplVulkan_InitInfo init_info {};
+			init_info.Instance = handle;
+			init_info.PhysicalDevice = renderingDevice->GetPhysicalDevice()->GetHandle();
+			init_info.Device = renderingDevice->GetHandle();
+			init_info.QueueFamily = renderingDevice->GetGraphicsQueue().familyIndex;
+			init_info.Queue = renderingDevice->GetGraphicsQueue().handle;
+			init_info.DescriptorPool = descriptorPool;
+			init_info.MinImageCount = swapChain->images.size();
+			init_info.ImageCount = swapChain->images.size();
+			init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+			init_info.CheckVkResultFn = [](VkResult err){if (err) LOG_ERROR("ImGui Vk Error " << (int)err)};
+		ImGui_ImplVulkan_Init(&init_info, renderPass);
+		// Clear any existing draw data
+		auto* drawData = ImGui::GetDrawData();
+		if (drawData) drawData->Clear();
+		// Font Upload
+		auto cmdBuffer = BeginSingleTimeCommands(renderingDevice->GetGraphicsQueue());
+			ImGui_ImplVulkan_CreateFontsTexture(cmdBuffer);
+		EndSingleTimeCommands(renderingDevice->GetGraphicsQueue(), cmdBuffer);
+		ImGui_ImplVulkan_DestroyFontUploadObjects();
+	}
+	void Renderer::UnloadImGui() {
+		// Clear any existing draw data
+		auto* drawData = ImGui::GetDrawData();
+		if (drawData) drawData->Clear();
+		// Shutdown ImGui
+		ImGui_ImplVulkan_Shutdown();
+	}
+	void Renderer::DrawImGui(VkCommandBuffer commandBuffer) {
+		auto* drawData = ImGui::GetDrawData();
+		if (drawData) {
+			ImGui_ImplVulkan_RenderDrawData(drawData, commandBuffer);
+		}
+	}
+	void Renderer::BeginFrameImGui() {
+		ImGui_ImplVulkan_NewFrame();
+		
+		ImGui_ImplGlfw_NewFrame();// this function calls glfwGetWindowAttrib() to check for focus before fetching mouse pos and always returns false if called on a secondary thread... 
+		// The quick fix is simply to always fetch the mouse position right here...
+		double mouse_x, mouse_y;
+		glfwGetCursorPos(imGuiGlfwWindow, &mouse_x, &mouse_y);
+		imGuiIO->MousePos = ImVec2((float)mouse_x, (float)mouse_y);
+		
+		ImGui::NewFrame();
+	}
+	void Renderer::EndFrameImGui() {
+		ImGui::Render();
+	}
+#endif
 
 #pragma region Constructor
 

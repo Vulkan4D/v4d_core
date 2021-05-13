@@ -130,8 +130,6 @@ namespace v4d::graphics {
 		
 		// Descriptor sets
 		VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
-		// std::map<std::string, DescriptorSet*> descriptorSets {};
-		// std::vector<VkDescriptorSet> vkDescriptorSets {};
 		
 		// Ray-Tracing Shaders
 		static std::unordered_map<std::string, uint32_t> sbtOffsets;
@@ -378,6 +376,20 @@ namespace v4d::graphics {
 		void AssignSurface(const VkSurfaceKHR& surface) {
 			this->surface = surface;
 		}
+		
+		#ifdef _ENABLE_IMGUI
+			ImGuiIO* imGuiIO = nullptr;
+			inline bool IsImGuiReady() const {
+				return imGuiIO->Fonts->IsBuilt();
+			};
+			GLFWwindow* imGuiGlfwWindow = nullptr;
+			void InitImGui(GLFWwindow*);
+			void LoadImGui(VkRenderPass);
+			void UnloadImGui();
+			void BeginFrameImGui();
+			void EndFrameImGui();
+			void DrawImGui(VkCommandBuffer commandBuffer);
+		#endif
 		
 	public: // Constructor & Destructor
 		Renderer(Loader* loader, const char* applicationName, uint applicationVersion);
