@@ -1,4 +1,5 @@
 #include "PipelineLayoutObject.h"
+#include "utilities/graphics/vulkan/Instance.h"
 
 using namespace v4d::graphics::vulkan;
 
@@ -7,18 +8,23 @@ COMMON_OBJECT_CPP(PipelineLayoutObject, VkPipelineLayout)
 void PipelineLayoutObject::Create(Device* device) {
 	this->device = device;
 	
-	// for (auto* set : descriptorSets) {
-	// 	layouts.push_back(set->GetDescriptorSetLayout());
-	// }
+	std::vector<VkDescriptorSetLayout> descriptorSetsLayouts {};
+	for (auto[set,frameBufferedSet] : descriptorSets) {
+		if (set) {
+			descriptorSetsLayouts.push_back(set->layout);
+		} else if (frameBufferedSet) {
+			descriptorSetsLayouts.push_back((*frameBufferedSet)[0].layout);
+		}
+	}
 	
 	// Pipeline Layout
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo {};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	
 	// Descriptor sets
-	if (layouts.size() > 0) {
-		pipelineLayoutInfo.setLayoutCount = layouts.size();
-		pipelineLayoutInfo.pSetLayouts = layouts.data();
+	if (descriptorSetsLayouts.size() > 0) {
+		pipelineLayoutInfo.setLayoutCount = descriptorSetsLayouts.size();
+		pipelineLayoutInfo.pSetLayouts = descriptorSetsLayouts.data();
 	}
 
 	// Push constants
@@ -27,21 +33,25 @@ void PipelineLayoutObject::Create(Device* device) {
 		pipelineLayoutInfo.pPushConstantRanges = pushConstants.data();
 	}
 
-	if (device->CreatePipelineLayout(&pipelineLayoutInfo, nullptr, obj) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to create pipeline layout");
-	}
+	Instance::CheckVkResult("Create pipeline layout", device->CreatePipelineLayout(&pipelineLayoutInfo, nullptr, obj));
 	
-	// // Descriptor sets array
-	// vkDescriptorSets.reserve(descriptorSets.size());
-	// for (auto* set : descriptorSets) {
-	// 	vkDescriptorSets.push_back(set->descriptorSet);
-	// }
+	// Descriptor sets array
+	for (int i = 0; i < rawDescriptorSets.size(); ++i) {
+		auto& rawSets = rawDescriptorSets[i];
+		rawSets.reserve(descriptorSets.size());
+		for (auto[set,frameBufferedSet] : descriptorSets) {
+			if (set) {
+				rawSets.push_back(set->obj);
+			} else if (frameBufferedSet) {
+				rawSets.push_back((*frameBufferedSet)[i].obj);
+			}
+		}
+	}
 }
 
 void PipelineLayoutObject::Destroy() {
 	assert(device);
-	vkDescriptorSets.clear();
+	for (auto& sets : rawDescriptorSets) sets.clear();
 	device->DestroyPipelineLayout(obj, nullptr);
-	layouts.clear();
 	device = nullptr;
 }

@@ -1,4 +1,5 @@
 #include "Renderer.h"
+#include "utilities/graphics/vulkan/DescriptorSetObject.h"
 
 using namespace v4d::graphics;
 
@@ -82,108 +83,65 @@ void Renderer::DestroyDevices() {
 	delete renderingDevice;
 }
 
-void Renderer::CreateCommandPools() {
-	for (auto&[k, qs] : renderingDevice->GetQueues()) if (k) {
-		for (auto& q : qs) {
-			if (!q.commandPool) {
-				renderingDevice->CreateCommandPool(q.familyIndex, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &q.commandPool);
-			}
+void Renderer::CreateDescriptorSets() {
+	std::map<VkDescriptorType, uint> descriptorTypes {};
+	
+	#ifdef _ENABLE_IMGUI
+		descriptorTypes[VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER]++;
+	#endif
+	
+	// Create Descriptor Set Layout
+	DescriptorSetObject::ForEach([this, &descriptorTypes](auto*set){
+		set->CreateDescriptorSetLayout(renderingDevice);
+		for (auto&[binding, descriptor] : set->descriptorBindings) {
+			descriptorTypes[descriptor->GetDescriptorType()]++;
 		}
+	});
+	
+	// Create Descriptor Pool
+	if (descriptorTypes.size() > 0) {
+		renderingDevice->CreateDescriptorPool(
+			descriptorTypes,
+			descriptorPool,
+			VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT
+		);
 	}
+	
+	// Allocate Descriptor Set
+	DescriptorSetObject::ForEach([this](auto*set){
+		set->Allocate(descriptorPool);
+	});
 }
 
-void Renderer::DestroyCommandPools() {
-	for (auto&[k, qs] : renderingDevice->GetQueues()) if (k) {
-		for (auto& q : qs) {
-			if (q.commandPool) {
-				renderingDevice->DestroyCommandPool(q.commandPool);
-			}
-		}
+void Renderer::DestroyDescriptorSets() {
+	
+	// Free Descriptor Set
+	DescriptorSetObject::ForEach([this](auto*set){
+		set->Free(descriptorPool);
+	});
+	
+	// Destroy Descriptor Pool
+	if (descriptorPool) {
+		renderingDevice->DestroyDescriptorPool(descriptorPool, nullptr);
+		descriptorPool = VK_NULL_HANDLE;
 	}
+	
+	// Destroy Descriptor Set Layout
+	DescriptorSetObject::ForEach([](auto*set){
+		set->DestroyDescriptorSetLayout();
+	});
 }
 
-// void Renderer::CreateDescriptorSets() {
-	
-// 	for (auto&[name,set] : descriptorSets) {
-// 		set->CreateDescriptorSetLayout(renderingDevice);
-// 	}
-	
-// 	// Descriptor sets / pool
-// 	std::map<VkDescriptorType, uint> descriptorTypes {};
-// 	for (auto&[name,set] : descriptorSets) {
-// 		for (auto&[binding, descriptor] : set->GetBindings()) {
-// 			if (descriptorTypes.find(descriptor.descriptorType) == descriptorTypes.end()) {
-// 				descriptorTypes[descriptor.descriptorType] = 1;
-// 			} else {
-// 				descriptorTypes[descriptor.descriptorType]++;
-// 			}
-// 		}
-// 	}
-	
-// 	if (descriptorSets.size() > 0) {
-// 		renderingDevice->CreateDescriptorPool(
-// 			descriptorTypes,
-// 			descriptorPool,
-// 			VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT
-// 		);
-		
-// 		// Allocate descriptor sets
-// 		std::vector<VkDescriptorSetLayout> setLayouts {};
-// 		vkDescriptorSets.resize(descriptorSets.size());
-// 		setLayouts.reserve(descriptorSets.size());
-// 		for (auto&[name,set] : descriptorSets) {
-// 			setLayouts.push_back(set->GetDescriptorSetLayout());
-// 		}
-// 		VkDescriptorSetAllocateInfo allocInfo = {};
-// 			allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-// 			allocInfo.descriptorPool = descriptorPool;
-// 			allocInfo.descriptorSetCount = (uint)setLayouts.size();
-// 			allocInfo.pSetLayouts = setLayouts.data();
-// 		if (renderingDevice->AllocateDescriptorSets(&allocInfo, vkDescriptorSets.data()) != VK_SUCCESS) {
-// 			throw std::runtime_error("Failed to allocate descriptor sets");
-// 		}
-// 		int i = 0;
-// 		for (auto&[name,set] : descriptorSets) {
-// 			descriptorSets[name]->descriptorSet = vkDescriptorSets[i++];
-// 		}
-// 	}
-	
-// 	UpdateDescriptorSets();
-// }
-
-// void Renderer::DestroyDescriptorSets() {
-// 	// Descriptor Sets
-// 	if (descriptorSets.size() > 0) {
-// 		renderingDevice->FreeDescriptorSets(descriptorPool, (uint)vkDescriptorSets.size(), vkDescriptorSets.data());
-// 		for (auto&[name,set] : descriptorSets) set->DestroyDescriptorSetLayout(renderingDevice);
-// 		// Descriptor pools
-// 		renderingDevice->DestroyDescriptorPool(descriptorPool, nullptr);
-// 	}
-// }
-
-// void Renderer::UpdateDescriptorSets() {
-// 	if (descriptorSets.size() > 0) {
-// 		std::vector<VkWriteDescriptorSet> descriptorWrites {};
-// 		for (auto&[name,set] : descriptorSets) {
-// 			for (auto&[binding, descriptor] : set->GetBindings()) {
-// 				if (descriptor.IsWriteDescriptorSetValid()) {
-// 					descriptorWrites.push_back(descriptor.GetWriteDescriptorSet(set->descriptorSet));
-// 				}
-// 			}
-// 		}
-// 		renderingDevice->UpdateDescriptorSets((uint)descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
-// 	}
-// }
-
-// void Renderer::UpdateDescriptorSet(DescriptorSet* set, const std::vector<uint32_t>& bindings) {
-// 	std::vector<VkWriteDescriptorSet> descriptorWrites {};
-// 	for (auto&[binding, descriptor] : set->GetBindings()) if (bindings.size() == 0 || std::find(bindings.begin(), bindings.end(), binding) != bindings.end()) {
-// 		if (descriptor.IsWriteDescriptorSetValid()) {
-// 			descriptorWrites.push_back(descriptor.GetWriteDescriptorSet(set->descriptorSet));
-// 		}
-// 	}
-// 	renderingDevice->UpdateDescriptorSets((uint)descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
-// }
+void Renderer::UpdateDescriptorSets() {
+	DescriptorSetObject::ForEach([this](auto*o){
+		if (state != STATE::RUNNING || o->isDirty) {
+			auto descriptorWrites = o->GetUpdateWrites();
+			if (descriptorWrites.size() > 0) {
+				renderingDevice->UpdateDescriptorSets((uint)descriptorWrites.size(), descriptorWrites.data(), 0, nullptr);
+			}
+		}
+	});
+}
 
 void Renderer::CreateSwapChain() {
 	
@@ -256,13 +214,16 @@ void Renderer::WatchModifiedShadersForReload(const std::vector<ShaderPipelineMet
 }
 
 void Renderer::RecreateSwapChain() {
+	std::lock_guard lock(frameSyncMutex2);
 	UnloadGraphicsFromDevice();
 	v4d::graphics::renderer::event::Resize(this);
+	CreateSwapChain();
 	LoadGraphicsToDevice();
 }
 
 void Renderer::InitRenderer() {
 	state = STATE::INITIALIZED;
+	ConfigureRenderer();
 	ConfigureLayouts();
 	ConfigureShaders();
 	ReadShaders();
@@ -270,9 +231,11 @@ void Renderer::InitRenderer() {
 
 void Renderer::LoadRenderer() {
 	CreateDevices();
-	ConfigureRenderer();
 	CreateSyncObjects();
 	CreateCommandPools();
+	CreateBuffers();
+	FillBuffers();
+	CreateSwapChain();
 	LoadGraphicsToDevice();
 	
 	v4d::graphics::renderer::event::Load(this);
@@ -280,11 +243,13 @@ void Renderer::LoadRenderer() {
 }
 
 void Renderer::UnloadRenderer() {
+	std::lock_guard lock(frameSyncMutex2);
 	renderingDevice->DeviceWaitIdle();
 	
 	v4d::graphics::renderer::event::Unload(this);
 	UnloadGraphicsFromDevice();
 	DestroySwapChain();
+	DestroyBuffers();
 	DestroyCommandPools();
 	DestroySyncObjects();
 	DestroyDevices();
@@ -303,11 +268,13 @@ void Renderer::ReloadShaderPipelines() {
 void Renderer::ReloadRenderer() {
 	LOG("Reloading renderer...")
 	
+	std::lock_guard lock(frameSyncMutex2);
 	renderingDevice->DeviceWaitIdle();
 	
 	v4d::graphics::renderer::event::Unload(this);
 	UnloadGraphicsFromDevice();
 	DestroySwapChain();
+	DestroyBuffers();
 	DestroyCommandPools();
 	DestroySyncObjects();
 	DestroyDevices();
@@ -317,9 +284,11 @@ void Renderer::ReloadRenderer() {
 	ReadShaders();
 	
 	CreateDevices();
-	ConfigureRenderer();
 	CreateSyncObjects();
 	CreateCommandPools();
+	CreateBuffers();
+	FillBuffers();
+	CreateSwapChain();
 	LoadGraphicsToDevice();
 	
 	v4d::graphics::renderer::event::Load(this);
@@ -327,9 +296,8 @@ void Renderer::ReloadRenderer() {
 }
 
 void Renderer::LoadGraphicsToDevice() {
-	CreateSwapChain();
 	AllocateResources();
-	// CreateDescriptorSets();
+	CreateDescriptorSets();
 	CreatePipelineLayouts();
 	ConfigureRenderPasses();
 	CreateRenderPasses();
@@ -337,7 +305,11 @@ void Renderer::LoadGraphicsToDevice() {
 	
 	v4d::graphics::renderer::event::PipelinesCreate(this);
 	
+	UpdateDescriptorSets();
+	
 	CreateCommandBuffers();
+	
+	LoadScene();
 	
 	state = STATE::LOADED;
 }
@@ -346,6 +318,8 @@ void Renderer::UnloadGraphicsFromDevice() {
 	state = STATE::UNLOADED;
 	renderingDevice->DeviceWaitIdle();
 	
+	UnloadScene();
+	
 	DestroyCommandBuffers();
 	
 	v4d::graphics::renderer::event::PipelinesDestroy(this);
@@ -353,7 +327,7 @@ void Renderer::UnloadGraphicsFromDevice() {
 	DestroyShaderPipelines();
 	DestroyRenderPasses();
 	DestroyPipelineLayouts();
-	// DestroyDescriptorSets();
+	DestroyDescriptorSets();
 	FreeResources();
 }
 
@@ -364,6 +338,7 @@ bool Renderer::BeginFrame(VkSemaphore triggerSemaphore, VkFence triggerFence) {
 	{// Sync queue
 		std::lock_guard lock(frameSyncMutex);
 		if (!syncQueue.empty()) {
+			std::lock_guard lock(frameSyncMutex2);
 			renderingDevice->DeviceWaitIdle();
 			while (!syncQueue.empty()) {
 				syncQueue.front()();
@@ -404,6 +379,7 @@ bool Renderer::BeginFrame(VkSemaphore triggerSemaphore, VkFence triggerFence) {
 
 void Renderer::RecordAndSubmitCommandBuffer(
 	const VkCommandBuffer& commandBuffer,
+	const VkQueue& queue,
 	const std::function<void(VkCommandBuffer)>& commandsToRecord,
 	const std::vector<VkSemaphore>& waitSemaphores,
 	const std::vector<VkPipelineStageFlags>& waitStages,
@@ -432,7 +408,7 @@ void Renderer::RecordAndSubmitCommandBuffer(
 	commandsToRecord(commandBuffer);
 	
 	CheckVkResult("End recording command buffer", renderingDevice->EndCommandBuffer(commandBuffer));
-	CheckVkResult("Queue Submit", renderingDevice->QueueSubmit(renderingDevice->GetGraphicsQueue().handle, 1, &submitInfo, triggerFence));
+	CheckVkResult("Queue Submit", renderingDevice->QueueSubmit(queue, 1, &submitInfo, triggerFence));
 }
 
 bool Renderer::EndFrame(const std::vector<VkSemaphore>& waitSemaphores) {

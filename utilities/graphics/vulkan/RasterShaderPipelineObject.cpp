@@ -1,4 +1,5 @@
 #include "RasterShaderPipelineObject.h"
+#include "utilities/graphics/vulkan/Instance.h"
 
 using namespace v4d::graphics::vulkan;
 
@@ -6,8 +7,6 @@ void RasterShaderPipelineObject::Create(Device* device) {
 	this->device = device;
 	
 	shaderProgram.CreateShaderStages(device);
-	
-	VkPipelineViewportStateCreateInfo viewportState {};
 	
 	if (pipelineCreateInfo.pViewportState == nullptr) {
 		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -17,14 +16,6 @@ void RasterShaderPipelineObject::Create(Device* device) {
 		viewportState.pScissors = scissors.size()>0? scissors.data() : nullptr;
 		pipelineCreateInfo.pViewportState = &viewportState;
 	}
-	
-	// if (viewports.size() == 0) {
-	// 	dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
-	// }
-	
-	// if (scissors.size() == 0) {
-	// 	dynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
-	// }
 	
 	// Bindings and Attributes
 	vertexInputInfo.vertexBindingDescriptionCount = shaderProgram.GetBindings()->size();
@@ -52,9 +43,7 @@ void RasterShaderPipelineObject::Create(Device* device) {
 	pipelineCreateInfo.pStages = shaderProgram.GetStages()->data();
 	
 	// Create the actual pipeline
-	if (device->CreateGraphicsPipelines(VK_NULL_HANDLE/*pipelineCache*/, 1, &pipelineCreateInfo, nullptr, obj) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to create Graphics Pipeline");
-	}
+	Instance::CheckVkResult("Create Graphics Pipeline", device->CreateGraphicsPipelines(VK_NULL_HANDLE/*pipelineCache*/, 1, &pipelineCreateInfo, nullptr, obj));
 }
 
 void RasterShaderPipelineObject::Destroy() {
@@ -65,11 +54,12 @@ void RasterShaderPipelineObject::Destroy() {
 	device->DestroyPipeline(obj, nullptr);
 	shaderProgram.DestroyShaderStages(device);
 	device = nullptr;
+	pipelineCreateInfo.pViewportState = nullptr;
 }
 
-void RasterShaderPipelineObject::Render(VkCommandBuffer cmdBuffer, uint32_t instanceCount) {
+void RasterShaderPipelineObject::Render(uint32_t frameIndex, VkCommandBuffer cmdBuffer, uint32_t instanceCount) {
 	assert(device);
-	if (vertexBuffer == VK_NULL_HANDLE) {
+	if (vertexBuffer[frameIndex] == VK_NULL_HANDLE) {
 		device->CmdDraw(cmdBuffer,
 			vertexCount, // vertexCount
 			instanceCount, // instanceCount
@@ -77,8 +67,8 @@ void RasterShaderPipelineObject::Render(VkCommandBuffer cmdBuffer, uint32_t inst
 			0  // firstInstance (defines the lowest value of gl_InstanceIndex)
 		);
 	} else {
-		device->CmdBindVertexBuffers(cmdBuffer, 0, 1, &vertexBuffer, &vertexOffset);
-		if (indexBuffer == VK_NULL_HANDLE) {
+		device->CmdBindVertexBuffers(cmdBuffer, 0, 1, &vertexBuffer[frameIndex], &vertexOffset);
+		if (indexBuffer[frameIndex] == VK_NULL_HANDLE) {
 			// Draw vertices
 			if (vertexCount > 0) {
 				device->CmdDraw(cmdBuffer,
@@ -90,7 +80,7 @@ void RasterShaderPipelineObject::Render(VkCommandBuffer cmdBuffer, uint32_t inst
 			}
 		} else if (indexCount > 0) {
 			// Draw indices
-			device->CmdBindIndexBuffer(cmdBuffer, indexBuffer, indexOffset, VK_INDEX_TYPE_UINT32);
+			device->CmdBindIndexBuffer(cmdBuffer, indexBuffer[frameIndex], indexOffset, VK_INDEX_TYPE_UINT32);
 			device->CmdDrawIndexed(cmdBuffer,
 				indexCount, // indexCount
 				instanceCount, // instanceCount

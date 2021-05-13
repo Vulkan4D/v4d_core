@@ -46,6 +46,7 @@ namespace v4d::graphics::vulkan {
 				&deviceFeatures2,
 				&shaderClockFeatures,
 				&_16bitStorageFeatures,
+				// Vulkan 1.2
 				&vulkan12DeviceFeatures,
 				&rayTracingPipelineFeatures,
 				&accelerationStructureFeatures,

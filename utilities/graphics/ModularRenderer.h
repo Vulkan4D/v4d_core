@@ -105,6 +105,26 @@ using Renderer::Renderer;
 	
 #pragma endregion
 	
+#pragma region Scene (final stuff to load when renderer is ready)
+	
+	void LoadScene() override {
+		V4D_Mod::ForEachSortedModule([](auto* mod){
+			if (mod->Renderer_LoadScene) {
+				mod->Renderer_LoadScene();
+			}
+		});
+	}
+	
+	void UnloadScene() override {
+		V4D_Mod::ForEachSortedModule([](auto* mod){
+			if (mod->Renderer_UnloadScene) {
+				mod->Renderer_UnloadScene();
+			}
+		});
+	}
+	
+#pragma endregion
+	
 public:
 	
 #pragma region Rendering
@@ -169,6 +189,14 @@ public:
 		V4D_Mod::ForEachSortedModule([&cmdBuffer, currentFrame, swapChainImageIndex](auto* mod){
 			if (mod->Renderer_SwapChainRenderPass) {
 				mod->Renderer_SwapChainRenderPass(cmdBuffer, currentFrame, swapChainImageIndex);
+			}
+		});
+	}
+	
+	inline void Render_SecondaryUpdate() {
+		V4D_Mod::ForEachSortedModule([](auto* mod){
+			if (mod->Renderer_SecondaryUpdate) {
+				mod->Renderer_SecondaryUpdate();
 			}
 		});
 	}

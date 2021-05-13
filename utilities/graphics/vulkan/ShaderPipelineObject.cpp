@@ -4,17 +4,17 @@ using namespace v4d::graphics::vulkan;
 
 COMMON_OBJECT_CPP (ShaderPipelineObject, VkPipeline)
 
-void ShaderPipelineObject::Execute(VkCommandBuffer cmdBuffer, uint32_t instanceCount, void* pushConstant, int pushConstantIndex) {
+void ShaderPipelineObject::Execute(uint32_t frameIndex, VkCommandBuffer cmdBuffer, uint32_t instanceCount, void* pushConstant, int pushConstantIndex) {
 	assert(device);
-	Bind(cmdBuffer);
+	Bind(frameIndex, cmdBuffer);
 	if (pushConstant) PushConstant(cmdBuffer, pushConstant, pushConstantIndex);
-	Render(cmdBuffer, instanceCount);
+	Render(frameIndex, cmdBuffer, instanceCount);
 }
 
-void ShaderPipelineObject::Execute(VkCommandBuffer cmdBuffer) {
+void ShaderPipelineObject::Execute(uint32_t frameIndex, VkCommandBuffer cmdBuffer) {
 	assert(device);
-	Bind(cmdBuffer);
-	Render(cmdBuffer, 1);
+	Bind(frameIndex, cmdBuffer);
+	Render(frameIndex, cmdBuffer, 1);
 }
 
 void ShaderPipelineObject::PushConstant(VkCommandBuffer cmdBuffer, void* pushConstant, int pushConstantIndex) {

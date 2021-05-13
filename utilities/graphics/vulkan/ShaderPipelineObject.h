@@ -88,8 +88,10 @@ namespace v4d::graphics::vulkan {
 		}
 
 		// Execute() will call Bind() and Render() automatically
-		virtual void Execute(VkCommandBuffer cmdBuffer, uint32_t instanceCount, void* pushConstant, int pushConstantIndex = 0);
-		virtual void Execute(VkCommandBuffer cmdBuffer);
+		virtual void Execute(uint32_t frameIndex, VkCommandBuffer cmdBuffer, uint32_t instanceCount, void* pushConstant, int pushConstantIndex = 0);
+		virtual void Execute(uint32_t frameIndex, VkCommandBuffer cmdBuffer);
+		inline virtual void Execute(VkCommandBuffer cmdBuffer, uint32_t instanceCount, void* pushConstant, int pushConstantIndex = 0) final {Execute(0, cmdBuffer, instanceCount, pushConstant, pushConstantIndex);}
+		inline virtual void Execute(VkCommandBuffer cmdBuffer) final {Execute(0, cmdBuffer);}
 		
 		// sends a push constant to the shader now
 		void PushConstant(VkCommandBuffer cmdBuffer, void* pushConstant, int pushConstantIndex = 0);
@@ -103,10 +105,12 @@ namespace v4d::graphics::vulkan {
 	protected:
 		
 		// binds the pipeline (to be implemented in child classes)
-		virtual void Bind(VkCommandBuffer) = 0;
+		virtual void Bind(uint32_t frameIndex, VkCommandBuffer) = 0;
+		inline virtual void Bind(VkCommandBuffer cmdBuffer) final {Bind(0, cmdBuffer);}
 		
 		// issues the draw calls (to be implemented in child classes)
-		virtual void Render(VkCommandBuffer, uint32_t instanceCount) = 0;
+		virtual void Render(uint32_t frameIndex, VkCommandBuffer, uint32_t instanceCount) = 0;
+		inline virtual void Render(VkCommandBuffer cmdBuffer, uint32_t instanceCount) final {Render(0, cmdBuffer, instanceCount);}
 		
 	};
 	

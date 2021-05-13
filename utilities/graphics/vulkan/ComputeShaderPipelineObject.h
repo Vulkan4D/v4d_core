@@ -33,13 +33,15 @@ namespace v4d::graphics::vulkan {
 		}
 		
 	protected:
+		using ShaderPipelineObject::Bind;
+		using ShaderPipelineObject::Render;
 		// these two methods are called automatically by Execute() from the parent class
-		virtual void Bind(VkCommandBuffer cmdBuffer) override {
+		virtual void Bind(uint32_t frameIndex, VkCommandBuffer cmdBuffer) override {
 			assert(device);
 			device->CmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, obj);
-			device->CmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, GetPipelineLayout()->obj, 0, GetPipelineLayout()->vkDescriptorSets.size(), GetPipelineLayout()->vkDescriptorSets.data(), 0, nullptr);
+			GetPipelineLayout()->Bind(frameIndex, cmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE);
 		}
-		virtual void Render(VkCommandBuffer cmdBuffer, uint32_t /*unused_arg*/ = 0) {
+		virtual void Render(uint32_t/*unused_arg frameIndex*/, VkCommandBuffer cmdBuffer, uint32_t /*unused_arg instanceCount*/ = 0) override {
 			assert(device);
 			device->CmdDispatch(cmdBuffer, groupCountX, groupCountY, groupCountZ);
 		}

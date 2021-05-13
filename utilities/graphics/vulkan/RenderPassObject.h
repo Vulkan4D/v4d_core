@@ -62,6 +62,14 @@ namespace v4d::graphics::vulkan {
 			imageViews.resize(frameBufferCount);
 		}
 		
+		void ConfigureFrameBuffers(uint frameBufferCount, Image& renderTargetImage, uint32_t layers = 1) {
+			renderWidth = renderTargetImage.width;
+			renderHeight = renderTargetImage.height;
+			renderLayers = layers;
+			frameBuffers.resize(frameBufferCount);
+			imageViews.resize(frameBufferCount);
+		}
+		
 		void ConfigureFrameBuffers(SwapChain* swapChainAsRenderTarget, uint32_t layers = 1) {
 			renderWidth = swapChainAsRenderTarget->extent.width;
 			renderHeight = swapChainAsRenderTarget->extent.height;

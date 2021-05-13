@@ -14,6 +14,8 @@
 #include "utilities/graphics/vulkan/Image.h"
 #include "utilities/graphics/vulkan/SwapChain.h"
 #include "utilities/graphics/vulkan/ShaderPipelineObject.h"
+#include "utilities/graphics/vulkan/BufferObject.h"
+#include "utilities/graphics/FrameBufferedObject.hpp"
 
 namespace v4d::graphics::vulkan {
 
@@ -47,8 +49,8 @@ namespace v4d::graphics::vulkan {
 		};
 		
 		// Data to draw
-		VkBuffer vertexBuffer = VK_NULL_HANDLE;
-		VkBuffer indexBuffer = VK_NULL_HANDLE;
+		FrameBufferedBuffer vertexBuffer;
+		FrameBufferedBuffer indexBuffer;
 		uint32_t vertexCount = 0;
 		VkDeviceSize vertexOffset = 0;
 		uint32_t indexCount = 0;
@@ -124,44 +126,62 @@ namespace v4d::graphics::vulkan {
 			nullptr//const VkDynamicState* pDynamicStates
 		};
 		
+		VkPipelineViewportStateCreateInfo viewportState {};
 		std::vector<VkDynamicState> dynamicStates {};
 		std::vector<VkViewport> viewports {};
 		std::vector<VkRect2D> scissors {};
 		
 		using ShaderPipelineObject::ShaderPipelineObject;
 		
-		// set what data to draw
-		void SetData(VkBuffer vertexBuffer, VkBuffer indexBuffer, uint32_t indexCount) {
+		inline void SetVertexBuffer(const VkBuffer& vertexBuffer) {
+			for (auto& b : this->vertexBuffer) b = vertexBuffer;
+		}
+		inline void SetIndexBuffer(const VkBuffer& indexBuffer) {
+			for (auto& b : this->indexBuffer) b = indexBuffer;
+		}
+		
+		inline void SetVertexBuffer(const FrameBufferedBuffer& vertexBuffer) {
 			this->vertexBuffer = vertexBuffer;
+		}
+		inline void SetIndexBuffer(const FrameBufferedBuffer& indexBuffer) {
 			this->indexBuffer = indexBuffer;
+		}
+		
+		// set what data to draw
+		void SetData(uint32_t vertexCount) {
+			SetVertexBuffer(VK_NULL_HANDLE);
+			SetIndexBuffer(VK_NULL_HANDLE);
+			this->vertexCount = vertexCount;
+			this->vertexOffset = 0;
+			this->indexCount = 0;
+			this->indexOffset = 0;
+		}
+		template<typename BufferT>
+		void SetData(BufferT vertexBuffer, uint32_t vertexCount) {
+			SetVertexBuffer(vertexBuffer);
+			SetIndexBuffer(VK_NULL_HANDLE);
+			this->vertexCount = vertexCount;
+			this->vertexOffset = 0;
+			this->indexCount = 0;
+			this->indexOffset = 0;
+		}
+		template<typename BufferT>
+		void SetData(BufferT vertexBuffer, BufferT indexBuffer, uint32_t indexCount) {
+			SetVertexBuffer(vertexBuffer);
+			SetIndexBuffer(indexBuffer);
 			this->vertexCount = 0;
 			this->vertexOffset = 0;
 			this->indexCount = indexCount;
 			this->indexOffset = 0;
 		}
-		void SetData(VkBuffer vertexBuffer, VkDeviceSize vertexOffset, VkBuffer indexBuffer, VkDeviceSize indexOffset, uint32_t indexCount) {
-			this->vertexBuffer = vertexBuffer;
-			this->indexBuffer = indexBuffer;
+		template<typename BufferT>
+		void SetData(BufferT vertexBuffer, VkDeviceSize vertexOffset, BufferT indexBuffer, VkDeviceSize indexOffset, uint32_t indexCount) {
+			SetVertexBuffer(vertexBuffer);
+			SetIndexBuffer(indexBuffer);
 			this->vertexCount = 0;
 			this->vertexOffset = vertexOffset;
 			this->indexCount = indexCount;
 			this->indexOffset = indexOffset;
-		}
-		void SetData(VkBuffer vertexBuffer, uint32_t vertexCount) {
-			this->vertexBuffer = vertexBuffer;
-			this->indexBuffer = nullptr;
-			this->vertexCount = vertexCount;
-			this->vertexOffset = 0;
-			this->indexCount = 0;
-			this->indexOffset = 0;
-		}
-		void SetData(uint32_t vertexCount) {
-			this->vertexBuffer = nullptr;
-			this->indexBuffer = nullptr;
-			this->vertexCount = vertexCount;
-			this->vertexOffset = 0;
-			this->indexCount = 0;
-			this->indexOffset = 0;
 		}
 
 		virtual void Create(Device* device) override;
@@ -223,13 +243,15 @@ namespace v4d::graphics::vulkan {
 			colorBlendAttachments = colorAttachmentsBlendings;
 		}
 		
+		using ShaderPipelineObject::Bind;
+		using ShaderPipelineObject::Render;
 		// these two methods are called automatically by Execute() from the parent class
-		virtual void Bind(VkCommandBuffer cmdBuffer) override {
+		virtual void Bind(uint32_t frameIndex, VkCommandBuffer cmdBuffer) override {
 			assert(device);
 			device->CmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj);
-			GetPipelineLayout()->Bind(cmdBuffer);
+			GetPipelineLayout()->Bind(frameIndex, cmdBuffer);
 		}
-		virtual void Render(VkCommandBuffer cmdBuffer, uint32_t instanceCount = 1) override;
+		virtual void Render(uint32_t frameIndex, VkCommandBuffer cmdBuffer, uint32_t instanceCount = 1) override;
 	};
 	
 }

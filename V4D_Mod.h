@@ -33,6 +33,8 @@ class V4DLIB V4D_Mod {
 		,Renderer_ConfigureRenderPasses
 		,Renderer_AllocateResources
 		,Renderer_FreeResources
+		,Renderer_LoadScene
+		,Renderer_UnloadScene
 		
 		// Called on every rendering frame
 		,Renderer_BeforeUpdate
@@ -44,6 +46,8 @@ class V4DLIB V4D_Mod {
 		,Renderer_PullCommands
 		,Renderer_PostCommands
 		,Renderer_SwapChainRenderPass
+		// Secondary
+		,Renderer_SecondaryUpdate
 		
 		// Game
 		,Game_Update
@@ -65,6 +69,8 @@ class V4DLIB V4D_Mod {
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_ConfigureRenderPasses)
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_AllocateResources)
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_FreeResources)
+	V4D_MODULE_FUNC_DECLARE(void, Renderer_LoadScene)
+	V4D_MODULE_FUNC_DECLARE(void, Renderer_UnloadScene)
 	
 	// Called on every rendering frame
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_BeforeUpdate, int currentFrame)
@@ -76,6 +82,8 @@ class V4DLIB V4D_Mod {
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_PullCommands, VkCommandBuffer cmdBuffer, int currentFrame)
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_PostCommands, VkCommandBuffer cmdBuffer, int currentFrame)
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_SwapChainRenderPass, VkCommandBuffer cmdBuffer, int currentFrame, int swapChainImageIndex)
+	// Secondary
+	V4D_MODULE_FUNC_DECLARE(void, Renderer_SecondaryUpdate)
 
 	// Game
 	V4D_MODULE_FUNC_DECLARE(void, Game_Update, double deltaTime)

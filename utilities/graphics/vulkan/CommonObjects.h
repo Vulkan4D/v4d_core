@@ -68,6 +68,11 @@ namespace v4d::graphics::vulkan {
 		
 		Device* device = nullptr;
 		
+		Queue& GetQueue() {
+			assert(device);
+			return device->GetQueue(queueFlags, queueIndex);
+		}
+		
 		void Allocate(Device* device) {
 			this->device = device;
 			
@@ -80,7 +85,7 @@ namespace v4d::graphics::vulkan {
 		}
 		void Free() {
 			assert(device);
-			device->FreeCommandBuffers(device->GetGraphicsQueue().commandPool, 1, obj);
+			device->FreeCommandBuffers(device->GetQueue(queueFlags, queueIndex).commandPool, 1, obj);
 			device = nullptr;
 		}
 	};

@@ -152,7 +152,9 @@ Usage:
 		public:\
 		UnderlyingClass& operator=(const UnderlyingClass& other) {return obj = other;}\
 		UnderlyingClass* operator->() {return &obj;}\
+		operator const UnderlyingClass&() const {return obj;}\
 		operator UnderlyingClass&() {return obj;}\
+		operator const UnderlyingClass* const() const {return &obj;}\
 		operator UnderlyingClass*() {return &obj;}\
 		UnderlyingCommonObjectContainer(UnderlyingCommonObjectContainer&& other) {*this = std::move(other);}\
 		UnderlyingCommonObjectContainer& operator= (UnderlyingCommonObjectContainer&& other) {\
