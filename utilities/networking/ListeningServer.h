@@ -18,15 +18,15 @@ namespace v4d::networking {
 	protected:
 		const ulong REQ_INCREMENT_MAX_DIFF = 100000; // maximum acceptable difference in the increment index between two requests
 		v4d::io::SocketPtr listeningSocket;
-		v4d::crypto::RSA* rsa;
+		std::shared_ptr<v4d::crypto::RSA> rsa;
 
 	public:
 
 		std::shared_ptr<std::unordered_map<ulong, std::shared_ptr<IncomingClient>>> clients = nullptr;
 		std::mutex clientsMutex;
 
-		ListeningServer(v4d::io::SOCKET_TYPE type = v4d::io::TCP, v4d::crypto::RSA* serverPrivateKey = nullptr);
-		ListeningServer(v4d::io::SOCKET_TYPE type, ListeningServer& src);
+		ListeningServer(v4d::io::SOCKET_TYPE type = v4d::io::TCP, std::shared_ptr<v4d::crypto::RSA> serverPrivateKey = nullptr);
+		ListeningServer(v4d::io::SOCKET_TYPE type, ListeningServer* src);
 
 		virtual ~ListeningServer();
 

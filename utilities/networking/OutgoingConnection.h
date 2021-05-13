@@ -16,7 +16,7 @@ namespace v4d::networking {
 		std::string token;
 	protected:
 		v4d::io::SocketPtr socket;
-		v4d::crypto::RSA* rsa;
+		std::shared_ptr<v4d::crypto::RSA> rsa;
 		v4d::crypto::AES aes;
 
 		bool runAsync = false;
@@ -25,12 +25,14 @@ namespace v4d::networking {
 	public:
 		int connectionTimeoutMilliseconds = 2000;
 
-		OutgoingConnection(v4d::io::SOCKET_TYPE type = v4d::io::TCP, v4d::crypto::RSA* serverPublicKey = nullptr, int aesBits = 256);
-		OutgoingConnection(ulong id, std::string token, v4d::io::SOCKET_TYPE type = v4d::io::TCP, v4d::crypto::RSA* serverPublicKey = nullptr, std::string aesHex = "");
-		OutgoingConnection(OutgoingConnection& src);
-		OutgoingConnection(v4d::io::SOCKET_TYPE type, OutgoingConnection& src);
+		OutgoingConnection(v4d::io::SOCKET_TYPE type = v4d::io::TCP, std::shared_ptr<v4d::crypto::RSA> serverPublicKey = nullptr, int aesBits = 256);
+		OutgoingConnection(ulong id, std::string token, v4d::io::SOCKET_TYPE type = v4d::io::TCP, std::shared_ptr<v4d::crypto::RSA> serverPublicKey = nullptr, std::string aesHex = "");
+		OutgoingConnection(OutgoingConnection* src);
+		OutgoingConnection(v4d::io::SOCKET_TYPE type, OutgoingConnection* src);
 
 		virtual ~OutgoingConnection();
+
+		DELETE_COPY_MOVE_CONSTRUCTORS(OutgoingConnection)
 
 		void Disconnect();
 

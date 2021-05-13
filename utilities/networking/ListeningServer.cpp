@@ -5,16 +5,16 @@
 
 using namespace v4d::networking;
 
-ListeningServer::ListeningServer(v4d::io::SOCKET_TYPE type, v4d::crypto::RSA* serverPrivateKey)
+ListeningServer::ListeningServer(v4d::io::SOCKET_TYPE type, std::shared_ptr<v4d::crypto::RSA> serverPrivateKey)
 : listeningSocket(nullptr), rsa(serverPrivateKey) {
 	listeningSocket = std::make_shared<v4d::io::Socket>(type);
 	clients = std::make_shared<std::unordered_map<ulong, std::shared_ptr<IncomingClient>>>();
 }
 
-ListeningServer::ListeningServer(v4d::io::SOCKET_TYPE type, ListeningServer& src)
-: listeningSocket(nullptr), rsa(src.rsa) {
+ListeningServer::ListeningServer(v4d::io::SOCKET_TYPE type, ListeningServer* src)
+: listeningSocket(nullptr), rsa(src->rsa) {
 	listeningSocket = std::make_shared<v4d::io::Socket>(type);
-	clients = src.clients;
+	clients = src->clients;
 }
 
 ListeningServer::~ListeningServer() {
@@ -224,7 +224,7 @@ void ListeningServer::AnonymousRequest(v4d::io::SocketPtr socket, byte clientTyp
 
 void ListeningServer::AuthRequest(v4d::io::SocketPtr socket, byte clientType) {
 	// Receive AUTH data
-	v4d::data::ReadOnlyStream authStream = rsa? socket->ReadEncryptedStream(rsa) : socket->ReadStream();
+	v4d::data::ReadOnlyStream authStream = rsa? socket->ReadEncryptedStream(rsa.get()) : socket->ReadStream();
 	if (rsa && authStream.GetDataBufferRemaining() == 0) {
 		if (socket->IsTCP()) {
 			*socket << ZAP::DENY;

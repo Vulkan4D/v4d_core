@@ -72,17 +72,17 @@ public:
 namespace v4d::tests {
 	int Networking() {
 
-		v4d::crypto::RSA rsa(2048, 3);
+		auto rsa = std::make_shared<v4d::crypto::RSA>(2048, 3);
 
 		{// Test1
 			// Server
-			TestServer server(v4d::io::TCP, &rsa);
+			TestServer server(v4d::io::TCP, rsa);
 			server.Start(44444);
 
-			auto rsaPublicKey = v4d::crypto::RSA::FromPublicKeyPEM(TestClient{v4d::io::TCP}.GetServerPublicKey("127.0.0.1", 44444));
+			auto rsaPublicKey = std::make_shared<v4d::crypto::RSA>(TestClient{v4d::io::TCP}.GetServerPublicKey("127.0.0.1", 44444), false);
 
 			// Client
-			TestClient client(v4d::io::TCP, &rsaPublicKey);
+			TestClient client(v4d::io::TCP, rsaPublicKey);
 			if (client.Connect("127.0.0.1", 44444, 1)) {
 				if (client.id != 16488) {
 					LOG_ERROR("Networking Error Test1: Wrong ID")
@@ -95,7 +95,7 @@ namespace v4d::tests {
 					return 4;
 				}
 
-				TestClient client2(client);
+				TestClient client2(&client);
 				if (client2.Connect("127.0.0.1", 44444, 2)) {
 					// SUCCESS
 					SLEEP(100ms) // wait for server to have the time to decrement result

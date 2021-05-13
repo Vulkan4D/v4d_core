@@ -3,26 +3,26 @@
 
 using namespace v4d::networking;
 
-OutgoingConnection::OutgoingConnection(v4d::io::SOCKET_TYPE type, v4d::crypto::RSA* serverPublicKey, int aesBits)
-	: id(0), token(""), socket(nullptr), rsa(serverPublicKey), aes(aesBits) {
+OutgoingConnection::OutgoingConnection(v4d::io::SOCKET_TYPE type, std::shared_ptr<v4d::crypto::RSA> serverPublicKey, int aesBits)
+	: id(0), token(""), socket(nullptr), rsa(serverPublicKey && serverPublicKey->GetSize()? serverPublicKey : nullptr), aes(aesBits) {
 		socket = std::make_shared<v4d::io::Socket>(type);
 	}
 
-OutgoingConnection::OutgoingConnection(ulong id, std::string token, v4d::io::SOCKET_TYPE type, v4d::crypto::RSA* serverPublicKey, std::string aesHex)
-	: id(id), token(token), socket(nullptr), rsa(serverPublicKey), aes(aesHex) {
+OutgoingConnection::OutgoingConnection(ulong id, std::string token, v4d::io::SOCKET_TYPE type, std::shared_ptr<v4d::crypto::RSA> serverPublicKey, std::string aesHex)
+	: id(id), token(token), socket(nullptr), rsa(serverPublicKey && serverPublicKey->GetSize()? serverPublicKey : nullptr), aes(aesHex) {
 		socket = std::make_shared<v4d::io::Socket>(type);
 	}
 
-OutgoingConnection::OutgoingConnection(OutgoingConnection& src)
-: id(src.id), token(src.token), socket(nullptr), rsa(src.rsa), aes(src.aes.GetHexKey()) {
-	socket = std::make_shared<v4d::io::Socket>(src.socket->GetSocketType());
-	socket->SetRemoteAddr(src.socket->GetRemoteAddr());
+OutgoingConnection::OutgoingConnection(OutgoingConnection* src)
+: id(src->id), token(src->token), socket(nullptr), rsa(src->rsa), aes(src->aes.GetHexKey()) {
+	socket = std::make_shared<v4d::io::Socket>(src->socket->GetSocketType());
+	socket->SetRemoteAddr(src->socket->GetRemoteAddr());
 }
 
-OutgoingConnection::OutgoingConnection(v4d::io::SOCKET_TYPE type, OutgoingConnection& src)
-: id(src.id), token(src.token), socket(nullptr), rsa(src.rsa), aes(src.aes.GetHexKey()) {
+OutgoingConnection::OutgoingConnection(v4d::io::SOCKET_TYPE type, OutgoingConnection* src)
+: id(src->id), token(src->token), socket(nullptr), rsa(src->rsa), aes(src->aes.GetHexKey()) {
 	socket = std::make_shared<v4d::io::Socket>(type);
-	socket->SetRemoteAddr(src.socket->GetRemoteAddr());
+	socket->SetRemoteAddr(src->socket->GetRemoteAddr());
 }
 
 OutgoingConnection::~OutgoingConnection(){
@@ -151,7 +151,7 @@ bool OutgoingConnection::AnonymousRequest() {
 bool OutgoingConnection::AuthRequest(v4d::data::Stream& authData) {
 	authData << aes.GetHexKey();
 	if (rsa) {
-		socket->WriteEncryptedStream(rsa, authData);
+		socket->WriteEncryptedStream(rsa.get(), authData);
 	} else {
 		socket->WriteStream(authData);
 	}
