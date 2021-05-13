@@ -36,7 +36,7 @@ void PipelineLayoutObject::Create(Device* device) {
 	Instance::CheckVkResult("Create pipeline layout", device->CreatePipelineLayout(&pipelineLayoutInfo, nullptr, obj));
 	
 	// Descriptor sets array
-	for (int i = 0; i < rawDescriptorSets.size(); ++i) {
+	for (size_t i = 0; i < rawDescriptorSets.size(); ++i) {
 		auto& rawSets = rawDescriptorSets[i];
 		rawSets.reserve(descriptorSets.size());
 		for (auto[set,frameBufferedSet] : descriptorSets) {

@@ -129,7 +129,7 @@ namespace v4d::graphics {
 		enum class STATE {NONE = 0, INITIALIZED, UNLOADED, LOADED, RUNNING} state = STATE::NONE;
 		
 		// Descriptor sets
-		VkDescriptorPool descriptorPool;
+		VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
 		// std::map<std::string, DescriptorSet*> descriptorSets {};
 		// std::vector<VkDescriptorSet> vkDescriptorSets {};
 		
