@@ -5,6 +5,7 @@ namespace v4d::graphics::vulkan {
 	COMMON_OBJECT_CPP(BufferObject, VkBuffer)
 
 	void BufferObject::Allocate(Device* device) {
+		assert(this->device == nullptr);
 		this->device = device;
 		VkBufferCreateInfo bufferInfo {};{
 			bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;

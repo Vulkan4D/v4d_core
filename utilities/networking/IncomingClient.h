@@ -16,6 +16,7 @@ namespace v4d::networking {
 		v4d::crypto::AES aes;
 		std::vector<std::thread> threads{};
 		std::atomic<uint64_t> requestIncrement = 0;
+		uint8_t flags = 0; // reserved for use by application
 		
 		IncomingClient(uint64_t id, std::string token, std::string aesHex);
 		IncomingClient(uint64_t id);

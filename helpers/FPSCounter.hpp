@@ -7,8 +7,8 @@ namespace v4d {
 	class FPSCounter {
 		
 		v4d::Timer avgTimer;
-		double averagedTime; // seconds
 		v4d::Timer deltaTimer;
+		double averagedTime; // seconds
 		
 		double avgFramerate = 0; // frames per second
 		int nbFrames = 0;
@@ -18,9 +18,9 @@ namespace v4d {
 		double deltaTime = 0;
 		
 		FPSCounter(double averagedTime = 1.0)
-		 : avgTimer(true), averagedTime(averagedTime), deltaTimer(true) {}
+		 : avgTimer(true), deltaTimer(true), averagedTime(averagedTime) {}
 		
-		FPSCounter& Tick(double minDeltaTime = 0.0001) {
+		FPSCounter& Tick() {
 			++nbFrames;
 			deltaTime = deltaTimer.GetElapsedSeconds();
 			const double elapsedTime = avgTimer.GetElapsedSeconds();
@@ -52,4 +52,10 @@ namespace v4d {
 		}
 		
 	};
+}
+
+#define V4D_LIMIT_FRAMERATE(timer, maxFramerate) {\
+	double sleepTime = (1.0 / maxFramerate) - timer.GetElapsedSeconds();\
+	if (sleepTime > 0.0001) SLEEP(1s * sleepTime)\
+	timer.Reset();\
 }

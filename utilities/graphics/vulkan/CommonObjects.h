@@ -16,6 +16,7 @@ namespace v4d::graphics::vulkan {
 		Device* device = nullptr;
 		
 		void Create(Device* device) {
+			assert(this->device == nullptr);
 			this->device = device;
 			
 			VkSemaphoreCreateInfo semaphoreInfo {};
@@ -40,6 +41,7 @@ namespace v4d::graphics::vulkan {
 		Device* device = nullptr;
 		
 		void Create(Device* device) {
+			assert(this->device == nullptr);
 			this->device = device;
 			
 			VkFenceCreateInfo fenceInfo = {};
@@ -74,6 +76,7 @@ namespace v4d::graphics::vulkan {
 		}
 		
 		void Allocate(Device* device) {
+			assert(this->device == nullptr);
 			this->device = device;
 			
 			VkCommandBufferAllocateInfo allocInfo = {};

@@ -79,7 +79,7 @@ bool OutgoingConnection::Connect(std::string ip, uint16_t port, byte clientType)
 	return false;
 }
 
-bool OutgoingConnection::ConnectRunAsync(std::string ip, uint16_t port, byte clientType) {
+bool OutgoingConnection::ConnectCommunicateAsync(std::string ip, uint16_t port, byte clientType) {
 	runAsync = true;
 	return Connect(ip, port, clientType);
 }
@@ -190,10 +190,10 @@ bool OutgoingConnection::AuthRequest(v4d::data::Stream& authData) {
 bool OutgoingConnection::HandleConnection() {
 	if (runAsync) {
 		if (!asyncRunThread) {
-			asyncRunThread = new std::thread(&OutgoingConnection::Run, this, socket);
+			asyncRunThread = new std::thread(&OutgoingConnection::Communicate, this, socket);
 		}
 	} else {
-		Run(socket);
+		Communicate(socket);
 	}
 	return true;
 }

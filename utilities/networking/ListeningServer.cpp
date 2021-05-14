@@ -31,7 +31,7 @@ void ListeningServer::Start(uint16_t port) {
 	});
 }
 
-void ListeningServer::Stop()  {
+void ListeningServer::Stop() {
 	listeningSocket->Disconnect();
 }
 
@@ -286,12 +286,12 @@ void ListeningServer::HandleNewClient(v4d::io::SocketPtr socket, ulong clientID,
 	}
 	if (socket->IsTCP()) {
 		std::lock_guard lock(clientsMutex);
-		// Start RunClient Thread
+		// Start Communicate Thread
 		client->threads.emplace_back([this,socket,client,clientType]{
-			RunClient(socket, client, clientType);
+			Communicate(socket, client, clientType);
 		});
 	} else {
-		RunClient(socket, client, clientType);
+		Communicate(socket, client, clientType);
 	}
 }
 

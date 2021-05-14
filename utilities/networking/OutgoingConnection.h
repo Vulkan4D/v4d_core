@@ -34,24 +34,22 @@ namespace v4d::networking {
 
 		DELETE_COPY_MOVE_CONSTRUCTORS(OutgoingConnection)
 
-		void Disconnect();
+		virtual void Disconnect();
 
 		inline void SetAsync() {
 			runAsync = true;
 		}
 		
-	// Pure-Virtual methods
+	protected: // Pure-Virtual methods
 		virtual uint64_t GetAppName() const = 0;
 		virtual uint16_t GetVersion() const = 0;
-
-	protected: // Pure-Virtual methods
 		virtual void Authenticate(v4d::data::Stream* authStream) = 0;
-		virtual void Run(v4d::io::SocketPtr socket) = 0;
+		virtual void Communicate(v4d::io::SocketPtr socket) = 0;
 
 	public:
 		virtual void SendHello(byte clientType = 0);
 		virtual bool Connect(std::string ip = "", uint16_t port = 0, byte clientType = 1);
-		virtual bool ConnectRunAsync(std::string ip = "", uint16_t port = 0, byte clientType = 1);
+		virtual bool ConnectCommunicateAsync(std::string ip = "", uint16_t port = 0, byte clientType = 1);
 		virtual std::string GetServerPublicKey(std::string ip, uint16_t port);
 
 		virtual bool TokenRequest();

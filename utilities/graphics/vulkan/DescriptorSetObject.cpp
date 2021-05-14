@@ -6,6 +6,7 @@ namespace v4d::graphics::vulkan {
 	DescriptorSetObject::Descriptor::~Descriptor() {}
 	
 	void DescriptorSetObject::CreateDescriptorSetLayout(Device* device) {
+		assert(this->device == nullptr);
 		this->device = device;
 		std::vector<VkDescriptorSetLayoutBinding> layoutBindings {};
 		for (auto& [binding, descriptor] : descriptorBindings) {

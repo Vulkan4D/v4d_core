@@ -3,6 +3,7 @@
 using namespace v4d::graphics::vulkan;
 
 void ComputeShaderPipelineObject::Create(Device* device) {
+	assert(this->device == nullptr);
 	this->device = device;
 	shaderProgram.CreateShaderStages(device);
 	VkComputePipelineCreateInfo computeCreateInfo {

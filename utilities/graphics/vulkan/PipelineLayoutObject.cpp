@@ -6,6 +6,7 @@ using namespace v4d::graphics::vulkan;
 COMMON_OBJECT_CPP(PipelineLayoutObject, VkPipelineLayout)
 
 void PipelineLayoutObject::Create(Device* device) {
+	assert(this->device == nullptr);
 	this->device = device;
 	
 	std::vector<VkDescriptorSetLayout> descriptorSetsLayouts {};

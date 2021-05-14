@@ -5,6 +5,7 @@ using namespace v4d::graphics::vulkan;
 COMMON_OBJECT_CPP(RenderPassObject, VkRenderPass)
 
 void RenderPassObject::Create(Device* device) {
+	assert(this->device == nullptr);
 	this->device = device;
 	
 	renderPassInfo.attachmentCount = attachments.size();

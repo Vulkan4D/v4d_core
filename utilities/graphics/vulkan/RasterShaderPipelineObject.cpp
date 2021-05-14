@@ -4,6 +4,7 @@
 using namespace v4d::graphics::vulkan;
 
 void RasterShaderPipelineObject::Create(Device* device) {
+	assert(this->device == nullptr);
 	this->device = device;
 	
 	shaderProgram.CreateShaderStages(device);

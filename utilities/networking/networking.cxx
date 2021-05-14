@@ -42,7 +42,7 @@ public:
 		}
 	}
 
-	void RunClient(v4d::io::SocketPtr, std::shared_ptr<v4d::networking::IncomingClient>, byte /*clientType*/) override {
+	void Communicate(v4d::io::SocketPtr, std::shared_ptr<v4d::networking::IncomingClient>, byte /*clientType*/) override {
 		result -= 30;
 	}
 
@@ -63,7 +63,7 @@ public:
 		*authStream << zapdata::Auth{"bob", "12345", {4,16,512}};
 	}
 	
-	void Run(v4d::io::SocketPtr /*socket*/) override {
+	void Communicate(v4d::io::SocketPtr /*socket*/) override {
 		result -= 20;
 	}
 
