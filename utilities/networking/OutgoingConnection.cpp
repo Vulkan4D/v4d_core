@@ -4,24 +4,22 @@
 using namespace v4d::networking;
 
 OutgoingConnection::OutgoingConnection(v4d::io::SOCKET_TYPE type, std::shared_ptr<v4d::crypto::RSA> serverPublicKey, int aesBits)
-	: id(0), token(""), socket(nullptr), rsa(serverPublicKey && serverPublicKey->GetSize()? serverPublicKey : nullptr), aes(aesBits) {
+	: id(-1), token(""), socket(nullptr), rsa(serverPublicKey && serverPublicKey->GetSize()? serverPublicKey : nullptr), aes(aesBits) {
 		socket = std::make_shared<v4d::io::Socket>(type);
 	}
 
-OutgoingConnection::OutgoingConnection(ulong id, std::string token, v4d::io::SOCKET_TYPE type, std::shared_ptr<v4d::crypto::RSA> serverPublicKey, std::string aesHex)
+OutgoingConnection::OutgoingConnection(int32_t id, std::string token, v4d::io::SOCKET_TYPE type, std::shared_ptr<v4d::crypto::RSA> serverPublicKey, std::string aesHex)
 	: id(id), token(token), socket(nullptr), rsa(serverPublicKey && serverPublicKey->GetSize()? serverPublicKey : nullptr), aes(aesHex) {
 		socket = std::make_shared<v4d::io::Socket>(type);
 	}
 
 OutgoingConnection::OutgoingConnection(OutgoingConnection* src)
-: id(src->id), token(src->token), socket(nullptr), rsa(src->rsa), aes(src->aes.GetHexKey()) {
-	socket = std::make_shared<v4d::io::Socket>(src->socket->GetSocketType());
+: id(src->id), token(src->token), socket(std::make_shared<v4d::io::Socket>(src->socket->GetSocketType())), rsa(src->rsa), aes(src->aes.GetHexKey()) {
 	socket->SetRemoteAddr(src->socket->GetRemoteAddr());
 }
 
-OutgoingConnection::OutgoingConnection(v4d::io::SOCKET_TYPE type, OutgoingConnection* src)
-: id(src->id), token(src->token), socket(nullptr), rsa(src->rsa), aes(src->aes.GetHexKey()) {
-	socket = std::make_shared<v4d::io::Socket>(type);
+OutgoingConnection::OutgoingConnection(OutgoingConnection* src, v4d::io::SOCKET_TYPE type)
+: id(src->id), token(src->token), socket(std::make_shared<v4d::io::Socket>(type)), rsa(src->rsa), aes(src->aes.GetHexKey()) {
 	socket->SetRemoteAddr(src->socket->GetRemoteAddr());
 }
 
@@ -49,13 +47,13 @@ bool OutgoingConnection::Connect(std::string ip, uint16_t port, byte clientType)
 	socket->Connect(ip, port);
 	SendHello(clientType);
 
-	if (id) {
+	if (id != -1) {
 		*socket << ZAP::TOKEN;
 		if (socket->IsTCP()) LOG_VERBOSE("Connecting using TOKEN....")
 		if (!TokenRequest()) {
 			if (socket->IsTCP()) { 
 				LOG_ERROR_VERBOSE("Token Connection failed, will try Auth connection...")
-				id = 0;
+				id = -1;
 				goto Connect;
 			} else {
 				return false;
@@ -100,7 +98,7 @@ std::string OutgoingConnection::GetServerPublicKey(std::string ip, uint16_t port
 
 bool OutgoingConnection::TokenRequest() {
 	static std::atomic<uint64_t> requestIncrement = 0;
-	socket->Write<uint64_t>(id);
+	socket->Write<int32_t>(id);
 	v4d::data::Stream tokenToEncrypt(64);
 	tokenToEncrypt << zapdata::ClientToken {++requestIncrement, token};
 	socket->WriteEncryptedStream(&aes, tokenToEncrypt);

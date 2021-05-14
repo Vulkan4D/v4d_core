@@ -11,19 +11,26 @@
 namespace v4d::networking {
 	class IncomingClient {
 	public:
-		uint64_t id;
-		std::string token;
-		v4d::crypto::AES aes;
-		std::vector<std::thread> threads{};
-		std::atomic<uint64_t> requestIncrement = 0;
-		uint8_t flags = 0; // reserved for use by application
+		int32_t id;
 		
-		IncomingClient(uint64_t id, std::string token, std::string aesHex);
-		IncomingClient(uint64_t id);
+		std::string token = "";
+		std::unique_ptr<v4d::crypto::AES> aes = nullptr;
+		std::atomic<uint64_t> requestIncrement = 0;
+		
+		IncomingClient(int32_t id);
 
 		~IncomingClient();
+		
+		void EmplaceThread(std::function<void()>&& func) {
+			std::lock_guard lock(threadsMutex);
+			threads.emplace_back(std::forward<std::function<void()>>(func));
+		}
 
 		DELETE_COPY_MOVE_CONSTRUCTORS(IncomingClient)
+		
+	protected:
+		std::mutex threadsMutex;
+		std::vector<std::thread> threads {};
 	};
 	
 	typedef std::shared_ptr<IncomingClient> IncomingClientPtr;

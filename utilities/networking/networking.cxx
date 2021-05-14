@@ -24,21 +24,22 @@ public:
 		return 168;
 	}
 
-	ulong Authenticate(v4d::data::ReadOnlyStream* authStream) override {
+	v4d::networking::IncomingClientPtr Authenticate(v4d::data::ReadOnlyStream* authStream) override {
 		if (authStream) {
 			auto[username, password, stuff] = zapdata::Auth::ConstructFromStream(authStream);
 			if (username == "bob" && password == "12345") {
 				if (stuff.size() == 3 && stuff[0] == 4 && stuff[1] == 16 && stuff[2] == 512) {
-					return 16488; // ID
+					uint32_t id;
+					return clientPool->NewClient(id);
 				} else {
-					return 0;
+					return nullptr;
 				}
 			} else {
-				return 0;
+				return nullptr;
 			}
 		} else {
 			// Anonymous
-			return 0;
+			return nullptr;
 		}
 	}
 
@@ -73,10 +74,12 @@ namespace v4d::tests {
 	int Networking() {
 
 		auto rsa = std::make_shared<v4d::crypto::RSA>(2048, 3);
+		
+		auto clientPool = std::make_shared<v4d::networking::BasicClientPool>(32);
 
 		{// Test1
 			// Server
-			TestServer server(v4d::io::TCP, rsa);
+			TestServer server(clientPool, v4d::io::TCP, rsa);
 			server.Start(44444);
 
 			auto rsaPublicKey = std::make_shared<v4d::crypto::RSA>(TestClient{v4d::io::TCP}.GetServerPublicKey("127.0.0.1", 44444), false);
@@ -84,10 +87,6 @@ namespace v4d::tests {
 			// Client
 			TestClient client(v4d::io::TCP, rsaPublicKey);
 			if (client.Connect("127.0.0.1", 44444, 1)) {
-				if (client.id != 16488) {
-					LOG_ERROR("Networking Error Test1: Wrong ID")
-					return 3;
-				}
 				SLEEP(100ms) // wait for server to have the time to decrement result
 				client.Disconnect();
 				if (result != 50) {

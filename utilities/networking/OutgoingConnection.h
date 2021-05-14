@@ -12,7 +12,7 @@
 namespace v4d::networking {
 	class V4DLIB OutgoingConnection {
 	public:
-		ulong id;
+		int32_t id;
 		std::string token;
 	protected:
 		v4d::io::SocketPtr socket;
@@ -26,9 +26,9 @@ namespace v4d::networking {
 		int connectionTimeoutMilliseconds = 2000;
 
 		OutgoingConnection(v4d::io::SOCKET_TYPE type = v4d::io::TCP, std::shared_ptr<v4d::crypto::RSA> serverPublicKey = nullptr, int aesBits = 256);
-		OutgoingConnection(ulong id, std::string token, v4d::io::SOCKET_TYPE type = v4d::io::TCP, std::shared_ptr<v4d::crypto::RSA> serverPublicKey = nullptr, std::string aesHex = "");
+		OutgoingConnection(int32_t id, std::string token, v4d::io::SOCKET_TYPE type = v4d::io::TCP, std::shared_ptr<v4d::crypto::RSA> serverPublicKey = nullptr, std::string aesHex = "");
 		OutgoingConnection(OutgoingConnection* src);
-		OutgoingConnection(v4d::io::SOCKET_TYPE type, OutgoingConnection* src);
+		OutgoingConnection(OutgoingConnection* src, v4d::io::SOCKET_TYPE type);
 
 		virtual ~OutgoingConnection();
 

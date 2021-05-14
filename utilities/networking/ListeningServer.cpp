@@ -5,17 +5,11 @@
 
 using namespace v4d::networking;
 
-ListeningServer::ListeningServer(v4d::io::SOCKET_TYPE type, std::shared_ptr<v4d::crypto::RSA> serverPrivateKey)
-: listeningSocket(nullptr), rsa(serverPrivateKey) {
-	listeningSocket = std::make_shared<v4d::io::Socket>(type);
-	clients = std::make_shared<std::unordered_map<ulong, std::shared_ptr<IncomingClient>>>();
-}
+ListeningServer::ListeningServer(std::shared_ptr<ClientPool> clientPool, v4d::io::SOCKET_TYPE type, std::shared_ptr<v4d::crypto::RSA> serverPrivateKey)
+: clientPool(clientPool), listeningSocket(std::make_shared<v4d::io::Socket>(type)), rsa(serverPrivateKey) {}
 
-ListeningServer::ListeningServer(v4d::io::SOCKET_TYPE type, ListeningServer* src)
-: listeningSocket(nullptr), rsa(src->rsa) {
-	listeningSocket = std::make_shared<v4d::io::Socket>(type);
-	clients = src->clients;
-}
+ListeningServer::ListeningServer(ListeningServer* src, v4d::io::SOCKET_TYPE type)
+: clientPool(src->clientPool), listeningSocket(std::make_shared<v4d::io::Socket>(type)), rsa(src->rsa) {}
 
 ListeningServer::~ListeningServer() {
 	Stop();
@@ -155,9 +149,10 @@ void ListeningServer::ExtendedRequest(v4d::io::SocketPtr socket, byte /*clientTy
 }
 
 void ListeningServer::TokenRequest(v4d::io::SocketPtr socket, byte clientType) {
-	uint64_t clientID = socket->Read<uint64_t>();
-	{std::lock_guard lock(clientsMutex);
-		if (clients->find(clientID) == clients->end()) {
+	int32_t clientID = socket->Read<int32_t>();
+	auto client = clientPool->GetClient(clientID);
+	{
+		if (!client) {
 			if (socket->IsTCP()) {
 				clientID = 0;
 				*socket << ZAP::DENY;
@@ -167,10 +162,10 @@ void ListeningServer::TokenRequest(v4d::io::SocketPtr socket, byte clientType) {
 			}
 			return;
 		}
-		auto encryptedToken = socket->ReadEncryptedStream(&clients->at(clientID)->aes);
+		auto encryptedToken = socket->ReadEncryptedStream(client->aes.get());
 		auto[increment, token] = zapdata::ClientToken::ConstructFromStream(encryptedToken);
 		// Compare token with client's token
-		if (strcmp(token.c_str(), clients->at(clientID)->token.c_str()) != 0) {
+		if (strcmp(token.c_str(), client->token.c_str()) != 0) {
 			if (socket->IsTCP()) {
 				token = "";
 				*socket << ZAP::DENY;
@@ -181,7 +176,7 @@ void ListeningServer::TokenRequest(v4d::io::SocketPtr socket, byte clientType) {
 			return;
 		}
 		// Compare encrypted increment to prevent hackers from reusing previously sent token headers to send data on behalf of someone else (some kind of nonce)
-		if (increment <= clients->at(clientID)->requestIncrement || increment > clients->at(clientID)->requestIncrement + REQ_INCREMENT_MAX_DIFF) {
+		if (increment <= client->requestIncrement || increment > client->requestIncrement + REQ_INCREMENT_MAX_DIFF) {
 			if (socket->IsTCP()) {
 				clientID = 0;
 				*socket << ZAP::DENY;
@@ -191,18 +186,18 @@ void ListeningServer::TokenRequest(v4d::io::SocketPtr socket, byte clientType) {
 			}
 			return;
 		}
-		clients->at(clientID)->requestIncrement = increment;
+		client->requestIncrement = increment;
 		if (socket->IsTCP()) {
 			*socket << ZAP::OK;
 			socket->Flush();
 		}
 	}
-	HandleNewClient(socket, clientID, clientType);
+	HandleNewClient(socket, client, clientType);
 }
 
 void ListeningServer::AnonymousRequest(v4d::io::SocketPtr socket, byte clientType) {
-	ulong clientID = Authenticate(nullptr);
-	if (!clientID) {
+	IncomingClientPtr client = Authenticate(nullptr);
+	if (!client) {
 		if (socket->IsTCP()) {
 			*socket << ZAP::DENY;
 			*socket << zapdata::Error{ZAP_CODES::DENY_ANONYMOUS, ZAP_CODES::DENY_ANONYMOUS_text};
@@ -211,15 +206,12 @@ void ListeningServer::AnonymousRequest(v4d::io::SocketPtr socket, byte clientTyp
 		}
 		return;
 	}
-	{std::lock_guard lock(clientsMutex);
-		clients->try_emplace(clientID, std::make_shared<IncomingClient>(clientID));
-	}
 	if (socket->IsTCP()) {
 		// Send response
 		*socket << ZAP::OK;
 		socket->Flush();
 	}
-	HandleNewClient(socket, clientID, clientType);
+	HandleNewClient(socket, client, clientType);
 }
 
 void ListeningServer::AuthRequest(v4d::io::SocketPtr socket, byte clientType) {
@@ -235,8 +227,8 @@ void ListeningServer::AuthRequest(v4d::io::SocketPtr socket, byte clientType) {
 		return;
 	}
 	auto authData = authStream.GetData();
-	ulong clientID = Authenticate(&authStream);
-	if (!clientID) {
+	IncomingClientPtr client = Authenticate(&authStream);
+	if (!client) {
 		if (socket->IsTCP()) {
 			*socket << ZAP::DENY;
 			*socket << zapdata::Error{ZAP_CODES::AUTH_FAILED, ZAP_CODES::AUTH_FAILED_text};
@@ -246,48 +238,35 @@ void ListeningServer::AuthRequest(v4d::io::SocketPtr socket, byte clientType) {
 		return;
 	}
 	// Prepare response
-	std::string token = GenerateToken();
-	std::string aesHexKey = authStream.Read<std::string>();
-	
-	{std::lock_guard lock(clientsMutex);
-		if (clients->find(clientID) != clients->end()) {
-			// Destroy any existing client with the same id
-			clients->erase(clientID);
-		}
-		(*clients)[clientID] = std::make_shared<IncomingClient>(clientID, token, aesHexKey);
-		if (socket->IsTCP()) {
-			v4d::data::Stream tokenAndId(10+token.size() + sizeof(clientID));
-			tokenAndId << token << clientID;
-			// Send response
-			*socket << ZAP::OK;
-			if (rsa) *socket << rsa->Sign(authData);
-			socket->WriteEncryptedStream(&clients->at(clientID)->aes, tokenAndId);
-		}
+	client->token = GenerateToken();
+	client->aes = std::make_unique<v4d::crypto::AES>(authStream.Read<std::string>());
+	if (socket->IsTCP()) {
+		v4d::data::Stream tokenAndId(10+client->token.size() + sizeof(client->id));
+		tokenAndId << client->token << client->id;
+		// Send response
+		*socket << ZAP::OK;
+		if (rsa) *socket << rsa->Sign(authData);
+		socket->WriteEncryptedStream(client->aes.get(), tokenAndId);
 	}
 	if (socket->IsTCP()) {
 		socket->Flush();
 	}
-	HandleNewClient(socket, clientID, clientType);
+	HandleNewClient(socket, client, clientType);
 }
 
-void ListeningServer::HandleNewClient(v4d::io::SocketPtr socket, ulong clientID, byte clientType) {
-	std::shared_ptr<IncomingClient> client = nullptr;
-	{std::lock_guard lock(clientsMutex);
-		if (!clientID || clients->find(clientID) == clients->end()) {
-			if (socket->IsTCP()) {
-				*socket << ZAP::DENY;
-				*socket << zapdata::Error{ZAP_CODES::AUTH_FAILED_HANDSHAKE, ZAP_CODES::AUTH_FAILED_HANDSHAKE_text};
-				socket->Flush();
-				socket->Disconnect();
-			}
-			return;
+void ListeningServer::HandleNewClient(v4d::io::SocketPtr socket, IncomingClientPtr client, byte clientType) {
+	if (!client) {
+		if (socket->IsTCP()) {
+			*socket << ZAP::DENY;
+			*socket << zapdata::Error{ZAP_CODES::AUTH_FAILED_HANDSHAKE, ZAP_CODES::AUTH_FAILED_HANDSHAKE_text};
+			socket->Flush();
+			socket->Disconnect();
 		}
-		client = clients->at(clientID);
+		return;
 	}
 	if (socket->IsTCP()) {
-		std::lock_guard lock(clientsMutex);
 		// Start Communicate Thread
-		client->threads.emplace_back([this,socket,client,clientType]{
+		client->EmplaceThread([this,socket,client,clientType]{
 			Communicate(socket, client, clientType);
 		});
 	} else {

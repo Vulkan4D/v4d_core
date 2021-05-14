@@ -41,6 +41,7 @@
 namespace v4d::io {
 
 	enum SOCKET_TYPE : byte {
+		INVALID = 0,
 		TCP = SOCK_STREAM,
 		UDP = SOCK_DGRAM,
 	};

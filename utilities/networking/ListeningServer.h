@@ -11,22 +11,22 @@
 #include "utilities/io/Socket.h"
 #include "utilities/networking/IncomingClient.h"
 #include "utilities/networking/ZAP.hh"
+#include "ClientPool.h"
 
 namespace v4d::networking {
 
 	class V4DLIB ListeningServer {
 	protected:
-		const ulong REQ_INCREMENT_MAX_DIFF = 100000; // maximum acceptable difference in the increment index between two requests
+		std::shared_ptr<ClientPool> clientPool;
 		v4d::io::SocketPtr listeningSocket;
 		std::shared_ptr<v4d::crypto::RSA> rsa;
 
+		const ulong REQ_INCREMENT_MAX_DIFF = 100000; // maximum acceptable difference in the increment index between two requests
+		
 	public:
 
-		std::shared_ptr<std::unordered_map<ulong, std::shared_ptr<IncomingClient>>> clients = nullptr;
-		std::mutex clientsMutex;
-
-		ListeningServer(v4d::io::SOCKET_TYPE type = v4d::io::TCP, std::shared_ptr<v4d::crypto::RSA> serverPrivateKey = nullptr);
-		ListeningServer(v4d::io::SOCKET_TYPE type, ListeningServer* src);
+		ListeningServer(std::shared_ptr<ClientPool>, v4d::io::SOCKET_TYPE type = v4d::io::TCP, std::shared_ptr<v4d::crypto::RSA> serverPrivateKey = nullptr);
+		ListeningServer(ListeningServer* src, v4d::io::SOCKET_TYPE type);
 
 		virtual ~ListeningServer();
 
@@ -45,7 +45,7 @@ namespace v4d::networking {
 		virtual uint16_t GetVersion() const = 0;
 
 	protected: // Pure-Virtual methods
-		virtual ulong Authenticate(v4d::data::ReadOnlyStream* /*authStream*/) = 0;
+		virtual IncomingClientPtr Authenticate(v4d::data::ReadOnlyStream* /*authStream*/) = 0;
 		virtual void Communicate(v4d::io::SocketPtr, std::shared_ptr<IncomingClient>, byte /*clientType*/) = 0;
 
 	protected:
@@ -60,7 +60,7 @@ namespace v4d::networking {
 		virtual void AnonymousRequest(v4d::io::SocketPtr socket, byte clientType);
 		virtual void AuthRequest(v4d::io::SocketPtr socket, byte clientType);
 		
-		virtual void HandleNewClient(v4d::io::SocketPtr socket, ulong clientID, byte clientType);
+		virtual void HandleNewClient(v4d::io::SocketPtr socket, IncomingClientPtr client, byte clientType);
 
 		virtual std::string GenerateToken() const;
 	};
