@@ -49,11 +49,6 @@ class V4DLIB V4D_Mod {
 		// Secondary
 		,Renderer_SecondaryUpdate
 		
-		// Game
-		,Game_Update
-		,Game_InputUpdate
-		,Game_PassiveUpdate
-		
 	)
 	
 	V4D_MODULE_FUNC_DECLARE(int, Mod_RunFromConsole, const int argc, const char** argv)
@@ -84,10 +79,5 @@ class V4DLIB V4D_Mod {
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_SwapChainRenderPass, VkCommandBuffer cmdBuffer, int currentFrame, int swapChainImageIndex)
 	// Secondary
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_SecondaryUpdate)
-
-	// Game
-	V4D_MODULE_FUNC_DECLARE(void, Game_Update, double deltaTime)
-	V4D_MODULE_FUNC_DECLARE(void, Game_InputUpdate, double deltaTime)
-	V4D_MODULE_FUNC_DECLARE(void, Game_PassiveUpdate)
 
 };

@@ -69,55 +69,38 @@ namespace v4d::modular {
 	};
 }
 
-#define V4D_MODULE_CLASS_CPP(moduleClassName)\
-	moduleClassName::callback moduleClassName::_modulesLoadCallback = [](moduleClassName*&){};\
-	moduleClassName::callback moduleClassName::_modulesUnloadCallback = [](moduleClassName*&){};\
-	moduleClassName::errorCallback moduleClassName::_modulesLoadErrorCallback = [](const char* err){\
+#define V4D_MODULE_CLASS_CPP(ModuleClassName)\
+	ModuleClassName::callback ModuleClassName::_modulesLoadCallback = [](ModuleClassName*&){};\
+	ModuleClassName::callback ModuleClassName::_modulesUnloadCallback = [](ModuleClassName*&){};\
+	ModuleClassName::errorCallback ModuleClassName::_modulesLoadErrorCallback = [](const char* err){\
 		std::cerr << err << std::endl;\
 	};\
-	std::recursive_mutex moduleClassName::_mutexForLoadedModules {};\
-	std::unordered_map<std::string, moduleClassName*> moduleClassName::_loadedModules {};\
-	std::unordered_map<std::string, std::vector<moduleClassName*>> moduleClassName::_loadedSortedModules {};\
-	void moduleClassName::ModulesSetLoadCallback(const callback&& func) {\
+	std::recursive_mutex ModuleClassName::_mutexForLoadedModules {};\
+	std::unordered_map<std::string, ModuleClassName*> ModuleClassName::_loadedModules {};\
+	std::unordered_map<std::string, std::vector<ModuleClassName*>> ModuleClassName::_loadedSortedModules {};\
+	void ModuleClassName::ModulesSetLoadCallback(const callback&& func) {\
 		_modulesLoadCallback = func;\
 	}\
-	void moduleClassName::ModulesSetUnloadCallback(const callback&& func) {\
+	void ModuleClassName::ModulesSetUnloadCallback(const callback&& func) {\
 		_modulesUnloadCallback = func;\
 	}\
-	void moduleClassName::ModulesSetLoadErrorCallback(const errorCallback&& func) {\
+	void ModuleClassName::ModulesSetLoadErrorCallback(const errorCallback&& func) {\
 		_modulesLoadErrorCallback = func;\
 	}\
-	moduleClassName* moduleClassName::LoadModule(const std::string& mod, bool triggerErrorOnFailure) {\
-		std::lock_guard lock(_mutexForLoadedModules);\
-		const std::string path = std::string("modules/") + mod + "/" + mod + "." + #moduleClassName;\
-		if (_loadedModules.find(mod) == _loadedModules.end()) {\
-			moduleClassName* instance = new moduleClassName(path);\
-			instance->_moduleName = mod;\
-			if (!instance->_handle) {\
-				if (triggerErrorOnFailure) {\
-					std::ostringstream err;\
-					err << "Module '" << path << "' failed to load with error: " << instance->_error;\
-					_modulesLoadErrorCallback(err.str().c_str());\
-				}\
-				delete instance;\
-				return nullptr;\
-			}\
-			_loadedModules.emplace(mod, instance);\
-			_modulesLoadCallback(instance);\
-		}\
-		return _loadedModules[mod];\
+	ModuleClassName* ModuleClassName::LoadModule(const std::string& mod, bool triggerErrorOnFailure) {\
+		const std::string filePath = std::string("modules/") + mod + "/" + mod + "." + #ModuleClassName;\
+		return LoadModuleLib<ModuleClassName>(mod, triggerErrorOnFailure, filePath);\
 	}\
-	moduleClassName* moduleClassName::GetModule(const std::string& mod) {\
-		/*std::lock_guard lock(_mutexForLoadedModules);*/\
-		if (_loadedModules.find(mod) == _loadedModules.end()) {\
-			return nullptr;\
+	ModuleClassName* ModuleClassName::GetModule(const std::string& mod) {\
+		if (_loadedModules.contains(mod)) {\
+			return _loadedModules.at(mod);\
 		}\
-		return _loadedModules.at(mod);\
+		return nullptr;\
 	}\
-	void moduleClassName::UnloadModule(const std::string& mod) {\
+	void ModuleClassName::UnloadModule(const std::string& mod) {\
 		std::lock_guard lock(_mutexForLoadedModules);\
-		moduleClassName* modPtr = nullptr;\
-		if (_loadedModules.find(mod) != _loadedModules.end()) {\
+		ModuleClassName* modPtr = nullptr;\
+		if (_loadedModules.contains(mod)) {\
 			_modulesUnloadCallback(_loadedModules[mod]);\
 			modPtr = _loadedModules[mod];\
 			delete modPtr;\
@@ -129,24 +112,24 @@ namespace v4d::modular {
 			}\
 		}\
 	}\
-	size_t moduleClassName::Count() {\
+	size_t ModuleClassName::Count() {\
 		std::lock_guard lock(_mutexForLoadedModules);\
 		return _loadedModules.size();\
 	}\
-	void moduleClassName::ForEachModule(const callback&& func) {\
+	void ModuleClassName::ForEachModule(const callback&& func) {\
 		std::lock_guard lock(_mutexForLoadedModules);\
 		for (auto[mod, modulePtr] : _loadedModules) {\
 			func(modulePtr);\
+			if (!modulePtr) break;\
 		}\
 	}\
-	void moduleClassName::ForEachSortedModule(const callback&& func, const std::string& sortedListKey) {\
-		/*std::lock_guard lock(_mutexForLoadedModules);*/\
+	void ModuleClassName::ForEachSortedModule(const callback&& func, const std::string& sortedListKey) {\
 		for (auto* modulePtr : _loadedSortedModules[sortedListKey]) {\
 			func(modulePtr);\
 			if (!modulePtr) break;\
 		}\
 	}\
-	void moduleClassName::SortModules(const std::function<bool(moduleClassName*, moduleClassName*)>& func, const std::string& sortedListKey) {\
+	void ModuleClassName::SortModules(const std::function<bool(ModuleClassName*, ModuleClassName*)>& func, const std::string& sortedListKey) {\
 		std::lock_guard lock(_mutexForLoadedModules);\
 		_loadedSortedModules[sortedListKey].clear();\
 		_loadedSortedModules[sortedListKey].reserve(_loadedModules.size());\
@@ -155,13 +138,17 @@ namespace v4d::modular {
 		}\
 		std::sort(_loadedSortedModules[sortedListKey].begin(), _loadedSortedModules[sortedListKey].end(), func);\
 	}\
-	void moduleClassName::UnloadModules() {\
+	void ModuleClassName::UnloadModules() {\
 		std::lock_guard lock(_mutexForLoadedModules);\
 		for (auto[mod, modulePtr] : _loadedModules) {\
 			delete modulePtr;\
 		}\
 		_loadedModules.clear();\
 		_loadedSortedModules.clear();\
+	}\
+	ModuleClassName::~ModuleClassName() {\
+		if (ModuleUnload) ModuleUnload();\
+		if (_handle) __V4D_MODULE_UNLOAD(_handle);\
 	}
 
 #ifdef _WIN32
@@ -172,9 +159,9 @@ namespace v4d::modular {
 	#define __V4D_MODULE_GET_ERROR() GetLastError()
 	#define __V4D_MODULE_UNLOAD(handle) FreeLibrary(handle)
 	#ifdef _V4D_IN_EDITOR // This is just for ease of editor validation, using a fake class method overrider instead of a function pointer definition
-		#define __V4D_MODULE_FUNC_LOAD(funcName)
+		#define __V4D_MODULE_FUNC_LOAD(FuncName)
 	#else
-		#define __V4D_MODULE_FUNC_LOAD(funcName) *(void **)(&funcName) = (void*)GetProcAddress(_handle, #funcName);
+		#define __V4D_MODULE_FUNC_LOAD(FuncName) *(void **)(&FuncName) = (void*)GetProcAddress(_handle, #FuncName);
 	#endif
 	// QuickFix for windows.. because 'overwrite_existing' option is not working... we get the 'file exists' error... WTF...
 	#define __V4D_MODULE_COPY_NEW(filePath) {std::filesystem::remove(filePath); std::filesystem::copy_file(filePath+".new", filePath);}
@@ -186,9 +173,9 @@ namespace v4d::modular {
 	#define __V4D_MODULE_GET_ERROR() dlerror()
 	#define __V4D_MODULE_UNLOAD(handle) dlclose(handle)
 	#ifdef _V4D_IN_EDITOR // This is just for ease of editor validation, using a fake class method overrider instead of a function pointer definition
-		#define __V4D_MODULE_FUNC_LOAD(funcName)
+		#define __V4D_MODULE_FUNC_LOAD(FuncName)
 	#else
-		#define __V4D_MODULE_FUNC_LOAD(funcName) *(void **)(&funcName) = dlsym(_handle, #funcName);
+		#define __V4D_MODULE_FUNC_LOAD(FuncName) *(void **)(&FuncName) = dlsym(_handle, #FuncName);
 	#endif
 	#define __V4D_MODULE_COPY_NEW(filePath) {std::filesystem::copy_file(filePath+".new", filePath, std::filesystem::copy_options::overwrite_existing);}
 #endif
@@ -197,37 +184,58 @@ namespace v4d::modular {
 	// Define which class your module extends
 	#define V4D_MODULE_CLASS(c) class c ## _MOD : private c
 	// Define a function within your module, using the same structure as in the V4D_MODULE_FUNC_DECLARE lines in the module class declaration
-	#define V4D_MODULE_FUNC(returnType, funcName, ...) returnType funcName ## _MOD (__VA_ARGS__) override
-	#define V4D_MODULE_FUNC_DECLARE(returnType, funcName, ...) private: virtual returnType funcName ## _MOD (__VA_ARGS__); public: returnType (*funcName)(__VA_ARGS__) = nullptr;
+	#define V4D_MODULE_FUNC(ReturnType, FuncName, ...) ReturnType FuncName ## _MOD (__VA_ARGS__) override
+	#define V4D_MODULE_FUNC_DECLARE(ReturnType, FuncName, ...) private: virtual ReturnType FuncName ## _MOD (__VA_ARGS__); public: ReturnType (*FuncName)(__VA_ARGS__) = nullptr;
 #else
 	#define V4D_MODULE_CLASS(c) extern "C"
-	#define V4D_MODULE_FUNC(returnType, funcName, ...) returnType funcName (__VA_ARGS__)
-	#define V4D_MODULE_FUNC_DECLARE(returnType, funcName, ...) public: returnType (*funcName)(__VA_ARGS__) = nullptr;
+	#define V4D_MODULE_FUNC(ReturnType, FuncName, ...) ReturnType FuncName (__VA_ARGS__)
+	#define V4D_MODULE_FUNC_DECLARE(ReturnType, FuncName, ...) public: ReturnType (*FuncName)(__VA_ARGS__) = nullptr;
 #endif
 
-#define V4D_MODULE_CLASS_HEADER(moduleClassName, ...)\
-	private:\
-		using callback = std::function<void(moduleClassName*&)>;\
+#define V4D_MODULE_CLASS_HEADER(ModuleClassName, ...)\
+	protected:\
+		using callback = std::function<void(ModuleClassName*&)>;\
 		using errorCallback = std::function<void(const char*)>;\
 		static callback _modulesLoadCallback;\
 		static callback _modulesUnloadCallback;\
 		static errorCallback _modulesLoadErrorCallback;\
 		static std::recursive_mutex _mutexForLoadedModules;\
-		static std::unordered_map<std::string, moduleClassName*> _loadedModules;\
-		static std::unordered_map<std::string, std::vector<moduleClassName*>> _loadedSortedModules;\
+		static std::unordered_map<std::string, ModuleClassName*> _loadedModules;\
+		static std::unordered_map<std::string, std::vector<ModuleClassName*>> _loadedSortedModules;\
+		template<class ModuleClass>\
+		static ModuleClass* LoadModuleLib(const std::string& mod, bool triggerErrorOnFailure, std::string filePath) {\
+			std::lock_guard lock(_mutexForLoadedModules);\
+			if (!_loadedModules.contains(mod)) {\
+				ModuleClass* instance = new ModuleClass(filePath);\
+				instance->_moduleName = mod;\
+				if (!instance->_handle) {\
+					if (triggerErrorOnFailure) {\
+						std::ostringstream err;\
+						err << "Module '" << filePath << "' failed to load with error: " << instance->_error;\
+						_modulesLoadErrorCallback(err.str().c_str());\
+					}\
+					delete instance;\
+					return nullptr;\
+				}\
+				_loadedModules.emplace(mod, instance);\
+				_modulesLoadCallback((ModuleClassName*&)instance);\
+				return instance;\
+			}\
+			return dynamic_cast<ModuleClass*>(_loadedModules.at(mod));\
+		}\
 	public:\
 		static void ModulesSetLoadCallback(const callback&& _modulesLoadCallback);\
 		static void ModulesSetUnloadCallback(const callback&& _modulesUnloadCallback);\
 		static void ModulesSetLoadErrorCallback(const errorCallback&& _modulesLoadErrorCallback);\
-		static moduleClassName* LoadModule(const std::string& mod, bool triggerErrorOnFailure = false);\
-		static moduleClassName* GetModule(const std::string& mod);\
+		static ModuleClassName* LoadModule(const std::string& mod, bool triggerErrorOnFailure = false);\
+		static ModuleClassName* GetModule(const std::string& mod);\
 		static void UnloadModule(const std::string& mod);\
 		static size_t Count();\
 		static void ForEachModule(const callback&& func);\
 		static void ForEachSortedModule(const callback&& func, const std::string& sortedListKey = "");\
-		static void SortModules(const std::function<bool(moduleClassName*, moduleClassName*)>& func, const std::string& sortedListKey = "");\
+		static void SortModules(const std::function<bool(ModuleClassName*, ModuleClassName*)>& func, const std::string& sortedListKey = "");\
 		static void UnloadModules();\
-	private:\
+	protected:\
 		__V4D_MODULE_FILE_HANDLER _handle = 0;\
 		__V4D_MODULE_ERR_TYPE _error = 0;\
 		std::string _libPath {""};\
@@ -236,7 +244,7 @@ namespace v4d::modular {
 		__V4D_MODULE_FILE_HANDLER ModuleLibraryHandle() const {return _handle;}\
 		std::string ModuleLibraryFilePath() const {return _libPath;}\
 		std::string ModuleName() const {return _moduleName;}\
-		moduleClassName(const std::string& filePath) {\
+		ModuleClassName(const std::string& filePath) {\
 			_libPath = filePath + __V4D_MODULE_FILE_EXT;\
 			if (v4d::io::FilePath::FileExists(_libPath+".new")) {\
 				__V4D_MODULE_COPY_NEW(_libPath)\
@@ -251,16 +259,57 @@ namespace v4d::modular {
 			__V4D_MODULE_FUNC_LOAD(ModuleGetCustomPtr)\
 			if (ModuleLoad) ModuleLoad();\
 		}\
-		DELETE_COPY_MOVE_CONSTRUCTORS(moduleClassName)\
+		DELETE_COPY_MOVE_CONSTRUCTORS(ModuleClassName)\
 		V4D_MODULE_FUNC_DECLARE(void, ModuleLoad)\
 		V4D_MODULE_FUNC_DECLARE(void, ModuleUnload)\
 		V4D_MODULE_FUNC_DECLARE(void, ModuleSetCustomPtr, int, void*)\
 		V4D_MODULE_FUNC_DECLARE(void*, ModuleGetCustomPtr, int)\
-		~moduleClassName() {\
-			if (ModuleUnload) ModuleUnload();\
-			if (_handle) __V4D_MODULE_UNLOAD(_handle);\
-		}
-		
+		virtual ~ModuleClassName();
+
+#define V4D_MODULE_CLASS_DERIVED(DerivedModuleClassName, BaseModuleClassName, ...)\
+	protected:\
+		using callback = std::function<void(DerivedModuleClassName*&)>;\
+	public:\
+		static DerivedModuleClassName* LoadModule(const std::string& mod, bool triggerErrorOnFailure = false) {\
+			DerivedModuleClassName* derivedModule = LoadModuleLib<DerivedModuleClassName>(mod, triggerErrorOnFailure, std::string("modules/") + mod + "/" + mod + "." + #DerivedModuleClassName);\
+			if (derivedModule) return derivedModule;\
+			return LoadModuleLib<DerivedModuleClassName>(mod, triggerErrorOnFailure, std::string("modules/") + mod + "/" + mod + "." + #BaseModuleClassName);\
+		}\
+		static DerivedModuleClassName* GetModule(const std::string& mod) {\
+			DerivedModuleClassName* derivedModule = dynamic_cast<DerivedModuleClassName*>(BaseModuleClassName::GetModule(mod));\
+			return derivedModule? derivedModule : nullptr;\
+		}\
+		static void ForEachModule(const callback&& func) {\
+			std::lock_guard lock(_mutexForLoadedModules);\
+			for (auto[mod, modulePtr] : _loadedModules) {\
+				DerivedModuleClassName* derivedModulePtr = dynamic_cast<DerivedModuleClassName*>(modulePtr);\
+				if (derivedModulePtr) func(derivedModulePtr);\
+				if (!modulePtr) break;\
+			}\
+		}\
+		static void ForEachSortedModule(const callback&& func, const std::string& sortedListKey = "") {\
+			for (BaseModuleClassName* modulePtr : _loadedSortedModules[sortedListKey]) {\
+				DerivedModuleClassName* derivedModulePtr = dynamic_cast<DerivedModuleClassName*>(modulePtr);\
+				if (derivedModulePtr) func(derivedModulePtr);\
+				if (!modulePtr) break;\
+			}\
+		}\
+		static void SortModules(const std::function<bool(DerivedModuleClassName*, DerivedModuleClassName*)>& func, const std::string& sortedListKey = "") {\
+			BaseModuleClassName::SortModules([&func, &sortedListKey](BaseModuleClassName* a, BaseModuleClassName* b) -> bool {\
+				DerivedModuleClassName* derivedA = dynamic_cast<DerivedModuleClassName*>(a);\
+				DerivedModuleClassName* derivedB = dynamic_cast<DerivedModuleClassName*>(b);\
+				if (derivedA && derivedB) return func(derivedA, derivedB);\
+				return true;\
+			});\
+		}\
+	public:\
+		DerivedModuleClassName(const std::string& filePath) : BaseModuleClassName(filePath) {\
+			if (!_handle) return;\
+			FOR_EACH(__V4D_MODULE_FUNC_LOAD, __VA_ARGS__)\
+		}\
+		DELETE_COPY_MOVE_CONSTRUCTORS(DerivedModuleClassName)\
+		~DerivedModuleClassName() {}
+	
 #define V4D_MODULE_ASSET_PATH(moduleName, assetRelativePath) (\
 	"modules/" moduleName "/assets/" assetRelativePath \
 )
