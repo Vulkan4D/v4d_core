@@ -76,7 +76,6 @@
 #include "helpers/Base64.hpp"
 #include "helpers/BaseN.hpp"
 #include "helpers/TextID.hpp"
-#include "helpers/modular.hpp"
 #include "helpers/EntityComponentSystem.hpp"
 #include "helpers/FPSCounter.hpp"
 #include "helpers/COMMON_OBJECT.hpp"
@@ -88,6 +87,8 @@
 
 // V4D Core class (Compiled into v4d.dll)
 #include "Core.h"
+
+// Some Utilities
 #include "utilities/io/Logger.h"
 
 #if defined(_V4D_APP)

@@ -1,9 +1,13 @@
 #pragma once
 
+#include "helpers/STREAMABLE.hpp"
+
 namespace v4d::modular {
 	struct ModuleID {
 		uint64_t vendor;
 		uint64_t module;
+		
+		ModuleID() : vendor(0), module(0) {}
 		ModuleID(uint64_t vendorID, uint64_t moduleID) : vendor(vendorID), module(moduleID) {}
 		ModuleID(const std::string& str) {
 			auto _ = str.find('_');
@@ -19,6 +23,7 @@ namespace v4d::modular {
 			module = v4d::BaseN::EncodeStringToUInt64(moduleStr, BASE36_LOWER_CHARS);
 		}
 		ModuleID(const char* str) : ModuleID(std::string(str)) {}
+		
 		operator std::string () const {
 			return String();
 		}
@@ -33,10 +38,14 @@ namespace v4d::modular {
 			ModuleID tmp = String();
 			return tmp.vendor != 0 && tmp.module != 0;
 		}
+		
+		STREAMABLE(ModuleID, vendor, module)
 	};
 	struct ModuleClassID {
 		uint64_t vendor = 0;
 		uint64_t moduleClass = 0;
+		
+		ModuleClassID() : vendor(0), moduleClass(0) {}
 		ModuleClassID(uint64_t vendorID, uint64_t classID) : vendor(vendorID), moduleClass(classID) {}
 		ModuleClassID(const std::string& str) {
 			auto _ = str.find('_');
@@ -53,6 +62,7 @@ namespace v4d::modular {
 			moduleClass = v4d::BaseN::EncodeStringToUInt64(moduleClassStr, BASE36_LOWER_CHARS);
 		}
 		ModuleClassID(const char* str) : ModuleClassID(std::string(str)) {}
+		
 		operator std::string () const {
 			return String();
 		}
@@ -66,6 +76,8 @@ namespace v4d::modular {
 			ModuleClassID tmp = String();
 			return tmp.vendor != 0 && tmp.moduleClass != 0;
 		}
+		
+		STREAMABLE(ModuleClassID, vendor, moduleClass)
 	};
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <v4d.h>
+#include "helpers/modular.hpp"
 
 // Dependencies for Modular
 #include <memory>

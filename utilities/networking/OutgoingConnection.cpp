@@ -162,24 +162,24 @@ bool OutgoingConnection::AuthRequest(v4d::data::Stream& authData) {
 		return false;
 	}
 	switch (socket->Read<byte>()) {
-		case ZAP::OK:
-			{
-				if (rsa) {
-					auto signature = socket->Read<std::vector, byte>();
-					if (!rsa->Verify(authData.GetData(), signature)) {
-						Error(ZAP_CODES::SERVER_SIGNATURE_FAILED, "Error while trying to connect to server. " + ZAP_CODES::SERVER_SIGNATURE_FAILED_text);
-						return false;
-					}
+		case ZAP::OK:{
+			if (rsa) {
+				auto signature = socket->Read<std::vector, byte>();
+				if (!rsa->Verify(authData.GetData(), signature)) {
+					Error(ZAP_CODES::SERVER_SIGNATURE_FAILED, "Error while trying to connect to server. " + ZAP_CODES::SERVER_SIGNATURE_FAILED_text);
+					return false;
 				}
-				auto tokenAndId = socket->ReadEncryptedStream(&aes);
-				tokenAndId >> token >> id;
-				return HandleConnection();
 			}
+			auto tokenAndId = socket->ReadEncryptedStream(&aes);
+			tokenAndId >> token >> id;
+			return HandleConnection();
+		}
 		break;
-		case ZAP::DENY:
+		case ZAP::DENY:{
 			auto[errCode, errMsg] = zapdata::Error::ConstructFromStream(socket);
 			Error(errCode, "Error while trying to connect to server: " + errMsg);
 			return false;
+		}
 	}
 	LOG_ERROR("Unknown auth response from server")
 	return false;

@@ -154,7 +154,6 @@ void ListeningServer::TokenRequest(v4d::io::SocketPtr socket, byte clientType) {
 	{
 		if (!client) {
 			if (socket->IsTCP()) {
-				clientID = 0;
 				*socket << ZAP::DENY;
 				*socket << zapdata::Error{ZAP_CODES::AUTH_FAILED_INVALID_ID, ZAP_CODES::AUTH_FAILED_INVALID_ID_text};
 				socket->Flush();
@@ -178,7 +177,6 @@ void ListeningServer::TokenRequest(v4d::io::SocketPtr socket, byte clientType) {
 		// Compare encrypted increment to prevent hackers from reusing previously sent token headers to send data on behalf of someone else (some kind of nonce)
 		if (increment <= client->requestIncrement || increment > client->requestIncrement + REQ_INCREMENT_MAX_DIFF) {
 			if (socket->IsTCP()) {
-				clientID = 0;
 				*socket << ZAP::DENY;
 				*socket << zapdata::Error{ZAP_CODES::AUTH_FAILED_REQ_INCREMENT, ZAP_CODES::AUTH_FAILED_REQ_INCREMENT_text};
 				socket->Flush();

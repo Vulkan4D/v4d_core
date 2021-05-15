@@ -6,6 +6,7 @@
 #include "utilities/io/Socket.h"
 #include "utilities/crypto/Crypto.h"
 #include "utilities/data/ReadOnlyStream.hpp"
+#include "helpers/STREAMABLE.hpp"
 
 // ZAP Ain't a Protocol
 namespace v4d::networking::ZAP {
