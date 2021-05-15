@@ -45,7 +45,7 @@ namespace v4d::networking::ZAP {
 	/////////////////////////////////////////////////////////////
 	// Typical connection request/handshake
 	/*
-	Client									<-->	Server
+	Client										<-->	Server
 	------------------------------------------------------
 	Get Public Key : 
 		ClientHello								---> 
@@ -66,7 +66,7 @@ namespace v4d::networking::ZAP {
 	TOKEN connection : 
 		ClientHello								---> 
 		TOKEN (Byte)							--->
-		id (Int64_u)							--->
+		id (Int32)								--->
 		ClientToken (EncryptedStream) aes		--->	(server decrypts and checks token and increment>lastIncrement with client id)
 												<---	OK (Byte)
 														Stay connected

@@ -19,6 +19,9 @@ Socket::Socket(SOCKET socket, const sockaddr_in& remoteAddr, SOCKET_TYPE type, S
 		isOriginalSocket = false;
 	}
 
+Socket::Socket(Socket* src, SOCKET_TYPE type)
+	: Socket(src->GetFd(), src->GetIncomingAddr(), type, src->GetProtocol()) {}
+
 Socket::~Socket() {
 	Disconnect();
 }

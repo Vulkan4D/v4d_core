@@ -9,7 +9,7 @@
 #include "utilities/crypto/AES.h"
 
 namespace v4d::networking {
-	class IncomingClient {
+	class V4DLIB IncomingClient {
 	public:
 		int32_t id;
 		
