@@ -9,16 +9,19 @@ using FrameBufferedBuffer = std::array<VkBuffer, V4D_RENDERER_FRAMEBUFFERS_MAX_F
 
 class V4DLIB BufferObject {
 	COMMON_OBJECT(BufferObject, VkBuffer, V4DLIB)
-	VkDeviceSize size;
 	MemoryUsage memoryUsage;
 	VkBufferUsageFlags bufferUsage;
+	VkDeviceSize size;
 	
 	Device* device = nullptr;
 	MemoryAllocation allocation = VK_NULL_HANDLE;
 	VkDeviceOrHostAddressConstKHR address {};
 	
-	BufferObject(VkDeviceSize size, MemoryUsage memoryUsage = MEMORY_USAGE_CPU_TO_GPU, VkBufferUsageFlags bufferUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
-	 : obj(), size(size), memoryUsage(memoryUsage), bufferUsage(bufferUsage) {}
+	BufferObject(MemoryUsage memoryUsage, VkBufferUsageFlags bufferUsage, VkDeviceSize size)
+	 : obj(), memoryUsage(memoryUsage), bufferUsage(bufferUsage), size(size) {}
+	
+	BufferObject()
+	 : obj(), memoryUsage(MEMORY_USAGE_UNKNOWN), bufferUsage(0), size(0) {}
 	
 	virtual void Allocate(Device* device);
 	virtual void Free();
@@ -45,8 +48,10 @@ protected:
 	T* data;
 	
 public:
-	MappedBufferObject(uint32_t count = 1, MemoryUsage memoryUsage = MEMORY_USAGE_CPU_TO_GPU, VkBufferUsageFlags bufferUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
-	 : BufferObject(sizeof(T) * count, memoryUsage, bufferUsage), data(nullptr) {}
+	MappedBufferObject(MemoryUsage memoryUsage, VkBufferUsageFlags bufferUsage, uint32_t count = 1)
+	 : BufferObject(memoryUsage, bufferUsage, sizeof(T) * count), data(nullptr) {}
+	
+	MappedBufferObject() {}
 	
 	static inline const size_t TypeSize = sizeof(T);
 	
@@ -58,8 +63,7 @@ public:
 	}
 	
 	virtual void Free() override {
-		assert(device);
-		if (data) {
+		if (device && data) {
 			device->UnmapMemoryAllocation(allocation);
 			data = nullptr;
 		}
@@ -90,10 +94,11 @@ protected:
 	MappedBufferObject<T> hostBuffer;
 	BufferObject deviceBuffer;
 public:
-	StagingBuffer(uint32_t count = 1, VkBufferUsageFlags bufferUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)
-	 : hostBuffer(count, MEMORY_USAGE_CPU_ONLY, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
-	 , deviceBuffer(sizeof(T) * count, MEMORY_USAGE_GPU_ONLY, bufferUsage | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
+	StagingBuffer(VkBufferUsageFlags bufferUsage, uint32_t count = 1)
+	 : hostBuffer(MEMORY_USAGE_CPU_ONLY, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, count)
+	 , deviceBuffer(MEMORY_USAGE_GPU_ONLY, bufferUsage | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, sizeof(T) * count)
 	{}
+	StagingBuffer() {}
 	
 	static inline const size_t TypeSize = sizeof(T);
 	
@@ -110,6 +115,8 @@ public:
 	T* operator->() {return hostBuffer.operator->();}
 	operator T&() {return hostBuffer;}
 	operator VkBuffer&() {return deviceBuffer;}
+	operator BufferObject&() {return deviceBuffer;}
+	operator const BufferObject&() const {return deviceBuffer;}
 	operator bool() {return hostBuffer;}
 	operator VkDeviceOrHostAddressConstKHR() {return deviceBuffer;}
 	operator VkDeviceAddress() {return deviceBuffer;}
@@ -125,7 +132,7 @@ public:
 		if (count == 0) return;
 		if (hostBuffer.size > 0) {
 			assert(hostBuffer.device);
-			assert(uint32_t(count) * sizeof(T) <= hostBuffer.size);
+			assert(count * int32_t(sizeof(T)) <= int32_t(hostBuffer.size));
 			VkBufferCopy region = {};{
 				region.srcOffset = offset;
 				region.dstOffset = offset;
@@ -139,7 +146,7 @@ public:
 		if (count == 0) return;
 		if (hostBuffer.size > 0) {
 			assert(hostBuffer.device);
-			assert(uint32_t(count) * sizeof(T) <= hostBuffer.size);
+			assert(count * int32_t(sizeof(T)) <= int32_t(hostBuffer.size));
 			VkBufferCopy region = {};{
 				region.srcOffset = offset;
 				region.dstOffset = offset;

@@ -130,10 +130,6 @@ public:
 		UniformBufferDescriptor(const BufferObject& buffer, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL, uint32_t count = 1)
 			: UniformBufferDescriptor(buffer.obj, buffer.size, 0, stageFlags, count) {}
 			
-		template<typename T>
-		UniformBufferDescriptor(const StagingBuffer<T>& buffer, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL, uint32_t count = 1)
-			: UniformBufferDescriptor(buffer.deviceBuffer, stageFlags, count) {}
-			
 		constexpr VkDescriptorType GetDescriptorType() const override {return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;}
 		void FillWriteInfo(VkWriteDescriptorSet& write) override {
 			assert(bufferPtr);
