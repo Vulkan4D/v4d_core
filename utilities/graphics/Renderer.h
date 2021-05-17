@@ -158,9 +158,10 @@ namespace v4d::graphics {
 		virtual void ConfigureLayouts() = 0;
 		virtual void ConfigureShaders() = 0;
 		virtual void ConfigureRenderPasses() = 0;
-		virtual void FillBuffers() = 0;
-		virtual void AllocateResources() = 0;
-		virtual void FreeResources() = 0;
+		virtual void LoadBuffers() = 0;
+		virtual void UnloadBuffers() = 0;
+		virtual void CreateImages() = 0;
+		virtual void DestroyImages() = 0;
 		virtual void LoadScene() = 0;
 		virtual void UnloadScene() = 0;
 		virtual void Render() = 0;
@@ -285,6 +286,13 @@ namespace v4d::graphics {
 		}
 		virtual void DestroyBuffers() {
 			BufferObject::ForEach([](BufferObject*o){o->Free();});
+		}
+		// Textures
+		virtual void LoadTextures() {
+			//TODO
+		}
+		virtual void UnloadTextures() {
+			//TODO
 		}
 
 		

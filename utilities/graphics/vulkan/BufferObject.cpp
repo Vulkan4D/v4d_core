@@ -7,15 +7,18 @@ namespace v4d::graphics::vulkan {
 	void BufferObject::Allocate(Device* device) {
 		assert(this->device == nullptr);
 		this->device = device;
-		VkBufferCreateInfo bufferInfo {};{
-			bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-			bufferInfo.size = size;
-			bufferInfo.usage = bufferUsage;
-			bufferInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
-			bufferInfo.queueFamilyIndexCount = 0;
-			bufferInfo.pQueueFamilyIndices = nullptr;
+		if (size > 0) {
+			VkBufferCreateInfo bufferInfo {};{
+				bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+				bufferInfo.size = size;
+				bufferInfo.usage = bufferUsage;
+				bufferInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
+				bufferInfo.queueFamilyIndexCount = 0;
+				bufferInfo.pQueueFamilyIndices = nullptr;
+			}
+			device->CreateAndAllocateBuffer(bufferInfo, memoryUsage, obj, &allocation);
+			address = device->GetBufferDeviceOrHostAddressConst(obj);
 		}
-		device->CreateAndAllocateBuffer(bufferInfo, memoryUsage, obj, &allocation);
 	}
 
 	void BufferObject::Free() {
@@ -26,4 +29,8 @@ namespace v4d::graphics::vulkan {
 		device = nullptr;
 	}
 
+	BufferObject::~BufferObject() {
+		Free();
+	}
+	
 }

@@ -192,6 +192,7 @@ namespace v4d::graphics::vulkan {
 			device->DestroyPipeline(obj, nullptr);
 			shaderProgram.DestroyShaderStages(device);
 			ReadShaders();
+			auto device = this->device; this->device = nullptr;//this->device must be nullptr when we call Create()
 			Create(device);
 		}
 

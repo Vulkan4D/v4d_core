@@ -234,7 +234,8 @@ void Renderer::LoadRenderer() {
 	CreateSyncObjects();
 	CreateCommandPools();
 	CreateBuffers();
-	FillBuffers();
+	LoadBuffers();
+	LoadTextures();
 	CreateSwapChain();
 	LoadGraphicsToDevice();
 	
@@ -249,6 +250,8 @@ void Renderer::UnloadRenderer() {
 	v4d::graphics::renderer::event::Unload(this);
 	UnloadGraphicsFromDevice();
 	DestroySwapChain();
+	UnloadTextures();
+	UnloadBuffers();
 	DestroyBuffers();
 	DestroyCommandPools();
 	DestroySyncObjects();
@@ -274,6 +277,8 @@ void Renderer::ReloadRenderer() {
 	v4d::graphics::renderer::event::Unload(this);
 	UnloadGraphicsFromDevice();
 	DestroySwapChain();
+	UnloadTextures();
+	UnloadBuffers();
 	DestroyBuffers();
 	DestroyCommandPools();
 	DestroySyncObjects();
@@ -287,7 +292,8 @@ void Renderer::ReloadRenderer() {
 	CreateSyncObjects();
 	CreateCommandPools();
 	CreateBuffers();
-	FillBuffers();
+	LoadBuffers();
+	LoadTextures();
 	CreateSwapChain();
 	LoadGraphicsToDevice();
 	
@@ -296,7 +302,7 @@ void Renderer::ReloadRenderer() {
 }
 
 void Renderer::LoadGraphicsToDevice() {
-	AllocateResources();
+	CreateImages();
 	CreateDescriptorSets();
 	CreatePipelineLayouts();
 	ConfigureRenderPasses();
@@ -328,7 +334,7 @@ void Renderer::UnloadGraphicsFromDevice() {
 	DestroyRenderPasses();
 	DestroyPipelineLayouts();
 	DestroyDescriptorSets();
-	FreeResources();
+	DestroyImages();
 }
 
 bool Renderer::BeginFrame(VkSemaphore triggerSemaphore, VkFence triggerFence) {

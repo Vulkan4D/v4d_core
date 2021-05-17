@@ -85,20 +85,40 @@ using Renderer::Renderer;
 	
 #pragma endregion
 
-#pragma region Resources
-	
-	void AllocateResources() override {
+#pragma region Buffers
+
+	void LoadBuffers() override {
 		V4D_Mod::ForEachSortedModule([](auto* mod){
-			if (mod->Renderer_AllocateResources) {
-				mod->Renderer_AllocateResources();
+			if (mod->Renderer_LoadBuffers) {
+				mod->Renderer_LoadBuffers();
 			}
 		});
 	}
 	
-	void FreeResources() override {
+	void UnloadBuffers() override {
 		V4D_Mod::ForEachSortedModule([](auto* mod){
-			if (mod->Renderer_FreeResources) {
-				mod->Renderer_FreeResources();
+			if (mod->Renderer_UnloadBuffers) {
+				mod->Renderer_UnloadBuffers();
+			}
+		});
+	}
+	
+#pragma endregion
+
+#pragma region Images
+	
+	void CreateImages() override {
+		V4D_Mod::ForEachSortedModule([](auto* mod){
+			if (mod->Renderer_CreateImages) {
+				mod->Renderer_CreateImages();
+			}
+		});
+	}
+	
+	void DestroyImages() override {
+		V4D_Mod::ForEachSortedModule([](auto* mod){
+			if (mod->Renderer_DestroyImages) {
+				mod->Renderer_DestroyImages();
 			}
 		});
 	}
