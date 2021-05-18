@@ -20,11 +20,6 @@ namespace v4d::graphics {
 			VertexPositionF32Vec3(const glm::vec3& v) : x(v.x), y(v.y), z(v.z) {}
 			operator glm::vec3() {return glm::vec3(x, y, z);}
 			VertexPositionF32Vec3() {static_assert(sizeof(VertexPositionF32Vec3) == 12);}
-			static std::vector<v4d::graphics::vulkan::VertexInputAttributeDescription> GetInputAttributes() {
-				return {
-					{0, offsetof(VertexPositionF32Vec3, x), VK_FORMAT_R32G32B32_SFLOAT},
-				};
-			}
 			bool operator==(const VertexPositionF32Vec3& other) const {
 				return x == other.x && y == other.y && z == other.z;
 			}
@@ -84,12 +79,6 @@ namespace v4d::graphics {
 			glm::vec3 aabbMax;
 			ProceduralVertexAABB(glm::vec3 aabbMin, glm::vec3 aabbMax) : aabbMin(aabbMin), aabbMax(aabbMax) {}
 			ProceduralVertexAABB() {static_assert(sizeof(ProceduralVertexAABB) == 24);}
-			static std::vector<v4d::graphics::vulkan::VertexInputAttributeDescription> GetInputAttributes() {
-				return {
-					{0, offsetof(ProceduralVertexAABB, aabbMin), VK_FORMAT_R32G32B32_SFLOAT},
-					{1, offsetof(ProceduralVertexAABB, aabbMax), VK_FORMAT_R32G32B32_SFLOAT},
-				};
-			}
 		};
 
 		struct Geometry {

@@ -48,9 +48,6 @@ class V4DLIB V4D_Mod {
 		,Renderer_LightingCommands
 		,Renderer_PullCommands
 		,Renderer_PostCommands
-		,Renderer_SwapChainRenderPass
-		// Secondary
-		,Renderer_SecondaryUpdate
 		
 	)
 	
@@ -81,8 +78,5 @@ class V4DLIB V4D_Mod {
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_LightingCommands, VkCommandBuffer cmdBuffer, int currentFrame)
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_PullCommands, VkCommandBuffer cmdBuffer, int currentFrame)
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_PostCommands, VkCommandBuffer cmdBuffer, int currentFrame)
-	V4D_MODULE_FUNC_DECLARE(void, Renderer_SwapChainRenderPass, VkCommandBuffer cmdBuffer, int currentFrame, int swapChainImageIndex)
-	// Secondary
-	V4D_MODULE_FUNC_DECLARE(void, Renderer_SecondaryUpdate)
 
 };

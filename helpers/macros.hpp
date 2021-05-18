@@ -421,3 +421,7 @@ std::unordered_map<KeyType, std::weak_ptr<ClassName>> ClassName::commonInstances
 // Threads
 
 #define THREAD_ID_STR std::to_string(std::hash<std::thread::id>{}(std::this_thread::get_id()))
+
+// Concepts
+#define REQUIRES_HAS_FUNC(T, FuncName, ReturnType) requires(T){{T::FuncName()} -> std::convertible_to<ReturnType>; };
+

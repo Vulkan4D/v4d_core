@@ -17,6 +17,12 @@
 
 namespace v4d::graphics::vulkan {
 
+	struct VertexInputAttributeDescription {
+		uint32_t location;
+		uint32_t offset;
+		VkFormat format;
+	};
+
 	enum MemoryUsage {
 		/** No intended memory usage specified.
 		*/

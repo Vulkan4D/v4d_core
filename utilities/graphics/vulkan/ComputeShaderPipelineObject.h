@@ -18,30 +18,19 @@
 namespace v4d::graphics::vulkan {
 	
 	class V4DLIB ComputeShaderPipelineObject : public ShaderPipelineObject {
-		uint32_t groupCountX = 0, groupCountY = 0, groupCountZ = 0;
-		
+	
 	public:
 		using ShaderPipelineObject::ShaderPipelineObject;
 		
 		virtual void Create(Device* device) override;
 		virtual void Destroy() override;
 		
-		void SetGroupCounts(uint32_t x, uint32_t y, uint32_t z) {
-			groupCountX = x;
-			groupCountY = y;
-			groupCountZ = z;
-		}
-		
-	protected:
-		using ShaderPipelineObject::Bind;
-		using ShaderPipelineObject::Render;
-		// these two methods are called automatically by Execute() from the parent class
-		virtual void Bind(uint32_t frameIndex, VkCommandBuffer cmdBuffer) override {
+		virtual void Bind(VkCommandBuffer cmdBuffer, uint32_t frameIndex = 0) override {
 			assert(device);
 			device->CmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, obj);
 			GetPipelineLayout()->Bind(frameIndex, cmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE);
 		}
-		virtual void Render(uint32_t/*unused_arg frameIndex*/, VkCommandBuffer cmdBuffer, uint32_t /*unused_arg instanceCount*/ = 0) override {
+		virtual void Dispatch(VkCommandBuffer cmdBuffer, uint32_t groupCountX = 1, uint32_t groupCountY = 1, uint32_t groupCountZ = 1) {
 			assert(device);
 			device->CmdDispatch(cmdBuffer, groupCountX, groupCountY, groupCountZ);
 		}

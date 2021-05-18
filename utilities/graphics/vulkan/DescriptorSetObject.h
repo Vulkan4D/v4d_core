@@ -74,7 +74,12 @@ public:
 	
 	template<class DescriptorType, class ObjectType>
 	inline void SetBinding(uint32_t binding, const FrameBufferedObject<ObjectType>& obj, VkShaderStageFlags stageFlags, uint32_t count = 1) {
-		for (int i = 0; i < set.size(); ++i) set[i].SetBinding<DescriptorType>(binding, obj[i], stageFlags, count);
+		for (size_t i = 0; i < set.size(); ++i) set[i].SetBinding<DescriptorType>(binding, obj[i], stageFlags, count);
+	}
+	
+	template<class DescriptorType>
+	inline void SetBinding(uint32_t binding, const FrameBuffered_Image& obj, VkShaderStageFlags stageFlags, uint32_t count = 1) {
+		for (size_t i = 0; i < set.size(); ++i) set[i].SetBinding<DescriptorType, Image>(binding, obj[i], stageFlags, count);
 	}
 	
 	inline DescriptorSetObject& operator[](size_t frameIndex) {
@@ -100,10 +105,6 @@ public:
 			
 		StorageBufferDescriptor(const BufferObject& buffer, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL, uint32_t count = 1)
 			: StorageBufferDescriptor(buffer.obj, buffer.size, 0, stageFlags, count) {}
-			
-		template<typename T>
-		StorageBufferDescriptor(const StagingBuffer<T>& buffer, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL, uint32_t count = 1)
-			: StorageBufferDescriptor(buffer.deviceBuffer, stageFlags, count) {}
 			
 		constexpr VkDescriptorType GetDescriptorType() const override {return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;}
 		void FillWriteInfo(VkWriteDescriptorSet& write) override {
@@ -201,12 +202,6 @@ public:
 		InputAttachmentDescriptor(const Image& image, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT, uint32_t count = 1)
 			: InputAttachmentDescriptor(&image.view, stageFlags, count) {}
 			
-		InputAttachmentDescriptor(const DepthImage& image, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT, uint32_t count = 1)
-			: InputAttachmentDescriptor(&image.view, stageFlags, count) {imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;}
-			
-		InputAttachmentDescriptor(const DepthStencilImage& image, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT, uint32_t count = 1)
-			: InputAttachmentDescriptor(&image.view, stageFlags, count) {imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;}
-			
 		constexpr VkDescriptorType GetDescriptorType() const override {return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;}
 		void FillWriteInfo(VkWriteDescriptorSet& write) override {
 			assert(imageViewPtr);
@@ -215,7 +210,7 @@ public:
 			write.pImageInfo = &info;
 		}
 	};
-
+	
 	struct AccelerationStructureDescriptor : DescriptorSetObject::Descriptor {
 		const VkAccelerationStructureKHR* tlas;
 		VkWriteDescriptorSetAccelerationStructureKHR info {};

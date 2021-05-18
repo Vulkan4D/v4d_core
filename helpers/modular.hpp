@@ -82,18 +82,18 @@ namespace v4d::modular {
 }
 
 #define V4D_MODULE_CLASS_CPP(ModuleClassName)\
-	ModuleClassName::callback ModuleClassName::_modulesLoadCallback = [](ModuleClassName*&){};\
-	ModuleClassName::callback ModuleClassName::_modulesUnloadCallback = [](ModuleClassName*&){};\
+	ModuleClassName::callbackByPtr ModuleClassName::_modulesLoadCallback = [](ModuleClassName*){};\
+	ModuleClassName::callbackByPtr ModuleClassName::_modulesUnloadCallback = [](ModuleClassName*){};\
 	ModuleClassName::errorCallback ModuleClassName::_modulesLoadErrorCallback = [](const char* err){\
 		std::cerr << err << std::endl;\
 	};\
 	std::recursive_mutex ModuleClassName::_mutexForLoadedModules {};\
 	std::unordered_map<std::string, ModuleClassName*> ModuleClassName::_loadedModules {};\
 	std::unordered_map<std::string, std::vector<ModuleClassName*>> ModuleClassName::_loadedSortedModules {};\
-	void ModuleClassName::ModulesSetLoadCallback(const callback&& func) {\
+	void ModuleClassName::ModulesSetLoadCallback(const callbackByPtr&& func) {\
 		_modulesLoadCallback = func;\
 	}\
-	void ModuleClassName::ModulesSetUnloadCallback(const callback&& func) {\
+	void ModuleClassName::ModulesSetUnloadCallback(const callbackByPtr&& func) {\
 		_modulesUnloadCallback = func;\
 	}\
 	void ModuleClassName::ModulesSetLoadErrorCallback(const errorCallback&& func) {\
@@ -128,14 +128,14 @@ namespace v4d::modular {
 		std::lock_guard lock(_mutexForLoadedModules);\
 		return _loadedModules.size();\
 	}\
-	void ModuleClassName::ForEachModule(const callback&& func) {\
+	void ModuleClassName::ForEachModule(const callbackByPtrRef&& func) {\
 		std::lock_guard lock(_mutexForLoadedModules);\
 		for (auto[mod, modulePtr] : _loadedModules) {\
 			func(modulePtr);\
 			if (!modulePtr) break;\
 		}\
 	}\
-	void ModuleClassName::ForEachSortedModule(const callback&& func, const std::string& sortedListKey) {\
+	void ModuleClassName::ForEachSortedModule(const callbackByPtrRef&& func, const std::string& sortedListKey) {\
 		for (auto* modulePtr : _loadedSortedModules[sortedListKey]) {\
 			func(modulePtr);\
 			if (!modulePtr) break;\
@@ -206,10 +206,11 @@ namespace v4d::modular {
 
 #define V4D_MODULE_CLASS_HEADER(ModuleClassName, ...)\
 	protected:\
-		using callback = std::function<void(ModuleClassName*&)>;\
+		using callbackByPtr = std::function<void(ModuleClassName*)>;\
+		using callbackByPtrRef = std::function<void(ModuleClassName*&)>;\
 		using errorCallback = std::function<void(const char*)>;\
-		static callback _modulesLoadCallback;\
-		static callback _modulesUnloadCallback;\
+		static callbackByPtr _modulesLoadCallback;\
+		static callbackByPtr _modulesUnloadCallback;\
 		static errorCallback _modulesLoadErrorCallback;\
 		static std::recursive_mutex _mutexForLoadedModules;\
 		static std::unordered_map<std::string, ModuleClassName*> _loadedModules;\
@@ -230,21 +231,21 @@ namespace v4d::modular {
 					return nullptr;\
 				}\
 				_loadedModules.emplace(mod, instance);\
-				_modulesLoadCallback((ModuleClassName*&)instance);\
+				_modulesLoadCallback((ModuleClassName*)instance);\
 				return instance;\
 			}\
 			return dynamic_cast<ModuleClass*>(_loadedModules.at(mod));\
 		}\
 	public:\
-		static void ModulesSetLoadCallback(const callback&& _modulesLoadCallback);\
-		static void ModulesSetUnloadCallback(const callback&& _modulesUnloadCallback);\
+		static void ModulesSetLoadCallback(const callbackByPtr&& _modulesLoadCallback);\
+		static void ModulesSetUnloadCallback(const callbackByPtr&& _modulesUnloadCallback);\
 		static void ModulesSetLoadErrorCallback(const errorCallback&& _modulesLoadErrorCallback);\
 		static ModuleClassName* LoadModule(const std::string& mod, bool triggerErrorOnFailure = false);\
 		static ModuleClassName* GetModule(const std::string& mod);\
 		static void UnloadModule(const std::string& mod);\
 		static size_t Count();\
-		static void ForEachModule(const callback&& func);\
-		static void ForEachSortedModule(const callback&& func, const std::string& sortedListKey = "");\
+		static void ForEachModule(const callbackByPtrRef&& func);\
+		static void ForEachSortedModule(const callbackByPtrRef&& func, const std::string& sortedListKey = "");\
 		static void SortModules(const std::function<bool(ModuleClassName*, ModuleClassName*)>& func, const std::string& sortedListKey = "");\
 		static void UnloadModules();\
 	protected:\
@@ -280,7 +281,8 @@ namespace v4d::modular {
 
 #define V4D_MODULE_CLASS_DERIVED(DerivedModuleClassName, BaseModuleClassName, ...)\
 	protected:\
-		using callback = std::function<void(DerivedModuleClassName*&)>;\
+		using callbackByPtr = std::function<void(DerivedModuleClassName*)>;\
+		using callbackByPtrRef = std::function<void(DerivedModuleClassName*&)>;\
 	public:\
 		static DerivedModuleClassName* LoadModule(const std::string& mod, bool triggerErrorOnFailure = false) {\
 			DerivedModuleClassName* derivedModule = LoadModuleLib<DerivedModuleClassName>(mod, triggerErrorOnFailure, std::string("modules/") + mod + "/" + mod + "." + #DerivedModuleClassName);\
@@ -291,7 +293,7 @@ namespace v4d::modular {
 			DerivedModuleClassName* derivedModule = dynamic_cast<DerivedModuleClassName*>(BaseModuleClassName::GetModule(mod));\
 			return derivedModule? derivedModule : nullptr;\
 		}\
-		static void ForEachModule(const callback&& func) {\
+		static void ForEachModule(const callbackByPtrRef&& func) {\
 			std::lock_guard lock(_mutexForLoadedModules);\
 			for (auto[mod, modulePtr] : _loadedModules) {\
 				DerivedModuleClassName* derivedModulePtr = dynamic_cast<DerivedModuleClassName*>(modulePtr);\
@@ -299,7 +301,7 @@ namespace v4d::modular {
 				if (!modulePtr) break;\
 			}\
 		}\
-		static void ForEachSortedModule(const callback&& func, const std::string& sortedListKey = "") {\
+		static void ForEachSortedModule(const callbackByPtrRef&& func, const std::string& sortedListKey = "") {\
 			for (BaseModuleClassName* modulePtr : _loadedSortedModules[sortedListKey]) {\
 				DerivedModuleClassName* derivedModulePtr = dynamic_cast<DerivedModuleClassName*>(modulePtr);\
 				if (derivedModulePtr) func(derivedModulePtr);\

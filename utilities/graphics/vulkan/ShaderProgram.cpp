@@ -9,21 +9,13 @@ ShaderProgram::ShaderProgram(const std::vector<ShaderInfo>& infos) {
 
 ShaderProgram::~ShaderProgram() {}
 
-void ShaderProgram::AddVertexInputBinding(uint32_t binding, uint32_t stride, VkVertexInputRate inputRate, std::vector<VertexInputAttributeDescription> attrs) {
-	bindings.emplace_back(VkVertexInputBindingDescription{binding, stride, inputRate});
-	for (auto attr : attrs) {
-		attributes.emplace_back(VkVertexInputAttributeDescription{attr.location, binding, attr.format, attr.offset});
-	}
-}
-
-void ShaderProgram::AddVertexInputBinding(uint32_t stride, VkVertexInputRate inputRate, std::vector<VertexInputAttributeDescription> attrs) {
-	AddVertexInputBinding(bindings.size(), stride, inputRate, attrs);
-}
-
 void ShaderProgram::ReadShaders() {
 	shaders.clear();
 	for (auto& shader : shaderFiles) {
-		shaders.emplace_back(shader.filepath, shader.entryPoint, shader.specializationInfo);
+		auto& s = shaders.emplace_back(shader.filepath, shader.entryPoint);
+		if (specializations.contains(s.type)) {
+			s.specialization = specializations[s.type];
+		}
 	}
 }
 

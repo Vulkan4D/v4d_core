@@ -19,10 +19,10 @@ void RasterShaderPipelineObject::Create(Device* device) {
 	}
 	
 	// Bindings and Attributes
-	vertexInputInfo.vertexBindingDescriptionCount = shaderProgram.GetBindings()->size();
-	vertexInputInfo.pVertexBindingDescriptions = shaderProgram.GetBindings()->data();
-	vertexInputInfo.vertexAttributeDescriptionCount = shaderProgram.GetAttributes()->size();
-	vertexInputInfo.pVertexAttributeDescriptions = shaderProgram.GetAttributes()->data();
+	vertexInputInfo.vertexBindingDescriptionCount = 0;
+	vertexInputInfo.pVertexBindingDescriptions = nullptr;
+	vertexInputInfo.vertexAttributeDescriptionCount = 0;
+	vertexInputInfo.pVertexAttributeDescriptions = nullptr;
 
 	// Dynamic states
 	if (dynamicStates.size() > 0) {
@@ -56,39 +56,4 @@ void RasterShaderPipelineObject::Destroy() {
 	shaderProgram.DestroyShaderStages(device);
 	device = nullptr;
 	pipelineCreateInfo.pViewportState = nullptr;
-}
-
-void RasterShaderPipelineObject::Render(uint32_t frameIndex, VkCommandBuffer cmdBuffer, uint32_t instanceCount) {
-	assert(device);
-	if (vertexBuffer[frameIndex] == VK_NULL_HANDLE) {
-		device->CmdDraw(cmdBuffer,
-			vertexCount, // vertexCount
-			instanceCount, // instanceCount
-			0, // firstVertex (defines the lowest value of gl_VertexIndex)
-			0  // firstInstance (defines the lowest value of gl_InstanceIndex)
-		);
-	} else {
-		device->CmdBindVertexBuffers(cmdBuffer, 0, 1, &vertexBuffer[frameIndex], &vertexOffset);
-		if (indexBuffer[frameIndex] == VK_NULL_HANDLE) {
-			// Draw vertices
-			if (vertexCount > 0) {
-				device->CmdDraw(cmdBuffer,
-					vertexCount, // vertexCount
-					instanceCount, // instanceCount
-					0, // firstVertex (defines the lowest value of gl_VertexIndex)
-					0  // firstInstance (defines the lowest value of gl_InstanceIndex)
-				);
-			}
-		} else if (indexCount > 0) {
-			// Draw indices
-			device->CmdBindIndexBuffer(cmdBuffer, indexBuffer[frameIndex], indexOffset, VK_INDEX_TYPE_UINT32);
-			device->CmdDrawIndexed(cmdBuffer,
-				indexCount, // indexCount
-				instanceCount, // instanceCount
-				0, // firstIndex
-				0, // vertexOffset (0 because we are already taking an offseted vertex buffer)
-				0  // firstInstance (defines the lowest value of gl_InstanceIndex)
-			);
-		}
-	}
 }

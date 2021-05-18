@@ -205,22 +205,7 @@ public:
 			}
 		});
 	}
-	inline void Render_SwapChainRenderPass(VkCommandBuffer cmdBuffer, int currentFrame, int swapChainImageIndex) {
-		V4D_Mod::ForEachSortedModule([&cmdBuffer, currentFrame, swapChainImageIndex](auto* mod){
-			if (mod->Renderer_SwapChainRenderPass) {
-				mod->Renderer_SwapChainRenderPass(cmdBuffer, currentFrame, swapChainImageIndex);
-			}
-		});
-	}
 	
-	inline void Render_SecondaryUpdate() {
-		V4D_Mod::ForEachSortedModule([](auto* mod){
-			if (mod->Renderer_SecondaryUpdate) {
-				mod->Renderer_SecondaryUpdate();
-			}
-		});
-	}
-
 #pragma endregion
 
 };

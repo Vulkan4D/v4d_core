@@ -48,6 +48,13 @@ void Image::Create(Device* device, uint32_t width, uint32_t height, const std::v
 	
 	device->CreateAndAllocateImage(imageInfo, memoryUsage, image, &allocation);
 	
+	if (format == VK_FORMAT_D32_SFLOAT) {
+		viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+	}
+	if (format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
+		viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+	}
+	
 	viewInfo.image = image;
 	if (device->CreateImageView(&viewInfo, nullptr, &view) != VK_SUCCESS)
 		throw std::runtime_error("Failed to create image view");

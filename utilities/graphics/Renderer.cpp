@@ -436,7 +436,7 @@ bool Renderer::EndFrame(const std::vector<VkSemaphore>& waitSemaphores) {
 		throw std::runtime_error(std::string("Failed to present: ") + GetVkResultText(result));
 	}
 	
-	currentFrame = (currentFrame+1) % NB_FRAMES_IN_FLIGHT;
+	currentFrame = (currentFrame+1) % std::min(int(swapChain->images.size()), NB_FRAMES_IN_FLIGHT);
 	
 	return true;
 }

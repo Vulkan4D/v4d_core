@@ -4,8 +4,8 @@
 
 using namespace v4d::graphics::vulkan;
 
-Shader::Shader(std::string filepath, std::string entryPoint, VkSpecializationInfo* specializationInfo)
-: filepath(filepath), entryPoint(entryPoint), specializationInfo(specializationInfo) {
+Shader::Shader(std::string filepath, std::string entryPoint)
+: filepath(filepath), entryPoint(entryPoint) {
 	// Automatically add .spv if not present at the end of the filepath
 	if (!std::regex_match(filepath, std::regex(R"(\.spv$)"))) {
 		filepath += ".spv";
@@ -47,6 +47,12 @@ VkShaderModule Shader::CreateShaderModule(Device* device, VkPipelineShaderStageC
 	if (device->CreateShaderModule(&createInfo, nullptr, &module) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create Shader Module for shader " + name);
 	}
+	
+	// Specialization
+	specialization.specializationInfo.mapEntryCount = specialization.specializationMap.size();
+	specialization.specializationInfo.pMapEntries = specialization.specializationMap.data();
+	specialization.specializationInfo.dataSize = specialization.specializationData.size();
+	specialization.specializationInfo.pData = specialization.specializationData.data();
 
 	// Create Stage Info
 	stageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -55,7 +61,7 @@ VkShaderModule Shader::CreateShaderModule(Device* device, VkPipelineShaderStageC
 	stageInfo.stage = SHADER_TYPES[type];
 	stageInfo.module = module;
 	stageInfo.pName = entryPoint.c_str();
-	stageInfo.pSpecializationInfo = specializationInfo;
+	stageInfo.pSpecializationInfo = specialization.specializationInfo.dataSize>0? &specialization.specializationInfo : nullptr;
 	
 	return module;
 }
@@ -64,14 +70,11 @@ void Shader::DestroyShaderModule(Device* device) {
 	device->DestroyShaderModule(module, nullptr);
 }
 
-ShaderInfo::ShaderInfo(const std::string& filepath, const std::string& entryPoint, VkSpecializationInfo* specializationInfo) 
-: filepath(filepath), entryPoint(entryPoint), specializationInfo(specializationInfo) {}
-
-ShaderInfo::ShaderInfo(const std::string& filepath, VkSpecializationInfo* specializationInfo) 
-: filepath(filepath), entryPoint(""), specializationInfo(specializationInfo) {}
+ShaderInfo::ShaderInfo(const std::string& filepath, const std::string& entryPoint) 
+: filepath(filepath), entryPoint(entryPoint) {}
 
 ShaderInfo::ShaderInfo(const std::string& filepath)
-: filepath(filepath), entryPoint("main"), specializationInfo(nullptr) {}
+: filepath(filepath), entryPoint("main") {}
 
 ShaderInfo::ShaderInfo(const char* filepath)
-: filepath(filepath), entryPoint("main"), specializationInfo(nullptr) {}
+: filepath(filepath), entryPoint("main") {}

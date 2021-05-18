@@ -121,7 +121,7 @@ namespace v4d::graphics::vulkan {
 		std::vector<uint32_t>* AddPreserveAttachmentRefs(const std::vector<uint32_t>& refs) {
 			return preserveAttachmentRefs.emplace_back(new std::vector<uint32_t>(refs)).get();
 		}
-		VkAttachmentReference* AddPreserveAttachmentRefs(const VkAttachmentReference& ref) {
+		VkAttachmentReference* AddDepthStencilAttachmentRef(const VkAttachmentReference& ref) {
 			return depthStencilAttachmentRefs.emplace_back(new VkAttachmentReference{ref.attachment, ref.layout}).get();
 		}
 		
@@ -182,7 +182,6 @@ namespace v4d::graphics::vulkan {
 			VkClearValue clear = {0,0,0,0}
 		) {
 			assert(frameBuffered_imageView.size() > 0);
-			assert(frameBuffers.size() >= frameBuffered_imageView.size());
 			assert(imageViews.size() == frameBuffers.size());
 			
 			for (size_t i = 0; i < imageViews.size(); ++i) {

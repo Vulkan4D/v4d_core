@@ -79,6 +79,11 @@ namespace v4d::graphics::vulkan {
 			Create(device);
 		}
 		
+		template<typename T>
+		void SetConstantValue(const std::string& stage, uint32_t id, const T& value) {
+			shaderProgram.SetConstantValue(stage, id, value);
+		}
+		
 		void SetPipelineLayout(PipelineLayoutObject* layout) {
 			this->pipelineLayout = layout;
 		}
@@ -87,31 +92,16 @@ namespace v4d::graphics::vulkan {
 			return pipelineLayout;
 		}
 
-		// Execute() will call Bind() and Render() automatically
-		virtual void Execute(uint32_t frameIndex, VkCommandBuffer cmdBuffer, uint32_t instanceCount, void* pushConstant, int pushConstantIndex = 0);
-		virtual void Execute(uint32_t frameIndex, VkCommandBuffer cmdBuffer);
-		inline virtual void Execute(VkCommandBuffer cmdBuffer, uint32_t instanceCount, void* pushConstant, int pushConstantIndex = 0) final {Execute(0, cmdBuffer, instanceCount, pushConstant, pushConstantIndex);}
-		inline virtual void Execute(VkCommandBuffer cmdBuffer) final {Execute(0, cmdBuffer);}
-		
 		// sends a push constant to the shader now
 		void PushConstant(VkCommandBuffer cmdBuffer, void* pushConstant, int pushConstantIndex = 0);
-			
+		
 		static uint CompactIVec4ToUint(uint r, uint g, uint b, uint a);
 		static uint CompactVec4ToUint(float r, float g, float b, float a);
 		static float CompactVec3rgb10ToFloat(float r, float g, float b);
 		
 		std::string GetShaderPath(std::string type) const;
 		
-	protected:
-		
-		// binds the pipeline (to be implemented in child classes)
-		virtual void Bind(uint32_t frameIndex, VkCommandBuffer) = 0;
-		inline virtual void Bind(VkCommandBuffer cmdBuffer) final {Bind(0, cmdBuffer);}
-		
-		// issues the draw calls (to be implemented in child classes)
-		virtual void Render(uint32_t frameIndex, VkCommandBuffer, uint32_t instanceCount) = 0;
-		inline virtual void Render(VkCommandBuffer cmdBuffer, uint32_t instanceCount) final {Render(0, cmdBuffer, instanceCount);}
-		
+		virtual void Bind(VkCommandBuffer, uint32_t frameIndex = 0) = 0;
 	};
 	
 }

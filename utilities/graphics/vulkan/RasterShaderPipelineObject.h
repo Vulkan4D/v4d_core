@@ -48,14 +48,6 @@ namespace v4d::graphics::vulkan {
 				-1 // basePipelineIndex
 		};
 		
-		// Data to draw
-		FrameBufferedBuffer vertexBuffer;
-		FrameBufferedBuffer indexBuffer;
-		uint32_t vertexCount = 0;
-		VkDeviceSize vertexOffset = 0;
-		uint32_t indexCount = 0;
-		VkDeviceSize indexOffset = 0;
-		
 		// Graphics Pipeline information
 		VkPipelineRasterizationStateCreateInfo rasterizer {VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
 			nullptr, // const void* pNext
@@ -133,57 +125,6 @@ namespace v4d::graphics::vulkan {
 		
 		using ShaderPipelineObject::ShaderPipelineObject;
 		
-		inline void SetVertexBuffer(const VkBuffer& vertexBuffer) {
-			for (auto& b : this->vertexBuffer) b = vertexBuffer;
-		}
-		inline void SetIndexBuffer(const VkBuffer& indexBuffer) {
-			for (auto& b : this->indexBuffer) b = indexBuffer;
-		}
-		
-		inline void SetVertexBuffer(const FrameBufferedBuffer& vertexBuffer) {
-			this->vertexBuffer = vertexBuffer;
-		}
-		inline void SetIndexBuffer(const FrameBufferedBuffer& indexBuffer) {
-			this->indexBuffer = indexBuffer;
-		}
-		
-		// set what data to draw
-		void SetData(uint32_t vertexCount) {
-			SetVertexBuffer(VK_NULL_HANDLE);
-			SetIndexBuffer(VK_NULL_HANDLE);
-			this->vertexCount = vertexCount;
-			this->vertexOffset = 0;
-			this->indexCount = 0;
-			this->indexOffset = 0;
-		}
-		template<typename BufferT>
-		void SetData(BufferT vertexBuffer, uint32_t vertexCount) {
-			SetVertexBuffer(vertexBuffer);
-			SetIndexBuffer(VK_NULL_HANDLE);
-			this->vertexCount = vertexCount;
-			this->vertexOffset = 0;
-			this->indexCount = 0;
-			this->indexOffset = 0;
-		}
-		template<typename BufferT>
-		void SetData(BufferT vertexBuffer, BufferT indexBuffer, uint32_t indexCount) {
-			SetVertexBuffer(vertexBuffer);
-			SetIndexBuffer(indexBuffer);
-			this->vertexCount = 0;
-			this->vertexOffset = 0;
-			this->indexCount = indexCount;
-			this->indexOffset = 0;
-		}
-		template<typename BufferT>
-		void SetData(BufferT vertexBuffer, VkDeviceSize vertexOffset, BufferT indexBuffer, VkDeviceSize indexOffset, uint32_t indexCount) {
-			SetVertexBuffer(vertexBuffer);
-			SetIndexBuffer(indexBuffer);
-			this->vertexCount = 0;
-			this->vertexOffset = vertexOffset;
-			this->indexCount = indexCount;
-			this->indexOffset = indexOffset;
-		}
-
 		virtual void Create(Device* device) override;
 		virtual void Destroy() override;
 		
@@ -234,6 +175,19 @@ namespace v4d::graphics::vulkan {
 			};
 		}
 		
+		static VkPipelineColorBlendAttachmentState GBufferAttachmentBlendState() {
+			return {
+				/*VkBool32 blendEnable*/ VK_FALSE,
+				/*VkBlendFactor srcColorBlendFactor*/ VK_BLEND_FACTOR_ONE,
+				/*VkBlendFactor dstColorBlendFactor*/ VK_BLEND_FACTOR_ONE,
+				/*VkBlendOp colorBlendOp*/ VK_BLEND_OP_ADD,
+				/*VkBlendFactor srcAlphaBlendFactor*/ VK_BLEND_FACTOR_ONE,
+				/*VkBlendFactor dstAlphaBlendFactor*/ VK_BLEND_FACTOR_ONE,
+				/*VkBlendOp alphaBlendOp*/ VK_BLEND_OP_ADD,
+				/*VkColorComponentFlags colorWriteMask*/ VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
+			};
+		}
+		
 		void SetColorBlendAttachmentStates(int colorAttachmentCount, VkPipelineColorBlendAttachmentState colorAttachmentBlendState = DefaultColorAttachmentBlendState()) {
 			colorBlendAttachments.clear();
 			for (int i = 0; i < colorAttachmentCount; ++i)
@@ -244,15 +198,21 @@ namespace v4d::graphics::vulkan {
 			colorBlendAttachments = colorAttachmentsBlendings;
 		}
 		
-		using ShaderPipelineObject::Bind;
-		using ShaderPipelineObject::Render;
-		// these two methods are called automatically by Execute() from the parent class
-		virtual void Bind(uint32_t frameIndex, VkCommandBuffer cmdBuffer) override {
+		virtual void Bind(VkCommandBuffer cmdBuffer, uint32_t frameIndex = 0) override {
 			assert(device);
 			device->CmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj);
 			GetPipelineLayout()->Bind(frameIndex, cmdBuffer);
 		}
-		virtual void Render(uint32_t frameIndex, VkCommandBuffer cmdBuffer, uint32_t instanceCount = 1) override;
+		
+		virtual void Draw(VkCommandBuffer cmdBuffer, uint32_t vertexOrIndexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0, uint32_t firstInstance = 0) {
+			assert(device);
+			device->CmdDraw(cmdBuffer,
+				vertexOrIndexCount,
+				instanceCount,
+				firstVertex, // (defines the lowest value of gl_VertexIndex)
+				firstInstance // (defines the lowest value of gl_InstanceIndex)
+			);
+		}
 	};
 	
 }

@@ -32,11 +32,11 @@ class V4DLIB BufferObject {
 	
 	virtual ~BufferObject();
 	
-	operator FrameBufferedBuffer() const {
-		FrameBufferedBuffer buffers;
-		buffers.fill(obj); // fills the array with VkBuffer pointers, not data...
-		return buffers;
-	}
+	// operator FrameBufferedBuffer() const {
+	// 	FrameBufferedBuffer buffers;
+	// 	buffers.fill(obj); // fills the array with VkBuffer pointers, not data...
+	// 	return buffers;
+	// }
 	
 	operator VkDeviceOrHostAddressConstKHR() {return address;}
 	operator VkDeviceAddress() {return address.deviceAddress;}
@@ -86,6 +86,10 @@ public:
 	T* operator->() {assert(data); return data;}
 	operator T&() {assert(data); return *data;}
 	operator bool() {return size > 0 && data;}
+	template<typename OTHER>
+	T& operator=(const OTHER& other) {
+		return data[0] = other;
+	}
 };
 
 template<typename T>
@@ -121,12 +125,17 @@ public:
 	operator VkDeviceOrHostAddressConstKHR() {return deviceBuffer;}
 	operator VkDeviceAddress() {return deviceBuffer;}
 	
-	operator FrameBufferedBuffer() const {
-		assert(hostBuffer.size > 0);
-		FrameBufferedBuffer buffers;
-		buffers.fill(deviceBuffer.obj);
-		return buffers;
+	template<typename OTHER>
+	T& operator=(const OTHER& other) {
+		return hostBuffer = other;
 	}
+	
+	// operator FrameBufferedBuffer() const {
+	// 	assert(hostBuffer.size > 0);
+	// 	FrameBufferedBuffer buffers;
+	// 	buffers.fill(deviceBuffer.obj);
+	// 	return buffers;
+	// }
 	
 	void Push(VkCommandBuffer cmdBuffer, int32_t count = -1, VkDeviceSize offset = 0) {
 		if (count == 0) return;

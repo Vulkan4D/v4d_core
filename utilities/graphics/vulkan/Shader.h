@@ -19,12 +19,32 @@ namespace v4d::graphics::vulkan {
 	struct V4DLIB ShaderInfo {
 		std::string filepath;
 		std::string entryPoint;
-		VkSpecializationInfo* specializationInfo;
 		
-		ShaderInfo(const std::string& filepath, const std::string& entryPoint, VkSpecializationInfo* specializationInfo = nullptr);
-		ShaderInfo(const std::string& filepath, VkSpecializationInfo* specializationInfo);
+		ShaderInfo(const std::string& filepath, const std::string& entryPoint);
 		ShaderInfo(const std::string& filepath);
 		ShaderInfo(const char* filepath);
+	};
+	
+	struct ShaderSpecialization {
+		std::vector<byte> specializationData {};
+		std::vector<VkSpecializationMapEntry> specializationMap {};
+		VkSpecializationInfo specializationInfo {};
+		
+		template<typename T>
+		void SetValue(uint32_t id, const T& value) {
+			size_t offset;
+			if (auto it = std::find_if(specializationMap.begin(), specializationMap.end(), [id](auto&s){
+				return s.constantID == id;
+			}); it != specializationMap.end()) {
+				assert(it->size == sizeof(T));
+				offset = it->offset;
+			} else {
+				offset = specializationData.size();
+				specializationData.resize(offset + sizeof(T));
+				specializationMap.emplace_back(id, offset, sizeof(T));
+			}
+			memcpy(specializationData.data() + offset, &value, sizeof(T));
+		}
 	};
 
 	static std::unordered_map<std::string, VkShaderStageFlagBits> SHADER_TYPES {
@@ -50,8 +70,6 @@ namespace v4d::graphics::vulkan {
 		std::string filepath; // path relative to executable
 		std::string entryPoint; // usually "main"
 		
-		VkSpecializationInfo* specializationInfo;
-		
 		std::vector<char> bytecode; // contains the spv file contents
 		
 		VkShaderModule module = VK_NULL_HANDLE;
@@ -62,7 +80,9 @@ namespace v4d::graphics::vulkan {
 		
 		VkPipelineShaderStageCreateInfo stageInfo;
 
-		Shader(std::string filepath/*relative to executable*/, std::string entryPoint = "main", VkSpecializationInfo* specializationInfo = nullptr);
+		ShaderSpecialization specialization {};
+		
+		Shader(std::string filepath/*relative to executable*/, std::string entryPoint = "main");
 		
 		VkShaderModule CreateShaderModule(Device* device, VkPipelineShaderStageCreateFlags flags = 0);
 		void DestroyShaderModule(Device* device);
