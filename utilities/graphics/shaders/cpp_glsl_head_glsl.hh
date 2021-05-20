@@ -6,5 +6,6 @@
 	#extension GL_EXT_shader_explicit_arithmetic_types_float32 : enable
 	#extension GL_EXT_shader_explicit_arithmetic_types_float64 : enable
 	#define STATIC_ASSERT_ALIGNED16_SIZE(T,X)
+	#define STATIC_ASSERT_SIZE(T,X)
 	#define VkDeviceAddress uint64_t
 #endif

@@ -106,6 +106,9 @@ namespace v4d::io {
 		struct ConfLineStream {
 			std::stringstream name {""};
 			std::stringstream value {""};
+			ConfLineStream() {}
+			ConfLineStream(const ConfLineStream& other)
+			 : name(std::stringstream(other.name.str())), value(std::stringstream(other.value.str())) {}
 		};
 
 		template<typename T>

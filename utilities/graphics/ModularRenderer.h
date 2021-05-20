@@ -144,69 +144,6 @@ using Renderer::Renderer;
 	}
 	
 #pragma endregion
-	
-public:
-	
-#pragma region Rendering
-	
-	inline void Render_BeforeUpdate(int currentFrame) {
-		V4D_Mod::ForEachSortedModule([currentFrame](auto* mod){
-			if (mod->Renderer_BeforeUpdate) {
-				mod->Renderer_BeforeUpdate(currentFrame);
-			}
-		});
-	}
-	inline void Render_FrameUpdate(int currentFrame) {
-		V4D_Mod::ForEachSortedModule([currentFrame](auto* mod){
-			if (mod->Renderer_FrameUpdate) {
-				mod->Renderer_FrameUpdate(currentFrame);
-			}
-		});
-	}
-	inline void Render_PushCommands(VkCommandBuffer cmdBuffer, int currentFrame) {
-		V4D_Mod::ForEachSortedModule([&cmdBuffer, currentFrame](auto* mod){
-			if (mod->Renderer_PushCommands) {
-				mod->Renderer_PushCommands(cmdBuffer, currentFrame);
-			}
-		});
-	}
-	inline void Render_VisibilityCommands(VkCommandBuffer cmdBuffer, int currentFrame) {
-		V4D_Mod::ForEachSortedModule([&cmdBuffer, currentFrame](auto* mod){
-			if (mod->Renderer_VisibilityCommands) {
-				mod->Renderer_VisibilityCommands(cmdBuffer, currentFrame);
-			}
-		});
-	}
-	inline void Render_ComputeCommands(VkCommandBuffer cmdBuffer, int currentFrame) {
-		V4D_Mod::ForEachSortedModule([&cmdBuffer, currentFrame](auto* mod){
-			if (mod->Renderer_ComputeCommands) {
-				mod->Renderer_ComputeCommands(cmdBuffer, currentFrame);
-			}
-		});
-	}
-	inline void Render_LightingCommands(VkCommandBuffer cmdBuffer, int currentFrame) {
-		V4D_Mod::ForEachSortedModule([&cmdBuffer, currentFrame](auto* mod){
-			if (mod->Renderer_LightingCommands) {
-				mod->Renderer_LightingCommands(cmdBuffer, currentFrame);
-			}
-		});
-	}
-	inline void Render_PullCommands(VkCommandBuffer cmdBuffer, int currentFrame) {
-		V4D_Mod::ForEachSortedModule([&cmdBuffer, currentFrame](auto* mod){
-			if (mod->Renderer_PullCommands) {
-				mod->Renderer_PullCommands(cmdBuffer, currentFrame);
-			}
-		});
-	}
-	inline void Render_PostCommands(VkCommandBuffer cmdBuffer, int currentFrame) {
-		V4D_Mod::ForEachSortedModule([&cmdBuffer, currentFrame](auto* mod){
-			if (mod->Renderer_PostCommands) {
-				mod->Renderer_PostCommands(cmdBuffer, currentFrame);
-			}
-		});
-	}
-	
-#pragma endregion
 
 };
 }

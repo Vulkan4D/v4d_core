@@ -188,6 +188,19 @@ namespace v4d::graphics::vulkan {
 			};
 		}
 		
+		static VkPipelineColorBlendAttachmentState LightingAttachmentBlendState() {
+			return {
+				/*VkBool32 blendEnable*/ VK_TRUE,
+				/*VkBlendFactor srcColorBlendFactor*/ VK_BLEND_FACTOR_ONE,
+				/*VkBlendFactor dstColorBlendFactor*/ VK_BLEND_FACTOR_ONE,
+				/*VkBlendOp colorBlendOp*/ VK_BLEND_OP_ADD,
+				/*VkBlendFactor srcAlphaBlendFactor*/ VK_BLEND_FACTOR_ONE,
+				/*VkBlendFactor dstAlphaBlendFactor*/ VK_BLEND_FACTOR_ONE,
+				/*VkBlendOp alphaBlendOp*/ VK_BLEND_OP_MAX,
+				/*VkColorComponentFlags colorWriteMask*/ VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
+			};
+		}
+		
 		void SetColorBlendAttachmentStates(int colorAttachmentCount, VkPipelineColorBlendAttachmentState colorAttachmentBlendState = DefaultColorAttachmentBlendState()) {
 			colorBlendAttachments.clear();
 			for (int i = 0; i < colorAttachmentCount; ++i)
@@ -204,8 +217,35 @@ namespace v4d::graphics::vulkan {
 			GetPipelineLayout()->Bind(frameIndex, cmdBuffer);
 		}
 		
-		virtual void Draw(VkCommandBuffer cmdBuffer, uint32_t vertexOrIndexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0, uint32_t firstInstance = 0) {
+		virtual void Draw(VkCommandBuffer cmdBuffer, uint32_t vertexOrIndexCount = 0, uint32_t instanceCount = 1, uint32_t firstVertex = 0, uint32_t firstInstance = 0) {
 			assert(device);
+			if (vertexOrIndexCount == 0) {
+				switch (inputAssembly.topology) {
+					case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
+						vertexOrIndexCount = 1;
+					break;
+					case VK_PRIMITIVE_TOPOLOGY_LINE_LIST:
+					case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP:
+						vertexOrIndexCount = 2;
+					break;
+					case VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY:
+					case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY: 
+						vertexOrIndexCount = 4;
+					break;
+					case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST:
+					case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP:
+					case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN:
+						vertexOrIndexCount = 3;
+					break;
+					case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST_WITH_ADJACENCY:
+					case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP_WITH_ADJACENCY:
+						vertexOrIndexCount = 6;
+					break;
+					case VK_PRIMITIVE_TOPOLOGY_PATCH_LIST:
+						vertexOrIndexCount = 0; // should trigger an error
+					break;
+				}
+			}
 			device->CmdDraw(cmdBuffer,
 				vertexOrIndexCount,
 				instanceCount,

@@ -48,6 +48,11 @@ public:
 	glm::dvec3 GetTransform(const std::string& key) const {
 		return transforms.at(key);
 	}
+	void ForEachMesh(std::function<void(const std::string& nodeName, Mesh& mesh, const glm::dvec3& transform)> func) {
+		for (auto&[nodeName, mesh] : meshes) {
+			func(nodeName, mesh, transforms[nodeName]);
+		}
+	}
 	
 	uint32_t GetMesh_geometriesCount(const std::string& nodeName) const {
 		try {return GetMesh(nodeName).geometriesCount;}

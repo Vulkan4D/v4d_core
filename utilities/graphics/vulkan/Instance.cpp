@@ -55,7 +55,7 @@ using namespace v4d::graphics::vulkan;
 					case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: // Message about behavior that is invalid and may cause crashes
 					
 						// Ignored errors
-						if (std::string("VUID-VkSwapchainCreateInfoKHR-imageExtent-01274") == pCallbackData->pMessageIdName) break;
+						if (std::string("VUID-VkSwapchainCreateInfoKHR-imageExtent-01274") == pCallbackData->pMessageIdName) break; // Error happening while resizing the window on Linux...
 						
 						LOG_ERROR("VULKAN_ERROR" << type << ": " << pCallbackData->pMessage);
 						#ifndef _WINDOWS

@@ -151,7 +151,7 @@ namespace v4d::graphics::vulkan {
 			uint32_t index = subpasses.size();
 			subpasses.push_back(subpass);
 			if (srcSubpassDependency != -1) {
-				VkSubpassDependency subPassDependency {
+				subpassDependencies.emplace_back(
 					/*srcSubpass*/uint32_t(srcSubpassDependency),
 					/*dstSubpass*/index,
 					srcStageMask,
@@ -159,7 +159,7 @@ namespace v4d::graphics::vulkan {
 					srcAccessMask,
 					dstAccessMask,
 					dependencyFlags
-				};
+				);
 			}
 			return index;
 		}
