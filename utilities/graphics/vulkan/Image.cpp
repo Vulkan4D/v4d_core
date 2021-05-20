@@ -1,8 +1,9 @@
 #include "Image.h"
 
-using namespace v4d::graphics::vulkan;
+namespace v4d::graphics::vulkan {
+COMMON_OBJECT_CPP(ImageObject, VkImage)
 
-Image::Image(VkImageUsageFlags usage, uint32_t mipLevels, uint32_t arrayLayers, const std::vector<VkFormat>& preferredFormats)
+ImageObject::ImageObject(VkImageUsageFlags usage, uint32_t mipLevels, uint32_t arrayLayers, const std::vector<VkFormat>& preferredFormats, VkImageViewType viewType)
 : 	usage(usage),
 	mipLevels(mipLevels),
 	arrayLayers(arrayLayers),
@@ -13,11 +14,12 @@ Image::Image(VkImageUsageFlags usage, uint32_t mipLevels, uint32_t arrayLayers, 
 	imageInfo.usage = usage;
 	viewInfo.subresourceRange.levelCount = mipLevels;
 	viewInfo.subresourceRange.layerCount = arrayLayers;
+	viewInfo.viewType = viewType;
 }
 
-Image::~Image() {}
+ImageObject::~ImageObject() {}
 
-void Image::SetAccessQueues(const std::vector<uint32_t>& queues) {
+void ImageObject::SetAccessQueues(const std::vector<uint32_t>& queues) {
 	if (queues.size() > 2 || (queues.size() == 2 && queues[0] != queues[1])) {
 		imageInfo.queueFamilyIndexCount = queues.size();
 		imageInfo.pQueueFamilyIndices = queues.data();
@@ -27,68 +29,77 @@ void Image::SetAccessQueues(const std::vector<uint32_t>& queues) {
 	}
 }
 
-void Image::Create(Device* device, uint32_t width, uint32_t height, const std::vector<VkFormat>& tryFormats, int additionalFormatFeatures) {
-	this->width = width;
-	this->height = height==0? width : height;
-	imageInfo.extent.width = width;
-	imageInfo.extent.height = this->height;
-	int formatFeatures = additionalFormatFeatures;
-	
-	// Map usage to features
-	if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) formatFeatures |= VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
-	if (usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) formatFeatures |= VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
-	if (usage & VK_IMAGE_USAGE_SAMPLED_BIT) formatFeatures |= VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
-	if (usage & VK_IMAGE_USAGE_STORAGE_BIT) formatFeatures |= VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT;
-	if (usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) formatFeatures |= VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
-	if (usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) formatFeatures |= VK_FORMAT_FEATURE_TRANSFER_SRC_BIT;
+void ImageObject::Create(Device* device) {
+	if (this->device == nullptr) {
+		this->device = device;
 		
-	format = device->GetPhysicalDevice()->FindSupportedFormat(tryFormats.size() > 0 ? tryFormats : preferredFormats, imageInfo.tiling, (VkFormatFeatureFlagBits)formatFeatures);
-	imageInfo.format = format;
-	viewInfo.format = format;
-	
-	device->CreateAndAllocateImage(imageInfo, memoryUsage, image, &allocation);
-	
-	if (format == VK_FORMAT_D32_SFLOAT) {
-		viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-	}
-	if (format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
-		viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-	}
-	
-	viewInfo.image = image;
-	if (device->CreateImageView(&viewInfo, nullptr, &view) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create image view");
+		imageInfo.extent.width = width;
+		imageInfo.extent.height = height;
 		
-	if (usage & VK_IMAGE_USAGE_SAMPLED_BIT) {
-		if (device->CreateSampler(&samplerInfo, nullptr, &sampler) != VK_SUCCESS)
-			throw std::runtime_error("Failed to create sampler");
+		// Map usage to features
+		if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) formatFeatures |= VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;
+		if (usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) formatFeatures |= VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+		if (usage & VK_IMAGE_USAGE_SAMPLED_BIT) formatFeatures |= VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
+		if (usage & VK_IMAGE_USAGE_STORAGE_BIT) formatFeatures |= VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT;
+		if (usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT) formatFeatures |= VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
+		if (usage & VK_IMAGE_USAGE_TRANSFER_SRC_BIT) formatFeatures |= VK_FORMAT_FEATURE_TRANSFER_SRC_BIT;
+		
+		format = device->GetPhysicalDevice()->FindSupportedFormat(preferredFormats, imageInfo.tiling, (VkFormatFeatureFlagBits)formatFeatures);
+		imageInfo.format = format;
+		viewInfo.format = format;
+		
+		if (viewInfo.viewType == VK_IMAGE_VIEW_TYPE_CUBE) imageInfo.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+		
+		device->CreateAndAllocateImage(imageInfo, memoryUsage, obj, &allocation);
+		
+		if (format == VK_FORMAT_D32_SFLOAT) {
+			viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+		}
+		if (format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
+			viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+		}
+		
+		viewInfo.image = obj;
+		if (device->CreateImageView(&viewInfo, nullptr, &view) != VK_SUCCESS)
+			throw std::runtime_error("Failed to create image view");
+			
+		if (usage & VK_IMAGE_USAGE_SAMPLED_BIT) {
+			if (device->CreateSampler(&samplerInfo, nullptr, &sampler) != VK_SUCCESS)
+				throw std::runtime_error("Failed to create sampler");
+		}
 	}
 }
 
-void Image::Destroy(Device* device) {
-	if (sampler != VK_NULL_HANDLE) {
-		device->DestroySampler(sampler, nullptr);
-		sampler = VK_NULL_HANDLE;
-	}
-	if (view != VK_NULL_HANDLE) {
-		device->DestroyImageView(view, nullptr);
-		view = VK_NULL_HANDLE;
-	}
-	if (image != VK_NULL_HANDLE) {
-		device->FreeAndDestroyImage(image, allocation);
+void ImageObject::Destroy() {
+	if (device) {
+		if (sampler != VK_NULL_HANDLE) {
+			device->DestroySampler(sampler, nullptr);
+			sampler = VK_NULL_HANDLE;
+		}
+		if (view != VK_NULL_HANDLE) {
+			device->DestroyImageView(view, nullptr);
+			view = VK_NULL_HANDLE;
+		}
+		if (VkImage(obj) != VK_NULL_HANDLE) {
+			device->FreeAndDestroyImage(obj, allocation);
+		}
+		device = nullptr;
+		width = 0;
+		height = 0;
 	}
 }
 
 
-void Image::TransitionLayout(Device* device, VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint32_t layerCount) {
+void ImageObject::TransitionLayout(VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout) {
+	assert(device);
 	VkImageAspectFlags aspectMask = 0;
 	if (format == VK_FORMAT_D32_SFLOAT) aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT;
 	if (format == VK_FORMAT_D32_SFLOAT_S8_UINT) aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 	if (!aspectMask && (usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) aspectMask |= VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-	TransitionImageLayout(device, commandBuffer, image, oldLayout, newLayout, mipLevels, layerCount, aspectMask);
+	TransitionImageLayout(device, commandBuffer, obj, oldLayout, newLayout, mipLevels, arrayLayers, aspectMask);
 }
 
-void Image::TransitionImageLayout(Device* device, VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint32_t layerCount, VkImageAspectFlags aspectMask) {
+void ImageObject::TransitionImageLayout(Device* device, VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels, uint32_t layerCount, VkImageAspectFlags aspectMask) {
 	VkImageMemoryBarrier barrier = {};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	barrier.oldLayout = oldLayout; // VK_IMAGE_LAYOUT_UNDEFINED if we dont care about existing contents of the image
@@ -237,39 +248,4 @@ void Image::TransitionImageLayout(Device* device, VkCommandBuffer commandBuffer,
 	);
 }
 
-
-
-DepthStencilImage::DepthStencilImage(VkImageUsageFlags usage, const std::vector<VkFormat>& formats)
-: Image(
-	usage,
-	1,
-	1,
-	formats
-) {
-	viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 }
-DepthStencilImage::~DepthStencilImage() {}
-
-DepthImage::DepthImage(VkImageUsageFlags usage, const std::vector<VkFormat>& formats)
-: Image(
-	usage,
-	1,
-	1,
-	formats
-) {
-	viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-}
-DepthImage::~DepthImage() {}
-
-CubeMapImage::CubeMapImage(VkImageUsageFlags usage, const std::vector<VkFormat>& formats)
-: Image(
-	usage,
-	1,
-	6,
-	formats
-) {
-	imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
-	viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
-}
-
-CubeMapImage::~CubeMapImage() {}

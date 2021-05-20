@@ -158,10 +158,9 @@ namespace v4d::graphics {
 		virtual void ConfigureLayouts() = 0;
 		virtual void ConfigureShaders() = 0;
 		virtual void ConfigureRenderPasses() = 0;
+		virtual void ConfigureImages(uint32_t swapChainWidth, uint32_t swapChainHeight) = 0;
 		virtual void LoadBuffers() = 0;
 		virtual void UnloadBuffers() = 0;
-		virtual void CreateImages() = 0;
-		virtual void DestroyImages() = 0;
 		virtual void LoadScene() = 0;
 		virtual void UnloadScene() = 0;
 		virtual void Render() = 0;
@@ -254,6 +253,28 @@ namespace v4d::graphics {
 		}
 		virtual void UnloadTextures() {
 			//TODO
+		}
+		// Images
+		virtual void CreateImages() {
+			ImageObject::ForEach([this](ImageObject*img){
+				if (img->squareSize != 0) {
+					img->width = img->squareSize;
+					img->height = img->squareSize;
+				}
+				if (img->width == 0) img->width = img->scale!=1.0? uint32_t(std::round(img->scale * float(swapChain->extent.width))) : swapChain->extent.width;
+				if (img->height == 0) img->height = img->scale!=1.0? uint32_t(std::round(img->scale * float(swapChain->extent.height))) : swapChain->extent.height;
+				img->Create(renderingDevice);
+			});
+			RunSingleTimeCommands(renderingDevice->GetGraphicsQueue(), [this](VkCommandBuffer cmdBuffer){
+				ImageObject::ForEach([this,&cmdBuffer](ImageObject*img){
+					img->TransitionLayout(cmdBuffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+				});
+			});
+		}
+		virtual void DestroyImages() {
+			ImageObject::ForEach([this](ImageObject*img){
+				img->Destroy();
+			});
 		}
 
 		

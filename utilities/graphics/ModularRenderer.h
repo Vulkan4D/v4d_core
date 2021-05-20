@@ -107,18 +107,10 @@ using Renderer::Renderer;
 
 #pragma region Images
 	
-	void CreateImages() override {
-		V4D_Mod::ForEachSortedModule([](auto* mod){
-			if (mod->Renderer_CreateImages) {
-				mod->Renderer_CreateImages();
-			}
-		});
-	}
-	
-	void DestroyImages() override {
-		V4D_Mod::ForEachSortedModule([](auto* mod){
-			if (mod->Renderer_DestroyImages) {
-				mod->Renderer_DestroyImages();
+	void ConfigureImages(uint32_t swapChainWidth, uint32_t swapChainHeight) override {
+		V4D_Mod::ForEachSortedModule([swapChainWidth, swapChainHeight](auto* mod){
+			if (mod->Renderer_ConfigureImages) {
+				mod->Renderer_ConfigureImages(swapChainWidth, swapChainHeight);
 			}
 		});
 	}

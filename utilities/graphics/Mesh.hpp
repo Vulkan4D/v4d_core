@@ -83,6 +83,9 @@ namespace v4d::graphics {
 
 		struct Geometry {
 			std::string materialName {""};
+			glm::vec4 baseColor {1};
+			float metallic {0};
+			float roughness {1};
 			uint32_t indexCount = 0;
 			uint32_t vertexCount = 0;
 			uint32_t firstIndex = 0;

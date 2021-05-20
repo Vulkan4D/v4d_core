@@ -34,8 +34,7 @@ class V4DLIB V4D_Mod {
 		,Renderer_ConfigureRenderPasses
 		,Renderer_LoadBuffers
 		,Renderer_UnloadBuffers
-		,Renderer_CreateImages
-		,Renderer_DestroyImages
+		,Renderer_ConfigureImages
 		,Renderer_LoadScene
 		,Renderer_UnloadScene
 		
@@ -54,8 +53,7 @@ class V4DLIB V4D_Mod {
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_ConfigureRenderPasses)
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_LoadBuffers)
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_UnloadBuffers)
-	V4D_MODULE_FUNC_DECLARE(void, Renderer_CreateImages)
-	V4D_MODULE_FUNC_DECLARE(void, Renderer_DestroyImages)
+	V4D_MODULE_FUNC_DECLARE(void, Renderer_ConfigureImages, uint32_t swapChainWidth, uint32_t swapChainHeight)
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_LoadScene)
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_UnloadScene)
 

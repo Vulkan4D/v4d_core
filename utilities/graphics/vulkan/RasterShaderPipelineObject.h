@@ -140,7 +140,7 @@ namespace v4d::graphics::vulkan {
 		void SetViewport(SwapChain* swapChain) {
 			pipelineCreateInfo.pViewportState = &swapChain->viewportState;
 		}
-		void SetViewport(Image* renderTarget) {
+		void SetViewport(ImageObject* renderTarget) {
 			pipelineCreateInfo.pViewportState = nullptr;
 			viewports = {VkViewport{
 				/*x*/ 0.0f,

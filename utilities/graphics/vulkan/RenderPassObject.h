@@ -62,7 +62,7 @@ namespace v4d::graphics::vulkan {
 			imageViews.resize(frameBufferCount);
 		}
 		
-		void ConfigureFrameBuffers(uint frameBufferCount, Image& renderTargetImage, uint32_t layers = 1) {
+		void ConfigureFrameBuffers(uint frameBufferCount, ImageObject& renderTargetImage, uint32_t layers = 1) {
 			renderWidth = renderTargetImage.width;
 			renderHeight = renderTargetImage.height;
 			renderLayers = layers;
@@ -130,7 +130,7 @@ namespace v4d::graphics::vulkan {
 			shaders.emplace_back(shader, subpassIndex);
 		}
 
-		void AddShader(RasterShaderPipelineObject* shader, Image* renderTarget, uint32_t subpassIndex = 0) {
+		void AddShader(RasterShaderPipelineObject* shader, ImageObject* renderTarget, uint32_t subpassIndex = 0) {
 			shader->SetViewport(renderTarget);
 			shaders.emplace_back(shader, subpassIndex);
 		}
@@ -205,7 +205,7 @@ namespace v4d::graphics::vulkan {
 		}
 		
 		[[nodiscard]] uint32_t AddAttachment(
-			const std::vector<const Image*>& frameBuffered_imagesPtr,
+			const std::vector<const ImageObject*>& frameBuffered_imagesPtr,
 			VkImageLayout initialLayout,
 			VkImageLayout finalLayout,
 			VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT,
@@ -239,7 +239,7 @@ namespace v4d::graphics::vulkan {
 		}
 		
 		[[nodiscard]] uint32_t AddAttachment(
-			const Image& image,
+			const ImageObject& image,
 			VkImageLayout initialLayout,
 			VkImageLayout finalLayout,
 			VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT,

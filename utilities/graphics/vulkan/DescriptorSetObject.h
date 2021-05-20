@@ -78,8 +78,8 @@ public:
 	}
 	
 	template<class DescriptorType>
-	inline void SetBinding(uint32_t binding, const FrameBuffered_Image& obj, VkShaderStageFlags stageFlags, uint32_t count = 1) {
-		for (size_t i = 0; i < set.size(); ++i) set[i].SetBinding<DescriptorType, Image>(binding, obj[i], stageFlags, count);
+	inline void SetBinding(uint32_t binding, const FrameBuffered_ImageObject& obj, VkShaderStageFlags stageFlags, uint32_t count = 1) {
+		for (size_t i = 0; i < set.size(); ++i) set[i].SetBinding<DescriptorType, ImageObject>(binding, obj[i], stageFlags, count);
 	}
 	
 	inline DescriptorSetObject& operator[](size_t frameIndex) {
@@ -151,7 +151,7 @@ public:
 		StorageImageDescriptor(const VkImageView* imageView, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS, uint32_t count = 1)
 			: Descriptor(stageFlags, count), imageViewPtr(imageView) {}
 			
-		StorageImageDescriptor(const Image& image, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS, uint32_t count = 1)
+		StorageImageDescriptor(const ImageObject& image, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS, uint32_t count = 1)
 			: StorageImageDescriptor(&image.view, stageFlags, count) {}
 			
 		constexpr VkDescriptorType GetDescriptorType() const override {return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;}
@@ -174,7 +174,7 @@ public:
 		CombinedImageSamplerDescriptor(const VkImageView* imageView, const VkSampler* sampler, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS, uint32_t count = 1)
 			: Descriptor(stageFlags, count), imageViewPtr(imageView), samplerPtr(sampler) {}
 			
-		CombinedImageSamplerDescriptor(const Image& image, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS, uint32_t count = 1)
+		CombinedImageSamplerDescriptor(const ImageObject& image, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS, uint32_t count = 1)
 			: CombinedImageSamplerDescriptor(&image.view, &image.sampler, stageFlags, count) {}
 			
 		constexpr VkDescriptorType GetDescriptorType() const override {return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;}
@@ -199,7 +199,7 @@ public:
 		InputAttachmentDescriptor(const VkImageView* imageView, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT, uint32_t count = 1)
 			: Descriptor(stageFlags, count), imageViewPtr(imageView) {}
 			
-		InputAttachmentDescriptor(const Image& image, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT, uint32_t count = 1)
+		InputAttachmentDescriptor(const ImageObject& image, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT, uint32_t count = 1)
 			: InputAttachmentDescriptor(&image.view, stageFlags, count) {}
 			
 		constexpr VkDescriptorType GetDescriptorType() const override {return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;}

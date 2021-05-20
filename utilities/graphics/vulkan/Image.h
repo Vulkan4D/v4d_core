@@ -3,8 +3,7 @@
  * Part of the Vulkan4D open-source game engine under the LGPL license - https://github.com/Vulkan4D
  * @author Olivier St-Laurent <olivier@xenon3d.com>
  * 
- * Included in this file is the Image class and some of it's children classes
- * These classes contains abstractions for VkImage, VkImageView and VkImageSampler
+ * This class contains abstractions for VkImage, VkImageView and VkImageSampler
  */
 #pragma once
 
@@ -14,8 +13,8 @@
 #include "utilities/graphics/vulkan/Device.h"
 
 namespace v4d::graphics::vulkan {
-	class V4DLIB Image {
-	public:
+	class V4DLIB ImageObject {
+		COMMON_OBJECT(ImageObject, VkImage, V4DLIB)
 		
 		// Constructor args
 		VkImageUsageFlags usage;
@@ -27,19 +26,25 @@ namespace v4d::graphics::vulkan {
 		uint32_t width = 0;
 		uint32_t height = 0;
 		VkFormat format = VK_FORMAT_R32G32B32A32_SFLOAT;
-		VkImage image = VK_NULL_HANDLE;
 		VkImageView view = VK_NULL_HANDLE;
 		VkSampler sampler = VK_NULL_HANDLE;
 		MemoryAllocation allocation = VK_NULL_HANDLE;
 		
-		Image(
+		int formatFeatures = 0;
+		uint32_t squareSize = 0;
+		float scale = 1.0;
+		
+		Device* device = nullptr;
+		
+		ImageObject(
 			VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
 			uint32_t mipLevels = 1,
 			uint32_t arrayLayers = 1,
-			const std::vector<VkFormat>& preferredFormats = {VK_FORMAT_R32G32B32A32_SFLOAT}
+			const std::vector<VkFormat>& preferredFormats = {VK_FORMAT_R32G32B32A32_SFLOAT},
+			VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D
 		);
 		
-		virtual ~Image();
+		virtual ~ImageObject();
 		
 		VkImageCreateInfo imageInfo {
 			VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -104,39 +109,12 @@ namespace v4d::graphics::vulkan {
 		
 		void SetAccessQueues(const std::vector<uint32_t>& queues);
 		
-		virtual void Create(Device* device, uint32_t width, uint32_t height = 0, const std::vector<VkFormat>& tryFormats = {}, int additionalFormatFeatures = 0);
-		virtual void Destroy(Device* device);
+		virtual void Create(Device* device);
+		virtual void Destroy();
 		
-		void TransitionLayout(Device* device, VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels = 1, uint32_t layerCount = 1);
+		void TransitionLayout(VkCommandBuffer commandBuffer, VkImageLayout oldLayout, VkImageLayout newLayout);
 		static void TransitionImageLayout(Device* device, VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels = 1, uint32_t layerCount = 1, VkImageAspectFlags aspectMask = 0);
 		
-	};
-	
-	class V4DLIB DepthStencilImage : public Image {
-	public:
-		DepthStencilImage(
-			VkImageUsageFlags usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-			const std::vector<VkFormat>& formats = {VK_FORMAT_D32_SFLOAT_S8_UINT}
-		);
-		virtual ~DepthStencilImage();
-	};
-	
-	class V4DLIB DepthImage : public Image {
-	public:
-		DepthImage(
-			VkImageUsageFlags usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-			const std::vector<VkFormat>& formats = {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT}
-		);
-		virtual ~DepthImage();
-	};
-	
-	class V4DLIB CubeMapImage : public Image {
-	public:
-		CubeMapImage(
-			VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			const std::vector<VkFormat>& formats = {VK_FORMAT_R32G32B32A32_SFLOAT}
-		);
-		virtual ~CubeMapImage();
 	};
 	
 }

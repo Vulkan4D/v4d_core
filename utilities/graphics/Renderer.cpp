@@ -302,6 +302,7 @@ void Renderer::ReloadRenderer() {
 }
 
 void Renderer::LoadGraphicsToDevice() {
+	ConfigureImages(swapChain->extent.width, swapChain->extent.height);
 	CreateImages();
 	CreateDescriptorSets();
 	CreatePipelineLayouts();
@@ -317,6 +318,7 @@ void Renderer::LoadGraphicsToDevice() {
 	
 	LoadScene();
 	
+	currentFrame = 0;
 	state = STATE::LOADED;
 }
 
