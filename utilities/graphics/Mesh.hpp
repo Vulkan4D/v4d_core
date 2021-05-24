@@ -74,6 +74,21 @@ namespace v4d::graphics {
 		};
 		using VertexUvF32Vec2 = VertexUvVec2<glm::f32>;
 		
+		template<typename T>
+		struct VertexTangentVec4 {
+			T x;
+			T y;
+			T z;
+			T w;
+			VertexTangentVec4(const glm::vec<4,T>& v) : x(v.x), y(v.y), z(v.z), w(v.w) {}
+			VertexTangentVec4() {static_assert(sizeof(VertexTangentVec4) == sizeof(T)*4);}
+			bool operator==(const VertexTangentVec4& other) const {
+				return x == other.x && y == other.y && z == other.z && w == other.w;
+			}
+			bool operator!=(const VertexTangentVec4& other) const {return !(*this == other);}
+		};
+		using VertexTangentF32Vec4 = VertexTangentVec4<glm::f32>;
+		
 		struct ProceduralVertexAABB {
 			glm::vec3 aabbMin;
 			glm::vec3 aabbMax;
@@ -86,6 +101,9 @@ namespace v4d::graphics {
 			glm::vec4 baseColor {1};
 			float metallic {0};
 			float roughness {1};
+			std::shared_ptr<SamplerObject> albedoTexture = nullptr;
+			std::shared_ptr<SamplerObject> normalTexture = nullptr;
+			std::shared_ptr<SamplerObject> metallicRoughnessTexture = nullptr;
 			uint32_t indexCount = 0;
 			uint32_t vertexCount = 0;
 			uint32_t firstIndex = 0;
@@ -99,6 +117,8 @@ namespace v4d::graphics {
 			uint32_t firstColor = 0;
 			VertexUvF32Vec2* uvBufferPtr_f32vec2 = nullptr;
 			uint32_t firstUv = 0;
+			VertexTangentF32Vec4* tangentBufferPtr_f32vec4 = nullptr;
+			uint32_t firstTangent = 0;
 		};
 	}
 	
@@ -111,5 +131,6 @@ namespace v4d::graphics {
 		uint32_t vertexNormalCount = 0;
 		uint32_t vertexColorCount = 0;
 		uint32_t vertexUvCount = 0;
+		uint32_t vertexTangentCount = 0;
 	};
 }

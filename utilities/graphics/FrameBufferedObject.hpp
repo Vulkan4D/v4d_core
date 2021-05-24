@@ -4,7 +4,7 @@
 #include <array>
 #include <utility>
 #include <v4d.h>
-#include "utilities/graphics/vulkan/Image.h"
+#include "utilities/graphics/vulkan/ImageObject.h"
 #include "utilities/graphics/vulkan/Device.h"
 
 namespace v4d::graphics {

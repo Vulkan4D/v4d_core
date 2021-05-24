@@ -12,7 +12,7 @@
 #include "utilities/graphics/vulkan/PhysicalDevice.h"
 #include "utilities/graphics/vulkan/Queue.hpp"
 #include "utilities/graphics/vulkan/Device.h"
-#include "utilities/graphics/vulkan/Image.h"
+#include "utilities/graphics/vulkan/ImageObject.h"
 #include "utilities/graphics/vulkan/SwapChain.h"
 #include "utilities/graphics/vulkan/PipelineLayoutObject.h"
 #include "utilities/graphics/vulkan/ShaderPipelineObject.h"
@@ -249,10 +249,20 @@ namespace v4d::graphics {
 		}
 		// Textures
 		virtual void LoadTextures() {
-			//TODO
+			TextureObject::ForEach([this](TextureObject*tex){
+				tex->Create(renderingDevice);
+			});
+			SamplerObject::ForEach([](SamplerObject*sampler){
+				sampler->Create();
+			});
 		}
 		virtual void UnloadTextures() {
-			//TODO
+			SamplerObject::ForEach([](SamplerObject*sampler){
+				sampler->Destroy();
+			});
+			TextureObject::ForEach([](TextureObject*tex){
+				tex->Destroy();
+			});
 		}
 		// Images
 		virtual void CreateImages() {

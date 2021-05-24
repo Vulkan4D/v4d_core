@@ -1,4 +1,4 @@
-#include "Image.h"
+#include "ImageObject.h"
 
 namespace v4d::graphics::vulkan {
 COMMON_OBJECT_CPP(ImageObject, VkImage)

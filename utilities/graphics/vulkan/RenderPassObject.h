@@ -9,7 +9,7 @@
 #include <vector>
 #include "utilities/graphics/vulkan/Loader.h"
 #include "utilities/graphics/vulkan/Device.h"
-#include "utilities/graphics/vulkan/Image.h"
+#include "utilities/graphics/vulkan/ImageObject.h"
 #include "utilities/graphics/vulkan/Instance.h"
 #include "utilities/graphics/vulkan/SwapChain.h"
 #include "utilities/graphics/vulkan/RasterShaderPipelineObject.h"

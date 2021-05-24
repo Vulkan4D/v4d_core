@@ -1,13 +1,13 @@
 #pragma once
 
 // TinyGltfLoader
-#define TINYGLTF_USE_CPP14
-#define TINYGLTF_NO_INCLUDE_STB_IMAGE
-#define TINYGLTF_NO_INCLUDE_STB_IMAGE_WRITE
-#define TINYGLTF_NO_STB_IMAGE
 #define TINYGLTF_NO_STB_IMAGE_WRITE
+#define TINYGLTF_NO_INCLUDE_STB_IMAGE_WRITE
 #define TINYGLTF_NO_EXTERNAL_IMAGE
 #define TINYGLTF_NO_INCLUDE_JSON
+#define TINYGLTF_USE_CPP14
+
+#include "vulkan/SamplerObject.h"
 #include "utilities/data/json.hpp"
 #include "../../tinygltf/tiny_gltf.h"
 
@@ -23,7 +23,8 @@ class V4DLIB MeshFile {
 	tinygltf::Model gltfModel;
 	
 	std::unordered_map<std::string, Mesh> meshes {};
-	std::unordered_map<std::string, glm::dvec3> transforms {};
+	std::unordered_map<std::string, glm::dmat4> transforms {};
+	std::vector<std::shared_ptr<TextureObject>> images {};
 	
 	bool Load();
 public:
@@ -45,10 +46,10 @@ public:
 	const Mesh& GetMesh(const std::string& key) const {
 		return meshes.at(key);
 	}
-	glm::dvec3 GetTransform(const std::string& key) const {
+	glm::dmat4 GetTransform(const std::string& key) const {
 		return transforms.at(key);
 	}
-	void ForEachMesh(std::function<void(const std::string& nodeName, Mesh& mesh, const glm::dvec3& transform)> func) {
+	void ForEachMesh(std::function<void(const std::string& nodeName, Mesh& mesh, const glm::dmat4& transform)> func) {
 		for (auto&[nodeName, mesh] : meshes) {
 			func(nodeName, mesh, transforms[nodeName]);
 		}
@@ -80,6 +81,10 @@ public:
 	}
 	uint32_t GetMesh_vertexUvCount(const std::string& nodeName) const {
 		try {return GetMesh(nodeName).vertexUvCount;}
+		catch (...) {return 0;}
+	}
+	uint32_t GetMesh_vertexTangentCount(const std::string& nodeName) const {
+		try {return GetMesh(nodeName).vertexTangentCount;}
 		catch (...) {return 0;}
 	}
 };

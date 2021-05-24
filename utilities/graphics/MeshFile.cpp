@@ -3,6 +3,69 @@
 
 namespace v4d::graphics {
 
+static glm::dmat4 GetLocalTransform(std::vector<tinygltf::Node>& nodes, int nodeIndex) {
+	auto& node = nodes[nodeIndex];
+	glm::dvec3 translation {0};
+	glm::dquat rotation {1,0,0,0};
+	glm::dvec3 scale {1};
+	if (node.matrix.size() == 16) {
+		return glm::dmat4(
+			node.matrix[0],
+			node.matrix[1],
+			node.matrix[2],
+			node.matrix[3],
+			node.matrix[4],
+			node.matrix[5],
+			node.matrix[6],
+			node.matrix[7],
+			node.matrix[8],
+			node.matrix[9],
+			node.matrix[10],
+			node.matrix[11],
+			node.matrix[12],
+			node.matrix[13],
+			node.matrix[14],
+			node.matrix[15]
+		);
+	} else {
+		if (node.translation.size() == 3) {
+			translation = glm::dvec3(node.translation[0], node.translation[1], node.translation[2]);
+		}
+		if (node.rotation.size() == 4) {
+			rotation = glm::dquat(node.rotation[3], node.rotation[0], node.rotation[1], node.rotation[2]);
+		}
+		if (node.scale.size() == 3) {
+			scale = glm::dvec3(node.scale[0], node.scale[1], node.scale[2]);
+		}
+		return glm::translate(glm::dmat4(1), translation) * glm::mat4_cast(rotation) * glm::scale(glm::dmat4(1), scale);
+	}
+}
+
+static glm::dmat4 GetAbsoluteTransform(std::map<int/*child*/, int/*parent*/>& childParentMap, std::vector<tinygltf::Node>& nodes, int nodeIndex) {
+	if (childParentMap.contains(nodeIndex)) {
+		return GetAbsoluteTransform(childParentMap, nodes, childParentMap[nodeIndex]) * GetLocalTransform(nodes, nodeIndex);
+	} else {
+		return GetLocalTransform(nodes, nodeIndex);
+	}
+}
+
+static VkFilter GetVkFilterFromGltf(int filter) {
+	switch (filter) {
+		case TINYGLTF_TEXTURE_FILTER_NEAREST: return VK_FILTER_NEAREST;
+		case TINYGLTF_TEXTURE_FILTER_LINEAR: return VK_FILTER_LINEAR;
+	}
+	return VK_FILTER_LINEAR;
+}
+
+static VkSamplerAddressMode GetVkSamplerAddressModeFromGltf(int wrap) {
+	switch (wrap) {
+		case TINYGLTF_TEXTURE_WRAP_REPEAT: return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		case TINYGLTF_TEXTURE_WRAP_CLAMP_TO_EDGE: return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		case TINYGLTF_TEXTURE_WRAP_MIRRORED_REPEAT: return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+	}
+	return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+}
+
 MeshFilePtr MeshFile::GetInstance(const std::string& filePath)
 	STATIC_CLASS_INSTANCES_CPP(filePath, MeshFile, filePath)
 
@@ -24,13 +87,23 @@ MeshFile::MeshFile(const std::string& filePath) : filePath(filePath) {
 bool MeshFile::Load() {
 	using namespace mesh;
 	
-	for (auto node : gltfModel.nodes) {
-		glm::dvec3& translation = transforms[node.name] = {0,0,0};
-		if (node.translation.size() == 3) {
-			translation.x = node.translation[0];
-			translation.y = node.translation[1];
-			translation.z = node.translation[2];
+	// Load textures
+	for (auto& image : gltfModel.images) {
+		images.emplace_back(std::make_shared<TextureObject>(image.width, image.height, image.component, image.image.data(), image.image.size()));
+	}
+	
+	// Load nodes hierarchy
+	std::map<int/*child*/, int/*parent*/> childParentMap {};
+	for (size_t i = 0; i < gltfModel.nodes.size(); ++i) {
+		for (auto& child : gltfModel.nodes[i].children) {
+			childParentMap[child] = i;
 		}
+	}
+	
+	// Load meshes and transforms
+	for (size_t i = 0; i < gltfModel.nodes.size(); ++i) {
+		auto& node = gltfModel.nodes[i];
+		transforms[node.name] = GetAbsoluteTransform(childParentMap, gltfModel.nodes, i);
 		
 		if (node.mesh != -1) {
 			// LOG("Loading mesh node '" << node.name << "'")
@@ -73,6 +146,7 @@ bool MeshFile::Load() {
 				size_t vertexNormalCount = 0;
 				size_t vertexColorCount = 0;
 				size_t vertexUvCount = 0;
+				size_t vertexTangentCount = 0;
 				
 				{// Vertex data
 					for (auto&[name,accessorIndex] : p.attributes) {
@@ -103,6 +177,20 @@ bool MeshFile::Load() {
 							geometry->firstNormal = meshData.vertexNormalCount;
 							meshData.vertexNormalCount += vertices.count;
 							vertexNormalCount += vertices.count;
+						}
+						else if (name == "TANGENT") {
+							auto& vertices = gltfModel.accessors[accessorIndex];
+							ASSERT_OR_RETURN_FALSE(geometry->vertexCount == 0 || geometry->vertexCount == vertices.count);
+							geometry->vertexCount = vertices.count;
+							auto& vertexBufferView = gltfModel.bufferViews[vertices.bufferView];
+							ASSERT_OR_RETURN_FALSE(vertices.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+							ASSERT_OR_RETURN_FALSE(vertexBufferView.byteStride == 0); // Only supports tightly packed buffers
+							ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength > 0);
+							ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength == vertices.count * sizeof(VertexTangentF32Vec4));
+							geometry->tangentBufferPtr_f32vec4 = reinterpret_cast<VertexTangentF32Vec4*>(&gltfModel.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
+							geometry->firstTangent = meshData.vertexTangentCount;
+							meshData.vertexTangentCount += vertices.count;
+							vertexTangentCount += vertices.count;
 						}
 						else if (name == "TEXCOORD_0") {
 							auto& vertices = gltfModel.accessors[accessorIndex];
@@ -144,6 +232,7 @@ bool MeshFile::Load() {
 				ASSERT_OR_RETURN_FALSE(vertexNormalCount == vertexPositionCount);
 				ASSERT_OR_RETURN_FALSE(vertexColorCount == 0 || vertexColorCount == vertexPositionCount);
 				ASSERT_OR_RETURN_FALSE(vertexUvCount == 0 || vertexUvCount == vertexPositionCount);
+				ASSERT_OR_RETURN_FALSE(vertexTangentCount == 0 || vertexTangentCount == vertexPositionCount);
 				
 				if (p.material != -1) {// Material
 					tinygltf::Material material = gltfModel.materials[p.material];
@@ -151,12 +240,29 @@ bool MeshFile::Load() {
 					geometry->baseColor = glm::vec4(material.pbrMetallicRoughness.baseColorFactor[0], material.pbrMetallicRoughness.baseColorFactor[1], material.pbrMetallicRoughness.baseColorFactor[2], material.pbrMetallicRoughness.baseColorFactor[3]);
 					geometry->metallic = float(material.pbrMetallicRoughness.metallicFactor);
 					geometry->roughness = float(material.pbrMetallicRoughness.roughnessFactor);
+					if (material.normalTexture.index != -1) {
+						auto& texture = gltfModel.textures[material.normalTexture.index];
+						auto& sampler = gltfModel.samplers[texture.sampler];
+						geometry->normalTexture = std::make_shared<SamplerObject>(images[texture.source], GetVkFilterFromGltf(sampler.magFilter), GetVkFilterFromGltf(sampler.minFilter), GetVkSamplerAddressModeFromGltf(sampler.wrapS), GetVkSamplerAddressModeFromGltf(sampler.wrapT), GetVkSamplerAddressModeFromGltf(sampler.wrapR));
+					}
+					if (material.pbrMetallicRoughness.baseColorTexture.index != -1) {
+						auto& texture = gltfModel.textures[material.pbrMetallicRoughness.baseColorTexture.index];
+						auto& sampler = gltfModel.samplers[texture.sampler];
+						geometry->albedoTexture = std::make_shared<SamplerObject>(images[texture.source], GetVkFilterFromGltf(sampler.magFilter), GetVkFilterFromGltf(sampler.minFilter), GetVkSamplerAddressModeFromGltf(sampler.wrapS), GetVkSamplerAddressModeFromGltf(sampler.wrapT), GetVkSamplerAddressModeFromGltf(sampler.wrapR));
+					}
+					if (material.pbrMetallicRoughness.metallicRoughnessTexture.index != -1) {
+						auto& texture = gltfModel.textures[material.pbrMetallicRoughness.metallicRoughnessTexture.index];
+						auto& sampler = gltfModel.samplers[texture.sampler];
+						geometry->metallicRoughnessTexture = std::make_shared<SamplerObject>(images[texture.source], GetVkFilterFromGltf(sampler.magFilter), GetVkFilterFromGltf(sampler.minFilter), GetVkSamplerAddressModeFromGltf(sampler.wrapS), GetVkSamplerAddressModeFromGltf(sampler.wrapT), GetVkSamplerAddressModeFromGltf(sampler.wrapR));
+					}
+					// also available: material.occlusionTexture
 				}
 				
 				meshData.geometriesCount++;
 			}
 		}
 	}
+	
 	return true;
 }
 
