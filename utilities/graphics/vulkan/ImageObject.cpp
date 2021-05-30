@@ -19,16 +19,6 @@ ImageObject::ImageObject(VkImageUsageFlags usage, uint32_t mipLevels, uint32_t a
 
 ImageObject::~ImageObject() {}
 
-void ImageObject::SetAccessQueues(const std::vector<uint32_t>& queues) {
-	if (queues.size() > 2 || (queues.size() == 2 && queues[0] != queues[1])) {
-		imageInfo.queueFamilyIndexCount = queues.size();
-		imageInfo.pQueueFamilyIndices = queues.data();
-		imageInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
-	} else {
-		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	}
-}
-
 void ImageObject::Create(Device* device) {
 	if (this->device == nullptr) {
 		this->device = device;
@@ -49,6 +39,14 @@ void ImageObject::Create(Device* device) {
 		viewInfo.format = format;
 		
 		if (viewInfo.viewType == VK_IMAGE_VIEW_TYPE_CUBE) imageInfo.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+		
+		if (sharedAccessQueues.size() > 2 || (sharedAccessQueues.size() == 2 && sharedAccessQueues[0] != sharedAccessQueues[1])) {
+			imageInfo.queueFamilyIndexCount = sharedAccessQueues.size();
+			imageInfo.pQueueFamilyIndices = sharedAccessQueues.data();
+			imageInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
+		} else {
+			imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		}
 		
 		device->CreateAndAllocateImage(imageInfo, memoryUsage, obj, &allocation);
 		

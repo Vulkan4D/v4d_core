@@ -34,6 +34,8 @@ namespace v4d::graphics::vulkan {
 		uint32_t squareSize = 0;
 		float scale = 1.0;
 		
+		std::vector<uint32_t> sharedAccessQueues {};
+		
 		Device* device = nullptr;
 		
 		ImageObject(

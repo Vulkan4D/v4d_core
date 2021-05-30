@@ -25,6 +25,11 @@ struct FrameBufferedObject {
 	operator FRAMEBUFFERED_ARRAY() const {
 		return objArray;
 	}
+	void ForEachFrame(const std::function<void(int, T&)>& func) {
+		for (size_t i = 0; i < V4D_RENDERER_FRAMEBUFFERS_MAX_FRAMES; ++i) {
+			func(int(i), objArray[i]);
+		}
+	}
 };
 
 struct FrameBuffered_ImageObject : FrameBufferedObject<vulkan::ImageObject> {

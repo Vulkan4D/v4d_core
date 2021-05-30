@@ -18,7 +18,7 @@ namespace v4d::graphics::vulkan {
 		COMMON_OBJECT_MOVEABLE(PipelineLayoutObject)
 		COMMON_OBJECT_COPYABLE(PipelineLayoutObject)
 		
-		std::vector<std::tuple<DescriptorSetObject*, FrameBufferedDescriptorSetObject*>> descriptorSets {};
+		std::vector<std::tuple<DescriptorSetObject*, FrameBuffered_DescriptorSetObject*>> descriptorSets {};
 		std::array<std::vector<VkDescriptorSet>, V4D_RENDERER_FRAMEBUFFERS_MAX_FRAMES> rawDescriptorSets {};
 		std::vector<VkPushConstantRange> pushConstants {};
 
@@ -31,7 +31,7 @@ namespace v4d::graphics::vulkan {
 			descriptorSets.emplace_back(descriptorSet, nullptr);
 		}
 
-		void AddDescriptorSet(FrameBufferedDescriptorSetObject* descriptorSet) {
+		void AddDescriptorSet(FrameBuffered_DescriptorSetObject* descriptorSet) {
 			descriptorSets.emplace_back(nullptr, descriptorSet);
 		}
 

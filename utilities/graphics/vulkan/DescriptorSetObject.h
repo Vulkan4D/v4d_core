@@ -80,7 +80,7 @@ class V4DLIB DescriptorSetObject {
 	
 };
 
-class V4DLIB FrameBufferedDescriptorSetObject {
+class V4DLIB FrameBuffered_DescriptorSetObject {
 	std::array<DescriptorSetObject, V4D_RENDERER_FRAMEBUFFERS_MAX_FRAMES> set;
 	
 public:

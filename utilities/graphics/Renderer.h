@@ -108,7 +108,7 @@ namespace v4d::graphics {
 		};
 		std::vector<VkSurfaceFormatKHR> preferredFormats {
 			{VK_FORMAT_R16G16B16A16_SFLOAT, VK_COLOR_SPACE_HDR10_HLG_EXT},
-			// {VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR},
+			{VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR},
 		};
 		
 		std::vector<DeviceQueueInfo> queuesInfo {
