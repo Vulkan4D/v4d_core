@@ -130,6 +130,11 @@ namespace v4d::graphics::vulkan {
 			shaders.emplace_back(shader, subpassIndex);
 		}
 
+		void AddShader(RasterShaderPipelineObject* shader, const VkExtent3D& extent, uint32_t subpassIndex = 0) {
+			shader->SetViewport(extent);
+			shaders.emplace_back(shader, subpassIndex);
+		}
+
 		void AddShader(RasterShaderPipelineObject* shader, ImageObject* renderTarget, uint32_t subpassIndex = 0) {
 			shader->SetViewport(renderTarget);
 			shaders.emplace_back(shader, subpassIndex);

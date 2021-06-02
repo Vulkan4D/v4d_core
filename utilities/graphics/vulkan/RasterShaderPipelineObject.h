@@ -152,6 +152,18 @@ namespace v4d::graphics::vulkan {
 			}};
 			scissors = {VkRect2D{VkOffset2D{0,0}, VkExtent2D{renderTarget->width, renderTarget->height}}};
 		}
+		void SetViewport(const VkExtent3D& extent) {
+			pipelineCreateInfo.pViewportState = nullptr;
+			viewports = {VkViewport{
+				/*x*/ 0.0f,
+				/*y*/ 0.0f,
+				/*width*/ (float) extent.width,
+				/*height*/ (float) extent.height,
+				/*minDepth*/ 0.0f,
+				/*maxDepth*/ float(extent.depth)
+			}};
+			scissors = {VkRect2D{VkOffset2D{0,0}, VkExtent2D{extent.width, extent.height}}};
+		}
 		void SetViewport(const VkViewport& viewport, const VkRect2D& scissor) {
 			pipelineCreateInfo.pViewportState = nullptr;
 			viewports = {viewport};
