@@ -82,8 +82,14 @@ namespace v4d::graphics::vulkan {
 		}
 		
 		static void CheckVkResult(const char* str, const VkResult& res) {
-			if (res == VK_SUCCESS) return;
-			throw std::runtime_error(std::string(str) + ": " + GetVkResultText(res));
+			if (res != VK_SUCCESS) {
+				LOG_ERROR(str << ": " << GetVkResultText(res))
+				throw res;
+			}
+		}
+		
+		static void CheckVkResult(const VkResult& res) {
+			if (res != VK_SUCCESS) throw res;
 		}
 		
 	};

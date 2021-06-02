@@ -1,5 +1,6 @@
 #pragma once
 #include "../TextureObject.h"
+#include "ImageObject.h"
 #include <v4d.h>
 
 namespace v4d::graphics::vulkan {
@@ -18,6 +19,10 @@ COMMON_OBJECT(SamplerObject, VkSampler, V4DLIB)
 		samplerInfo.addressModeV = addrModeV;
 		samplerInfo.addressModeW = addrModeW;
 	}
+
+	SamplerObject(ImageObject* image)
+	 : obj(image->sampler), view(image->view), texture(nullptr), viewInfo(image->viewInfo), samplerInfo(image->samplerInfo)
+	{}
 
 	VkImageViewCreateInfo viewInfo {
 		VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,// VkStructureType sType
