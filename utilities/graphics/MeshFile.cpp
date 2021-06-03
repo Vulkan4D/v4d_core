@@ -145,7 +145,8 @@ bool MeshFile::Load() {
 				size_t vertexPositionCount = 0;
 				size_t vertexNormalCount = 0;
 				size_t vertexColorCount = 0;
-				size_t vertexUvCount = 0;
+				size_t vertexTexCoord0Count = 0;
+				size_t vertexTexCoord1Count = 0;
 				size_t vertexTangentCount = 0;
 				
 				{// Vertex data
@@ -201,10 +202,24 @@ bool MeshFile::Load() {
 							ASSERT_OR_RETURN_FALSE(vertexBufferView.byteStride == 0); // Only supports tightly packed buffers
 							ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength > 0);
 							ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength == vertices.count * sizeof(VertexUvF32Vec2));
-							geometry->uvBufferPtr_f32vec2 = reinterpret_cast<VertexUvF32Vec2*>(&gltfModel.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
-							geometry->firstUv = meshData.vertexUvCount;
-							meshData.vertexUvCount += vertices.count;
-							vertexUvCount += vertices.count;
+							geometry->texCoord0BufferPtr_f32vec2 = reinterpret_cast<VertexUvF32Vec2*>(&gltfModel.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
+							geometry->firstTexCoord0 = meshData.vertexTexCoord0Count;
+							meshData.vertexTexCoord0Count += vertices.count;
+							vertexTexCoord0Count += vertices.count;
+						}
+						else if (name == "TEXCOORD_1") {
+							auto& vertices = gltfModel.accessors[accessorIndex];
+							ASSERT_OR_RETURN_FALSE(geometry->vertexCount == 0 || geometry->vertexCount == vertices.count);
+							geometry->vertexCount = vertices.count;
+							auto& vertexBufferView = gltfModel.bufferViews[vertices.bufferView];
+							ASSERT_OR_RETURN_FALSE(vertices.componentType == TINYGLTF_COMPONENT_TYPE_FLOAT);
+							ASSERT_OR_RETURN_FALSE(vertexBufferView.byteStride == 0); // Only supports tightly packed buffers
+							ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength > 0);
+							ASSERT_OR_RETURN_FALSE(vertexBufferView.byteLength == vertices.count * sizeof(VertexUvF32Vec2));
+							geometry->texCoord1BufferPtr_f32vec2 = reinterpret_cast<VertexUvF32Vec2*>(&gltfModel.buffers[vertexBufferView.buffer].data.data()[vertexBufferView.byteOffset]);
+							geometry->firstTexCoord1 = meshData.vertexTexCoord1Count;
+							meshData.vertexTexCoord1Count += vertices.count;
+							vertexTexCoord1Count += vertices.count;
 						}
 						else if (name == "COLOR_0") {
 							auto& vertices = gltfModel.accessors[accessorIndex];
@@ -231,7 +246,8 @@ bool MeshFile::Load() {
 				ASSERT_OR_RETURN_FALSE(vertexPositionCount > 0);
 				ASSERT_OR_RETURN_FALSE(vertexNormalCount == vertexPositionCount);
 				ASSERT_OR_RETURN_FALSE(vertexColorCount == 0 || vertexColorCount == vertexPositionCount);
-				ASSERT_OR_RETURN_FALSE(vertexUvCount == 0 || vertexUvCount == vertexPositionCount);
+				ASSERT_OR_RETURN_FALSE(vertexTexCoord0Count == 0 || vertexTexCoord0Count == vertexPositionCount);
+				ASSERT_OR_RETURN_FALSE(vertexTexCoord1Count == 0 || vertexTexCoord1Count == vertexPositionCount);
 				ASSERT_OR_RETURN_FALSE(vertexTangentCount == 0 || vertexTangentCount == vertexPositionCount);
 				
 				if (p.material != -1) {// Material
@@ -244,16 +260,19 @@ bool MeshFile::Load() {
 						auto& texture = gltfModel.textures[material.normalTexture.index];
 						auto& sampler = gltfModel.samplers[texture.sampler];
 						geometry->normalTexture = std::make_shared<SamplerObject>(images[texture.source], GetVkFilterFromGltf(sampler.magFilter), GetVkFilterFromGltf(sampler.minFilter), GetVkSamplerAddressModeFromGltf(sampler.wrapS), GetVkSamplerAddressModeFromGltf(sampler.wrapT), GetVkSamplerAddressModeFromGltf(sampler.wrapR));
+						// uint8_t texCoordIndex = material.normalTexture.texCoord; // 0/1 for texCoord0/texCoord1
 					}
 					if (material.pbrMetallicRoughness.baseColorTexture.index != -1) {
 						auto& texture = gltfModel.textures[material.pbrMetallicRoughness.baseColorTexture.index];
 						auto& sampler = gltfModel.samplers[texture.sampler];
 						geometry->albedoTexture = std::make_shared<SamplerObject>(images[texture.source], GetVkFilterFromGltf(sampler.magFilter), GetVkFilterFromGltf(sampler.minFilter), GetVkSamplerAddressModeFromGltf(sampler.wrapS), GetVkSamplerAddressModeFromGltf(sampler.wrapT), GetVkSamplerAddressModeFromGltf(sampler.wrapR));
+						// uint8_t texCoordIndex = material.pbrMetallicRoughness.baseColorTexture.texCoord; // 0/1 for texCoord0/texCoord1
 					}
 					if (material.pbrMetallicRoughness.metallicRoughnessTexture.index != -1) {
 						auto& texture = gltfModel.textures[material.pbrMetallicRoughness.metallicRoughnessTexture.index];
 						auto& sampler = gltfModel.samplers[texture.sampler];
 						geometry->metallicRoughnessTexture = std::make_shared<SamplerObject>(images[texture.source], GetVkFilterFromGltf(sampler.magFilter), GetVkFilterFromGltf(sampler.minFilter), GetVkSamplerAddressModeFromGltf(sampler.wrapS), GetVkSamplerAddressModeFromGltf(sampler.wrapT), GetVkSamplerAddressModeFromGltf(sampler.wrapR));
+						// uint8_t texCoordIndex = material.pbrMetallicRoughness.metallicRoughnessTexture.texCoord; // 0/1 for texCoord0/texCoord1
 					}
 					// also available: material.occlusionTexture
 				}

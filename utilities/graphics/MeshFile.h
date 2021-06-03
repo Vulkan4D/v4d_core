@@ -79,8 +79,12 @@ public:
 		try {return GetMesh(nodeName).vertexColorCount;}
 		catch (...) {return 0;}
 	}
-	uint32_t GetMesh_vertexUvCount(const std::string& nodeName) const {
-		try {return GetMesh(nodeName).vertexUvCount;}
+	uint32_t GetMesh_vertexTexCoord0Count(const std::string& nodeName) const {
+		try {return GetMesh(nodeName).vertexTexCoord0Count;}
+		catch (...) {return 0;}
+	}
+	uint32_t GetMesh_vertexTexCoord1Count(const std::string& nodeName) const {
+		try {return GetMesh(nodeName).vertexTexCoord1Count;}
 		catch (...) {return 0;}
 	}
 	uint32_t GetMesh_vertexTangentCount(const std::string& nodeName) const {

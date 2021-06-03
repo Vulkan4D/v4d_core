@@ -13,6 +13,8 @@ COMMON_OBJECT_CPP(TextureObject, VkImage)
 			imageInfo.extent.width = uint32_t(width);
 			imageInfo.extent.height = uint32_t(height);
 			
+			imageInfo.mipLevels = glm::min(imageInfo.mipLevels, uint32_t(glm::floor(glm::log2(glm::max(imageInfo.extent.width, imageInfo.extent.height, imageInfo.extent.depth))))+1);
+			
 			switch (componentCount) {
 				case STBI_grey:
 					imageInfo.format = VK_FORMAT_R8_UNORM;

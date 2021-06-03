@@ -115,8 +115,10 @@ namespace v4d::graphics {
 			uint32_t firstNormal = 0;
 			VertexColorF32Vec4* colorBufferPtr_f32vec4 = nullptr;
 			uint32_t firstColor = 0;
-			VertexUvF32Vec2* uvBufferPtr_f32vec2 = nullptr;
-			uint32_t firstUv = 0;
+			VertexUvF32Vec2* texCoord0BufferPtr_f32vec2 = nullptr;
+			uint32_t firstTexCoord0 = 0;
+			VertexUvF32Vec2* texCoord1BufferPtr_f32vec2 = nullptr;
+			uint32_t firstTexCoord1 = 0;
 			VertexTangentF32Vec4* tangentBufferPtr_f32vec4 = nullptr;
 			uint32_t firstTangent = 0;
 		};
@@ -130,7 +132,8 @@ namespace v4d::graphics {
 		uint32_t vertexPositionCount = 0;
 		uint32_t vertexNormalCount = 0;
 		uint32_t vertexColorCount = 0;
-		uint32_t vertexUvCount = 0;
+		uint32_t vertexTexCoord0Count = 0;
+		uint32_t vertexTexCoord1Count = 0;
 		uint32_t vertexTangentCount = 0;
 	};
 }
