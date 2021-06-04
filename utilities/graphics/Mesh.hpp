@@ -103,7 +103,7 @@ namespace v4d::graphics {
 			float roughness {1};
 			std::shared_ptr<SamplerObject> albedoTexture = nullptr;
 			std::shared_ptr<SamplerObject> normalTexture = nullptr;
-			std::shared_ptr<SamplerObject> metallicRoughnessTexture = nullptr;
+			std::shared_ptr<SamplerObject> pbrTexture = nullptr;
 			uint32_t indexCount = 0;
 			uint32_t vertexCount = 0;
 			uint32_t firstIndex = 0;
