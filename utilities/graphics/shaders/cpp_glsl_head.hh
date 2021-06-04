@@ -49,9 +49,9 @@
 	#define i64vec4 alignas(32) glm::i64vec4
 	#define u64vec4 alignas(32) glm::u64vec4
 
-	#define f32mat3 alignas(16) glm::f32mat3
-	#define f64mat3 alignas(32) glm::f64mat3
-
+	#define f32mat3x4 alignas(16) glm::f32mat3x4
+	#define f64mat3x4 alignas(32) glm::f64mat3x4
+	
 	#define f32mat4 alignas(16) glm::f32mat4
 	#define f64mat4 alignas(32) glm::f64mat4
 

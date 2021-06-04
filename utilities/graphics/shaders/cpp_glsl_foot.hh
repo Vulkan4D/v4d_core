@@ -46,8 +46,8 @@
 	#undef i64vec4
 	#undef u64vec4
 
-	#undef f32mat3
-	#undef f64mat3
+	#undef f32mat3x4
+	#undef f64mat3x4
 
 	#undef f32mat4
 	#undef f64mat4
