@@ -15,7 +15,7 @@
 #include "utilities/graphics/vulkan/SwapChain.h"
 #include "utilities/graphics/vulkan/ShaderPipelineObject.h"
 #include "utilities/graphics/vulkan/BufferObject.h"
-#include "utilities/graphics/FrameBufferedObject.hpp"
+#include "utilities/graphics/FramebufferedObject.hpp"
 
 namespace v4d::graphics::vulkan {
 

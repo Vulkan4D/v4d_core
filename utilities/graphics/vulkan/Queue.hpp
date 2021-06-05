@@ -10,7 +10,7 @@ namespace v4d::graphics::vulkan {
 	struct V4DLIB Queue {
 		uint32_t familyIndex = 0;
 		VkQueue handle = VK_NULL_HANDLE;
-		VkCommandPool commandPool = VK_NULL_HANDLE;
+		std::array<VkCommandPool, V4D_COMMAND_POOLS_PER_QUEUE> commandPools {};
 	};
 	
 	struct V4DLIB DeviceQueueInfo {

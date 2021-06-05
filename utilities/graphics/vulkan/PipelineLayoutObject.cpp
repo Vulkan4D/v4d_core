@@ -10,11 +10,11 @@ void PipelineLayoutObject::Create(Device* device) {
 	this->device = device;
 	
 	std::vector<VkDescriptorSetLayout> descriptorSetsLayouts {};
-	for (auto[set,frameBufferedSet] : descriptorSets) {
+	for (auto[set,framebufferedSet] : descriptorSets) {
 		if (set) {
 			descriptorSetsLayouts.push_back(set->layout);
-		} else if (frameBufferedSet) {
-			descriptorSetsLayouts.push_back((*frameBufferedSet)[0].layout);
+		} else if (framebufferedSet) {
+			descriptorSetsLayouts.push_back((*framebufferedSet)[0].layout);
 		}
 	}
 	
@@ -40,11 +40,11 @@ void PipelineLayoutObject::Create(Device* device) {
 	for (size_t i = 0; i < rawDescriptorSets.size(); ++i) {
 		auto& rawSets = rawDescriptorSets[i];
 		rawSets.reserve(descriptorSets.size());
-		for (auto[set,frameBufferedSet] : descriptorSets) {
+		for (auto[set,framebufferedSet] : descriptorSets) {
 			if (set) {
 				rawSets.push_back(set->obj);
-			} else if (frameBufferedSet) {
-				rawSets.push_back((*frameBufferedSet)[i].obj);
+			} else if (framebufferedSet) {
+				rawSets.push_back((*framebufferedSet)[i].obj);
 			}
 		}
 	}

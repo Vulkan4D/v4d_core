@@ -25,7 +25,7 @@ void RenderPassObject::Create(Device* device) {
 		shader->SetRenderPass(obj, subpass);
 	}
 	
-	// Create FrameBuffers
+	// Create Framebuffers
 	VkFramebufferCreateInfo framebufferCreateInfo = {};
 		framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		framebufferCreateInfo.renderPass = obj;
@@ -34,21 +34,21 @@ void RenderPassObject::Create(Device* device) {
 		framebufferCreateInfo.height = renderHeight;
 		framebufferCreateInfo.layers = renderLayers;
 	
-	for (size_t i = 0; i < frameBuffers.size(); ++i) {
+	for (size_t i = 0; i < framebuffers.size(); ++i) {
 		framebufferCreateInfo.pAttachments = imageViews[i].data();
-		Instance::CheckVkResult("Create framebuffer", device->CreateFramebuffer(&framebufferCreateInfo, nullptr, &frameBuffers[i]));
+		Instance::CheckVkResult("Create framebuffer", device->CreateFramebuffer(&framebufferCreateInfo, nullptr, &framebuffers[i]));
 	}
 }
 
 void RenderPassObject::Destroy() {
 	assert(device);
 	
-	for (auto framebuffer : frameBuffers) {
+	for (auto framebuffer : framebuffers) {
 		device->DestroyFramebuffer(framebuffer, nullptr);
 	}
 	
 	device->DestroyRenderPass(obj, nullptr);
-	frameBuffers.clear();
+	framebuffers.clear();
 	subpasses.clear();
 	subpassDependencies.clear();
 	attachments.clear();

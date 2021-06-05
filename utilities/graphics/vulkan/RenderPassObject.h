@@ -39,7 +39,7 @@ namespace v4d::graphics::vulkan {
 		std::vector<VkSubpassDependency> subpassDependencies {};
 		std::vector<VkAttachmentDescription> attachments {}; // This struct defines the output data from the fragment shader (o_color)
 		std::vector<VkClearValue> clearValues {};
-		std::vector<VkFramebuffer> frameBuffers {};
+		std::vector<VkFramebuffer> framebuffers {};
 		std::vector<std::vector<VkImageView>> imageViews {};
 		std::vector<std::tuple<RasterShaderPipelineObject*, uint32_t/*subpass*/>> shaders {};
 
@@ -54,28 +54,32 @@ namespace v4d::graphics::vulkan {
 		void Create(Device* device);
 		void Destroy();
 		
-		void ConfigureFrameBuffers(uint frameBufferCount, uint32_t width, uint32_t height, uint32_t layers = 1) {
+		void ConfigureFramebuffers(uint framebufferCount, uint32_t width, uint32_t height, uint32_t layers = 1) {
 			renderWidth = width;
 			renderHeight = height;
 			renderLayers = layers;
-			frameBuffers.resize(frameBufferCount);
-			imageViews.resize(frameBufferCount);
+			framebuffers.resize(framebufferCount);
+			imageViews.resize(framebufferCount);
 		}
 		
-		void ConfigureFrameBuffers(uint frameBufferCount, ImageObject& renderTargetImage, uint32_t layers = 1) {
+		void ConfigureFramebuffers(uint framebufferCount, ImageObject& renderTargetImage, uint32_t layers = 1) {
 			renderWidth = renderTargetImage.width;
 			renderHeight = renderTargetImage.height;
 			renderLayers = layers;
-			frameBuffers.resize(frameBufferCount);
-			imageViews.resize(frameBufferCount);
+			framebuffers.resize(framebufferCount);
+			imageViews.resize(framebufferCount);
 		}
 		
-		void ConfigureFrameBuffers(SwapChain* swapChainAsRenderTarget, uint32_t layers = 1) {
+		void ConfigureFramebuffers(SwapChain* swapChainAsRenderTarget, uint32_t layers = 1) {
 			renderWidth = swapChainAsRenderTarget->extent.width;
 			renderHeight = swapChainAsRenderTarget->extent.height;
 			renderLayers = layers;
-			frameBuffers.resize(swapChainAsRenderTarget->images.size());
+			framebuffers.resize(swapChainAsRenderTarget->images.size());
 			imageViews.resize(swapChainAsRenderTarget->images.size());
+		}
+		
+		VkFramebuffer GetFramebuffer(uint32_t index) {
+			return framebuffers[index % framebuffers.size()];
 		}
 		
 		struct Subpass {
@@ -174,7 +178,7 @@ namespace v4d::graphics::vulkan {
 		}
 		
 		[[nodiscard]] uint32_t AddAttachment(
-			const std::vector<VkImageView>& frameBuffered_imageView,
+			const std::vector<VkImageView>& framebuffered_imageView,
 			VkFormat format,
 			VkImageLayout initialLayout,
 			VkImageLayout finalLayout,
@@ -186,11 +190,11 @@ namespace v4d::graphics::vulkan {
 			VkAttachmentDescriptionFlags flags = 0,
 			VkClearValue clear = {0,0,0,0}
 		) {
-			assert(frameBuffered_imageView.size() > 0);
-			assert(imageViews.size() == frameBuffers.size());
+			assert(framebuffered_imageView.size() > 0);
+			assert(imageViews.size() == framebuffers.size());
 			
 			for (size_t i = 0; i < imageViews.size(); ++i) {
-				imageViews[i].emplace_back(frameBuffered_imageView[i % frameBuffered_imageView.size()]);
+				imageViews[i].emplace_back(framebuffered_imageView[i % framebuffered_imageView.size()]);
 			}
 			
 			uint32_t index = attachments.size();
@@ -210,7 +214,7 @@ namespace v4d::graphics::vulkan {
 		}
 		
 		[[nodiscard]] uint32_t AddAttachment(
-			const std::vector<const ImageObject*>& frameBuffered_imagesPtr,
+			const std::vector<const ImageObject*>& framebuffered_imagesPtr,
 			VkImageLayout initialLayout,
 			VkImageLayout finalLayout,
 			VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT,
@@ -221,10 +225,10 @@ namespace v4d::graphics::vulkan {
 			VkAttachmentDescriptionFlags flags = 0,
 			VkClearValue clear = {0,0,0,0}
 		) {
-			assert(frameBuffered_imagesPtr.size() > 0);
+			assert(framebuffered_imagesPtr.size() > 0);
 			std::vector<VkImageView> imageViews {};
-			for (auto& i : frameBuffered_imagesPtr) imageViews.push_back(i->view);
-			return AddAttachment(imageViews, frameBuffered_imagesPtr[0]->format, initialLayout,finalLayout,samples,loadOp,storeOp,stencilLoadOp,stencilStoreOp,flags,clear);
+			for (auto& i : framebuffered_imagesPtr) imageViews.push_back(i->view);
+			return AddAttachment(imageViews, framebuffered_imagesPtr[0]->format, initialLayout,finalLayout,samples,loadOp,storeOp,stencilLoadOp,stencilStoreOp,flags,clear);
 		}
 		
 		[[nodiscard]] uint32_t AddAttachment(
@@ -274,16 +278,16 @@ namespace v4d::graphics::vulkan {
 			return AddAttachment(imageViews, swapChain->format.format, VK_IMAGE_LAYOUT_UNDEFINED,VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,samples,loadOp,storeOp,stencilLoadOp,stencilStoreOp,flags,clear);
 		}
 
-		void Begin(const VkCommandBuffer& commandBuffer, int imageIndex = 0, VkSubpassContents contents = VK_SUBPASS_CONTENTS_INLINE) {
+		void Begin(const VkCommandBuffer& commandBuffer, int imageIndex = 0, bool useSecondaryCommandBuffers = false) {
 			VkRenderPassBeginInfo renderPassInfo = {};
 				renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 				renderPassInfo.renderPass = obj;
-				renderPassInfo.framebuffer = frameBuffers.size()>size_t(imageIndex)? frameBuffers[imageIndex] : frameBuffers[imageIndex % frameBuffers.size()];
+				renderPassInfo.framebuffer = framebuffers.size()>size_t(imageIndex)? framebuffers[imageIndex] : framebuffers[imageIndex % framebuffers.size()];
 				renderPassInfo.renderArea.offset = {0,0};
 				renderPassInfo.renderArea.extent = {renderWidth, renderHeight};
 				renderPassInfo.clearValueCount = clearValues.size();
 				renderPassInfo.pClearValues = clearValues.data();
-			device->CmdBeginRenderPass(commandBuffer, &renderPassInfo, contents);
+			device->CmdBeginRenderPass(commandBuffer, &renderPassInfo, useSecondaryCommandBuffers?VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS:VK_SUBPASS_CONTENTS_INLINE);
 		}
 
 		void End(const VkCommandBuffer& commandBuffer) {

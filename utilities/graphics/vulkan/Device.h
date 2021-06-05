@@ -182,9 +182,9 @@ namespace v4d::graphics::vulkan {
 		// Helpers
 		size_t GetAlignedUniformSize(size_t size);
 
-		VkCommandBuffer BeginSingleTimeCommands(Queue);
-		void EndSingleTimeCommands(Queue, VkCommandBuffer);
-		void RunSingleTimeCommands(Queue, std::function<void(VkCommandBuffer)>&&);
+		VkCommandBuffer BeginSingleTimeCommands(Queue, uint commandPoolIndex = 0);
+		void EndSingleTimeCommands(Queue, VkCommandBuffer, uint commandPoolIndex = 0);
+		void RunSingleTimeCommands(Queue, std::function<void(VkCommandBuffer)>&&, uint commandPoolIndex = 0);
 		
 		// Allocator
 		void CreateAllocator();

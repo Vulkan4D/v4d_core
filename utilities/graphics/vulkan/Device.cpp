@@ -202,11 +202,11 @@ size_t Device::GetAlignedUniformSize(size_t size) {
 	return alignedSize;
 }
 
-VkCommandBuffer Device::BeginSingleTimeCommands(Queue queue) {
+VkCommandBuffer Device::BeginSingleTimeCommands(Queue queue, uint commandPoolIndex) {
 	VkCommandBufferAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandPool = queue.commandPool;
+	allocInfo.commandPool = queue.commandPools[commandPoolIndex];
 	allocInfo.commandBufferCount = 1;
 
 	VkCommandBuffer commandBuffer;
@@ -221,7 +221,7 @@ VkCommandBuffer Device::BeginSingleTimeCommands(Queue queue) {
 	return commandBuffer;
 }
 
-void Device::EndSingleTimeCommands(Queue queue, VkCommandBuffer commandBuffer) {
+void Device::EndSingleTimeCommands(Queue queue, VkCommandBuffer commandBuffer, uint commandPoolIndex) {
 	EndCommandBuffer(commandBuffer);
 
 	VkSubmitInfo submitInfo = {};
@@ -251,15 +251,15 @@ void Device::EndSingleTimeCommands(Queue queue, VkCommandBuffer commandBuffer) {
 
 	DestroyFence(fence, nullptr);
 	
-	FreeCommandBuffers(queue.commandPool, 1, &commandBuffer);
+	FreeCommandBuffers(queue.commandPools[commandPoolIndex], 1, &commandBuffer);
 	
 	// QueueWaitIdle(queue.handle);
 }
 
-void Device::RunSingleTimeCommands(Queue queue, std::function<void(VkCommandBuffer)>&& func) {
-	auto cmdBuffer = BeginSingleTimeCommands(queue);
+void Device::RunSingleTimeCommands(Queue queue, std::function<void(VkCommandBuffer)>&& func, uint commandPoolIndex) {
+	auto cmdBuffer = BeginSingleTimeCommands(queue, commandPoolIndex);
 	func(cmdBuffer);
-	EndSingleTimeCommands(queue, cmdBuffer);
+	EndSingleTimeCommands(queue, cmdBuffer, commandPoolIndex);
 }
 
 // Allocator

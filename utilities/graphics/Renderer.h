@@ -20,7 +20,7 @@
 #include <utilities/graphics/vulkan/RasterShaderPipelineObject.h>
 #include "utilities/graphics/vulkan/CommonObjects.h"
 #include "utilities/graphics/vulkan/BufferObject.h"
-#include "utilities/graphics/FrameBufferedObject.hpp"
+#include "utilities/graphics/FramebufferedObject.hpp"
 
 // Useful macro to be used in ConfigureDeviceFeatures()
 #define V4D_ENABLE_DEVICE_FEATURE(F) \
@@ -184,8 +184,8 @@ namespace v4d::graphics {
 		void CreateCommandPools() {
 			for (auto&[k, qs] : renderingDevice->GetQueues()) if (k) {
 				for (auto& q : qs) {
-					if (!q.commandPool) {
-						renderingDevice->CreateCommandPool(q.familyIndex, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &q.commandPool);
+					for (auto& commandPool : q.commandPools) if (!commandPool) {
+						renderingDevice->CreateCommandPool(q.familyIndex, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &commandPool);
 					}
 				}
 			}
@@ -193,8 +193,9 @@ namespace v4d::graphics {
 		void DestroyCommandPools() {
 			for (auto&[k, qs] : renderingDevice->GetQueues()) if (k) {
 				for (auto& q : qs) {
-					if (q.commandPool) {
-						renderingDevice->DestroyCommandPool(q.commandPool);
+					for (auto& commandPool : q.commandPools) if (commandPool) {
+						renderingDevice->DestroyCommandPool(commandPool);
+						commandPool = VK_NULL_HANDLE;
 					}
 				}
 			}
