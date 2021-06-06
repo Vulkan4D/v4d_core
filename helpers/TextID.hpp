@@ -16,7 +16,11 @@ namespace v4d {
 		
 		TextID(uint64_t v = 0) : numericValue(v) {}
 		TextID(const char* str) : numericValue(BaseN::TryEncodeStringToUInt64(TruncatedString(str), BASECHARS)) {}
-		TextID(std::string_view str) : numericValue(BaseN::TryEncodeStringToUInt64(TruncatedString(str), BASECHARS)) {}
+		TextID(const std::string_view& str) : numericValue(BaseN::TryEncodeStringToUInt64(TruncatedString(str), BASECHARS)) {}
+		TextID(std::string str) {
+			String::ToLowerCase(str);
+			numericValue = BaseN::TryEncodeStringToUInt64(TruncatedString(str), BASECHARS);
+		}
 		
 		TextID(const TextID& other) : numericValue(other.numericValue) {}
 		TextID(TextID&& other) : numericValue(std::move(other.numericValue)) {}
@@ -29,7 +33,12 @@ namespace v4d {
 			numericValue = BaseN::TryEncodeStringToUInt64(TruncatedString(str), BASECHARS);
 			return *this;
 		}
-		TextID& operator=(std::string_view str) {
+		TextID& operator=(const std::string_view& str) {
+			numericValue = BaseN::TryEncodeStringToUInt64(TruncatedString(str), BASECHARS);
+			return *this;
+		}
+		TextID& operator=(std::string str) {
+			String::ToLowerCase(str);
 			numericValue = BaseN::TryEncodeStringToUInt64(TruncatedString(str), BASECHARS);
 			return *this;
 		}

@@ -11,8 +11,8 @@
 #include <utility>
 
 /**
- * V4D's ECS v1.2
- * Author: Olivier St-Laurent, December 2020 - March 2021
+ * V4D's ECS v1.3
+ * Author: Olivier St-Laurent, December 2020 - June 2021
  * 
  * This is a very lightweight and elegant implementation of a data-oriented entity-component workload for very fast computation.
  * It is thread-safe and optimized for looping through all components of certain types instead of the full entities.
@@ -124,7 +124,7 @@
 	// Entities also have static members *Components for every component defined in it, to access component lists.
 	
 	// We can loop through all firstNames like this:
-	MyEntity::firstNameComponents.ForEach([](auto entityInstanceIndex, auto& firstName){
+	MyEntity::firstNameComponents.ForEach([](auto entityInstanceIndex, auto& firstName, auto componentIndex){ // componentIndex arg is optional
 		std::cout << firstName << std::endl;
 	});
 	// This will only run for existing components, not for entities that don't have that component added to it
@@ -134,6 +134,7 @@
 	//		If you intend to call MyEntity::Get(entityInstanceIndex) from the lambda in a component ForEach() function, you must use ForEach_LockEntities() or ForEach_Entity() instead.
 	//		This will ensure that we always lock the entities around the components and not the other way around.
 	//		For the same reason, from within a component ForEach(), you cannot do a ForEach() through another component type. You must loop through the entities themselves and fetch its components individually instead.
+	//		Note that the first argument of the lambda passed to ForEach_Entity() is the shared pointer to the entity instead of its index.
 	
 	// Direct component member access will cast to boolean so that we can check if an entity has a specific component:
 	if (entity->someData) {
@@ -177,6 +178,10 @@
 	
 	// You may loop through all components in the map related to a specific entity like with the Do() method above:
 	entity->someDataMap.ForEach([](auto& someData){
+		someData.a = 44;
+	});
+	// you may otherwise use a lambda with a more complete set of args when needed
+	entity->someDataMap.ForEach([](const auto& componentKey, auto& someData, auto componentIndex){
 		someData.a = 44;
 	});
 	
@@ -280,6 +285,30 @@ namespace v4d::ECS {
 			for (auto&[entityInstanceIndex, cmpIdxPtr, data] : componentsList) {
 				std::shared_ptr<EntityClass> entity = EntityClass::Get(entityInstanceIndex);
 				if (entity) func(entity, data);
+			}
+		}
+		void ForEach(std::function<void(EntityIndex_T, ComponentType&, ComponentIndex_T)>&& func) {
+			std::lock_guard lock(componentsMutex);
+			for (ComponentIndex_T componentIndex = 0; componentIndex < componentsList.size(); ++componentIndex) {
+				auto&[entityInstanceIndex, cmpIdxPtr, data] = componentsList[componentIndex];
+				func(entityInstanceIndex, data, componentIndex);
+			}
+		}
+		void ForEach_LockEntities(std::function<void(EntityIndex_T, ComponentType&, ComponentIndex_T)>&& func) {
+			auto entitiesLock = EntityClass::GetLock();
+			std::lock_guard lock(componentsMutex);
+			for (ComponentIndex_T componentIndex = 0; componentIndex < componentsList.size(); ++componentIndex) {
+				auto&[entityInstanceIndex, cmpIdxPtr, data] = componentsList[componentIndex];
+				func(entityInstanceIndex, data, componentIndex);
+			}
+		}
+		void ForEach_Entity(std::function<void(std::shared_ptr<EntityClass>&, ComponentType&, ComponentIndex_T)>&& func) {
+			auto entitiesLock = EntityClass::GetLock();
+			std::lock_guard lock(componentsMutex);
+			for (ComponentIndex_T componentIndex = 0; componentIndex < componentsList.size(); ++componentIndex) {
+				auto&[entityInstanceIndex, cmpIdxPtr, data] = componentsList[componentIndex];
+				std::shared_ptr<EntityClass> entity = EntityClass::Get(entityInstanceIndex);
+				if (entity) func(entity, data, componentIndex);
 			}
 		}
 		size_t Count() const {
@@ -677,7 +706,19 @@ namespace v4d::ECS {
 			if (entityIndex == -1) return false;\
 			std::lock_guard componentsLock(MemberName ## Components.componentsMutex);\
 			for (auto&[key, indexPtr] : indices) if(indexPtr) {\
-				MemberName ## Components .Do(*indexPtr, std::forward<std::function<void(ComponentType&)>>(func));\
+				if (auto* componentPtr = MemberName ## Components .__Get__(*indexPtr); componentPtr) {\
+					func(*componentPtr);\
+				}\
+			}\
+			return true;\
+		}\
+		bool ForEach(std::function<void(const MapKey&, ComponentType&, v4d::ECS::ComponentIndex_T)>&& func){\
+			if (entityIndex == -1) return false;\
+			std::lock_guard componentsLock(MemberName ## Components.componentsMutex);\
+			for (auto&[key, indexPtr] : indices) if(indexPtr) {\
+				if (auto* componentPtr = MemberName ## Components .__Get__(*indexPtr); componentPtr) {\
+					func(key, *componentPtr, *indexPtr);\
+				}\
 			}\
 			return true;\
 		}\

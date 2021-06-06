@@ -19,6 +19,13 @@ struct FramebufferedObject {
 	FramebufferedObject(Args&&...args) {
 		objArray.fill(T{std::move(args)...});
 	}
+	template<typename V>
+	FramebufferedObject<T>& operator=(const V& value) {
+		for (T& obj : objArray) {
+			obj = value;
+		}
+		return *this;
+	}
 	operator const FRAMEBUFFERED_ARRAY&() const {
 		return objArray;
 	}
