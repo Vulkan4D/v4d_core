@@ -199,10 +199,8 @@ void ConfigFile::ReadFromINI(std::function<void(std::stringstream section, std::
 		if (line.length() == 0) continue;
 		if (std::regex_match(line.c_str(), match, INI_REGEX_COMMENT)) continue;
 		if (std::regex_match(line.c_str(), match, INI_REGEX_SECTION)) {
-			if (curConfigs.size() > 0) {
-				callbackPerSection(std::move(std::stringstream{curSection}), curConfigs);
-				curConfigs.clear();
-			}
+			callbackPerSection(std::move(std::stringstream{curSection}), curConfigs);
+			curConfigs.clear();
 			curSection = match[1].str();
 			continue;
 		}
@@ -215,8 +213,5 @@ void ConfigFile::ReadFromINI(std::function<void(std::stringstream section, std::
 		LOG_WARN_VERBOSE("Line " << n << " is invalid in config file " << filePath)
 	}
 	file.close();
-	
-	if (curConfigs.size() > 0) {
-		callbackPerSection(std::move(std::stringstream{curSection}), curConfigs);
-	}
+	callbackPerSection(std::move(std::stringstream{curSection}), curConfigs);
 }

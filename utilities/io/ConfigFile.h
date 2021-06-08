@@ -109,6 +109,19 @@ namespace v4d::io {
 			ConfLineStream() {}
 			ConfLineStream(const ConfLineStream& other)
 			 : name(std::stringstream(other.name.str())), value(std::stringstream(other.value.str())) {}
+			std::string ReadName() {
+				std::string ret;
+				name >> ret;
+				return ret;
+			}
+			// Returns the remaining chars from value as a string after trimming spaces and quotes
+			std::string ReadStringValue() {
+				std::string ret;
+				std::getline(value, ret);
+				v4d::String::Trim(ret);
+				v4d::String::Trim(ret, "\"'");
+				return ret;
+			}
 		};
 
 		template<typename T>
