@@ -55,6 +55,10 @@ public:
 	
 	static inline const size_t TypeSize = sizeof(T);
 	
+	size_t Count() const {
+		return size / sizeof(T);
+	}
+	
 	virtual void Allocate(Device* device) override {
 		if (size > 0) {
 			BufferObject::Allocate(device);
@@ -106,6 +110,10 @@ public:
 	
 	static inline const size_t TypeSize = sizeof(T);
 	
+	size_t Count() const {
+		return hostBuffer.Count();
+	}
+	
 	void Resize(size_t newCount) {
 		assert(hostBuffer.device == nullptr);
 		hostBuffer.Resize(newCount);
@@ -129,13 +137,6 @@ public:
 	T& operator=(const OTHER& other) {
 		return hostBuffer = other;
 	}
-	
-	// operator FramebufferedBuffer() const {
-	// 	assert(hostBuffer.size > 0);
-	// 	FramebufferedBuffer buffers;
-	// 	buffers.fill(deviceBuffer.obj);
-	// 	return buffers;
-	// }
 	
 	void Push(VkCommandBuffer cmdBuffer, int32_t count = -1, VkDeviceSize offset = 0) {
 		if (count == 0) return;
