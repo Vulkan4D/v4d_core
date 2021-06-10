@@ -114,6 +114,16 @@ public:
 		return hostBuffer.Count();
 	}
 	
+	void Allocate(Device* device) {
+		hostBuffer.Allocate(device);
+		deviceBuffer.Allocate(device);
+	}
+	
+	void Free() {
+		hostBuffer.Free();
+		deviceBuffer.Free();
+	}
+	
 	void Resize(size_t newCount) {
 		assert(hostBuffer.device == nullptr);
 		hostBuffer.Resize(newCount);

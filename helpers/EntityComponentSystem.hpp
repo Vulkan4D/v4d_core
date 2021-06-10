@@ -11,7 +11,7 @@
 #include <utility>
 
 /**
- * V4D's ECS v1.3
+ * V4D's ECS v1.4
  * Author: Olivier St-Laurent, December 2020 - June 2021
  * 
  * This is a very lightweight and elegant implementation of a data-oriented entity-component workload for very fast computation.
@@ -38,7 +38,7 @@
 		V4D_ENTITY_DECLARE_COMPONENT(MyEntity, std::string, firstName) // OneToOne entity-component
 		V4D_ENTITY_DECLARE_COMPONENT(MyEntity, glm::mat4, transform)
 		V4D_ENTITY_DECLARE_COMPONENT(MyEntity, SomeDataStruct, someData)
-		V4D_ENTITY_DECLARE_COMPONENT_MAP(MyEntity, std::string_view, SomeDataStruct, someDataMap) // OneToMany (with this feature, an entity can host a map of a certain type of components) documented at the end
+		V4D_ENTITY_DECLARE_COMPONENT_MAP(MyEntity, std::string, SomeDataStruct, someDataMap) // OneToMany (with this feature, an entity can host a map of a certain type of components) documented at the end
 		//... more components
 	};
 
@@ -48,7 +48,7 @@
 	V4D_ENTITY_DEFINE_COMPONENT(MyEntity, std::string, firstName)
 	V4D_ENTITY_DEFINE_COMPONENT(MyEntity, glm::mat4, transform)
 	V4D_ENTITY_DEFINE_COMPONENT(MyEntity, SomeDataStruct, someData)
-	V4D_ENTITY_DEFINE_COMPONENT_MAP(MyEntity, std::string_view, SomeDataStruct, someDataMap)
+	V4D_ENTITY_DEFINE_COMPONENT_MAP(MyEntity, std::string, SomeDataStruct, someDataMap)
 	//... more components
 
  // main.cpp
@@ -157,8 +157,8 @@
 	// OneToMany component maps
 	
 	// If your needs require a single entity to be able to host a variable-size map of a certain type of component, you may define a component map
-	// example using std::string_view as the map's key type in the second parameter of the macro
-	V4D_ENTITY_DECLARE_COMPONENT_MAP(MyEntity, std::string_view, SomeDataStruct, someDataMap)
+	// example using std::string as the map's key type in the second parameter of the macro
+	V4D_ENTITY_DECLARE_COMPONENT_MAP(MyEntity, std::string, SomeDataStruct, someDataMap)
 	
 	// To use a component map, it is a little different than a standard OneToOne component.
 	
@@ -169,6 +169,7 @@
 	entity->someDataMap["myKey"] = {...};
 	entity->someDataMap["myKey"]->a = 6;
 	cout << entity->someDataMap["myKey"]->a;
+	// You may also emplace a component using the Emplace(key, args...) method
 	
 	// You may remove the entire component map like this and it will effectively erase all elements in it
 	entity->Remove_someDataMap();
@@ -674,11 +675,11 @@ namespace v4d::ECS {
 
 
 // Used in .h files
-#define V4D_ENTITY_DECLARE_COMPONENT_MAP(ClassName, MapKey, ComponentType, MemberName) \
+#define V4D_ENTITY_DECLARE_COMPONENT_MAP(ClassName, MapKeyType, ComponentType, MemberName) \
 	class ComponentReferenceMap_ ## MemberName {\
 		friend ClassName;\
 		v4d::ECS::EntityIndex_T entityIndex;\
-		std::unordered_map<MapKey, v4d::ECS::ComponentIndex_T*> indices {};\
+		std::unordered_map<MapKeyType, v4d::ECS::ComponentIndex_T*> indices {};\
 		ComponentReferenceMap_ ## MemberName () : entityIndex(-1) {}\
 		ComponentReferenceMap_ ## MemberName (v4d::ECS::EntityIndex_T entityIndex) : entityIndex(entityIndex) {}\
 		~ComponentReferenceMap_ ## MemberName () {\
@@ -702,6 +703,16 @@ namespace v4d::ECS {
 			}\
 			return MemberName ## Components .Lock(*indices[std::forward<T>(key)]);\
 		}\
+		template<typename...Args>\
+		v4d::ECS::Component<ClassName, ComponentType>::ComponentReferenceLocked Emplace(MapKeyType&& key, Args&&...args) {\
+			if (entityIndex == -1) return {};\
+			std::lock_guard componentsLock(MemberName ## Components.componentsMutex);\
+			if (!indices[std::forward<MapKeyType>(key)]) {\
+				indices[std::forward<MapKeyType>(key)] = new v4d::ECS::ComponentIndex_T;\
+				MemberName ## Components .__Add__(entityIndex, indices[std::forward<MapKeyType>(key)], std::forward<Args>(args)...);\
+			}\
+			return MemberName ## Components .Lock(*indices[std::forward<MapKeyType>(key)]);\
+		}\
 		bool ForEach(std::function<void(ComponentType&)>&& func){\
 			if (entityIndex == -1) return false;\
 			std::lock_guard componentsLock(MemberName ## Components.componentsMutex);\
@@ -712,7 +723,7 @@ namespace v4d::ECS {
 			}\
 			return true;\
 		}\
-		bool ForEach(std::function<void(const MapKey&, ComponentType&, v4d::ECS::ComponentIndex_T)>&& func){\
+		bool ForEach(std::function<void(const MapKeyType&, ComponentType&, v4d::ECS::ComponentIndex_T)>&& func){\
 			if (entityIndex == -1) return false;\
 			std::lock_guard componentsLock(MemberName ## Components.componentsMutex);\
 			for (auto&[key, indexPtr] : indices) if(indexPtr) {\
@@ -727,7 +738,7 @@ namespace v4d::ECS {
 			std::lock_guard componentsLock(MemberName ## Components.componentsMutex);\
 			return indices.size();\
 		}\
-		void Erase(MapKey key) {\
+		void Erase(MapKeyType key) {\
 			if (entityIndex == -1) return;\
 			std::lock_guard componentsLock(MemberName ## Components.componentsMutex);\
 			try {\
@@ -749,7 +760,7 @@ namespace v4d::ECS {
 	void Remove_ ## MemberName ();
 
 // Used in .cpp files
-#define V4D_ENTITY_DEFINE_COMPONENT_MAP(ClassName, MapKey, ComponentType, MemberName) \
+#define V4D_ENTITY_DEFINE_COMPONENT_MAP(ClassName, MapKeyType, ComponentType, MemberName) \
 	v4d::ECS::Component<ClassName, ComponentType> ClassName::MemberName ## Components  {};\
 	void ClassName::Remove_ ## MemberName () {\
 		if (MemberName.entityIndex == -1) return;\

@@ -1,4 +1,5 @@
 #include "Device.h"
+#include "Instance.h"
 
 using namespace v4d::graphics::vulkan;
 
@@ -210,19 +211,19 @@ VkCommandBuffer Device::BeginSingleTimeCommands(Queue queue, uint commandPoolInd
 	allocInfo.commandBufferCount = 1;
 
 	VkCommandBuffer commandBuffer;
-	AllocateCommandBuffers(&allocInfo, &commandBuffer);
+	Instance::CheckVkResult("BeginSingleTimeCommands::AllocateCommandBuffers", AllocateCommandBuffers(&allocInfo, &commandBuffer));
 
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-	BeginCommandBuffer(commandBuffer, &beginInfo);
+	Instance::CheckVkResult("BeginSingleTimeCommands::BeginCommandBuffer", BeginCommandBuffer(commandBuffer, &beginInfo));
 
 	return commandBuffer;
 }
 
 void Device::EndSingleTimeCommands(Queue queue, VkCommandBuffer commandBuffer, uint commandPoolIndex) {
-	EndCommandBuffer(commandBuffer);
+	Instance::CheckVkResult("EndSingleTimeCommands::EndCommandBuffer", EndCommandBuffer(commandBuffer));
 
 	VkSubmitInfo submitInfo = {};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
