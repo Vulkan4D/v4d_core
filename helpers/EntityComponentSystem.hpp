@@ -703,15 +703,15 @@ namespace v4d::ECS {
 			}\
 			return MemberName ## Components .Lock(*indices[std::forward<T>(key)]);\
 		}\
-		template<typename...Args>\
-		v4d::ECS::Component<ClassName, ComponentType>::ComponentReferenceLocked Emplace(MapKeyType&& key, Args&&...args) {\
+		template<typename MapKey, typename...Args>\
+		v4d::ECS::Component<ClassName, ComponentType>::ComponentReferenceLocked Emplace(MapKey&& key, Args&&...args) {\
 			if (entityIndex == -1) return {};\
 			std::lock_guard componentsLock(MemberName ## Components.componentsMutex);\
-			if (!indices[std::forward<MapKeyType>(key)]) {\
-				indices[std::forward<MapKeyType>(key)] = new v4d::ECS::ComponentIndex_T;\
-				MemberName ## Components .__Add__(entityIndex, indices[std::forward<MapKeyType>(key)], std::forward<Args>(args)...);\
+			if (!indices[std::forward<MapKey>(key)]) {\
+				indices[std::forward<MapKey>(key)] = new v4d::ECS::ComponentIndex_T;\
+				MemberName ## Components .__Add__(entityIndex, indices[std::forward<MapKey>(key)], std::forward<Args>(args)...);\
 			}\
-			return MemberName ## Components .Lock(*indices[std::forward<MapKeyType>(key)]);\
+			return MemberName ## Components .Lock(*indices[std::forward<MapKey>(key)]);\
 		}\
 		bool ForEach(std::function<void(ComponentType&)>&& func){\
 			if (entityIndex == -1) return false;\

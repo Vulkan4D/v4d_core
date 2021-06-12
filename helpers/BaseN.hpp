@@ -53,10 +53,10 @@ namespace v4d {
 			uint64_t base = BASECHARS.length();
 			for (int i = str.length()-1; i >= 0; --i) {
 				uint64_t pos = (uint64_t) BASECHARS.find(str[i]);
-				if (pos == std::string::npos) throw std::runtime_error("Invalid string");
-				if (double(value) * double(base) > double(std::numeric_limits<uint64_t>::max())) throw std::runtime_error("Invalid string");
+				if (pos == std::string::npos) throw std::runtime_error("TextID: Invalid string '" + std::string(str) + "'");
+				if (double(value) * double(base) > double(std::numeric_limits<uint64_t>::max())) throw std::runtime_error("TextID: Invalid string '" + std::string(str) + "'");
 				value *= base;
-				if (double(value) + double(pos) > double(std::numeric_limits<uint64_t>::max())) throw std::runtime_error("Invalid string");
+				if (double(value) + double(pos) > double(std::numeric_limits<uint64_t>::max())) throw std::runtime_error("TextID: Invalid string '" + std::string(str) + "'");
 				value += pos;
 			}
 			return value;

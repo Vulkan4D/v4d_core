@@ -10,36 +10,31 @@ namespace v4d {
 		inline static const char* BASECHARS = BASE40_LOWER_CHARS; // or BASE64_WORD_DASH_CHARS with 10 chars?
 		inline static constexpr int MAX_LENGTH = 11;
 		
-		static std::string_view TruncatedString(const std::string_view& str) {
-			return str.substr(0, MAX_LENGTH);
-		}
-		
 		TextID(uint64_t v = 0) : numericValue(v) {}
-		TextID(const char* str) : numericValue(BaseN::TryEncodeStringToUInt64(TruncatedString(str), BASECHARS)) {}
-		TextID(const std::string_view& str) : numericValue(BaseN::TryEncodeStringToUInt64(TruncatedString(str), BASECHARS)) {}
-		TextID(std::string str) {
-			String::ToLowerCase(str);
-			numericValue = BaseN::TryEncodeStringToUInt64(TruncatedString(str), BASECHARS);
-		}
+		TextID(const char* str) : numericValue(BaseN::TryEncodeStringToUInt64(str, BASECHARS)) {}
+		TextID(const std::string_view& str) : numericValue(BaseN::TryEncodeStringToUInt64(str, BASECHARS)) {}
 		
 		TextID(const TextID& other) : numericValue(other.numericValue) {}
 		TextID(TextID&& other) : numericValue(std::move(other.numericValue)) {}
+		
+		static TextID TryOrHash(const std::string_view& str) {
+			try {
+				return str;
+			} catch (...) {
+				return std::hash<std::string_view>()(str);
+			}
+		}
 		
 		TextID& operator=(uint64_t v) {
 			numericValue = v;
 			return *this;
 		}
 		TextID& operator=(const char* str) {
-			numericValue = BaseN::TryEncodeStringToUInt64(TruncatedString(str), BASECHARS);
+			numericValue = BaseN::TryEncodeStringToUInt64(str, BASECHARS);
 			return *this;
 		}
 		TextID& operator=(const std::string_view& str) {
-			numericValue = BaseN::TryEncodeStringToUInt64(TruncatedString(str), BASECHARS);
-			return *this;
-		}
-		TextID& operator=(std::string str) {
-			String::ToLowerCase(str);
-			numericValue = BaseN::TryEncodeStringToUInt64(TruncatedString(str), BASECHARS);
+			numericValue = BaseN::TryEncodeStringToUInt64(str, BASECHARS);
 			return *this;
 		}
 		
