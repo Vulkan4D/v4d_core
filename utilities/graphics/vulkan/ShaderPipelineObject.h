@@ -14,35 +14,8 @@
 #include "utilities/graphics/vulkan/Loader.h"
 #include "utilities/graphics/vulkan/Device.h"
 #include "utilities/graphics/vulkan/ShaderProgram.h"
-#include "utilities/io/FilePath.h"
-#include "utilities/io/StringListFile.h"
 
 namespace v4d::graphics::vulkan {
-
-	class ShaderPipelineObject;
-	
-	struct ShaderPipelineMetaFile {
-		v4d::io::FilePath file;
-		std::vector<v4d::graphics::vulkan::ShaderPipelineObject*> shaders;
-		double mtime;
-		
-		ShaderPipelineMetaFile(v4d::io::FilePath metaFile, std::vector<v4d::graphics::vulkan::ShaderPipelineObject*>&& shaders)
-		: file(metaFile), shaders(shaders), mtime(0) {}
-		
-		ShaderPipelineMetaFile(const std::string& shaderProgram, ShaderPipelineObject* shaderPipeline)
-		: file(shaderProgram+".meta"), shaders({shaderPipeline}), mtime(0) {}
-		
-		operator const std::vector<ShaderInfo> () const {
-			std::vector<ShaderInfo> vec {};
-			std::string path = file.GetParentPath();
-			v4d::io::StringListFile::Instance(file)->Load([&path,&vec](v4d::io::ASCIIFile* file){
-				for (auto& shader : ((v4d::io::StringListFile*)file)->lines) {
-					vec.emplace_back(path + "/" + shader);
-				}
-			});
-			return vec;
-		}
-	};
 
 	class V4DLIB ShaderPipelineObject {
 		COMMON_OBJECT (ShaderPipelineObject, VkPipeline, V4DLIB)
@@ -58,7 +31,7 @@ namespace v4d::graphics::vulkan {
 		Device* device = nullptr;
 	
 		ShaderPipelineObject(PipelineLayoutObject* pipelineLayout, const char* shaderFile, int sortIndex = 0)
-		: shaderPipelineMetaFile(shaderFile, this), shaderProgram(shaderPipelineMetaFile), pipelineLayout(pipelineLayout), sortIndex(sortIndex) {}
+		: obj(), shaderPipelineMetaFile(shaderFile, this), shaderProgram(shaderPipelineMetaFile), pipelineLayout(pipelineLayout), sortIndex(sortIndex) {}
 		
 		virtual ~ShaderPipelineObject() = default;
 		

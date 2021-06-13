@@ -6,6 +6,7 @@
 #include "utilities/graphics/vulkan/SamplerObject.h"
 #include "utilities/graphics/vulkan/BufferObject.h"
 #include "utilities/graphics/FramebufferedObject.hpp"
+#include "utilities/graphics/vulkan/raytracing/AccelerationStructure.h"
 
 namespace v4d::graphics::vulkan {
 
@@ -293,6 +294,9 @@ public:
 		
 		AccelerationStructureDescriptor(const VkAccelerationStructureKHR* tlas, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR)
 			: Descriptor(stageFlags, 1), tlas(tlas) {}
+			
+		AccelerationStructureDescriptor(const raytracing::AccelerationStructure& tlas, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR)
+			: AccelerationStructureDescriptor(&tlas.accelerationStructure, stageFlags) {}
 			
 		explicit AccelerationStructureDescriptor(uint32_t count, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR)
 			: Descriptor(stageFlags, count), tlas(nullptr) {}

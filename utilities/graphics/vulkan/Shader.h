@@ -13,6 +13,8 @@
 #include <unordered_map>
 #include "utilities/graphics/vulkan/Loader.h"
 #include "utilities/graphics/vulkan/Device.h"
+#include "utilities/io/FilePath.h"
+#include "utilities/io/StringListFile.h"
 
 namespace v4d::graphics::vulkan {
 
@@ -25,6 +27,37 @@ namespace v4d::graphics::vulkan {
 		ShaderInfo(const char* filepath);
 	};
 	
+	class ShaderPipelineObject;
+	namespace raytracing {
+		class ShaderBindingTable;
+	};
+	using namespace raytracing;
+	
+	struct ShaderPipelineMetaFile {
+		v4d::io::FilePath file;
+		std::vector<ShaderPipelineObject*> shaders;
+		ShaderBindingTable* sbt;
+		double mtime;
+		
+		ShaderPipelineMetaFile(v4d::io::FilePath metaFile, std::vector<ShaderPipelineObject*>&& shaders)
+		: file(metaFile), shaders(shaders), sbt(nullptr), mtime(0) {}
+		ShaderPipelineMetaFile(const std::string& shaderProgram, ShaderPipelineObject* shaderPipeline)
+		: file(shaderProgram+".meta"), shaders({shaderPipeline}), sbt(nullptr), mtime(0) {}
+		ShaderPipelineMetaFile(const std::string& shaderProgram, ShaderBindingTable* sbt)
+		: file(shaderProgram+".meta"), shaders(), sbt(sbt), mtime(0) {}
+		
+		operator const std::vector<ShaderInfo> () const {
+			std::vector<ShaderInfo> vec {};
+			std::string path = file.GetParentPath();
+			v4d::io::StringListFile::Instance(file)->Load([&path,&vec](v4d::io::ASCIIFile* file){
+				for (auto& shader : ((v4d::io::StringListFile*)file)->lines) {
+					vec.emplace_back(path + "/" + shader);
+				}
+			});
+			return vec;
+		}
+	};
+
 	struct ShaderSpecialization {
 		std::vector<byte> specializationData {};
 		std::vector<VkSpecializationMapEntry> specializationMap {};

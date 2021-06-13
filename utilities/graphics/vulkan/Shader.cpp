@@ -35,7 +35,6 @@ Shader::Shader(std::string filepath, std::string entryPoint)
 	file.seekg(0);
 	file.read(bytecode.data(), fileSize);
 	file.close();
-
 }
 
 VkShaderModule Shader::CreateShaderModule(Device* device, VkPipelineShaderStageCreateFlags flags) {

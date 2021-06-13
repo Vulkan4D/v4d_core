@@ -1,5 +1,6 @@
 #include "Renderer.h"
 #include "utilities/graphics/vulkan/DescriptorSetObject.h"
+#include "utilities/graphics/vulkan/raytracing/ShaderBindingTable.h"
 
 using namespace v4d::graphics;
 
@@ -203,13 +204,13 @@ void Renderer::WatchModifiedShadersForReload(const std::vector<ShaderPipelineMet
 					watcher.mtime = 0;
 					RunSynchronized([watcher](){
 						for (auto& s : watcher.shaders) s->Reload();
+						if (watcher.sbt) watcher.sbt->Reload();
 					});
 					break;
 				}
 			}
 			SLEEP(100ms)
 		}
-		
 	}));
 }
 

@@ -3,8 +3,7 @@
 using namespace v4d::graphics::vulkan;
 
 ShaderProgram::ShaderProgram(const std::vector<ShaderInfo>& infos) {
-	for (auto& info : infos)
-		shaderFiles.push_back(info);
+	shaderFiles = infos;
 }
 
 ShaderProgram::~ShaderProgram() {}
