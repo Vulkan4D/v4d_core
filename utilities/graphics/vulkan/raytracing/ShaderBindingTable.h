@@ -8,6 +8,7 @@
 #include "utilities/graphics/vulkan/Shader.h"
 #include "utilities/graphics/vulkan/PipelineLayoutObject.h"
 #include "utilities/graphics/vulkan/BufferObject.h"
+#include "utilities/graphics/Renderer.h"
 
 namespace v4d::graphics::vulkan::raytracing {
 	using namespace v4d::graphics::vulkan;
@@ -48,6 +49,20 @@ namespace v4d::graphics::vulkan::raytracing {
 		VkPipeline pipeline = VK_NULL_HANDLE;
 		
 		Device* device = nullptr;
+		std::unique_ptr<BufferObject> buffer = nullptr;
+		
+		VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties {};
+		VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties {};
+		
+		void ReadShaders();
+		void CreateShaderStages();
+		void DestroyShaderStages();
+		
+		VkPipeline CreateRayTracingPipeline();
+		void DestroyRayTracingPipeline();
+		
+		VkDeviceSize GetSbtBufferSize();
+		void WriteShaderBindingTableToBuffer();
 		
 	public:
 
@@ -81,15 +96,9 @@ namespace v4d::graphics::vulkan::raytracing {
 		uint32_t AddHitShader(const ShaderInfo& rchit, const ShaderInfo& rahit, const ShaderInfo& rint);
 		uint32_t AddCallableShader(const ShaderInfo& rcall);
 		
-		void ReadShaders();
-		void CreateShaderStages(Device*);
-		void DestroyShaderStages();
+		void Configure(v4d::graphics::Renderer*, Device*);
+		void Create(Device* device);
 		void Reload();
-		
-		VkPipeline CreateRayTracingPipeline(Device*);
-		void DestroyRayTracingPipeline();
-		
-		VkDeviceSize GetSbtBufferSize(const VkPhysicalDeviceRayTracingPipelinePropertiesKHR&);
-		void WriteShaderBindingTableToBuffer(Device*, BufferObject*, VkDeviceSize offset, const VkPhysicalDeviceRayTracingPipelinePropertiesKHR&);
+		void Destroy();
 	};
 }

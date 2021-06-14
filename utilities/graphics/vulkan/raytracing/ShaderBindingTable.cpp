@@ -12,7 +12,7 @@ ShaderBindingTable::ShaderBindingTable(PipelineLayoutObject* pipelineLayout, con
 	
 	for (auto& shaderFile : files) {
 		v4d::io::FilePath filePath(shaderFile.filepath);
-		if (filePath.GetExtension() == "rgen") {
+		if (filePath.GetExtension() == ".rgen") {
 			rayGenGroups.push_back({
 				VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR,
 				nullptr, // pNext
@@ -24,19 +24,19 @@ ShaderBindingTable::ShaderBindingTable(PipelineLayoutObject* pipelineLayout, con
 				nullptr // pShaderGroupCaptureReplayHandle
 			});
 		}
-		else if (filePath.GetExtension() == "rmiss") {
+		else if (filePath.GetExtension() == ".rmiss") {
 			AddMissShader(shaderFile);
 		}
-		else if (filePath.GetExtension() == "rcall") {
+		else if (filePath.GetExtension() == ".rcall") {
 			AddCallableShader(shaderFile);
 		}
-		else if (filePath.GetExtension() == "rchit") {
+		else if (filePath.GetExtension() == ".rchit") {
 			rchit = shaderFile;
 		}
-		else if (filePath.GetExtension() == "rachit") {
+		else if (filePath.GetExtension() == ".rachit") {
 			rahit = shaderFile;
 		}
-		else if (filePath.GetExtension() == "rint") {
+		else if (filePath.GetExtension() == ".rint") {
 			rint = shaderFile;
 		}
 	}
@@ -102,13 +102,13 @@ uint32_t ShaderBindingTable::AddHitShader(const char* filePath) {
 	
 	for (auto& shaderFile : files) {
 		v4d::io::FilePath filePath(shaderFile.filepath);
-		if (filePath.GetExtension() == "rchit") {
+		if (filePath.GetExtension() == ".rchit") {
 			rchit = shaderFile;
 		}
-		else if (filePath.GetExtension() == "rachit") {
+		else if (filePath.GetExtension() == ".rachit") {
 			rahit = shaderFile;
 		}
-		else if (filePath.GetExtension() == "rint") {
+		else if (filePath.GetExtension() == ".rint") {
 			rint = shaderFile;
 		}
 	}
@@ -151,9 +151,8 @@ void ShaderBindingTable::ReadShaders() {
 	}
 }
 
-void ShaderBindingTable::CreateShaderStages(Device* device) {
-	this->device = device;
-	if (stages.size() == 0) {
+void ShaderBindingTable::CreateShaderStages() {
+	if (device && stages.size() == 0) {
 		for (auto& shader : shaderObjects) {
 			shader.CreateShaderModule(device);
 			stages.push_back(shader.stageInfo);
@@ -168,21 +167,20 @@ void ShaderBindingTable::DestroyShaderStages() {
 			shader.DestroyShaderModule(device);
 		}
 	}
-	device = nullptr;
 }
 
 void ShaderBindingTable::Reload() {
 	if (this->device) {
 		LOG("Reloading Ray Tracing Pipeline...")
 		Device* device = this->device;
-		DestroyRayTracingPipeline();
-		ReadShaders();
-		CreateRayTracingPipeline(device);
+		Destroy();
+		Create(device);
 	}
 }
 
-VkPipeline ShaderBindingTable::CreateRayTracingPipeline(Device* device) {
-	CreateShaderStages(device);
+VkPipeline ShaderBindingTable::CreateRayTracingPipeline() {
+	ReadShaders();
+	CreateShaderStages();
 	
 	groups.reserve(rayGenGroups.size() + rayMissGroups.size() + rayHitGroups.size());
 	for (auto& group : rayGenGroups) groups.push_back(group);
@@ -231,10 +229,10 @@ VkStridedDeviceAddressRegionKHR* ShaderBindingTable::GetRayCallableDeviceAddress
 	return &rayCallableDeviceAddressRegion;
 }
 
-VkDeviceSize ShaderBindingTable::GetSbtBufferSize(const VkPhysicalDeviceRayTracingPipelinePropertiesKHR& rayTracingPipelineProperties) {
+VkDeviceSize ShaderBindingTable::GetSbtBufferSize() {
 	if (bufferSize > 0) return bufferSize;
 	
-	auto addAlignedShaderRegion = [this, &rayTracingPipelineProperties](VkDeviceSize& offset, VkDeviceSize& size, size_t n) {
+	auto addAlignedShaderRegion = [this](VkDeviceSize& offset, VkDeviceSize& size, size_t n) {
 		offset = bufferSize;
 		bufferSize += size = n * rayTracingPipelineProperties.shaderGroupHandleSize;
 		// Align
@@ -251,41 +249,40 @@ VkDeviceSize ShaderBindingTable::GetSbtBufferSize(const VkPhysicalDeviceRayTraci
 	return bufferSize;
 }
 
-void ShaderBindingTable::WriteShaderBindingTableToBuffer(Device* device, BufferObject* buffer, VkDeviceSize offset, const VkPhysicalDeviceRayTracingPipelinePropertiesKHR& rayTracingPipelineProperties) {
-	this->bufferOffset = offset;
-	uint32_t sbtSize = GetSbtBufferSize(rayTracingPipelineProperties); // GetSbtBufferSize must be called here, it caches some values used for setting regions
+void ShaderBindingTable::WriteShaderBindingTableToBuffer() {
+	uint32_t sbtSize = GetSbtBufferSize(); // GetSbtBufferSize must be called here, it caches some values used for setting regions
 	VkDeviceSize bindingStride = rayTracingPipelineProperties.shaderGroupHandleSize;
 	
 	// Ray Gen
 	rayGenDeviceAddressRegion = {
-		VkDeviceAddress(*buffer) + offset + rayGenShaderRegionOffset,
+		VkDeviceAddress(*buffer) + bufferOffset + rayGenShaderRegionOffset,
 		bindingStride, 
 		rayGenShaderRegionSize
 	};
 	
 	// Ray Miss
 	rayMissDeviceAddressRegion = {
-		VkDeviceAddress(*buffer) + offset + rayMissShaderRegionOffset,
+		VkDeviceAddress(*buffer) + bufferOffset + rayMissShaderRegionOffset,
 		bindingStride,
 		rayMissShaderRegionSize
 	};
 	
 	// Ray Hit
 	rayHitDeviceAddressRegion = {
-		VkDeviceAddress(*buffer) + offset + rayHitShaderRegionOffset,
+		VkDeviceAddress(*buffer) + bufferOffset + rayHitShaderRegionOffset,
 		bindingStride,
 		rayHitShaderRegionSize
 	};
 	
 	// Ray Callable
 	rayCallableDeviceAddressRegion = {
-		VkDeviceAddress(*buffer) + offset + rayCallableShaderRegionOffset,
+		VkDeviceAddress(*buffer) + bufferOffset + rayCallableShaderRegionOffset,
 		bindingStride,
 		rayCallableShaderRegionSize
 	};
 	
 	uint8_t* data;
-	device->MapMemoryAllocation(buffer->allocation, (void**)&data, offset, sbtSize);
+	device->MapMemoryAllocation(buffer->allocation, (void**)&data, bufferOffset, sbtSize);
 	const size_t shaderHandlerStorageSize = groups.size()*rayTracingPipelineProperties.shaderGroupHandleSize;
 	auto shaderHandleStorage = new uint8_t[shaderHandlerStorageSize];
 	if (device->GetRayTracingShaderGroupHandlesKHR(pipeline, 0, (uint)groups.size(), shaderHandlerStorageSize, shaderHandleStorage) != VK_SUCCESS)
@@ -311,4 +308,35 @@ void ShaderBindingTable::WriteShaderBindingTableToBuffer(Device* device, BufferO
 	
 	device->UnmapMemoryAllocation(buffer->allocation);
 	delete[] shaderHandleStorage;
+}
+
+
+void ShaderBindingTable::Configure(v4d::graphics::Renderer* renderer, Device* device) {
+	// Query the ray tracing properties of the current implementation
+	accelerationStructureProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR;
+	rayTracingPipelineProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+	accelerationStructureProperties.pNext = &rayTracingPipelineProperties;
+	VkPhysicalDeviceProperties2 deviceProps2 {};{
+		deviceProps2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+		deviceProps2.pNext = &accelerationStructureProperties;
+	}
+	renderer->GetPhysicalDeviceProperties2(device->GetPhysicalDevice()->GetHandle(), &deviceProps2);
+}
+
+void ShaderBindingTable::Create(Device* device) {
+	if (this->device == nullptr) {
+		this->device = device;
+		CreateRayTracingPipeline();
+		buffer = std::make_unique<BufferObject>(MEMORY_USAGE_CPU_TO_GPU, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, GetSbtBufferSize());
+		buffer->Allocate(device);
+		WriteShaderBindingTableToBuffer();
+	}
+}
+
+void ShaderBindingTable::Destroy() {
+	if (device) {
+		buffer = nullptr;
+		DestroyRayTracingPipeline();
+		device = nullptr;
+	}
 }
