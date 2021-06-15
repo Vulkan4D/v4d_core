@@ -87,6 +87,8 @@ namespace v4d::graphics::vulkan::raytracing {
 			// closestHitShader must be either VK_SHADER_UNUSED_KHR or a valid index into pStages referring to a shader of VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR
 			// anyHitShader must be either VK_SHADER_UNUSED_KHR or a valid index into pStages referring to a shader of VK_SHADER_STAGE_ANY_HIT_BIT_KHR
 		
+		void PushConstant(VkCommandBuffer cmdBuffer, void* pushConstant, int pushConstantIndex = 0);
+		
 		uint32_t GetOrAddShaderFileIndex(const ShaderInfo& shader);
 		
 		ShaderBindingTable(PipelineLayoutObject* pipelineLayout, const char* shaderFile);

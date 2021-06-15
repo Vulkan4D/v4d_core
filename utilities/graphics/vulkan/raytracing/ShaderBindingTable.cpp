@@ -53,6 +53,12 @@ PipelineLayoutObject* ShaderBindingTable::GetPipelineLayout() const {
 	return pipelineLayout;
 }
 
+void ShaderBindingTable::PushConstant(VkCommandBuffer cmdBuffer, void* pushConstant, int pushConstantIndex) {
+	assert(device);
+	auto& pushConstantRange = pipelineLayout->pushConstants[pushConstantIndex];
+	device->CmdPushConstants(cmdBuffer, pipelineLayout->obj, pushConstantRange.stageFlags, pushConstantRange.offset, pushConstantRange.size, pushConstant);
+}
+
 std::vector<VkPipelineShaderStageCreateInfo> ShaderBindingTable::GetStages() const {
 	return stages;
 }
