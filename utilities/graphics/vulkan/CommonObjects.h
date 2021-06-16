@@ -61,19 +61,19 @@ namespace v4d::graphics::vulkan {
 		COMMON_OBJECT_MOVEABLE(CommandBufferObject)
 		COMMON_OBJECT_COPYABLE(CommandBufferObject)
 		
-		VkQueueFlags queueFlags = VK_QUEUE_GRAPHICS_BIT;
+		VkQueueFlags queueFlags = 0;
 		uint queueIndex = 0;
 		VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		uint commandPoolIndex = 0;
 		
-		CommandBufferObject(const VkQueueFlags& queueFlags = VK_QUEUE_GRAPHICS_BIT, uint queueIndex = 0, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY, uint commandPoolIndex = 0)
+		CommandBufferObject(const VkQueueFlags& queueFlags = 0, uint queueIndex = 0, uint commandPoolIndex = 0, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY)
 		: obj(), queueFlags(queueFlags), queueIndex(uint(queueIndex)), level(level), commandPoolIndex(uint(commandPoolIndex)) {}
 		
 		Device* device = nullptr;
 		
 		Queue& GetQueue() {
 			assert(device);
-			return device->GetQueue(queueFlags, queueIndex);
+			return device->queues[queueFlags][queueIndex];
 		}
 		
 		void Allocate(Device* device) {
@@ -84,12 +84,12 @@ namespace v4d::graphics::vulkan {
 				allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 				allocInfo.commandBufferCount = 1;
 				allocInfo.level = level;
-				allocInfo.commandPool = device->GetQueue(queueFlags, queueIndex).commandPools[commandPoolIndex];
+				allocInfo.commandPool = device->queues[queueFlags][queueIndex].commandPools[commandPoolIndex];
 			Instance::CheckVkResult("Allocate CommandBuffer", device->AllocateCommandBuffers(&allocInfo, obj));
 		}
 		void Free() {
 			assert(device);
-			device->FreeCommandBuffers(device->GetQueue(queueFlags, queueIndex).commandPools[commandPoolIndex], 1, obj);
+			device->FreeCommandBuffers(device->queues[queueFlags][queueIndex].commandPools[commandPoolIndex], 1, obj);
 			device = nullptr;
 		}
 	};

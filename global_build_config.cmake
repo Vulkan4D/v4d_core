@@ -54,7 +54,7 @@ else()
 	# set(BUILD_FLAGS "${BUILD_FLAGS} -Wshadow")
 endif()
 
-# don't open a console window on windows
+# don't open a console window on Windows
 if(WIN32)
 	SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -mwindows")
 endif()

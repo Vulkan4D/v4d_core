@@ -53,7 +53,7 @@ COMMON_OBJECT_CPP(TextureObject, VkImage)
 			}
 			
 			// Copy staging buffer to image and generate mip maps
-			device->RunSingleTimeCommands(device->GetGraphicsQueue(), [&](VkCommandBuffer cmdBuffer){
+			device->RunSingleTimeCommands(device->queues[0][0], [&](VkCommandBuffer cmdBuffer){
 				ImageObject::TransitionImageLayout(device, cmdBuffer, obj, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, imageInfo.mipLevels, imageInfo.arrayLayers);
 				
 				VkBufferImageCopy region = {};

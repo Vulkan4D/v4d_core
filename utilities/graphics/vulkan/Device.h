@@ -110,7 +110,6 @@ namespace v4d::graphics::vulkan {
 	private:
 		PhysicalDevice* physicalDevice;
 		VkDeviceCreateInfo createInfo {};
-		std::unordered_map<VkQueueFlags, std::vector<Queue>> queues;
 		
 		#ifdef V4D_VULKAN_USE_VMA
 			VmaAllocator allocator;
@@ -122,7 +121,7 @@ namespace v4d::graphics::vulkan {
 			PhysicalDevice* physicalDevice,
 			std::vector<const char*>& extensions,
 			std::vector<const char*>& layers,
-			std::vector<DeviceQueueInfo> queuesInfo,
+			std::map<VkQueueFlags, std::vector<Queue>>& queues,
 			void* pNext = nullptr
 		);
 		~Device();
@@ -131,31 +130,8 @@ namespace v4d::graphics::vulkan {
 		VkPhysicalDevice GetPhysicalDeviceHandle() const;
 		PhysicalDevice* GetPhysicalDevice() const;
 
-		inline std::unordered_map<VkQueueFlags, std::vector<Queue>>& GetQueues() {return queues;}
+		std::map<VkQueueFlags, std::vector<Queue>>& queues;
 		
-		inline Queue& GetPresentQueue(uint index = 0) {
-			if (index >= queues[0].size()) index = 0;
-			return queues[0][index];
-		}
-		
-		inline Queue& GetQueue(VkQueueFlags flags, uint index = 0) {
-			if (!queues.contains(flags)) flags = VK_QUEUE_GRAPHICS_BIT;
-			if (index >= queues[flags].size()) index = 0;
-			return queues[flags][index];
-		}
-		
-		inline Queue& GetGraphicsQueue(uint index = 0) {
-			return GetQueue(VK_QUEUE_GRAPHICS_BIT, index);
-		}
-		
-		inline Queue& GetTransferQueue(uint index = 0) {
-			return GetQueue(VK_QUEUE_TRANSFER_BIT, index);
-		}
-		
-		inline Queue& GetComputeQueue(uint index = 0) {
-			return GetQueue(VK_QUEUE_COMPUTE_BIT, index);
-		}
-
 		// overloads native vulkan command with different arguments
 		using xvk::Interface::DeviceInterface::CreateCommandPool;
 		void CreateCommandPool(uint queueIndex, VkCommandPoolCreateFlags flags, VkCommandPool* commandPool);

@@ -7,59 +7,60 @@ Device::Device(
 	PhysicalDevice* physicalDevice,
 	std::vector<const char*>& extensions,
 	std::vector<const char*>& layers,
-	std::vector<DeviceQueueInfo> queuesInfo,
+	std::map<VkQueueFlags, std::vector<Queue>>& queues,
 	void* pNext
-) : physicalDevice(physicalDevice) {
+) : physicalDevice(physicalDevice), queues(queues) {
 	instance = physicalDevice->GetVulkanInstance();
 
 	// Queues
 	std::vector<VkDeviceQueueCreateInfo> queuesCreateInfo {};
-	queuesCreateInfo.reserve(queuesInfo.size());
-	for (auto& queueInfo : queuesInfo) {
-		if (queueInfo.count != queueInfo.priorities.size()) {
-			throw std::runtime_error("Queue priorities list size does not match queue count");
-		}
-		queues[queueInfo.flags] = std::vector<Queue>(queueInfo.count);
+	std::map<int, std::vector<float>> queuesCreateInfoPriorities {};
+	for (auto& [key, qs] : queues) if (qs.size() > 0) {
 		bool foundQueueFamilyIndex = false;
-		auto queueFamilyIndices = physicalDevice->GetQueueFamilyIndicesFromFlags(queueInfo.flags, queueInfo.count, queueInfo.surface);
-		for (auto queueFamilyIndex : queueFamilyIndices) {
-			// If queueFamilyIndex is not already present in our queuesCreateInfo vector, add it
+		for (auto queueFamilyIndex : physicalDevice->GetQueueFamilyIndicesFromFlags(qs[0].flags, qs.size(), qs[0].surface)) {
 			auto existing = std::find_if(queuesCreateInfo.begin(), queuesCreateInfo.end(), [queueFamilyIndex](VkDeviceQueueCreateInfo& n){return n.queueFamilyIndex == (uint32_t)queueFamilyIndex;});
+			// If queueFamilyIndex is NOT already present in our queuesCreateInfo vector, add it
 			if (existing == queuesCreateInfo.end()) {
-				queueInfo.queueFamilyIndex = queueFamilyIndex;
-				queueInfo.indexOffset = 0;
-				queueInfo.createInfoIndex = queuesCreateInfo.size();
-				queuesCreateInfo.push_back({
+				size_t createInfoIndex = queuesCreateInfo.size();
+				uint32_t index = 0;
+				for (auto& q : qs) {
+					q.family = queueFamilyIndex;
+					q.index = index++;
+					queuesCreateInfoPriorities[createInfoIndex].push_back(q.priority);
+				}
+				queuesCreateInfo.emplace_back(
 					VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, // VkStructureType sType
 					nullptr, // const void* pNext
 					0, // VkDeviceQueueCreateFlags flags
 					(uint)queueFamilyIndex, // uint32_t queueFamilyIndex
-					queueInfo.count, // uint32_t queueCount
-					queueInfo.priorities.data(), // const float* pQueuePriorities
-				});
+					qs.size(), // uint32_t queueCount
+					queuesCreateInfoPriorities[createInfoIndex].data() // const float* pQueuePriorities
+				);
 				foundQueueFamilyIndex = true;
 				break;
 			}
 		}
 		if (!foundQueueFamilyIndex) {
 			// If could not find a different queue family, try to use an existing one
-			for (auto& existingQueuesInfo : queuesInfo) {
-				if (existingQueuesInfo.createInfoIndex == -1) break;
-				auto& existingQueueCreateInfo = queuesCreateInfo[existingQueuesInfo.createInfoIndex];
-				if (existingQueueCreateInfo.queueFamilyIndex == (uint32_t)physicalDevice->GetQueueFamilyIndexFromFlags(queueInfo.flags, queueInfo.count + existingQueueCreateInfo.queueCount, queueInfo.surface)) {
-					queueInfo.queueFamilyIndex = existingQueueCreateInfo.queueFamilyIndex;
-					queueInfo.indexOffset = existingQueueCreateInfo.queueCount;
-					queueInfo.createInfoIndex = -1;
-					existingQueueCreateInfo.queueCount += queueInfo.count;
-					for (auto f : queueInfo.priorities) existingQueuesInfo.priorities.push_back(f);
-					existingQueueCreateInfo.pQueuePriorities = existingQueuesInfo.priorities.data();
+			size_t createInfoIndex = 0;
+			for (auto& existingQueuesCreateInfo : queuesCreateInfo) {
+				if (existingQueuesCreateInfo.queueFamilyIndex == (uint32_t)physicalDevice->GetQueueFamilyIndexFromFlags(qs[0].flags, qs.size() + existingQueuesCreateInfo.queueCount, qs[0].surface)) {
+					uint32_t index = 0;
+					for (auto& q : qs) {
+						q.family = existingQueuesCreateInfo.queueFamilyIndex;
+						q.index = (index++) + existingQueuesCreateInfo.queueCount;
+						queuesCreateInfoPriorities[createInfoIndex].push_back(q.priority);
+						existingQueuesCreateInfo.queueCount++;
+					}
+					existingQueuesCreateInfo.pQueuePriorities = queuesCreateInfoPriorities[createInfoIndex].data();
 					foundQueueFamilyIndex = true;
 					break;
 				}
+				createInfoIndex++;
 			}
 		}
 		if (!foundQueueFamilyIndex) {
-			throw std::runtime_error("Failed to find a suitable queue family for " + std::to_string(queueInfo.flags));
+			throw std::runtime_error("Failed to find a suitable queue for " + std::to_string(int(key)) + " with flags " + std::to_string(int(qs[0].flags)) + " and queueCount " + std::to_string(int(qs.size())));
 		}
 	}
 	
@@ -80,17 +81,9 @@ Device::Device(
 	LoadFunctionPointers();
 
 	// Get Queues Handles
-	for (auto queueInfo : queuesInfo) {
-		queues[queueInfo.flags] = std::vector<Queue>(queueInfo.count);
-		for (uint i = 0; i < queueInfo.count; i++) {
-			auto *q = &queues[queueInfo.flags][i];
-			GetDeviceQueue(queueInfo.queueFamilyIndex, queueInfo.indexOffset + i, &(q->handle));
-			q->familyIndex = (uint)queueInfo.queueFamilyIndex;
-		}
-		
-		// Assign a present queue to the one with a Surface
-		if (queueInfo.surface && *queueInfo.surface != VK_NULL_HANDLE) {
-			queues[0] = queues[queueInfo.flags];
+	for (auto& [key, qs] : queues) {
+		for (auto& q : qs) {
+			GetDeviceQueue(q.family, q.index, &q.handle);
 		}
 	}
 }

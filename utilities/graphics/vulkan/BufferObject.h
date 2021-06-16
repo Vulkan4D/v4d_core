@@ -60,7 +60,7 @@ public:
 	}
 	
 	virtual void Allocate(Device* device) override {
-		if (size > 0) {
+		if (size > 0 && this->device == nullptr) {
 			BufferObject::Allocate(device);
 			device->MapMemoryAllocation(allocation, (void**)&data, 0, size);
 		}

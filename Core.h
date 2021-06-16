@@ -25,6 +25,7 @@ DEFINE_CORE_EVENT_HEADER(APP_ERROR, int)
 
 EXTERNC V4DLIB void V4D_SIGNAL_HANDLER(int num);
 
+EXTERNC V4DLIB const char* SIGNALS_STR[32];
 
 //////////////////////////////////////////////////////////
 // Some utilities prototypes

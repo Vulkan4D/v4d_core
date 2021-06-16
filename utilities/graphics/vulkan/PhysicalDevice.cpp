@@ -35,8 +35,19 @@ PhysicalDevice::~PhysicalDevice() {
 
 int PhysicalDevice::GetQueueFamilyIndexFromFlags(VkQueueFlags flags, uint minQueuesCount, VkSurfaceKHR* surface) {
 	int i = 0;
+	// Prioritize a specialized queue family
 	for (const auto& queueFamily : *queueFamilies) {
-		if (queueFamily.queueCount >= minQueuesCount && queueFamily.queueFlags & flags) {
+		if (queueFamily.queueCount >= minQueuesCount && (queueFamily.queueFlags == flags)) {
+			if (!surface || *surface == VK_NULL_HANDLE) return i;
+			VkBool32 presentationSupport;
+			vulkanInstance->GetPhysicalDeviceSurfaceSupportKHR(handle, i, *surface, &presentationSupport);
+			if (presentationSupport) return i;
+		}
+		i++;
+	}
+	i = 0;
+	for (const auto& queueFamily : *queueFamilies) {
+		if (queueFamily.queueCount >= minQueuesCount && (queueFamily.queueFlags & flags)) {
 			if (!surface || *surface == VK_NULL_HANDLE) return i;
 			VkBool32 presentationSupport;
 			vulkanInstance->GetPhysicalDeviceSurfaceSupportKHR(handle, i, *surface, &presentationSupport);
@@ -50,8 +61,22 @@ int PhysicalDevice::GetQueueFamilyIndexFromFlags(VkQueueFlags flags, uint minQue
 std::vector<int> PhysicalDevice::GetQueueFamilyIndicesFromFlags(VkQueueFlags flags, uint minQueuesCount, VkSurfaceKHR* surface) {
 	std::vector<int> indices {};
 	int i = 0;
+	// Prioritize a specialized queue family
 	for (const auto& queueFamily : *queueFamilies) {
-		if (queueFamily.queueCount >= minQueuesCount && queueFamily.queueFlags & flags) {
+		if (queueFamily.queueCount >= minQueuesCount && (queueFamily.queueFlags == flags)) {
+			if (!surface || *surface == VK_NULL_HANDLE) {
+				indices.push_back(i);
+			} else {
+				VkBool32 presentationSupport;
+				vulkanInstance->GetPhysicalDeviceSurfaceSupportKHR(handle, i, *surface, &presentationSupport);
+				if (presentationSupport) indices.push_back(i);
+			}
+		}
+		i++;
+	}
+	i = 0;
+	for (const auto& queueFamily : *queueFamilies) {
+		if (queueFamily.queueCount >= minQueuesCount && (queueFamily.queueFlags != flags) && (queueFamily.queueFlags & flags)) {
 			if (!surface || *surface == VK_NULL_HANDLE) {
 				indices.push_back(i);
 			} else {
@@ -63,6 +88,15 @@ std::vector<int> PhysicalDevice::GetQueueFamilyIndicesFromFlags(VkQueueFlags fla
 		i++;
 	}
 	return indices;
+}
+
+bool PhysicalDevice::HasSpecializedTransferQueue() const {
+	for (const auto& queueFamily : *queueFamilies) {
+		if (queueFamily.queueFlags == VK_QUEUE_TRANSFER_BIT) {
+			return true;
+		}
+	}
+	return false;
 }
 
 bool PhysicalDevice::QueueFamiliesContainsFlags(VkQueueFlags flags, uint minQueuesCount, VkSurfaceKHR* surface) {

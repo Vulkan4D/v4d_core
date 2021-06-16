@@ -91,6 +91,7 @@ namespace v4d::graphics::vulkan {
 		int GetQueueFamilyIndexFromFlags(VkQueueFlags flags, uint minQueuesCount = 1, VkSurfaceKHR* surface = nullptr);
 		std::vector<int> GetQueueFamilyIndicesFromFlags(VkQueueFlags flags, uint minQueuesCount = 1, VkSurfaceKHR* surface = nullptr);
 		bool QueueFamiliesContainsFlags(VkQueueFlags flags, uint minQueuesCount = 1, VkSurfaceKHR* surface = nullptr);
+		bool HasSpecializedTransferQueue() const;
 
 		bool SupportsExtension(std::string ext);
 

@@ -57,6 +57,9 @@ void Renderer::CreateDevices() {
 		}
 	}
 	
+	// Presentation queue
+	queues[0][0].surface = &surface;
+	
 	// Prepare Device Features
 	PhysicalDevice::DeviceFeatures enabledDeviceFeatures {};
 	ConfigureDeviceFeatures(&enabledDeviceFeatures, &renderingPhysicalDevice->deviceFeatures);
@@ -67,14 +70,10 @@ void Renderer::CreateDevices() {
 		renderingPhysicalDevice,
 		deviceExtensions,
 		vulkanLoader->requiredInstanceLayers,
-		queuesInfo,
+		queues,
 		renderingPhysicalDevice->deviceFeatures.GetDeviceFeaturesPNext()
 	);
 
-	if (!renderingDevice->GetPresentQueue().handle) {
-		throw std::runtime_error("Failed to get Presentation Queue for surface. At least one queue must be defined with a VkSurfaceKHR or you must manually specify a 'present' queue");
-	}
-	
 	renderingDevice->CreateAllocator();
 }
 
@@ -429,7 +428,7 @@ bool Renderer::EndFrame(const std::vector<VkSemaphore>& waitSemaphores) {
 		presentInfo.pSwapchains = &swapChain->GetHandle();
 		presentInfo.pImageIndices = &swapChainImageIndex;
 		
-	VkResult result = renderingDevice->QueuePresentKHR(renderingDevice->GetPresentQueue().handle, &presentInfo);
+	VkResult result = renderingDevice->QueuePresentKHR(queues[0][0].handle, &presentInfo);
 
 	// Check for errors
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
@@ -462,8 +461,8 @@ bool Renderer::EndFrame(const std::vector<VkSemaphore>& waitSemaphores) {
 			init_info.Instance = handle;
 			init_info.PhysicalDevice = renderingDevice->GetPhysicalDevice()->GetHandle();
 			init_info.Device = renderingDevice->GetHandle();
-			init_info.QueueFamily = renderingDevice->GetGraphicsQueue().familyIndex;
-			init_info.Queue = renderingDevice->GetGraphicsQueue().handle;
+			init_info.QueueFamily = queues[0][0].family;
+			init_info.Queue = queues[0][0].handle;
 			init_info.DescriptorPool = descriptorPool;
 			init_info.MinImageCount = swapChain->images.size();
 			init_info.ImageCount = swapChain->images.size();
@@ -474,9 +473,9 @@ bool Renderer::EndFrame(const std::vector<VkSemaphore>& waitSemaphores) {
 		auto* drawData = ImGui::GetDrawData();
 		if (drawData) drawData->Clear();
 		// Font Upload
-		auto cmdBuffer = BeginSingleTimeCommands(renderingDevice->GetGraphicsQueue());
+		auto cmdBuffer = BeginSingleTimeCommands(queues[0][0]);
 			ImGui_ImplVulkan_CreateFontsTexture(cmdBuffer);
-		EndSingleTimeCommands(renderingDevice->GetGraphicsQueue(), cmdBuffer);
+		EndSingleTimeCommands(queues[0][0], cmdBuffer);
 		ImGui_ImplVulkan_DestroyFontUploadObjects();
 	}
 	void Renderer::UnloadImGui() {

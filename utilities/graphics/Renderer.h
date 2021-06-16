@@ -111,21 +111,10 @@ namespace v4d::graphics {
 			{VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR},
 		};
 		
-		std::vector<DeviceQueueInfo> queuesInfo {
-			{
-				VK_QUEUE_GRAPHICS_BIT,
-				2, // Count
-				{1.0f, 0.1f}, // Priorities (one per queue count)
-				&surface // Putting a surface here forces the need for a presentation feature on that specific queue family
-			},
-			{
-				VK_QUEUE_COMPUTE_BIT,
-			},
-			{
-				VK_QUEUE_TRANSFER_BIT,
-			},
+		std::map<VkQueueFlags, std::vector<Queue>> queues {
+			{0, {Queue(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT)}}
 		};
-
+		
 		// State
 		enum class STATE {NONE = 0, INITIALIZED, UNLOADED, LOADED, RUNNING} state = STATE::NONE;
 		
@@ -182,16 +171,16 @@ namespace v4d::graphics {
 		
 		// Command Pools
 		void CreateCommandPools() {
-			for (auto&[k, qs] : renderingDevice->GetQueues()) if (k) {
+			for (auto&[k, qs] : queues) {
 				for (auto& q : qs) {
 					for (auto& commandPool : q.commandPools) if (!commandPool) {
-						renderingDevice->CreateCommandPool(q.familyIndex, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &commandPool);
+						renderingDevice->CreateCommandPool(q.family, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &commandPool);
 					}
 				}
 			}
 		}
 		void DestroyCommandPools() {
-			for (auto&[k, qs] : renderingDevice->GetQueues()) if (k) {
+			for (auto&[k, qs] : queues) {
 				for (auto& q : qs) {
 					for (auto& commandPool : q.commandPools) if (commandPool) {
 						renderingDevice->DestroyCommandPool(commandPool);
@@ -276,7 +265,7 @@ namespace v4d::graphics {
 				if (img->height == 0) img->height = img->scale!=1.0? uint32_t(std::round(img->scale * float(swapChain->extent.height))) : swapChain->extent.height;
 				img->Create(renderingDevice);
 			});
-			RunSingleTimeCommands(renderingDevice->GetGraphicsQueue(), [this](VkCommandBuffer cmdBuffer){
+			RunSingleTimeCommands(queues[0][0], [this](VkCommandBuffer cmdBuffer){
 				ImageObject::ForEach([this,&cmdBuffer](ImageObject*img){
 					img->TransitionLayout(cmdBuffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 				});
