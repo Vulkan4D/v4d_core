@@ -199,10 +199,12 @@ namespace v4d::graphics {
 		}
 		// Synchronization objects
 		virtual void CreateSyncObjects() {
+			TimelineSemaphoreObject::ForEach([this](TimelineSemaphoreObject*o){o->Create(renderingDevice);});
 			SemaphoreObject::ForEach([this](SemaphoreObject*o){o->Create(renderingDevice);});
 			FenceObject::ForEach([this](FenceObject*o){o->Create(renderingDevice);});
 		}
 		virtual void DestroySyncObjects() {
+			TimelineSemaphoreObject::ForEach([this](TimelineSemaphoreObject*o){o->Destroy();});
 			SemaphoreObject::ForEach([this](SemaphoreObject*o){o->Destroy();});
 			FenceObject::ForEach([this](FenceObject*o){o->Destroy();});
 		}

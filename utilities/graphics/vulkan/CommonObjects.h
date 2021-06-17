@@ -6,6 +6,65 @@
 
 namespace v4d::graphics::vulkan {
 
+	class TimelineSemaphoreObject {
+		COMMON_OBJECT(TimelineSemaphoreObject, VkSemaphore, V4DLIB)
+		COMMON_OBJECT_MOVEABLE(TimelineSemaphoreObject)
+		COMMON_OBJECT_COPYABLE(TimelineSemaphoreObject)
+		
+		uint64_t initialValue;
+		
+		TimelineSemaphoreObject(uint64_t initialValue = 0) : obj(), initialValue(initialValue) {}
+		
+		Device* device = nullptr;
+		
+		void Create(Device* device) {
+			assert(this->device == nullptr);
+			this->device = device;
+			VkSemaphoreTypeCreateInfo timelineCreateInfo {};
+				timelineCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO;
+				timelineCreateInfo.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+				timelineCreateInfo.initialValue = initialValue;
+			VkSemaphoreCreateInfo semaphoreInfo {};
+				semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+				semaphoreInfo.pNext = &timelineCreateInfo;
+				semaphoreInfo.flags = 0;
+			Instance::CheckVkResult("Create Semaphore", device->CreateSemaphore(&semaphoreInfo, nullptr, obj));
+		}
+		
+		void Destroy() {
+			assert(device);
+			device->DestroySemaphore(obj, nullptr);
+			device = nullptr;
+		}
+		
+		void Signal(uint64_t value) {
+			assert(device);
+			VkSemaphoreSignalInfo signalInfo {};
+				signalInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SIGNAL_INFO;
+				signalInfo.semaphore = obj;
+				signalInfo.value = value;
+			Instance::CheckVkResult("Signal Semaphore", device->SignalSemaphore(&signalInfo));
+		}
+		
+		void Wait(uint64_t value, VkSemaphoreWaitFlags flags = 0, uint64_t timeout = UINT64_MAX) const {
+			assert(device);
+			VkSemaphoreWaitInfo waitInfo {};
+				waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
+				waitInfo.semaphoreCount = 1;
+				waitInfo.pSemaphores = obj;
+				waitInfo.pValues = &value;
+				waitInfo.flags = flags;
+			Instance::CheckVkResult("Wait Semaphore", device->WaitSemaphores(&waitInfo, timeout));
+		}
+		
+		uint64_t GetCounterValue() const {
+			assert(device);
+			uint64_t value;
+			device->GetSemaphoreCounterValue(obj, &value);
+			return value;
+		}
+	};
+
 	class SemaphoreObject {
 		COMMON_OBJECT(SemaphoreObject, VkSemaphore, V4DLIB)
 		COMMON_OBJECT_MOVEABLE(SemaphoreObject)
