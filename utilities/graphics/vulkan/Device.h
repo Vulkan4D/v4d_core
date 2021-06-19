@@ -121,7 +121,7 @@ namespace v4d::graphics::vulkan {
 			PhysicalDevice* physicalDevice,
 			std::vector<const char*>& extensions,
 			std::vector<const char*>& layers,
-			std::map<VkQueueFlags, std::vector<Queue>>& queues,
+			std::map<VkQueueFlags, std::map<uint, Queue>>& queues,
 			void* pNext = nullptr
 		);
 		~Device();
@@ -130,7 +130,7 @@ namespace v4d::graphics::vulkan {
 		VkPhysicalDevice GetPhysicalDeviceHandle() const;
 		PhysicalDevice* GetPhysicalDevice() const;
 
-		std::map<VkQueueFlags, std::vector<Queue>>& queues;
+		std::map<VkQueueFlags, std::map<uint, Queue>>& queues;
 		
 		// overloads native vulkan command with different arguments
 		using xvk::Interface::DeviceInterface::CreateCommandPool;

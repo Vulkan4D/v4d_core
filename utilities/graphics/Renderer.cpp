@@ -231,7 +231,6 @@ void Renderer::InitRenderer() {
 
 void Renderer::LoadRenderer() {
 	CreateDevices();
-	CreateSyncObjects();
 	CreateCommandPools();
 	CreateBuffers();
 	LoadBuffers();
@@ -254,7 +253,6 @@ void Renderer::UnloadRenderer() {
 	UnloadBuffers();
 	DestroyBuffers();
 	DestroyCommandPools();
-	DestroySyncObjects();
 	DestroyDevices();
 }
 
@@ -281,7 +279,6 @@ void Renderer::ReloadRenderer() {
 	UnloadBuffers();
 	DestroyBuffers();
 	DestroyCommandPools();
-	DestroySyncObjects();
 	DestroyDevices();
 	
 	v4d::graphics::renderer::event::Reload(this);
@@ -289,7 +286,6 @@ void Renderer::ReloadRenderer() {
 	ReadShaders();
 	
 	CreateDevices();
-	CreateSyncObjects();
 	CreateCommandPools();
 	CreateBuffers();
 	LoadBuffers();
@@ -302,6 +298,7 @@ void Renderer::ReloadRenderer() {
 }
 
 void Renderer::LoadGraphicsToDevice() {
+	CreateSyncObjects();
 	ConfigureImages(swapChain->extent.width, swapChain->extent.height);
 	CreateImages();
 	CreateDescriptorSets();
@@ -337,11 +334,11 @@ void Renderer::UnloadGraphicsFromDevice() {
 	DestroyPipelineLayouts();
 	DestroyDescriptorSets();
 	DestroyImages();
+	DestroySyncObjects();
 }
 
 bool Renderer::BeginFrame(VkSemaphore triggerSemaphore, VkFence triggerFence) {
 	state = STATE::RUNNING;
-	Begin:
 	
 	{// Sync queue
 		std::lock_guard lock(frameSyncMutex);
@@ -370,7 +367,7 @@ bool Renderer::BeginFrame(VkSemaphore triggerSemaphore, VkFence triggerFence) {
 		case VK_SUBOPTIMAL_KHR:
 		{
 			RecreateSwapChain();
-			goto Begin;
+			return false;
 		}
 		case VK_TIMEOUT:
 		case VK_NOT_READY:
@@ -392,9 +389,20 @@ void Renderer::RecordAndSubmitCommandBuffer(
 	const std::vector<VkSemaphore>& waitSemaphores,
 	const std::vector<VkPipelineStageFlags>& waitStages,
 	const std::vector<VkSemaphore>& signalSemaphores,
-	const VkFence& triggerFence
+	const VkFence& triggerFence,
+	const std::vector<uint64_t> waitTimelineSemaphoreValues,
+	const std::vector<uint64_t> signalTimelineSemaphoreValues
 ) {
 	assert(waitSemaphores.size() == waitStages.size());
+	assert(waitTimelineSemaphoreValues.size() == 0 || waitTimelineSemaphoreValues.size() == waitSemaphores.size());
+	assert(signalTimelineSemaphoreValues.size() == 0 || signalTimelineSemaphoreValues.size() == signalSemaphores.size());
+	
+	VkTimelineSemaphoreSubmitInfo timelineSemaphoreSubmit {};
+		timelineSemaphoreSubmit.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
+		timelineSemaphoreSubmit.waitSemaphoreValueCount = waitTimelineSemaphoreValues.size();
+		timelineSemaphoreSubmit.pWaitSemaphoreValues = waitTimelineSemaphoreValues.data();
+		timelineSemaphoreSubmit.signalSemaphoreValueCount = signalTimelineSemaphoreValues.size();
+		timelineSemaphoreSubmit.pSignalSemaphoreValues = signalTimelineSemaphoreValues.data();
 	
 	VkCommandBufferBeginInfo beginInfo = {};
 		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -408,15 +416,102 @@ void Renderer::RecordAndSubmitCommandBuffer(
 		submitInfo.pCommandBuffers = &commandBuffer;
 		submitInfo.signalSemaphoreCount = signalSemaphores.size();
 		submitInfo.pSignalSemaphores = signalSemaphores.data();
+		if (waitTimelineSemaphoreValues.size() > 0 || signalTimelineSemaphoreValues.size() > 0) {
+			submitInfo.pNext = &timelineSemaphoreSubmit;
+		}
 	
-	ResetFence(triggerFence);
 	CheckVkResult("Reset command buffer", renderingDevice->ResetCommandBuffer(commandBuffer, 0));
 	CheckVkResult("Begin recording command buffer", renderingDevice->BeginCommandBuffer(commandBuffer, &beginInfo));
-	
-	commandsToRecord(commandBuffer);
-	
+		commandsToRecord(commandBuffer);
 	CheckVkResult("End recording command buffer", renderingDevice->EndCommandBuffer(commandBuffer));
+	ResetFence(triggerFence);
 	CheckVkResult("Queue Submit", renderingDevice->QueueSubmit(queue, 1, &submitInfo, triggerFence));
+}
+
+void Renderer::SubmitCommandBuffer(
+	CommandBufferObject& commandBuffer,
+	const std::vector<VkSemaphore>& waitSemaphores,
+	const std::vector<VkPipelineStageFlags>& waitStages,
+	const std::vector<VkSemaphore>& signalSemaphores,
+	const VkFence& triggerFence,
+	const std::vector<uint64_t> waitTimelineSemaphoreValues,
+	const std::vector<uint64_t> signalTimelineSemaphoreValues
+) {
+	assert(waitSemaphores.size() == waitStages.size());
+	assert(waitTimelineSemaphoreValues.size() == 0 || waitTimelineSemaphoreValues.size() == waitSemaphores.size());
+	assert(signalTimelineSemaphoreValues.size() == 0 || signalTimelineSemaphoreValues.size() == signalSemaphores.size());
+	
+	VkTimelineSemaphoreSubmitInfo timelineSemaphoreSubmit {};
+		timelineSemaphoreSubmit.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
+		timelineSemaphoreSubmit.waitSemaphoreValueCount = waitTimelineSemaphoreValues.size();
+		timelineSemaphoreSubmit.pWaitSemaphoreValues = waitTimelineSemaphoreValues.data();
+		timelineSemaphoreSubmit.signalSemaphoreValueCount = signalTimelineSemaphoreValues.size();
+		timelineSemaphoreSubmit.pSignalSemaphoreValues = signalTimelineSemaphoreValues.data();
+	VkSubmitInfo submitInfo {};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.waitSemaphoreCount = waitSemaphores.size();
+		submitInfo.pWaitSemaphores = waitSemaphores.data();
+		submitInfo.pWaitDstStageMask = waitStages.data();
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = commandBuffer;
+		submitInfo.signalSemaphoreCount = signalSemaphores.size();
+		submitInfo.pSignalSemaphores = signalSemaphores.data();
+		if (waitTimelineSemaphoreValues.size() > 0 || signalTimelineSemaphoreValues.size() > 0) {
+			submitInfo.pNext = &timelineSemaphoreSubmit;
+		}
+	
+	ResetFence(triggerFence);
+	CheckVkResult("Queue Submit", renderingDevice->QueueSubmit(commandBuffer.GetQueue().handle, 1, &submitInfo, triggerFence));
+}
+
+void Renderer::RecordIfDirtyAndSubmitCommandBuffer(
+	CommandBufferObject& commandBuffer,
+	std::function<void(VkCommandBuffer)>&& commandsToRecord,
+	const std::vector<VkSemaphore>& waitSemaphores,
+	const std::vector<VkPipelineStageFlags>& waitStages,
+	const std::vector<VkSemaphore>& signalSemaphores,
+	const VkFence& triggerFence,
+	const std::vector<uint64_t> waitTimelineSemaphoreValues,
+	const std::vector<uint64_t> signalTimelineSemaphoreValues
+){
+	if (commandBuffer.dirty) {
+		commandBuffer.dirty = false;
+		
+		assert(waitSemaphores.size() == waitStages.size());
+		assert(waitTimelineSemaphoreValues.size() == 0 || waitTimelineSemaphoreValues.size() == waitSemaphores.size());
+		assert(signalTimelineSemaphoreValues.size() == 0 || signalTimelineSemaphoreValues.size() == signalSemaphores.size());
+
+		VkCommandBufferBeginInfo beginInfo = {};
+			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+			beginInfo.flags = 0;
+		
+		CheckVkResult("Reset command buffer", renderingDevice->ResetCommandBuffer(commandBuffer, 0));
+		CheckVkResult("Begin recording command buffer", renderingDevice->BeginCommandBuffer(commandBuffer, &beginInfo));
+			commandsToRecord(commandBuffer);
+		CheckVkResult("End recording command buffer", renderingDevice->EndCommandBuffer(commandBuffer));
+	}
+	
+	VkTimelineSemaphoreSubmitInfo timelineSemaphoreSubmit {};
+		timelineSemaphoreSubmit.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
+		timelineSemaphoreSubmit.waitSemaphoreValueCount = waitTimelineSemaphoreValues.size();
+		timelineSemaphoreSubmit.pWaitSemaphoreValues = waitTimelineSemaphoreValues.data();
+		timelineSemaphoreSubmit.signalSemaphoreValueCount = signalTimelineSemaphoreValues.size();
+		timelineSemaphoreSubmit.pSignalSemaphoreValues = signalTimelineSemaphoreValues.data();
+	VkSubmitInfo submitInfo {};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.waitSemaphoreCount = waitSemaphores.size();
+		submitInfo.pWaitSemaphores = waitSemaphores.data();
+		submitInfo.pWaitDstStageMask = waitStages.data();
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = commandBuffer;
+		submitInfo.signalSemaphoreCount = signalSemaphores.size();
+		submitInfo.pSignalSemaphores = signalSemaphores.data();
+		if (waitTimelineSemaphoreValues.size() > 0 || signalTimelineSemaphoreValues.size() > 0) {
+			submitInfo.pNext = &timelineSemaphoreSubmit;
+		}
+		
+	ResetFence(triggerFence);
+	CheckVkResult("Queue Submit", renderingDevice->QueueSubmit(commandBuffer.GetQueue().handle, 1, &submitInfo, triggerFence));
 }
 
 bool Renderer::EndFrame(const std::vector<VkSemaphore>& waitSemaphores) {

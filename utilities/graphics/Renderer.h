@@ -24,11 +24,12 @@
 
 // Useful macro to be used in ConfigureDeviceFeatures()
 #define V4D_ENABLE_DEVICE_FEATURE(F) \
-	([deviceFeaturesToEnable, availableDeviceFeatures] () -> bool {\
-		if (availableDeviceFeatures-> F) {deviceFeaturesToEnable-> F = VK_TRUE; return true;}\
-		else {LOG_WARN("Device feature not available: " << #F); return false;}\
-	})();
-#define V4D_ENABLE_DEVICE_FEATURES(...) FOR_EACH(V4D_ENABLE_DEVICE_FEATURE, __VA_ARGS__)
+	([deviceFeaturesToEnable, availableDeviceFeatures] () -> int {\
+		if (availableDeviceFeatures-> F) {deviceFeaturesToEnable-> F = VK_TRUE; return 1;}\
+		else {LOG_WARN("Device feature not available: " << #F); return 0;}\
+	})()
+#define __V4D_ENABLE_DEVICE_FEATURE_MULT(F) * V4D_ENABLE_DEVICE_FEATURE(F)
+#define V4D_ENABLE_DEVICE_FEATURES(...) ([deviceFeaturesToEnable, availableDeviceFeatures](){return (1 FOR_EACH(__V4D_ENABLE_DEVICE_FEATURE_MULT, __VA_ARGS__)) > 0;})()
 
 namespace v4d::graphics {
 	using namespace v4d::graphics::vulkan;
@@ -111,8 +112,9 @@ namespace v4d::graphics {
 			{VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR},
 		};
 		
-		std::map<VkQueueFlags, std::vector<Queue>> queues {
-			{0, {Queue(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT)}}
+		std::map<VkQueueFlags, std::map<uint, Queue>> queues {
+			// Main/Default queue
+			{0, {{0, Queue(VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT | VK_QUEUE_TRANSFER_BIT)}}}
 		};
 		
 		// State
@@ -152,7 +154,6 @@ namespace v4d::graphics {
 		virtual void UnloadBuffers() = 0;
 		virtual void LoadScene() = 0;
 		virtual void UnloadScene() = 0;
-		virtual void Render() = 0;
 		
 	protected: // Virtual INIT Methods
 
@@ -172,7 +173,7 @@ namespace v4d::graphics {
 		// Command Pools
 		void CreateCommandPools() {
 			for (auto&[k, qs] : queues) {
-				for (auto& q : qs) {
+				for (auto& [i, q] : qs) {
 					for (auto& commandPool : q.commandPools) if (!commandPool) {
 						renderingDevice->CreateCommandPool(q.family, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, &commandPool);
 					}
@@ -181,7 +182,7 @@ namespace v4d::graphics {
 		}
 		void DestroyCommandPools() {
 			for (auto&[k, qs] : queues) {
-				for (auto& q : qs) {
+				for (auto& [i, q] : qs) {
 					for (auto& commandPool : q.commandPools) if (commandPool) {
 						renderingDevice->DestroyCommandPool(commandPool);
 						commandPool = VK_NULL_HANDLE;
@@ -323,7 +324,9 @@ namespace v4d::graphics {
 			const std::vector<VkSemaphore>& waitSemaphores = {},
 			const std::vector<VkPipelineStageFlags>& waitStages = {},
 			const std::vector<VkSemaphore>& signalSemaphores = {},
-			const VkFence& triggerFence = VK_NULL_HANDLE
+			const VkFence& triggerFence = VK_NULL_HANDLE,
+			const std::vector<uint64_t> waitTimelineSemaphoreValues = {},
+			const std::vector<uint64_t> signalTimelineSemaphoreValues = {}
 		);
 		
 		void RecordAndSubmitCommandBuffer(
@@ -332,7 +335,9 @@ namespace v4d::graphics {
 			const std::vector<VkSemaphore>& waitSemaphores = {},
 			const std::vector<VkPipelineStageFlags>& waitStages = {},
 			const std::vector<VkSemaphore>& signalSemaphores = {},
-			const VkFence& triggerFence = VK_NULL_HANDLE
+			const VkFence& triggerFence = VK_NULL_HANDLE,
+			const std::vector<uint64_t> waitTimelineSemaphoreValues = {},
+			const std::vector<uint64_t> signalTimelineSemaphoreValues = {}
 		){
 			RecordAndSubmitCommandBuffer(
 				commandBuffer,
@@ -341,9 +346,32 @@ namespace v4d::graphics {
 				waitSemaphores,
 				waitStages,
 				signalSemaphores,
-				triggerFence
+				triggerFence,
+				waitTimelineSemaphoreValues,
+				signalTimelineSemaphoreValues
 			);
 		}
+		
+		void SubmitCommandBuffer(
+			CommandBufferObject& commandBuffer,
+			const std::vector<VkSemaphore>& waitSemaphores = {},
+			const std::vector<VkPipelineStageFlags>& waitStages = {},
+			const std::vector<VkSemaphore>& signalSemaphores = {},
+			const VkFence& triggerFence = VK_NULL_HANDLE,
+			const std::vector<uint64_t> waitTimelineSemaphoreValues = {},
+			const std::vector<uint64_t> signalTimelineSemaphoreValues = {}
+		);
+		
+		void RecordIfDirtyAndSubmitCommandBuffer(
+			CommandBufferObject& commandBuffer,
+			std::function<void(VkCommandBuffer)>&& commandsToRecord,
+			const std::vector<VkSemaphore>& waitSemaphores = {},
+			const std::vector<VkPipelineStageFlags>& waitStages = {},
+			const std::vector<VkSemaphore>& signalSemaphores = {},
+			const VkFence& triggerFence = VK_NULL_HANDLE,
+			const std::vector<uint64_t> waitTimelineSemaphoreValues = {},
+			const std::vector<uint64_t> signalTimelineSemaphoreValues = {}
+		);
 		
 		VkCommandBuffer BeginSingleTimeCommands(const Queue& queue) {
 			return renderingDevice->BeginSingleTimeCommands(queue);

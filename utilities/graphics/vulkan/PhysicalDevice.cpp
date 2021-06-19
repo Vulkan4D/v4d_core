@@ -8,6 +8,15 @@ PhysicalDevice::PhysicalDevice(xvk::Interface::InstanceInterface* vulkanInstance
 	vulkanInstance->GetPhysicalDeviceProperties(handle, &deviceProperties);
 	LOG_VERBOSE("DETECTED PhysicalDevice: " << deviceProperties.deviceName);
 	
+	// VRAM
+	vulkanInstance->GetPhysicalDeviceMemoryProperties(handle, &deviceMemoryProperties);
+	std::vector<VkMemoryHeap> heaps (deviceMemoryProperties.memoryHeaps, deviceMemoryProperties.memoryHeaps + deviceMemoryProperties.memoryHeapCount);
+	for (auto& heap : heaps) {
+		if (heap.flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) {
+			totalVRAM += heap.size;
+		}
+	}
+	
 	// Supported Extensions
 	uint supportedExtensionsCount = 0;
 	vulkanInstance->EnumerateDeviceExtensionProperties(handle, nullptr, &supportedExtensionsCount, nullptr);
@@ -36,18 +45,27 @@ PhysicalDevice::~PhysicalDevice() {
 int PhysicalDevice::GetQueueFamilyIndexFromFlags(VkQueueFlags flags, uint minQueuesCount, VkSurfaceKHR* surface) {
 	int i = 0;
 	// Prioritize a specialized queue family
-	for (const auto& queueFamily : *queueFamilies) {
-		if (queueFamily.queueCount >= minQueuesCount && (queueFamily.queueFlags == flags)) {
-			if (!surface || *surface == VK_NULL_HANDLE) return i;
-			VkBool32 presentationSupport;
-			vulkanInstance->GetPhysicalDeviceSurfaceSupportKHR(handle, i, *surface, &presentationSupport);
-			if (presentationSupport) return i;
+	std::vector<VkQueueFlags> specializedFlags {
+		flags,
+		flags|VK_QUEUE_SPARSE_BINDING_BIT,
+		flags|VK_QUEUE_TRANSFER_BIT,
+		flags|VK_QUEUE_SPARSE_BINDING_BIT|VK_QUEUE_TRANSFER_BIT,
+	};
+	for (auto f : specializedFlags) {
+		for (const auto& queueFamily : *queueFamilies) {
+			if (queueFamily.queueCount >= minQueuesCount && (queueFamily.queueFlags == f)) {
+				if (!surface || *surface == VK_NULL_HANDLE) return i;
+				VkBool32 presentationSupport;
+				vulkanInstance->GetPhysicalDeviceSurfaceSupportKHR(handle, i, *surface, &presentationSupport);
+				if (presentationSupport) return i;
+			}
+			i++;
 		}
-		i++;
+		i = 0;
 	}
-	i = 0;
+	// no specialized queue family, simply take the first that is compatible
 	for (const auto& queueFamily : *queueFamilies) {
-		if (queueFamily.queueCount >= minQueuesCount && (queueFamily.queueFlags & flags)) {
+		if (queueFamily.queueCount >= minQueuesCount && (queueFamily.queueFlags & flags) == flags) {
 			if (!surface || *surface == VK_NULL_HANDLE) return i;
 			VkBool32 presentationSupport;
 			vulkanInstance->GetPhysicalDeviceSurfaceSupportKHR(handle, i, *surface, &presentationSupport);
@@ -61,38 +79,38 @@ int PhysicalDevice::GetQueueFamilyIndexFromFlags(VkQueueFlags flags, uint minQue
 std::vector<int> PhysicalDevice::GetQueueFamilyIndicesFromFlags(VkQueueFlags flags, uint minQueuesCount, VkSurfaceKHR* surface) {
 	std::vector<int> indices {};
 	int i = 0;
+	for (const auto& queueFamily : *queueFamilies) {
+		if (queueFamily.queueCount >= minQueuesCount && (queueFamily.queueFlags & flags) == flags) {
+			if (!surface || *surface == VK_NULL_HANDLE) {
+				indices.push_back(i);
+			} else {
+				VkBool32 presentationSupport;
+				vulkanInstance->GetPhysicalDeviceSurfaceSupportKHR(handle, i, *surface, &presentationSupport);
+				if (presentationSupport) indices.push_back(i);
+			}
+		}
+		i++;
+	}
 	// Prioritize a specialized queue family
-	for (const auto& queueFamily : *queueFamilies) {
-		if (queueFamily.queueCount >= minQueuesCount && (queueFamily.queueFlags == flags)) {
-			if (!surface || *surface == VK_NULL_HANDLE) {
-				indices.push_back(i);
-			} else {
-				VkBool32 presentationSupport;
-				vulkanInstance->GetPhysicalDeviceSurfaceSupportKHR(handle, i, *surface, &presentationSupport);
-				if (presentationSupport) indices.push_back(i);
-			}
-		}
-		i++;
-	}
-	i = 0;
-	for (const auto& queueFamily : *queueFamilies) {
-		if (queueFamily.queueCount >= minQueuesCount && (queueFamily.queueFlags != flags) && (queueFamily.queueFlags & flags)) {
-			if (!surface || *surface == VK_NULL_HANDLE) {
-				indices.push_back(i);
-			} else {
-				VkBool32 presentationSupport;
-				vulkanInstance->GetPhysicalDeviceSurfaceSupportKHR(handle, i, *surface, &presentationSupport);
-				if (presentationSupport) indices.push_back(i);
-			}
-		}
-		i++;
-	}
+	std::sort(indices.begin(), indices.end(), [this](int a, int b){
+		if (queueFamilies->at(a).queueFlags == queueFamilies->at(b).queueFlags) return a < b;
+		return queueFamilies->at(a).queueFlags < queueFamilies->at(b).queueFlags;
+	});
 	return indices;
 }
 
 bool PhysicalDevice::HasSpecializedTransferQueue() const {
 	for (const auto& queueFamily : *queueFamilies) {
-		if (queueFamily.queueFlags == VK_QUEUE_TRANSFER_BIT) {
+		if (queueFamily.queueFlags == VK_QUEUE_TRANSFER_BIT || queueFamily.queueFlags == (VK_QUEUE_TRANSFER_BIT|VK_QUEUE_SPARSE_BINDING_BIT)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool PhysicalDevice::HasSpecializedComputeQueue() const {
+	for (const auto& queueFamily : *queueFamilies) {
+		if (queueFamily.queueFlags == VK_QUEUE_COMPUTE_BIT || queueFamily.queueFlags == (VK_QUEUE_COMPUTE_BIT|VK_QUEUE_SPARSE_BINDING_BIT) || queueFamily.queueFlags == (VK_QUEUE_COMPUTE_BIT|VK_QUEUE_TRANSFER_BIT|VK_QUEUE_SPARSE_BINDING_BIT)) {
 			return true;
 		}
 	}
@@ -101,7 +119,7 @@ bool PhysicalDevice::HasSpecializedTransferQueue() const {
 
 bool PhysicalDevice::QueueFamiliesContainsFlags(VkQueueFlags flags, uint minQueuesCount, VkSurfaceKHR* surface) {
 	for (const auto& queueFamily : *queueFamilies) {
-		if (queueFamily.queueCount >= minQueuesCount && queueFamily.queueFlags & flags) {
+		if (queueFamily.queueCount >= minQueuesCount && (queueFamily.queueFlags & flags) == flags) {
 			if (!surface || *surface == VK_NULL_HANDLE) return true;
 			VkBool32 presentationSupport;
 			vulkanInstance->GetPhysicalDeviceSurfaceSupportKHR(handle, 0, *surface, &presentationSupport);

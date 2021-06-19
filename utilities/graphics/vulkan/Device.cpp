@@ -7,7 +7,7 @@ Device::Device(
 	PhysicalDevice* physicalDevice,
 	std::vector<const char*>& extensions,
 	std::vector<const char*>& layers,
-	std::map<VkQueueFlags, std::vector<Queue>>& queues,
+	std::map<VkQueueFlags, std::map<uint, Queue>>& queues,
 	void* pNext
 ) : physicalDevice(physicalDevice), queues(queues) {
 	instance = physicalDevice->GetVulkanInstance();
@@ -22,10 +22,9 @@ Device::Device(
 			// If queueFamilyIndex is NOT already present in our queuesCreateInfo vector, add it
 			if (existing == queuesCreateInfo.end()) {
 				size_t createInfoIndex = queuesCreateInfo.size();
-				uint32_t index = 0;
-				for (auto& q : qs) {
+				for (auto& [i, q] : qs) {
 					q.family = queueFamilyIndex;
-					q.index = index++;
+					q.index = i;
 					queuesCreateInfoPriorities[createInfoIndex].push_back(q.priority);
 				}
 				queuesCreateInfo.emplace_back(
@@ -45,10 +44,9 @@ Device::Device(
 			size_t createInfoIndex = 0;
 			for (auto& existingQueuesCreateInfo : queuesCreateInfo) {
 				if (existingQueuesCreateInfo.queueFamilyIndex == (uint32_t)physicalDevice->GetQueueFamilyIndexFromFlags(qs[0].flags, qs.size() + existingQueuesCreateInfo.queueCount, qs[0].surface)) {
-					uint32_t index = 0;
-					for (auto& q : qs) {
+					for (auto& [i, q] : qs) {
 						q.family = existingQueuesCreateInfo.queueFamilyIndex;
-						q.index = (index++) + existingQueuesCreateInfo.queueCount;
+						q.index = i + existingQueuesCreateInfo.queueCount;
 						queuesCreateInfoPriorities[createInfoIndex].push_back(q.priority);
 						existingQueuesCreateInfo.queueCount++;
 					}
@@ -82,7 +80,7 @@ Device::Device(
 
 	// Get Queues Handles
 	for (auto& [key, qs] : queues) {
-		for (auto& q : qs) {
+		for (auto& [i, q] : qs) {
 			GetDeviceQueue(q.family, q.index, &q.handle);
 		}
 	}

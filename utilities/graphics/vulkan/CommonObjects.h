@@ -46,7 +46,7 @@ namespace v4d::graphics::vulkan {
 			Instance::CheckVkResult("Signal Semaphore", device->SignalSemaphore(&signalInfo));
 		}
 		
-		void Wait(uint64_t value, VkSemaphoreWaitFlags flags = 0, uint64_t timeout = UINT64_MAX) const {
+		[[nodiscard]] bool Wait(uint64_t value, VkSemaphoreWaitFlags flags = 0, uint64_t timeout = UINT64_MAX) const {
 			assert(device);
 			VkSemaphoreWaitInfo waitInfo {};
 				waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
@@ -54,7 +54,15 @@ namespace v4d::graphics::vulkan {
 				waitInfo.pSemaphores = obj;
 				waitInfo.pValues = &value;
 				waitInfo.flags = flags;
-			Instance::CheckVkResult("Wait Semaphore", device->WaitSemaphores(&waitInfo, timeout));
+			VkResult res = device->WaitSemaphores(&waitInfo, timeout);
+			if (res != VK_SUCCESS) {
+				if (res == VK_TIMEOUT) {
+					return false;
+				}
+				LOG_ERROR("Error on Wait For Timeline Semaphore: " << Instance::GetVkResultText(res))
+				throw res;
+			}
+			return true;
 		}
 		
 		uint64_t GetCounterValue() const {
@@ -124,6 +132,7 @@ namespace v4d::graphics::vulkan {
 		uint queueIndex = 0;
 		VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		uint commandPoolIndex = 0;
+		bool dirty = false;
 		
 		CommandBufferObject(const VkQueueFlags& queueFlags = 0, uint queueIndex = 0, uint commandPoolIndex = 0, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY)
 		: obj(), queueFlags(queueFlags), queueIndex(uint(queueIndex)), level(level), commandPoolIndex(uint(commandPoolIndex)) {}
@@ -138,6 +147,7 @@ namespace v4d::graphics::vulkan {
 		void Allocate(Device* device) {
 			assert(this->device == nullptr);
 			this->device = device;
+			dirty = true;
 			
 			VkCommandBufferAllocateInfo allocInfo = {};
 				allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -147,9 +157,11 @@ namespace v4d::graphics::vulkan {
 			Instance::CheckVkResult("Allocate CommandBuffer", device->AllocateCommandBuffers(&allocInfo, obj));
 		}
 		void Free() {
-			assert(device);
-			device->FreeCommandBuffers(device->queues[queueFlags][queueIndex].commandPools[commandPoolIndex], 1, obj);
-			device = nullptr;
+			if (device) {
+				device->FreeCommandBuffers(device->queues[queueFlags][queueIndex].commandPools[commandPoolIndex], 1, obj);
+				device = nullptr;
+				dirty = false;
+			}
 		}
 	};
 

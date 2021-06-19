@@ -19,6 +19,8 @@ namespace v4d::graphics::vulkan {
 		VkPhysicalDevice handle;
 
 		VkPhysicalDeviceProperties deviceProperties {};
+		VkPhysicalDeviceMemoryProperties deviceMemoryProperties {};
+		size_t totalVRAM = 0;
 		
 		std::vector<VkQueueFamilyProperties>* queueFamilies = nullptr;
 		std::vector<VkExtensionProperties>* supportedExtensions = nullptr;
@@ -92,6 +94,9 @@ namespace v4d::graphics::vulkan {
 		std::vector<int> GetQueueFamilyIndicesFromFlags(VkQueueFlags flags, uint minQueuesCount = 1, VkSurfaceKHR* surface = nullptr);
 		bool QueueFamiliesContainsFlags(VkQueueFlags flags, uint minQueuesCount = 1, VkSurfaceKHR* surface = nullptr);
 		bool HasSpecializedTransferQueue() const;
+		bool HasSpecializedComputeQueue() const;
+		
+		size_t GetTotalVRAM() const {return totalVRAM;}
 
 		bool SupportsExtension(std::string ext);
 
