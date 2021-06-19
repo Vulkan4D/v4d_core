@@ -41,27 +41,27 @@ void RenderPassObject::Create(Device* device) {
 }
 
 void RenderPassObject::Destroy() {
-	assert(device);
-	
-	for (auto framebuffer : framebuffers) {
-		device->DestroyFramebuffer(framebuffer, nullptr);
+	if (device) {
+		for (auto framebuffer : framebuffers) {
+			device->DestroyFramebuffer(framebuffer, nullptr);
+		}
+		
+		device->DestroyRenderPass(obj, nullptr);
+		framebuffers.clear();
+		subpasses.clear();
+		subpassDependencies.clear();
+		attachments.clear();
+		clearValues.clear();
+		imageViews.clear();
+		
+		colorAttachmentRefs.clear();
+		inputAttachmentRefs.clear();
+		resolveAttachmentRefs.clear();
+		preserveAttachmentRefs.clear();
+		depthStencilAttachmentRefs.clear();
+		
+		shaders.clear();
+		
+		device = nullptr;
 	}
-	
-	device->DestroyRenderPass(obj, nullptr);
-	framebuffers.clear();
-	subpasses.clear();
-	subpassDependencies.clear();
-	attachments.clear();
-	clearValues.clear();
-	imageViews.clear();
-	
-	colorAttachmentRefs.clear();
-	inputAttachmentRefs.clear();
-	resolveAttachmentRefs.clear();
-	preserveAttachmentRefs.clear();
-	depthStencilAttachmentRefs.clear();
-	
-	shaders.clear();
-	
-	device = nullptr;
 }

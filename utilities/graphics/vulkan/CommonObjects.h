@@ -32,9 +32,10 @@ namespace v4d::graphics::vulkan {
 		}
 		
 		void Destroy() {
-			assert(device);
-			device->DestroySemaphore(obj, nullptr);
-			device = nullptr;
+			if (device) {
+				device->DestroySemaphore(obj, nullptr);
+				device = nullptr;
+			}
 		}
 		
 		void Signal(uint64_t value) {
@@ -91,9 +92,10 @@ namespace v4d::graphics::vulkan {
 			Instance::CheckVkResult("Create Semaphore", device->CreateSemaphore(&semaphoreInfo, nullptr, obj));
 		}
 		void Destroy() {
-			assert(device);
-			device->DestroySemaphore(obj, nullptr);
-			device = nullptr;
+			if (device) {
+				device->DestroySemaphore(obj, nullptr);
+				device = nullptr;
+			}
 		}
 	};
 
@@ -117,9 +119,10 @@ namespace v4d::graphics::vulkan {
 			Instance::CheckVkResult("Create Fence", device->CreateFence(&fenceInfo, nullptr, obj));
 		}
 		void Destroy() {
-			assert(device);
-			device->DestroyFence(obj, nullptr);
-			device = nullptr;
+			if (device) {
+				device->DestroyFence(obj, nullptr);
+				device = nullptr;
+			}
 		}
 	};
 

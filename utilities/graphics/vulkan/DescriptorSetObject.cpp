@@ -24,10 +24,11 @@ namespace v4d::graphics::vulkan {
 	}
 	
 	void DescriptorSetObject::DestroyDescriptorSetLayout() {
-		assert(device);
-		device->DestroyDescriptorSetLayout(layout, nullptr);
-		layout = VK_NULL_HANDLE;
-		device = nullptr;
+		if (device) {
+			device->DestroyDescriptorSetLayout(layout, nullptr);
+			layout = VK_NULL_HANDLE;
+			device = nullptr;
+		}
 	}
 	
 	void DescriptorSetObject::Allocate(VkDescriptorPool descriptorPool) {
@@ -45,8 +46,9 @@ namespace v4d::graphics::vulkan {
 	}
 	
 	void DescriptorSetObject::Free(VkDescriptorPool descriptorPool) {
-		assert(device);
-		device->FreeDescriptorSets(descriptorPool, 1, obj);
+		if (device) {
+			device->FreeDescriptorSets(descriptorPool, 1, obj);
+		}
 	}
 	
 	std::vector<VkWriteDescriptorSet> DescriptorSetObject::GetUpdateWrites() {

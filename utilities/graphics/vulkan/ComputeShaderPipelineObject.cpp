@@ -19,8 +19,9 @@ void ComputeShaderPipelineObject::Create(Device* device) {
 }
 
 void ComputeShaderPipelineObject::Destroy() {
-	assert(device);
-	device->DestroyPipeline(obj, nullptr);
-	shaderProgram.DestroyShaderStages(device);
-	device = nullptr;
+	if (device) {
+		device->DestroyPipeline(obj, nullptr);
+		shaderProgram.DestroyShaderStages(device);
+		device = nullptr;
+	}
 }

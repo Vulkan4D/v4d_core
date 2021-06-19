@@ -48,12 +48,13 @@ void RasterShaderPipelineObject::Create(Device* device) {
 }
 
 void RasterShaderPipelineObject::Destroy() {
-	assert(device);
-	dynamicStates.clear();
-	viewports.clear();
-	scissors.clear();
-	device->DestroyPipeline(obj, nullptr);
-	shaderProgram.DestroyShaderStages(device);
-	device = nullptr;
-	pipelineCreateInfo.pViewportState = nullptr;
+	if (device) {
+		dynamicStates.clear();
+		viewports.clear();
+		scissors.clear();
+		device->DestroyPipeline(obj, nullptr);
+		shaderProgram.DestroyShaderStages(device);
+		device = nullptr;
+		pipelineCreateInfo.pViewportState = nullptr;
+	}
 }

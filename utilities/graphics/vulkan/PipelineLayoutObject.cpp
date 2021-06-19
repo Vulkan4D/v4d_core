@@ -51,8 +51,9 @@ void PipelineLayoutObject::Create(Device* device) {
 }
 
 void PipelineLayoutObject::Destroy() {
-	assert(device);
-	for (auto& sets : rawDescriptorSets) sets.clear();
-	device->DestroyPipelineLayout(obj, nullptr);
-	device = nullptr;
+	if (device) {
+		for (auto& sets : rawDescriptorSets) sets.clear();
+		device->DestroyPipelineLayout(obj, nullptr);
+		device = nullptr;
+	}
 }
