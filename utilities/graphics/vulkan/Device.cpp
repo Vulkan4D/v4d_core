@@ -148,7 +148,7 @@ void Device::CreateDescriptorPool(std::map<VkDescriptorType, uint>& types, VkDes
 	poolInfo.flags = flags;
 	poolInfo.maxSets = 0;
 	for (auto [type, count] : types) {
-		poolSizes.emplace_back(VkDescriptorPoolSize{type, count});
+		poolSizes.emplace_back(type, count);
 		poolInfo.maxSets += count;
 	}
 	poolInfo.poolSizeCount = poolSizes.size();

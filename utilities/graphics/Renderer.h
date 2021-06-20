@@ -105,10 +105,8 @@ namespace v4d::graphics {
 			VK_PRESENT_MODE_MAILBOX_KHR,	// TripleBuffering (No Tearing, low latency)
 			VK_PRESENT_MODE_IMMEDIATE_KHR,	// VSync OFF (With Tearing, no latency)
 			VK_PRESENT_MODE_FIFO_KHR,		// VSync ON (No Tearing, more latency)
-			VK_PRESENT_MODE_FIFO_RELAXED_KHR,
 		};
 		std::vector<VkSurfaceFormatKHR> preferredFormats {
-			{VK_FORMAT_R16G16B16A16_SFLOAT, VK_COLOR_SPACE_HDR10_HLG_EXT},
 			{VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR},
 		};
 		

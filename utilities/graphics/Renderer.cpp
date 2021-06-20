@@ -94,7 +94,7 @@ void Renderer::CreateDescriptorSets() {
 	DescriptorSetObject::ForEach([this, &descriptorTypes](auto*set){
 		set->CreateDescriptorSetLayout(renderingDevice);
 		for (auto&[binding, descriptor] : set->descriptorBindings) {
-			descriptorTypes[descriptor->GetDescriptorType()]++;
+			descriptorTypes[descriptor->GetDescriptorType()] += descriptor->count;
 		}
 	});
 	

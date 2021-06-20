@@ -106,8 +106,8 @@ namespace v4d::tests {
 		}
 
 		double elapsedTime = timer.GetElapsedMilliseconds();
-		if (elapsedTime < 500 || elapsedTime > 510) {
-			LOG_ERROR("v4d::tests::ThreadPool ERROR 4 (execution time was " << elapsedTime << " milliseconds instead of ~500-510)")
+		if (elapsedTime < 500 || elapsedTime > 530) {
+			LOG_ERROR("v4d::tests::ThreadPool ERROR 4 (execution time was " << elapsedTime << " milliseconds instead of ~500-530)")
 			return 1;
 		}
 
