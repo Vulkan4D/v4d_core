@@ -204,6 +204,7 @@ void Renderer::WatchModifiedShadersForReload(const std::vector<ShaderPipelineMet
 					RunSynchronized([watcher](){
 						for (auto& s : watcher.shaders) s->Reload();
 						if (watcher.sbt) watcher.sbt->Reload();
+						CommandBufferObject::ForEach([](auto*cmdBuffer){cmdBuffer->dirty = true;});
 					});
 					break;
 				}

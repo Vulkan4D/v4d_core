@@ -294,5 +294,9 @@ namespace v4d::graphics::vulkan {
 			device->CmdEndRenderPass(commandBuffer);
 		}
 		
+		void NextSubpass(const VkCommandBuffer& commandBuffer, VkSubpassContents subpassContents = VK_SUBPASS_CONTENTS_INLINE) {
+			device->CmdNextSubpass(commandBuffer, subpassContents);
+		}
+		
 	};
 }

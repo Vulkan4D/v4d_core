@@ -285,6 +285,33 @@ public:
 		}
 	};
 	
+	struct InputOutputAttachmentDescriptor : DescriptorSetObject::Descriptor {
+		const VkImageView* imageViewPtr;
+		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+		VkDescriptorImageInfo info {};
+		
+		InputOutputAttachmentDescriptor(const InputOutputAttachmentDescriptor&) = default;
+		InputOutputAttachmentDescriptor(InputOutputAttachmentDescriptor&&) = default;
+		
+		InputOutputAttachmentDescriptor(const VkImageView* imageView, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT)
+			: Descriptor(stageFlags, 1), imageViewPtr(imageView) {}
+			
+		InputOutputAttachmentDescriptor(const ImageObject& image, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT)
+			: InputOutputAttachmentDescriptor(&image.view, stageFlags) {}
+			
+		explicit InputOutputAttachmentDescriptor(uint32_t count, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT)
+			: Descriptor(stageFlags, count), imageViewPtr(nullptr) {}
+			
+		constexpr VkDescriptorType GetDescriptorType() const override {return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;}
+		void FillWriteInfo(VkWriteDescriptorSet& write) override {
+			if (imageViewPtr) {
+				info.imageLayout = imageLayout;
+				info.imageView = *imageViewPtr;
+				write.pImageInfo = &info;
+			} else write.descriptorCount = 0;
+		}
+	};
+	
 	struct AccelerationStructureDescriptor : DescriptorSetObject::Descriptor {
 		const VkAccelerationStructureKHR* tlas;
 		VkWriteDescriptorSetAccelerationStructureKHR info {};
