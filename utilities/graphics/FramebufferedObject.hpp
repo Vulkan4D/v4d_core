@@ -17,7 +17,7 @@ struct FramebufferedObject {
 	T& operator[](size_t i) {return objArray[i];}
 	template<typename...Args> requires std::is_constructible_v<T, Args...>
 	FramebufferedObject(Args&&...args) {
-		objArray.fill(T{std::move(args)...});
+		objArray.fill(T(std::move(args)...));
 	}
 	FramebufferedObject() {}
 	template<typename V>

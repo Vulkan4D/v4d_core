@@ -197,6 +197,8 @@ PhysicalDevice* Instance::SelectSuitablePhysicalDevice(const std::function<void(
 			selectedPhysicalDevice = physicalDevice;
 			bestScore = score;
 		}
+		
+		LOG("Detected PhysicalDevice '" << physicalDevice->GetDescription() << "' with a score of " << score)
 	}
 
 	// Make sure that all mandatory PhysicalDevices have been selected

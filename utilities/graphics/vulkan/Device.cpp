@@ -295,7 +295,7 @@ void Device::CreateAllocator() {
 			allocatorInfo.frameInUseCount = 1;
 			allocatorInfo.pVulkanFunctions = &vulkanFunctions;
 			if (Loader::VULKAN_API_VERSION >= VK_API_VERSION_1_2) {
-				allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT | VMA_ALLOCATION_CREATE_CAN_BECOME_LOST_BIT;
+				allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 			}
 		}
 		vmaCreateAllocator(&allocatorInfo, &allocator);
@@ -315,9 +315,9 @@ VkResult Device::CreateAndAllocateBuffer(const VkBufferCreateInfo& bufferCreateI
 			if (weakAllocation && memoryUsage == MEMORY_USAGE_GPU_ONLY) {
 				allocInfo.flags |= VMA_ALLOCATION_CREATE_CAN_BECOME_LOST_BIT | VMA_ALLOCATION_CREATE_CAN_MAKE_OTHER_LOST_BIT;
 			}
-			if (Loader::VULKAN_API_VERSION >= VK_API_VERSION_1_2 && (bufferCreateInfo.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)) {
-				allocInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
-			}
+			// if (Loader::VULKAN_API_VERSION >= VK_API_VERSION_1_2 && (bufferCreateInfo.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)) {
+			// 	allocInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+			// }
 		return vmaCreateBuffer(allocator, &bufferCreateInfo, &allocInfo, &buffer, pAllocation, nullptr);
 	#else
 		if (CreateBuffer(&bufferCreateInfo, nullptr, &buffer) != VK_SUCCESS) {

@@ -149,32 +149,53 @@ namespace v4d::graphics::vulkan {
 			shaders.emplace_back(shader, subpassIndex);
 		}
 
-		uint32_t AddSubpass(const VkSubpassDescription& subpass, int32_t srcSubpassDependency = -1, 
-			// Subpass Dependency
-			VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-			VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-			VkAccessFlags srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-			VkAccessFlags dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT|VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-			VkDependencyFlags dependencyFlags = 0
-		){
+		uint32_t AddSubpass(const VkSubpassDescription& subpass){
 			uint32_t index = subpasses.size();
 			subpasses.push_back(subpass);
-			if (srcSubpassDependency != -1) {
-				subpassDependencies.emplace_back(
-					/*srcSubpass*/uint32_t(srcSubpassDependency),
-					/*dstSubpass*/index,
-					srcStageMask,
-					dstStageMask,
-					srcAccessMask,
-					dstAccessMask,
-					dependencyFlags
-				);
-			}
+			return index;
+		}
+		
+		uint32_t AddSubpass(const VkSubpassDescription& subpass, uint32_t srcSubpassDependency, 
+			// Subpass Dependency
+			VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+			VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+			VkAccessFlags srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+			VkAccessFlags dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+			VkDependencyFlags dependencyFlags = 0
+		){
+			uint32_t index = AddSubpass(subpass);
+			subpassDependencies.emplace_back(
+				/*srcSubpass*/srcSubpassDependency,
+				/*dstSubpass*/index,
+				srcStageMask,
+				dstStageMask,
+				srcAccessMask,
+				dstAccessMask,
+				dependencyFlags
+			);
 			return index;
 		}
 		
 		void AddSubpassDependency(const VkSubpassDependency& subpassDependency) {
 			subpassDependencies.push_back(subpassDependency);
+		}
+		
+		void AddSubpassDependency(uint32_t srcSubpass, uint32_t dstSubpass,
+			VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+			VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT,
+			VkAccessFlags srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+			VkAccessFlags dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+			VkDependencyFlags dependencyFlags = 0
+		) {
+			subpassDependencies.emplace_back(
+				srcSubpass,
+				dstSubpass,
+				srcStageMask,
+				dstStageMask,
+				srcAccessMask,
+				dstAccessMask,
+				dependencyFlags
+			);
 		}
 		
 		[[nodiscard]] uint32_t AddAttachment(

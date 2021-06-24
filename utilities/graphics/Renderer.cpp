@@ -14,6 +14,7 @@ using namespace v4d::graphics;
 #pragma region Virtual INIT Methods
 
 void Renderer::CreateDevices() {
+	LOG("Finding a suitable PhysicalDevice...")
 	
 	// Select The Best Main PhysicalDevice using a score system
 	renderingPhysicalDevice = SelectSuitablePhysicalDevice([this](int& score, PhysicalDevice* physicalDevice){
@@ -181,6 +182,13 @@ void Renderer::CreateSwapChain() {
 		oldSwapChain->Destroy();
 		delete oldSwapChain;
 	}
+	
+	// Transition swapchain images to PRESENT layout
+	RunSingleTimeCommands(queues[0][0], [this](VkCommandBuffer cmdBuffer){
+		for (auto& img : swapChain->images) {
+			ImageObject::TransitionImageLayout(renderingDevice, cmdBuffer, img, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+		}
+	});
 }
 
 void Renderer::DestroySwapChain() {
