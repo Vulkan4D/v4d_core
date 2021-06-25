@@ -294,8 +294,7 @@ namespace v4d::graphics::vulkan {
 			VkClearValue clear = {0,0,0,0}
 		) {
 			assert(swapChain->imageViews.size() > 0);
-			std::vector<VkImageView> imageViews {};
-			for (auto& i : swapChain->imageViews) imageViews.push_back(i);
+			std::vector<VkImageView> imageViews = swapChain->imageViews;
 			return AddAttachment(imageViews, swapChain->format.format, VK_IMAGE_LAYOUT_UNDEFINED,VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,samples,loadOp,storeOp,stencilLoadOp,stencilStoreOp,flags,clear);
 		}
 
@@ -303,7 +302,7 @@ namespace v4d::graphics::vulkan {
 			VkRenderPassBeginInfo renderPassInfo = {};
 				renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 				renderPassInfo.renderPass = obj;
-				renderPassInfo.framebuffer = framebuffers.size()>size_t(imageIndex)? framebuffers[imageIndex] : framebuffers[imageIndex % framebuffers.size()];
+				renderPassInfo.framebuffer = framebuffers[imageIndex % framebuffers.size()];
 				renderPassInfo.renderArea.offset = {0,0};
 				renderPassInfo.renderArea.extent = {renderWidth, renderHeight};
 				renderPassInfo.clearValueCount = clearValues.size();

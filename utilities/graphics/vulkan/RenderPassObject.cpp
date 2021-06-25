@@ -33,8 +33,10 @@ void RenderPassObject::Create(Device* device) {
 		framebufferCreateInfo.width = renderWidth;
 		framebufferCreateInfo.height = renderHeight;
 		framebufferCreateInfo.layers = renderLayers;
+		
 	
 	for (size_t i = 0; i < framebuffers.size(); ++i) {
+		assert(framebufferCreateInfo.attachmentCount == imageViews[i].size());
 		framebufferCreateInfo.pAttachments = imageViews[i].data();
 		Instance::CheckVkResult("Create framebuffer", device->CreateFramebuffer(&framebufferCreateInfo, nullptr, &framebuffers[i]));
 	}
