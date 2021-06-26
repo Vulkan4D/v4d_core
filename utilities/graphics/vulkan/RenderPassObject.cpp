@@ -7,10 +7,10 @@ COMMON_OBJECT_CPP(RenderPassObject, VkRenderPass)
 void RenderPassObject::Create(Device* device) {
 	assert(this->device == nullptr);
 	this->device = device;
-	
+
 	renderPassInfo.attachmentCount = attachments.size();
 	renderPassInfo.pAttachments = attachments.data();
-
+	
 	renderPassInfo.subpassCount = subpasses.size();
 	renderPassInfo.pSubpasses = subpasses.data();
 
@@ -29,15 +29,27 @@ void RenderPassObject::Create(Device* device) {
 	VkFramebufferCreateInfo framebufferCreateInfo = {};
 		framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		framebufferCreateInfo.renderPass = obj;
-		framebufferCreateInfo.attachmentCount = renderPassInfo.attachmentCount;
 		framebufferCreateInfo.width = renderWidth;
 		framebufferCreateInfo.height = renderHeight;
 		framebufferCreateInfo.layers = renderLayers;
-		
+		framebufferCreateInfo.attachmentCount = renderPassInfo.attachmentCount;
+	VkFramebufferAttachmentsCreateInfo framebufferAttachmentsCreateInfo {};
+	if (imageless) {
+		assert(attachments.size() == framebufferAttachments.size());
+		framebufferAttachmentsCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO;
+		framebufferAttachmentsCreateInfo.attachmentImageInfoCount = framebufferAttachments.size();
+		framebufferAttachmentsCreateInfo.pAttachmentImageInfos = framebufferAttachments.data();
+		framebufferCreateInfo.pNext = &framebufferAttachmentsCreateInfo;
+		framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
+	}
 	
 	for (size_t i = 0; i < framebuffers.size(); ++i) {
-		assert(framebufferCreateInfo.attachmentCount == imageViews[i].size());
-		framebufferCreateInfo.pAttachments = imageViews[i].data();
+		if (imageless) {
+			framebufferCreateInfo.pAttachments = nullptr;
+		} else {
+			assert(framebufferCreateInfo.attachmentCount == imageViews[i].size());
+			framebufferCreateInfo.pAttachments = imageViews[i].data();
+		}
 		Instance::CheckVkResult("Create framebuffer", device->CreateFramebuffer(&framebufferCreateInfo, nullptr, &framebuffers[i]));
 	}
 }
@@ -55,6 +67,8 @@ void RenderPassObject::Destroy() {
 		attachments.clear();
 		clearValues.clear();
 		imageViews.clear();
+		framebufferAttachments.clear();
+		framebufferAttachmentsFormats.clear();
 		
 		colorAttachmentRefs.clear();
 		inputAttachmentRefs.clear();
