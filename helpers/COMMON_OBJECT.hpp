@@ -1,7 +1,7 @@
 /*
 
-CommonObject macro v1.0
-Author: Olivier St-Laurent, May 2021
+CommonObject macro v1.1
+Author: Olivier St-Laurent, May 2021 - June 2021
 
 Common Objects are practical to be able to loop through all existing objects of a certain type
 
@@ -85,6 +85,9 @@ Usage:
 			// if it is dereferenced, you may also use myObject->someMemberOfUnderlyingType
 			// you may return false to break the loop at any point (or return true to continue to the next object)
 		});
+		
+		// You may want to swap the underlying object:
+		obj1.Swap(obj2); // This ONLY swaps the underlying object, not any additional data that could have been defined in the wrapper class.
 		
 	}
 
@@ -181,6 +184,11 @@ Usage:
 	UnderlyingClass* operator->() {return &obj.obj;}\
 	operator UnderlyingClass&() {return obj.obj;}\
 	operator UnderlyingClass*() {return &obj.obj;}\
+	template<typename T>\
+	void Swap(T& other) requires std::is_same_v<T, ObjClass> && std::is_nothrow_swappable_v<UnderlyingClass> {\
+		std::lock_guard lock(UnderlyingCommonObjectContainer::mu);\
+		std::swap(obj.obj, other.obj.obj);\
+	}\
 	static void Sort(std::function<bool(ObjClass*,ObjClass*)>&& f) {\
 		std::lock_guard lock(UnderlyingCommonObjectContainer::mu);\
 		std::sort(\

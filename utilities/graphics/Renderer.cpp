@@ -349,6 +349,8 @@ void Renderer::UnloadGraphicsFromDevice() {
 bool Renderer::BeginFrame(VkSemaphore signalSemaphore, VkFence triggerFence) {
 	state = STATE::RUNNING;
 	
+	BeginFrame:
+	
 	{// Sync queue
 		std::lock_guard lock(frameSyncMutex);
 		if (!syncQueue.empty()) {
@@ -381,9 +383,8 @@ bool Renderer::BeginFrame(VkSemaphore signalSemaphore, VkFence triggerFence) {
 		case VK_TIMEOUT:
 		case VK_NOT_READY:
 		{
-			LOG_WARN("Trying to acquire next swap chain image: " << GetVkResultText(result))
-			RecreateSwapChain();
-			return false;
+			// This is normal behaviour in FIFO present mode
+			goto BeginFrame;
 		}
 		default:
 			throw std::runtime_error(std::string("Failed to acquire next swap chain image: ") + GetVkResultText(result));
