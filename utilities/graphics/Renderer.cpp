@@ -346,7 +346,7 @@ void Renderer::UnloadGraphicsFromDevice() {
 	DestroySyncObjects();
 }
 
-bool Renderer::BeginFrame(VkSemaphore triggerSemaphore, VkFence triggerFence) {
+bool Renderer::BeginFrame(VkSemaphore signalSemaphore, VkFence triggerFence) {
 	state = STATE::RUNNING;
 	
 	{// Sync queue
@@ -365,8 +365,8 @@ bool Renderer::BeginFrame(VkSemaphore triggerSemaphore, VkFence triggerFence) {
 	
 	VkResult result = renderingDevice->AcquireNextImageKHR(
 		swapChain->GetHandle(), // swapChain
-		1000UL * 1000 * 1000, // timeout in nanoseconds (using max disables the timeout)
-		triggerSemaphore,
+		1000UL * 1000 * 1000, // timeout in nanoseconds
+		signalSemaphore,
 		triggerFence,
 		&swapChainImageIndex // output the index of the swapchain image in there
 	);
@@ -382,7 +382,8 @@ bool Renderer::BeginFrame(VkSemaphore triggerSemaphore, VkFence triggerFence) {
 		case VK_NOT_READY:
 		{
 			LOG_WARN("Trying to acquire next swap chain image: " << GetVkResultText(result))
-			break;
+			RecreateSwapChain();
+			return false;
 		}
 		default:
 			throw std::runtime_error(std::string("Failed to acquire next swap chain image: ") + GetVkResultText(result));
