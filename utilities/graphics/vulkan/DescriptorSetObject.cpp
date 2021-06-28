@@ -9,8 +9,10 @@ namespace v4d::graphics::vulkan {
 		assert(this->device == nullptr);
 		this->device = device;
 		std::vector<VkDescriptorSetLayoutBinding> layoutBindings {};
+		std::vector<VkDescriptorBindingFlags> bindingFlags {};
 		for (auto& [binding, descriptor] : descriptorBindings) {
 			layoutBindings.push_back({binding, descriptor->GetDescriptorType(), descriptor->count, descriptor->stageFlags, descriptor->GetImmutableSamplersPtr()});
+			bindingFlags.push_back(descriptor->bindingFlags);
 		}
 		layoutBindingFlagsInfo.bindingCount = bindingFlags.size();
 		layoutBindingFlagsInfo.pBindingFlags = bindingFlags.data();

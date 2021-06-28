@@ -174,7 +174,7 @@ namespace v4d::graphics::vulkan {
 			pipelineCreateInfo.subpass = subpass;
 		}
 		
-		static VkPipelineColorBlendAttachmentState DefaultColorAttachmentBlendState() {
+		static VkPipelineColorBlendAttachmentState DefaultColorAttachmentBlendState(VkColorComponentFlags colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT) {
 			return {
 				/*VkBool32 blendEnable*/ VK_TRUE,
 				/*VkBlendFactor srcColorBlendFactor*/ VK_BLEND_FACTOR_SRC_ALPHA,
@@ -183,24 +183,18 @@ namespace v4d::graphics::vulkan {
 				/*VkBlendFactor srcAlphaBlendFactor*/ VK_BLEND_FACTOR_ONE,
 				/*VkBlendFactor dstAlphaBlendFactor*/ VK_BLEND_FACTOR_ZERO,
 				/*VkBlendOp alphaBlendOp*/ VK_BLEND_OP_ADD,
-				/*VkColorComponentFlags colorWriteMask*/ VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
+				/*VkColorComponentFlags colorWriteMask*/ colorWriteMask
 			};
 		}
 		
-		static VkPipelineColorBlendAttachmentState GBufferAttachmentBlendState() {
-			return {
-				/*VkBool32 blendEnable*/ VK_FALSE,
-				/*VkBlendFactor srcColorBlendFactor*/ VK_BLEND_FACTOR_ONE,
-				/*VkBlendFactor dstColorBlendFactor*/ VK_BLEND_FACTOR_ONE,
-				/*VkBlendOp colorBlendOp*/ VK_BLEND_OP_ADD,
-				/*VkBlendFactor srcAlphaBlendFactor*/ VK_BLEND_FACTOR_ONE,
-				/*VkBlendFactor dstAlphaBlendFactor*/ VK_BLEND_FACTOR_ONE,
-				/*VkBlendOp alphaBlendOp*/ VK_BLEND_OP_ADD,
-				/*VkColorComponentFlags colorWriteMask*/ VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
-			};
+		static VkPipelineColorBlendAttachmentState ColorAttachmentNoBlendState(VkColorComponentFlags colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT) {
+			VkPipelineColorBlendAttachmentState blendState {};
+				blendState.blendEnable = VK_FALSE;
+				blendState.colorWriteMask = colorWriteMask;
+			return blendState;
 		}
 		
-		static VkPipelineColorBlendAttachmentState LightingAttachmentBlendState() {
+		static VkPipelineColorBlendAttachmentState LightingAttachmentBlendState(VkColorComponentFlags colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT) {
 			return {
 				/*VkBool32 blendEnable*/ VK_TRUE,
 				/*VkBlendFactor srcColorBlendFactor*/ VK_BLEND_FACTOR_ONE,
@@ -209,7 +203,7 @@ namespace v4d::graphics::vulkan {
 				/*VkBlendFactor srcAlphaBlendFactor*/ VK_BLEND_FACTOR_ONE,
 				/*VkBlendFactor dstAlphaBlendFactor*/ VK_BLEND_FACTOR_ONE,
 				/*VkBlendOp alphaBlendOp*/ VK_BLEND_OP_MAX,
-				/*VkColorComponentFlags colorWriteMask*/ VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
+				/*VkColorComponentFlags colorWriteMask*/ colorWriteMask
 			};
 		}
 		

@@ -17,7 +17,6 @@ class V4DLIB DescriptorSetObject {
 	bool isDirty = false;
 	VkDescriptorSetLayout layout = VK_NULL_HANDLE;
 	
-	std::vector<VkDescriptorBindingFlags> bindingFlags {};
 	VkDescriptorSetLayoutBindingFlagsCreateInfo layoutBindingFlagsInfo {
 		VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
 		nullptr,// const void*                        pNext;
@@ -36,9 +35,10 @@ class V4DLIB DescriptorSetObject {
 	struct V4DLIB Descriptor {
 		VkShaderStageFlags stageFlags;
 		uint32_t count;
+		VkDescriptorBindingFlags bindingFlags;
 		
-		Descriptor(VkShaderStageFlags stageFlags, uint32_t count)
-		 : stageFlags(stageFlags), count(count) {}
+		Descriptor(VkShaderStageFlags stageFlags, uint32_t count, bool useDescriptorIndexing = false)
+		 : stageFlags(stageFlags), count(count), bindingFlags(useDescriptorIndexing? (VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT) : 0) {}
 		
 		virtual ~Descriptor();
 		
@@ -58,15 +58,12 @@ class V4DLIB DescriptorSetObject {
 	template<class DescriptorType, class ObjectType>
 	void SetBinding(uint32_t binding, const ObjectType& obj, VkShaderStageFlags stageFlags) {
 		descriptorBindings[binding] = std::make_unique<DescriptorType>(obj, stageFlags);
-		if (bindingFlags.size() <= binding) bindingFlags.resize(binding+1);
 		isDirty = true;
 	}
 	
 	template<class DescriptorType>
 	void SetBindingArray(uint32_t binding, uint32_t count, VkShaderStageFlags stageFlags) {
 		descriptorBindings[binding] = std::make_unique<DescriptorType>(count, stageFlags);
-		if (bindingFlags.size() <= binding) bindingFlags.resize(binding+1);
-		bindingFlags[binding] = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT | VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
 		variableCount = count;
 		isDirty = true;
 	}
@@ -128,7 +125,7 @@ public:
 			: Descriptor(stageFlags, 1), bufferPtr(bufferPtr), bufferSize(bufferSize), bufferOffset(bufferOffset) {}
 		
 		explicit StorageBufferDescriptor(uint32_t count, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL)
-			: Descriptor(stageFlags, count), bufferPtr(nullptr), bufferSize(0), bufferOffset(0) {}
+			: Descriptor(stageFlags, count, true), bufferPtr(nullptr), bufferSize(0), bufferOffset(0) {}
 			
 		StorageBufferDescriptor(const BufferObject& buffer, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL)
 			: StorageBufferDescriptor(buffer.obj, buffer.size, 0, stageFlags) {}
@@ -157,7 +154,7 @@ public:
 			: Descriptor(stageFlags, 1), bufferPtr(bufferPtr), bufferSize(bufferSize), bufferOffset(bufferOffset) {}
 		
 		explicit UniformBufferDescriptor(uint32_t count, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL)
-			: Descriptor(stageFlags, count), bufferPtr(nullptr), bufferSize(0), bufferOffset(0) {}
+			: Descriptor(stageFlags, count, true), bufferPtr(nullptr), bufferSize(0), bufferOffset(0) {}
 			
 		UniformBufferDescriptor(const BufferObject& buffer, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL)
 			: UniformBufferDescriptor(buffer.obj, buffer.size, 0, stageFlags) {}
@@ -184,7 +181,7 @@ public:
 			: Descriptor(stageFlags, 1), imageViewPtr(imageView) {}
 			
 		explicit StorageImageDescriptor(uint32_t count, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS)
-			: Descriptor(stageFlags, count), imageViewPtr(nullptr) {}
+			: Descriptor(stageFlags, count, true), imageViewPtr(nullptr) {}
 			
 		StorageImageDescriptor(const ImageObject& image, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS)
 			: StorageImageDescriptor(&image.view, stageFlags) {}
@@ -211,7 +208,7 @@ public:
 			: Descriptor(stageFlags, 1), imageViewPtr(imageView), samplerPtr(sampler) {}
 			
 		explicit CombinedImageSamplerDescriptor(uint32_t count, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS)
-			: Descriptor(stageFlags, count), imageViewPtr(nullptr), samplerPtr(nullptr) {}
+			: Descriptor(stageFlags, count, true), imageViewPtr(nullptr), samplerPtr(nullptr) {}
 			
 		CombinedImageSamplerDescriptor(const ImageObject& image, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS)
 			: CombinedImageSamplerDescriptor(&image.view, &image.sampler, stageFlags) {}
@@ -242,7 +239,7 @@ public:
 			: Descriptor(stageFlags, 1), imageViewPtr(imageView), samplerPtr(sampler) {}
 			
 		explicit SamplerDescriptor(uint32_t count, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS)
-			: Descriptor(stageFlags, count), imageViewPtr(nullptr), samplerPtr(nullptr) {}
+			: Descriptor(stageFlags, count, true), imageViewPtr(nullptr), samplerPtr(nullptr) {}
 			
 		SamplerDescriptor(const SamplerObject& sampler, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS)
 			: SamplerDescriptor(&sampler.view, sampler.obj, stageFlags) {}
@@ -273,7 +270,7 @@ public:
 			: InputAttachmentDescriptor(&image.view, stageFlags) {}
 			
 		explicit InputAttachmentDescriptor(uint32_t count, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT)
-			: Descriptor(stageFlags, count), imageViewPtr(nullptr) {}
+			: Descriptor(stageFlags, count, true), imageViewPtr(nullptr) {}
 			
 		constexpr VkDescriptorType GetDescriptorType() const override {return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;}
 		void FillWriteInfo(VkWriteDescriptorSet& write) override {
@@ -300,7 +297,7 @@ public:
 			: InputOutputAttachmentDescriptor(&image.view, stageFlags) {}
 			
 		explicit InputOutputAttachmentDescriptor(uint32_t count, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT)
-			: Descriptor(stageFlags, count), imageViewPtr(nullptr) {}
+			: Descriptor(stageFlags, count, true), imageViewPtr(nullptr) {}
 			
 		constexpr VkDescriptorType GetDescriptorType() const override {return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;}
 		void FillWriteInfo(VkWriteDescriptorSet& write) override {
@@ -326,7 +323,7 @@ public:
 			: AccelerationStructureDescriptor(&tlas.accelerationStructure, stageFlags) {}
 			
 		explicit AccelerationStructureDescriptor(uint32_t count, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR)
-			: Descriptor(stageFlags, count), tlas(nullptr) {}
+			: Descriptor(stageFlags, count, true), tlas(nullptr) {}
 			
 		constexpr VkDescriptorType GetDescriptorType() const override {return VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;}
 		void FillWriteInfo(VkWriteDescriptorSet& write) override {
