@@ -89,7 +89,7 @@ bool MeshFile::Load() {
 	
 	// Load textures
 	for (auto& image : gltfModel.images) {
-		images.emplace_back(std::make_shared<TextureObject>(image.width, image.height, image.component, image.image.data(), image.image.size()));
+		textures.emplace_back(std::make_shared<TextureObject>(image.width, image.height, image.component, image.image.data(), image.image.size()));
 	}
 	
 	// Load nodes hierarchy
@@ -260,21 +260,21 @@ bool MeshFile::Load() {
 					if (material.normalTexture.index != -1) {
 						auto& texture = gltfModel.textures[material.normalTexture.index];
 						auto& sampler = gltfModel.samplers[texture.sampler];
-						geometry->normalTexture = std::make_shared<SamplerObject>(images[texture.source], GetVkFilterFromGltf(sampler.magFilter), GetVkFilterFromGltf(sampler.minFilter), GetVkSamplerAddressModeFromGltf(sampler.wrapS), GetVkSamplerAddressModeFromGltf(sampler.wrapT), GetVkSamplerAddressModeFromGltf(sampler.wrapR));
+						geometry->normalTexture = std::make_shared<SamplerObject>(textures[texture.source], GetVkFilterFromGltf(sampler.magFilter), GetVkFilterFromGltf(sampler.minFilter), GetVkSamplerAddressModeFromGltf(sampler.wrapS), GetVkSamplerAddressModeFromGltf(sampler.wrapT), GetVkSamplerAddressModeFromGltf(sampler.wrapR));
 						// uint8_t texCoordIndex = material.normalTexture.texCoord; // 0/1 for texCoord0/texCoord1
 					}
 					// Albedo texture
 					if (material.pbrMetallicRoughness.baseColorTexture.index != -1) {
 						auto& texture = gltfModel.textures[material.pbrMetallicRoughness.baseColorTexture.index];
 						auto& sampler = gltfModel.samplers[texture.sampler];
-						geometry->albedoTexture = std::make_shared<SamplerObject>(images[texture.source], GetVkFilterFromGltf(sampler.magFilter), GetVkFilterFromGltf(sampler.minFilter), GetVkSamplerAddressModeFromGltf(sampler.wrapS), GetVkSamplerAddressModeFromGltf(sampler.wrapT), GetVkSamplerAddressModeFromGltf(sampler.wrapR));
+						geometry->albedoTexture = std::make_shared<SamplerObject>(textures[texture.source], GetVkFilterFromGltf(sampler.magFilter), GetVkFilterFromGltf(sampler.minFilter), GetVkSamplerAddressModeFromGltf(sampler.wrapS), GetVkSamplerAddressModeFromGltf(sampler.wrapT), GetVkSamplerAddressModeFromGltf(sampler.wrapR));
 						// uint8_t texCoordIndex = material.pbrMetallicRoughness.baseColorTexture.texCoord; // 0/1 for texCoord0/texCoord1
 					}
 					// PBR texture (When exported from Blender's glTF (glb) binary exporter, we get a 3-component texture R=AO, G=Roughness, B=Metallic)
 					if (material.pbrMetallicRoughness.metallicRoughnessTexture.index != -1) {
 						auto& texture = gltfModel.textures[material.pbrMetallicRoughness.metallicRoughnessTexture.index];
 						auto& sampler = gltfModel.samplers[texture.sampler];
-						geometry->pbrTexture = std::make_shared<SamplerObject>(images[texture.source], GetVkFilterFromGltf(sampler.magFilter), GetVkFilterFromGltf(sampler.minFilter), GetVkSamplerAddressModeFromGltf(sampler.wrapS), GetVkSamplerAddressModeFromGltf(sampler.wrapT), GetVkSamplerAddressModeFromGltf(sampler.wrapR));
+						geometry->pbrTexture = std::make_shared<SamplerObject>(textures[texture.source], GetVkFilterFromGltf(sampler.magFilter), GetVkFilterFromGltf(sampler.minFilter), GetVkSamplerAddressModeFromGltf(sampler.wrapS), GetVkSamplerAddressModeFromGltf(sampler.wrapT), GetVkSamplerAddressModeFromGltf(sampler.wrapR));
 						// uint8_t texCoordIndex = material.pbrMetallicRoughness.pbrTexture.texCoord; // 0/1 for texCoord0/texCoord1
 					}
 					// material.alphaMode // OPAQUE | MASK | BLEND???

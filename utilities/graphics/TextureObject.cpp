@@ -6,6 +6,23 @@
 namespace v4d::graphics {
 COMMON_OBJECT_CPP(TextureObject, VkImage)
 
+	TextureObject::TextureObject(const char* filepath) : obj() {
+		ownedData = stbi_load(filepath, &width, &height, &componentCount, STBI_default);
+		bufferSize = width * height * componentCount;
+		if (!ownedData){
+			throw std::runtime_error("Failed to load texture '" + std::string(filepath) + "' : " + stbi_failure_reason());
+		}
+		data = ownedData;
+	}
+	
+	TextureObject::TextureObject(uint32_t width, uint32_t height, int componentCount, byte* data, size_t bufferSize)
+	 : obj(), width(width), height(height), componentCount(componentCount), data(data), bufferSize(bufferSize) {}
+	
+	TextureObject::~TextureObject() {
+		if (ownedData) stbi_image_free(ownedData);
+	}
+	
+
 	void TextureObject::Create(Device* device) {
 		if (this->device == nullptr) {
 			this->device = device;

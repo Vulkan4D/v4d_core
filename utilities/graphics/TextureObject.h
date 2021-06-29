@@ -38,21 +38,10 @@ COMMON_OBJECT(TextureObject, VkImage, V4DLIB)
 		VK_IMAGE_LAYOUT_UNDEFINED// VkImageLayout initialLayout
 	};
 	
-	TextureObject(const char* filepath) : obj() {
-		ownedData = stbi_load(filepath, &width, &height, &componentCount, STBI_default);
-		bufferSize = width * height * componentCount;
-		if (!ownedData){
-			throw std::runtime_error("Failed to load texture '" + std::string(filepath) + "' : " + stbi_failure_reason());
-		}
-		data = ownedData;
-	}
+	TextureObject(const char* filepath);
+	TextureObject(uint32_t width, uint32_t height, int componentCount, byte* data, size_t bufferSize);
 	
-	TextureObject(uint32_t width, uint32_t height, int componentCount, byte* data, size_t bufferSize)
-	 : obj(), width(width), height(height), componentCount(componentCount), data(data), bufferSize(bufferSize) {}
-	
-	~TextureObject() {
-		if (ownedData) stbi_image_free(ownedData);
-	}
+	~TextureObject();
 	
 	void Create(Device* device);
 	void Destroy();

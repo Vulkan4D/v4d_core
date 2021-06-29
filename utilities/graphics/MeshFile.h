@@ -24,7 +24,7 @@ class V4DLIB MeshFile {
 	
 	std::unordered_map<std::string, Mesh> meshes {};
 	std::unordered_map<std::string, glm::dmat4> transforms {};
-	std::vector<std::shared_ptr<TextureObject>> images {};
+	std::vector<std::shared_ptr<TextureObject>> textures {};
 	
 	bool Load();
 public:
