@@ -47,6 +47,7 @@ namespace v4d::graphics::vulkan {
 		virtual void Destroy() = 0;
 		virtual void Reload() {
 			assert(device);
+			auto device = this->device;
 			Destroy();
 			shaderProgram.ReadShaders();
 			Create(device);
