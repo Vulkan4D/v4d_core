@@ -31,9 +31,7 @@ namespace v4d::io {
 		std::string GetParentPath() const;
 		double GetLastWriteTime() const;
 		
-		bool Exists() const {
-			return FileExists(filePath.c_str());
-		}
+		bool Exists() const;
 
 	public: // Static methods
 

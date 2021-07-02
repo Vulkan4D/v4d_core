@@ -80,6 +80,18 @@ bool FilePath::DirectoryExists(const std::string& path) {
 	}
 }
 
+bool FilePath::Exists() const {
+	if (!std::filesystem::exists(filePath)) {
+		return false; // Does not exist
+	} else if (std::filesystem::is_regular_file(filePath)) {
+		return true;
+	// } else if (supportLinks && std::filesystem::is_symlink(filePath)) {
+	// 	return true;
+	} else {
+		return false; // Exists, but Is Not a File
+	}
+}
+
 bool FilePath::FileExists(const std::string& path/*, bool supportLinks*/) {
 	if (!std::filesystem::exists(path)) {
 		return false; // Does not exist
