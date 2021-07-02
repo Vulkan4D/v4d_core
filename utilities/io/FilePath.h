@@ -32,7 +32,7 @@ namespace v4d::io {
 		double GetLastWriteTime() const;
 		
 		bool Exists() const {
-			return FileExists(filePath);
+			return FileExists(filePath.c_str());
 		}
 
 	public: // Static methods
