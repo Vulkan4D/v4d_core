@@ -30,6 +30,10 @@ namespace v4d::io {
 		std::string GetExtension() const;
 		std::string GetParentPath() const;
 		double GetLastWriteTime() const;
+		
+		bool Exists() const {
+			return FileExists(filePath);
+		}
 
 	public: // Static methods
 

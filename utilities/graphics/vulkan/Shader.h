@@ -47,6 +47,8 @@ namespace v4d::graphics::vulkan {
 		: file(shaderProgram+".meta"), shaders(), sbt(sbt), mtime(0) {}
 		
 		operator const std::vector<ShaderInfo> () const {
+			DEBUG_ASSERT_ERROR(file.Exists(), "Shader file does not exist: " << std::string(file));
+			if (!file.Exists()) return {};
 			std::vector<ShaderInfo> vec {};
 			std::string path = file.GetParentPath();
 			v4d::io::StringListFile::Instance(file)->Load([&path,&vec](v4d::io::ASCIIFile* file){

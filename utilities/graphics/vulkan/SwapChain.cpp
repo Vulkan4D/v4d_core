@@ -42,7 +42,7 @@ void SwapChain::SetConfiguration(VkExtent2D preferredExtent, const std::vector<V
 
 	// Default value for minImageCount
 	if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
-		LOG("Using MAILBOX presend mode (Triple Buffering)")
+		LOG("Using MAILBOX present mode (Triple Buffering)")
 		createInfo.minImageCount = std::max(capabilities.minImageCount, 3u);
 	} else if (presentMode == VK_PRESENT_MODE_FIFO_KHR) {
 		LOG("Using FIFO present mode (VSync)")
