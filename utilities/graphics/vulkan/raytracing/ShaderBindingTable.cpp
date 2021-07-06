@@ -111,7 +111,7 @@ uint32_t ShaderBindingTable::AddHitShader(const char* filePath) {
 		if (filePath.GetExtension() == ".rchit") {
 			rchit = shaderFile;
 		}
-		else if (filePath.GetExtension() == ".rachit") {
+		else if (filePath.GetExtension() == ".rahit") {
 			rahit = shaderFile;
 		}
 		else if (filePath.GetExtension() == ".rint") {
