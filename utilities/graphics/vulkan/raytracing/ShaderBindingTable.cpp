@@ -185,14 +185,22 @@ void ShaderBindingTable::Reload() {
 }
 
 VkPipeline ShaderBindingTable::CreateRayTracingPipeline() {
+	assert(device);
+	
 	ReadShaders();
 	CreateShaderStages();
+	
+	assert(stages.size() > 0);
+	
+	assert(rayGenGroups.size() == 1);
 	
 	groups.reserve(rayGenGroups.size() + rayMissGroups.size() + rayHitGroups.size());
 	for (auto& group : rayGenGroups) groups.push_back(group);
 	for (auto& group : rayMissGroups) groups.push_back(group);
 	for (auto& group : rayHitGroups) groups.push_back(group);
 	for (auto& group : rayCallableGroups) groups.push_back(group);
+	
+	assert(groups.size() > 0);
 	
 	VkRayTracingPipelineCreateInfoKHR rayTracingPipelineInfo {};
 		rayTracingPipelineInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
@@ -206,7 +214,7 @@ VkPipeline ShaderBindingTable::CreateRayTracingPipeline() {
 		// const VkRayTracingPipelineInterfaceCreateInfoKHR*    pLibraryInterface;
 		// VkPipeline                                           basePipelineHandle;
 		// int32_t                                              basePipelineIndex;
-	
+		
 	if (device->CreateRayTracingPipelinesKHR(VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &rayTracingPipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
 		throw std::runtime_error("Failed to create ray tracing pipelines");
 	
@@ -335,6 +343,7 @@ void ShaderBindingTable::Create(Device* device) {
 		CreateRayTracingPipeline();
 		buffer = std::make_unique<BufferObject>(MEMORY_USAGE_CPU_TO_GPU, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, GetSbtBufferSize());
 		buffer->Allocate(device);
+		assert(buffer);
 		WriteShaderBindingTableToBuffer();
 	}
 }

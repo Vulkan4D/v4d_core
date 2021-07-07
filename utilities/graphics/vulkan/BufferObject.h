@@ -49,7 +49,13 @@ protected:
 	
 public:
 	MappedBufferObject(MemoryUsage memoryUsage, VkBufferUsageFlags bufferUsage, uint32_t count = 1)
-	 : BufferObject(memoryUsage, bufferUsage, sizeof(T) * count), data(nullptr) {}
+	 : BufferObject(
+			memoryUsage,
+			bufferUsage
+				| VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT // This forces the memory alignment to 16 bytes for all mapped buffers (fixes lots of issues with -O3 compiler optimisations)... Maybe find a better solution in the future...
+				,
+			sizeof(T) * count
+		), data(nullptr) {}
 	
 	MappedBufferObject() {}
 	
@@ -131,7 +137,7 @@ public:
 	}
 	
 	T& operator[](size_t index) {
-		assert(index * sizeof(T) < hostBuffer.size);
+		assert(hostBuffer);
 		return hostBuffer[index];
 	}
 	T* operator->() {return hostBuffer.operator->();}

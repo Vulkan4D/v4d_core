@@ -4,7 +4,7 @@
 	ERR_load_CRYPTO_strings();\
 	char errorMessage[200];\
 	ERR_error_string_n(ERR_get_error(), errorMessage, 200);\
-	// LOG_ERROR("RSA " << action << " Error: " << errorMessage)
+	LOG_ERROR("RSA " << action << " Error: " << errorMessage)
 
 
 v4d::crypto::RSA::RSA(int bits, long unsigned int exponent) {
@@ -93,7 +93,7 @@ v4d::crypto::RSA v4d::crypto::RSA::FromPublicKeyPEM(const std::string& pem) {
 std::vector<byte> v4d::crypto::RSA::Encrypt(const byte* data, size_t size) {
 	std::vector<byte> encryptedData(GetSize());
 	if (size > GetMaxBlockSize()) {
-		// LOG_ERROR("RSA Encrypt Error: Max block size exceeded")
+		LOG_ERROR("RSA Encrypt Error: Max block size exceeded")
 		encryptedData.clear();
 		return encryptedData;
 	}
@@ -108,7 +108,7 @@ std::vector<byte> v4d::crypto::RSA::Encrypt(const byte* data, size_t size) {
 
 std::vector<byte> v4d::crypto::RSA::Decrypt(const byte* encryptedData, size_t size) {
 	if (size != GetSize()) {
-		// LOG_ERROR("RSA Decrypt Error: invalid input data (block size does not match)")
+		LOG_ERROR("RSA Decrypt Error: invalid input data (block size does not match)")
 		return std::vector<byte>{};
 	}
 	std::vector<byte> data(GetSize());

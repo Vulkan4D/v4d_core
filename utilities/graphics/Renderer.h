@@ -116,7 +116,8 @@ namespace v4d::graphics {
 		};
 		
 		// State
-		enum class STATE {NONE = 0, INITIALIZED, UNLOADED, LOADED, RUNNING} state = STATE::NONE;
+		enum class STATE {NONE = 0, INITIALIZED, UNLOADED, LOADED, RUNNING};
+		std::atomic<STATE> state = STATE::NONE;
 		
 		// Descriptor sets
 		VkDescriptorPool descriptorPool = VK_NULL_HANDLE;

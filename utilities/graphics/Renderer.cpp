@@ -203,19 +203,26 @@ void Renderer::DestroySwapChain() {
 
 void Renderer::WatchModifiedShadersForReload(const std::vector<ShaderPipelineMetaFile>& shaderWatchers) {
 	shaderWatcherThreads.emplace_back(std::make_unique<std::thread>([watchers=shaderWatchers,this]() mutable {
+		std::vector<ShaderPipelineObject*> shadersToReload {};
+		std::vector<ShaderBindingTable*> sbtsToReload {};
 		while (state != STATE::NONE) {
 			for (auto& watcher : watchers) {
 				if (watcher.mtime == 0) {
 					watcher.mtime = watcher.file.GetLastWriteTime();
 				} else if (watcher.file.GetLastWriteTime() > watcher.mtime) {
 					watcher.mtime = 0;
-					RunSynchronized([watcher](){
-						for (auto& s : watcher.shaders) s->Reload();
-						if (watcher.sbt) watcher.sbt->Reload();
-						CommandBufferObject::ForEach([](auto*cmdBuffer){cmdBuffer->dirty = true;});
-					});
-					break;
+					for (auto* s : watcher.shaders) shadersToReload.push_back(s);
+					if (watcher.sbt) sbtsToReload.push_back(watcher.sbt);
 				}
+			}
+			if (shadersToReload.size() > 0 || sbtsToReload.size() > 0) {
+				RunSynchronized([=](){
+					for (auto* s : shadersToReload) s->Reload();
+					for (auto* s : sbtsToReload) s->Reload();
+					CommandBufferObject::ForEach([](auto*cmdBuffer){cmdBuffer->dirty = true;});
+				});
+				shadersToReload.clear();
+				sbtsToReload.clear();
 			}
 			SLEEP(100ms)
 		}
@@ -352,9 +359,11 @@ bool Renderer::BeginFrame(VkSemaphore signalSemaphore, VkFence triggerFence) {
 	BeginFrame:
 	
 	{// Sync queue
-		std::lock_guard lock(frameSyncMutex);
+		std::unique_lock lock1(frameSyncMutex);
 		if (!syncQueue.empty()) {
-			std::lock_guard lock(frameSyncMutex2);
+			lock1.unlock();
+			std::lock_guard lock2(frameSyncMutex2);
+			lock1.lock();
 			renderingDevice->DeviceWaitIdle();
 			while (!syncQueue.empty()) {
 				syncQueue.front()();

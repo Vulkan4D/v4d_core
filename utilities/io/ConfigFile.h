@@ -145,7 +145,7 @@ namespace v4d::io {
 
 	protected: // Class members
 
-		int autoReloadInterval;
+		std::atomic<int> autoReloadInterval;
 
 	public: // Virtual methods
 

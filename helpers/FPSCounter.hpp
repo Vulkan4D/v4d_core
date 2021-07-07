@@ -10,7 +10,7 @@ namespace v4d {
 		v4d::Timer deltaTimer;
 		double averagedTime; // seconds
 		
-		double avgFramerate = 0; // frames per second
+		std::atomic<double> avgFramerate = 0; // frames per second
 		int nbFrames = 0;
 		
 	public:
@@ -43,11 +43,11 @@ namespace v4d {
 			}
 		}
 		
-		operator double() {
+		operator double() const {
 			return std::round(avgFramerate*10)*0.1;
 		}
 		
-		operator int() {
+		operator int() const {
 			return int(std::round(avgFramerate));
 		}
 		

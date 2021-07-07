@@ -217,8 +217,8 @@ void Socket::StartListeningThread(int waitIntervalMilliseconds, ListeningThreadC
 		}, std::forward<ListeningThreadCallbackFunc>(newSocketCallback));
 	} else if (IsUDP()) {
 		listening = true;
-		listeningThread = new std::thread([this, waitIntervalMilliseconds](ListeningThreadCallbackFunc&& newSocketCallback){
-			std::shared_ptr<Socket> s = std::make_shared<Socket>(socket, remoteAddr, type, protocol);
+		std::shared_ptr<Socket> s = std::make_shared<Socket>(socket, remoteAddr, type, protocol);
+		listeningThread = new std::thread([this, waitIntervalMilliseconds, s=s](ListeningThreadCallbackFunc&& newSocketCallback){
 			while (IsListening()) {
 
 				// Check if there is a connection waiting in the socket

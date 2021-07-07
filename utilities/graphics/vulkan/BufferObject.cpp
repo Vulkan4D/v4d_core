@@ -11,11 +11,15 @@ namespace v4d::graphics::vulkan {
 				VkBufferCreateInfo bufferInfo {};{
 					bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 					bufferInfo.size = size;
-					bufferInfo.usage = bufferUsage | (device->GetPhysicalDevice()->deviceFeatures.vulkan12DeviceFeatures.bufferDeviceAddress? VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT : 0);
+					bufferInfo.usage = bufferUsage;
 					bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 					bufferInfo.queueFamilyIndexCount = 0;
 					bufferInfo.pQueueFamilyIndices = nullptr;
 				}
+				
+				if (device->GetPhysicalDevice()->deviceFeatures.vulkan12DeviceFeatures.bufferDeviceAddress)
+					bufferInfo.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+				
 				device->CreateAndAllocateBuffer(bufferInfo, memoryUsage, obj, &allocation);
 				if (device->GetPhysicalDevice()->deviceFeatures.vulkan12DeviceFeatures.bufferDeviceAddress) {
 					address = device->GetBufferDeviceOrHostAddressConst(obj);

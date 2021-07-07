@@ -441,8 +441,8 @@ void Device::FreeAndDestroyImage(VkImage& image, MemoryAllocation& allocation) {
 VkResult Device::MapMemoryAllocation(MemoryAllocation& allocation, void** data, VkDeviceSize offset, VkDeviceSize size) {
 	#ifdef V4D_VULKAN_USE_VMA
 		VkResult result = vmaMapMemory(allocator, allocation, data);
-		if (result != VK_SUCCESS && offset > 0) {
-			(*((uint8_t**)data)) += offset;
+		if (result == VK_SUCCESS && offset > 0) {
+			*((uint8_t**)data) += offset;
 		}
 		return result;
 	#else

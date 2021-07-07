@@ -87,7 +87,7 @@ std::vector<byte> v4d::crypto::AES::Decrypt(const byte* encryptedData, size_t si
 		decryptedData.resize(actualDataSize);
 	} else {
 		decryptedData.clear();
-		// LOG_ERROR_VERBOSE("Data decryption failed")
+		LOG_ERROR_VERBOSE("Data decryption failed")
 	}
 	return decryptedData;
 }

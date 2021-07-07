@@ -55,7 +55,7 @@ namespace v4d::io {
 	protected:
 		SOCKET_TYPE type;
 		SOCKET_PROTOCOL protocol;
-		SOCKET socket = INVALID_SOCKET;
+		std::atomic<SOCKET> socket = INVALID_SOCKET;
 		std::atomic<bool>	bound = false, 
 							connected = false, 
 							listening = false,
