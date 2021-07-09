@@ -376,7 +376,7 @@ bool Renderer::BeginFrame(VkSemaphore signalSemaphore, VkFence triggerFence) {
 	
 	VkResult result = renderingDevice->AcquireNextImageKHR(
 		swapChain->GetHandle(), // swapChain
-		1000UL * 1000 * 1000, // timeout in nanoseconds
+		1000UL * 1000 * 5000, // timeout in nanoseconds
 		signalSemaphore,
 		triggerFence,
 		&swapChainImageIndex // output the index of the swapchain image in there

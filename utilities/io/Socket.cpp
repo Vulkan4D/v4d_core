@@ -271,11 +271,13 @@ void Socket::StopListening() {
 	}
 	listening = false;
 	if (listeningThread) {
-		if (listeningThread->joinable()) {
-			listeningThread->join();
-			delete listeningThread;
-			listeningThread = nullptr;
-		}
+		try {
+			if (listeningThread->joinable()) {
+				listeningThread->join();
+				delete listeningThread;
+				listeningThread = nullptr;
+			}
+		} catch(...){}
 	}
 }
 

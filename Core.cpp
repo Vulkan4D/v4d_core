@@ -81,43 +81,45 @@
 	};
 
 	void V4D_SIGNAL_HANDLER(int num) {
-		v4d::event::SIGNAL(num);
-		switch (num) {
-			// Signals that kill the application
-			case SIGINT:
-				v4d::event::SIGNAL_INTERUPT(num);
-				v4d::event::APP_KILLED(num);
-				exit(num);
-			break;
-			case SIGABRT:
-				v4d::event::SIGNAL_ABORT(num);
-				v4d::event::APP_KILLED(num);
-				exit(num);
-			break;
-			case SIGTERM:
-				v4d::event::SIGNAL_TERMINATE(num);
-				v4d::event::APP_KILLED(num);
-				exit(num);
-			break;
-			#ifdef _LINUX
-				case SIGHUP:
-					v4d::event::SIGNAL_HANGUP(num);
+		try {
+			v4d::event::SIGNAL(num);
+			switch (num) {
+				// Signals that kill the application
+				case SIGINT:
+					v4d::event::SIGNAL_INTERUPT(num);
 					v4d::event::APP_KILLED(num);
 					exit(num);
 				break;
-				case SIGQUIT:
-					v4d::event::SIGNAL_QUIT(num);
+				case SIGABRT:
+					v4d::event::SIGNAL_ABORT(num);
 					v4d::event::APP_KILLED(num);
 					exit(num);
 				break;
-			#endif
-			// Errors
-			case SIGFPE:
-			case SIGILL:
-			case SIGSEGV:
-				v4d::event::APP_ERROR(num);
-			break;
-		}
+				case SIGTERM:
+					v4d::event::SIGNAL_TERMINATE(num);
+					v4d::event::APP_KILLED(num);
+					exit(num);
+				break;
+				#ifdef _LINUX
+					case SIGHUP:
+						v4d::event::SIGNAL_HANGUP(num);
+						v4d::event::APP_KILLED(num);
+						exit(num);
+					break;
+					case SIGQUIT:
+						v4d::event::SIGNAL_QUIT(num);
+						v4d::event::APP_KILLED(num);
+						exit(num);
+					break;
+				#endif
+				// Errors
+				case SIGFPE:
+				case SIGILL:
+				case SIGSEGV:
+					v4d::event::APP_ERROR(num);
+				break;
+			}
+		} catch(...) {}
 	}
 
 
