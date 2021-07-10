@@ -16,6 +16,17 @@ using namespace v4d::graphics;
 void Renderer::CreateDevices() {
 	LOG("Finding a suitable PhysicalDevice...")
 	
+	// Prepare enabled extensions
+	requiredDeviceExtensions = {
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+		#ifdef V4D_VULKAN_USE_VMA
+			VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+			VK_KHR_BIND_MEMORY_2_EXTENSION_NAME,
+		#endif
+	};
+	optionalDeviceExtensions = {};
+	ConfigureDeviceExtensions();
+	
 	// Select The Best Main PhysicalDevice using a score system
 	renderingPhysicalDevice = SelectSuitablePhysicalDevice([this](int& score, PhysicalDevice* physicalDevice){
 		// Build up a score here and the PhysicalDevice with the highest score will be selected.
@@ -39,8 +50,6 @@ void Renderer::CreateDevices() {
 
 	LOG("Selected Rendering PhysicalDevice: " << renderingPhysicalDevice->GetDescription());
 
-	// Prepare enabled extensions
-	ConfigureDeviceExtensions();
 	deviceExtensions.clear();
 	for (auto& ext : requiredDeviceExtensions) {
 		deviceExtensions.push_back(ext);

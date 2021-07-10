@@ -79,13 +79,7 @@ namespace v4d::graphics {
 		std::queue<std::function<void()>> syncQueue {};
 		std::vector<std::unique_ptr<std::thread>> shaderWatcherThreads {};
 		
-		std::vector<const char*> requiredDeviceExtensions {
-			VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-			#ifdef V4D_VULKAN_USE_VMA
-				VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
-				VK_KHR_BIND_MEMORY_2_EXTENSION_NAME,
-			#endif
-		};
+		std::vector<const char*> requiredDeviceExtensions {};
 		std::vector<const char*> optionalDeviceExtensions {};
 		std::vector<const char*> deviceExtensions {};
 		std::unordered_map<std::string, bool> enabledDeviceExtensions {};
