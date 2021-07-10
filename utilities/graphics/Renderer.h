@@ -74,7 +74,7 @@ namespace v4d::graphics {
 		VkSurfaceKHR surface;
 		
 		// Synchronized frame execution
-		std::mutex frameSyncMutex;
+		std::recursive_mutex frameSyncMutex;
 		std::recursive_mutex frameSyncMutex2;
 		std::queue<std::function<void()>> syncQueue {};
 		std::vector<std::unique_ptr<std::thread>> shaderWatcherThreads {};

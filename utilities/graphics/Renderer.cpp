@@ -362,6 +362,7 @@ bool Renderer::BeginFrame(VkSemaphore signalSemaphore, VkFence triggerFence) {
 		std::unique_lock lock1(frameSyncMutex);
 		if (!syncQueue.empty()) {
 			lock1.unlock();
+			THREAD_YIELD
 			std::lock_guard lock2(frameSyncMutex2);
 			lock1.lock();
 			renderingDevice->DeviceWaitIdle();
