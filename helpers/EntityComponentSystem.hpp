@@ -693,17 +693,26 @@ namespace v4d::ECS {
 		}\
 		public:\
 		operator bool() {return (entityIndex != -1);}\
-		template<typename T>\
+		template<typename T> requires std::is_default_constructible_v<ComponentType>\
 		v4d::ECS::Component<ClassName, ComponentType>::ComponentReferenceLocked operator[] (T&& key) {\
 			if (entityIndex == -1) return {};\
 			std::lock_guard componentsLock(MemberName ## Components.componentsMutex);\
-			if (!indices[std::forward<T>(key)]) {\
+			if (!indices.contains(std::forward<T>(key))) {\
 				indices[std::forward<T>(key)] = new v4d::ECS::ComponentIndex_T;\
 				MemberName ## Components .__Add__(entityIndex, indices[std::forward<T>(key)]);\
 			}\
 			return MemberName ## Components .Lock(*indices[std::forward<T>(key)]);\
 		}\
-		template<typename MapKey, typename...Args>\
+		template<typename T> requires (!std::is_default_constructible_v<ComponentType>)\
+		v4d::ECS::Component<ClassName, ComponentType>::ComponentReferenceLocked operator[] (T&& key) {\
+			if (entityIndex == -1) return {};\
+			std::lock_guard componentsLock(MemberName ## Components.componentsMutex);\
+			if (!indices.contains(std::forward<T>(key))) {\
+				return {};\
+			}\
+			return MemberName ## Components .Lock(*indices[std::forward<T>(key)]);\
+		}\
+		template<typename MapKey, typename...Args> requires std::is_constructible_v<ComponentType, Args...>\
 		v4d::ECS::Component<ClassName, ComponentType>::ComponentReferenceLocked Emplace(MapKey&& key, Args&&...args) {\
 			if (entityIndex == -1) return {};\
 			std::lock_guard componentsLock(MemberName ## Components.componentsMutex);\
