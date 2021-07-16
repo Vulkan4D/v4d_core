@@ -123,6 +123,9 @@ namespace v4d::graphics::vulkan {
 		std::vector<VkViewport> viewports {};
 		std::vector<VkRect2D> scissors {};
 		
+		std::vector<VkVertexInputBindingDescription> bindings {};
+		std::vector<VkVertexInputAttributeDescription> attributes {};
+		
 		using ShaderPipelineObject::ShaderPipelineObject;
 		
 		virtual void Create(Device* device) override;

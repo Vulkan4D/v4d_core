@@ -19,10 +19,10 @@ void RasterShaderPipelineObject::Create(Device* device) {
 	}
 	
 	// Bindings and Attributes
-	vertexInputInfo.vertexBindingDescriptionCount = 0;
-	vertexInputInfo.pVertexBindingDescriptions = nullptr;
-	vertexInputInfo.vertexAttributeDescriptionCount = 0;
-	vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+	vertexInputInfo.vertexBindingDescriptionCount = bindings.size();
+	vertexInputInfo.pVertexBindingDescriptions = bindings.data();
+	vertexInputInfo.vertexAttributeDescriptionCount = attributes.size();
+	vertexInputInfo.pVertexAttributeDescriptions = attributes.data();
 
 	// Dynamic states
 	if (dynamicStates.size() > 0) {
