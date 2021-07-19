@@ -225,10 +225,11 @@ void Renderer::WatchModifiedShadersForReload(const std::vector<ShaderPipelineMet
 				}
 			}
 			if (shadersToReload.size() > 0 || sbtsToReload.size() > 0) {
-				RunSynchronized([=](){
+				RunSynchronized([=,this](){
+					ReloadShaderPipelines();
 					for (auto* s : shadersToReload) s->Reload();
 					for (auto* s : sbtsToReload) s->Reload();
-					CommandBufferObject::ForEach([](auto*cmdBuffer){cmdBuffer->dirty = true;});
+					LOG("Reloaded modified shaders")
 				});
 				shadersToReload.clear();
 				sbtsToReload.clear();
@@ -281,14 +282,14 @@ void Renderer::UnloadRenderer() {
 	DestroyDevices();
 }
 
-void Renderer::ReloadShaderPipelines() {
-	LOG("Reloading shaders...")
-	
+void Renderer::ReloadShaderPipelines(bool forceReloadAllShaders) {
 	renderingDevice->DeviceWaitIdle();
-	
-	DestroyShaderPipelines();
-	ReadShaders();
-	CreateShaderPipelines();
+	if (forceReloadAllShaders) {
+		LOG("Reloading all shaders...")
+		DestroyShaderPipelines();
+		ReadShaders();
+		CreateShaderPipelines();
+	}
 }
 
 void Renderer::ReloadRenderer() {

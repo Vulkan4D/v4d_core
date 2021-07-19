@@ -384,7 +384,7 @@ namespace v4d::graphics {
 		virtual void LoadRenderer();
 		virtual void UnloadRenderer();
 		virtual void ReloadRenderer();
-		virtual void ReloadShaderPipelines();
+		virtual void ReloadShaderPipelines(bool forceReloadAllShaders = false);
 		void WatchModifiedShadersForReload(const std::vector<ShaderPipelineMetaFile>&);
 		
 		void AssignSurface(const VkSurfaceKHR& surface) {

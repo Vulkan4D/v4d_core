@@ -250,8 +250,12 @@ VkDeviceSize ShaderBindingTable::GetSbtBufferSize() {
 		offset = bufferSize;
 		bufferSize += size = n * rayTracingPipelineProperties.shaderGroupHandleSize;
 		// Align
-		if (rayTracingPipelineProperties.shaderGroupBaseAlignment && (bufferSize % rayTracingPipelineProperties.shaderGroupBaseAlignment) > 0) {
-			bufferSize += rayTracingPipelineProperties.shaderGroupBaseAlignment - (bufferSize % rayTracingPipelineProperties.shaderGroupBaseAlignment);
+		if (rayTracingPipelineProperties.shaderGroupBaseAlignment > 0) {
+			if (bufferSize <= rayTracingPipelineProperties.shaderGroupBaseAlignment) {
+				bufferSize = rayTracingPipelineProperties.shaderGroupBaseAlignment;
+			} else if (bufferSize % rayTracingPipelineProperties.shaderGroupBaseAlignment > 0) {
+				bufferSize += rayTracingPipelineProperties.shaderGroupBaseAlignment - (bufferSize % rayTracingPipelineProperties.shaderGroupBaseAlignment);
+			}
 		}
 	};
 	
@@ -260,6 +264,8 @@ VkDeviceSize ShaderBindingTable::GetSbtBufferSize() {
 	addAlignedShaderRegion(rayHitShaderRegionOffset, rayHitShaderRegionSize, rayHitGroups.size());
 	addAlignedShaderRegion(rayCallableShaderRegionOffset, rayCallableShaderRegionSize, rayCallableGroups.size());
 	
+	bufferSize += rayTracingPipelineProperties.shaderGroupBaseAlignment;
+	
 	return bufferSize;
 }
 
@@ -267,30 +273,36 @@ void ShaderBindingTable::WriteShaderBindingTableToBuffer() {
 	uint32_t sbtSize = GetSbtBufferSize(); // GetSbtBufferSize must be called here, it caches some values used for setting regions
 	VkDeviceSize bindingStride = rayTracingPipelineProperties.shaderGroupHandleSize;
 	
+	VkDeviceAddress baseAddress = *buffer;
+	// Align
+	if (rayTracingPipelineProperties.shaderGroupBaseAlignment > 0) {
+		bufferOffset += rayTracingPipelineProperties.shaderGroupBaseAlignment - (baseAddress % rayTracingPipelineProperties.shaderGroupBaseAlignment);
+	}
+	
 	// Ray Gen
 	rayGenDeviceAddressRegion = {
-		VkDeviceAddress(*buffer) + bufferOffset + rayGenShaderRegionOffset,
+		baseAddress + bufferOffset + rayGenShaderRegionOffset,
 		bindingStride, 
 		rayGenShaderRegionSize
 	};
 	
 	// Ray Miss
 	rayMissDeviceAddressRegion = {
-		VkDeviceAddress(*buffer) + bufferOffset + rayMissShaderRegionOffset,
+		baseAddress + bufferOffset + rayMissShaderRegionOffset,
 		bindingStride,
 		rayMissShaderRegionSize
 	};
 	
 	// Ray Hit
 	rayHitDeviceAddressRegion = {
-		VkDeviceAddress(*buffer) + bufferOffset + rayHitShaderRegionOffset,
+		baseAddress + bufferOffset + rayHitShaderRegionOffset,
 		bindingStride,
 		rayHitShaderRegionSize
 	};
 	
 	// Ray Callable
 	rayCallableDeviceAddressRegion = {
-		VkDeviceAddress(*buffer) + bufferOffset + rayCallableShaderRegionOffset,
+		baseAddress + bufferOffset + rayCallableShaderRegionOffset,
 		bindingStride,
 		rayCallableShaderRegionSize
 	};
@@ -341,7 +353,7 @@ void ShaderBindingTable::Create(Device* device) {
 	if (this->device == nullptr) {
 		this->device = device;
 		CreateRayTracingPipeline();
-		buffer = std::make_unique<BufferObject>(MEMORY_USAGE_CPU_TO_GPU, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, GetSbtBufferSize());
+		buffer = std::make_unique<BufferObject>(MEMORY_USAGE_CPU_TO_GPU, VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR, GetSbtBufferSize());
 		buffer->Allocate(device);
 		assert(buffer);
 		WriteShaderBindingTableToBuffer();
