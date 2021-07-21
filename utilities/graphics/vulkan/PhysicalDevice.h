@@ -46,8 +46,11 @@ namespace v4d::graphics::vulkan {
 		private:
 			const std::array<void*, 7> featuresPNextOrder {
 				&deviceFeatures2,
+				
+				// Vulkan 1.1
 				&shaderClockFeatures,
 				&_16bitStorageFeatures,
+				
 				// Vulkan 1.2
 				&vulkan12DeviceFeatures,
 				&rayTracingPipelineFeatures,
