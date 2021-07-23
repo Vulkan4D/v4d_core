@@ -27,7 +27,7 @@ COMMON_OBJECT(TextureObject, VkImage, V4DLIB)
 		VK_IMAGE_TYPE_2D,// VkImageType imageType
 		VK_FORMAT_R32G32B32A32_SFLOAT,// VkFormat format
 		{0,0,1},// VkExtent3D extent
-		8,// uint32_t mipLevels
+		4,// uint32_t mipLevels
 		1,// uint32_t arrayLayers
 		VK_SAMPLE_COUNT_1_BIT,// VkSampleCountFlagBits samples
 		VK_IMAGE_TILING_OPTIMAL,// VkImageTiling tiling

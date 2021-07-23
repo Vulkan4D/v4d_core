@@ -56,13 +56,13 @@ COMMON_OBJECT(SamplerObject, VkSampler, V4DLIB)
 		VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,// VkSamplerAddressMode addressModeU
 		VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,// VkSamplerAddressMode addressModeV
 		VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,// VkSamplerAddressMode addressModeW
-		0.0f,// float mipLodBias
+		-1.0f,// float mipLodBias
 		VK_TRUE,// VkBool32 anisotropyEnable
 		8.0f,// float maxAnisotropy
 		VK_FALSE,// VkBool32 compareEnable
 		VK_COMPARE_OP_NEVER,// VkCompareOp compareOp
 		0.0f,// float minLod
-		1.0f,// float maxLod
+		VK_LOD_CLAMP_NONE,// float maxLod
 		VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK,// VkBorderColor borderColor
 		VK_FALSE// VkBool32 unnormalizedCoordinates
 	};
