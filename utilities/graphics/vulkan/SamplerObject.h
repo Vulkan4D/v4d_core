@@ -20,6 +20,16 @@ COMMON_OBJECT(SamplerObject, VkSampler, V4DLIB)
 		samplerInfo.addressModeW = addrModeW;
 	}
 
+	SamplerObject(const char* textureFilePath, VkFilter magFilter, VkFilter minFilter, VkSamplerAddressMode addrModeU, VkSamplerAddressMode addrModeV, VkSamplerAddressMode addrModeW)
+	 : obj(), view(), texture(std::make_shared<TextureObject>(textureFilePath))
+	{
+		samplerInfo.magFilter = magFilter;
+		samplerInfo.minFilter = minFilter;
+		samplerInfo.addressModeU = addrModeU;
+		samplerInfo.addressModeV = addrModeV;
+		samplerInfo.addressModeW = addrModeW;
+	}
+
 	SamplerObject(ImageObject* image)
 	 : obj(image->sampler), view(image->view), texture(nullptr), viewInfo(image->viewInfo), samplerInfo(image->samplerInfo)
 	{}

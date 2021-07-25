@@ -79,6 +79,7 @@
 #include "helpers/EntityComponentSystem.hpp"
 #include "helpers/FPSCounter.hpp"
 #include "helpers/COMMON_OBJECT.hpp"
+#include "helpers/SHARED_OBJECT.hpp"
 
 // Automatically use vulkan validation layers if we are in debug mode on linux, unless we have defined V4D_VULKAN_NO_VALIDATION_LAYERS
 #if !defined(V4D_VULKAN_USE_VALIDATION_LAYERS) && (defined(_DEBUG) && defined(_LINUX) && !defined(V4D_VULKAN_NO_VALIDATION_LAYERS))

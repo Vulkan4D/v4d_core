@@ -16,9 +16,6 @@ ConfigFile::ConfigFile(const std::string& filePath, std::optional<int> autoReloa
 
 ConfigFile::~ConfigFile() {
 	autoReloadInterval = 0;
-	{
-		std::lock_guard lock(mu);
-	}
 	if (autoReloadThread && autoReloadThread->joinable()) {
 		autoReloadThread->join();
 		delete autoReloadThread;
@@ -38,10 +35,9 @@ ConfigFile* ConfigFile::Load() {
 }
 
 void ConfigFile::SetAutoReloadInterval(int interval) {
-	std::lock_guard lock(mu);
 	autoReloadInterval = interval;
 	if (autoReloadInterval <= 0 && autoReloadThread && autoReloadThread->joinable()) {
-		autoReloadThread->detach();
+		autoReloadThread->join();
 		delete autoReloadThread;
 		autoReloadThread = nullptr;
 	} else if (autoReloadInterval > 0 && !autoReloadThread) {
@@ -56,25 +52,20 @@ bool ConfigFile::FileHasChanged() const {
 
 void ConfigFile::StartAutoReloadThread() {
 	autoReloadThread = new std::thread([this]{
-		int interval;
-		{
-			std::lock_guard lock(mu);
-			interval = autoReloadInterval;
-		}
+		int interval = autoReloadInterval;
 		for (;;) {
 			if (interval <= 0) return;
 			SLEEP(std::chrono::milliseconds{interval})
 			std::lock_guard lock(mu);
-			if (autoReloadInterval > 0) {
-				auto lastWriteTime = GetLastWriteTime();
-				if (lastWriteTime == 0) {
-					AutoCreateFile();
-					lastWriteTime = GetLastWriteTime();
-				}
-				if (lastWriteTimeCache != lastWriteTime) {
-					ReadConfig();
-					lastWriteTimeCache = GetLastWriteTime();
-				}
+			if (autoReloadInterval <= 0) return;
+			auto lastWriteTime = GetLastWriteTime();
+			if (lastWriteTime == 0) {
+				AutoCreateFile();
+				lastWriteTime = GetLastWriteTime();
+			}
+			if (lastWriteTimeCache != lastWriteTime) {
+				ReadConfig();
+				lastWriteTimeCache = GetLastWriteTime();
 			}
 			interval = autoReloadInterval;
 		}

@@ -640,14 +640,14 @@ Renderer::Renderer(Loader* loader, const char* applicationName, uint application
 
 Renderer::~Renderer() {
 	state = STATE::NONE;
-	if (surface) {
-		DestroySurfaceKHR(surface, nullptr);
-	}
 	for (auto& shaderWatcherThread : shaderWatcherThreads) {
 		if (shaderWatcherThread && shaderWatcherThread->joinable()) {
 			shaderWatcherThread->join();
 			shaderWatcherThread.reset();
 		}
+	}
+	if (surface) {
+		DestroySurfaceKHR(surface, nullptr);
 	}
 }
 
