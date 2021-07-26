@@ -90,6 +90,8 @@ namespace v4d::graphics {
 		PhysicalDevice* renderingPhysicalDevice = nullptr;
 		Device* renderingDevice = nullptr;
 		
+		static Device* mainRenderingDevice;
+
 		// Swap Chains
 		SwapChain* swapChain = nullptr;
 		uint32_t swapChainImageIndex;
@@ -238,8 +240,8 @@ namespace v4d::graphics {
 			TextureObject::ForEach([this](TextureObject*tex){
 				tex->Create(renderingDevice);
 			});
-			SamplerObject::ForEach([](SamplerObject*sampler){
-				sampler->Create();
+			SamplerObject::ForEach([this](SamplerObject*sampler){
+				sampler->Create(renderingDevice);
 			});
 		}
 		virtual void UnloadTextures() {

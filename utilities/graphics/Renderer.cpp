@@ -4,6 +4,8 @@
 
 using namespace v4d::graphics;
 
+Device* Renderer::mainRenderingDevice = nullptr;
+
 #pragma region Static maps
 
 	// Ray-Tracing Shaders
@@ -83,6 +85,8 @@ void Renderer::CreateDevices() {
 		queues,
 		renderingPhysicalDevice->deviceFeatures.GetDeviceFeaturesPNext()
 	);
+	
+	mainRenderingDevice = renderingDevice;
 
 	renderingDevice->CreateAllocator();
 }
@@ -90,6 +94,7 @@ void Renderer::CreateDevices() {
 void Renderer::DestroyDevices() {
 	renderingDevice->DeviceWaitIdle();
 	renderingDevice->DestroyAllocator();
+	mainRenderingDevice = nullptr;
 	delete renderingDevice;
 }
 

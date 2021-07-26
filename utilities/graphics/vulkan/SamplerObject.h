@@ -77,7 +77,7 @@ COMMON_OBJECT(SamplerObject, VkSampler, V4DLIB)
 		VK_FALSE// VkBool32 unnormalizedCoordinates
 	};
 	
-	void Create();
+	void Create(Device* device = nullptr);
 	void Destroy();
 	
 };

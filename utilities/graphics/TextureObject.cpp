@@ -32,26 +32,6 @@ COMMON_OBJECT_CPP(TextureObject, VkImage)
 			
 			imageInfo.mipLevels = glm::min(imageInfo.mipLevels, uint32_t(glm::floor(glm::log2(glm::max(imageInfo.extent.width, imageInfo.extent.height, imageInfo.extent.depth))))+1);
 			
-			switch (componentCount) {
-				case STBI_grey:
-					imageInfo.format = VK_FORMAT_R8_UNORM;
-					break;
-				case STBI_grey_alpha:
-					imageInfo.format = VK_FORMAT_R8G8_UNORM;
-					break;
-				case STBI_rgb:
-					imageInfo.format = VK_FORMAT_R8G8B8_UNORM;
-					break;
-				case STBI_rgb_alpha: default:
-					imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
-					break;
-			}
-			
-			Instance::CheckVkResult("Create and allocate image", device->CreateAndAllocateImage(imageInfo, memoryUsage, obj, &allocation));
-			
-			MemoryAllocation stagingBufferAllocation = VK_NULL_HANDLE;
-			VkBuffer stagingBuffer = VK_NULL_HANDLE;
-			
 			VkBufferCreateInfo bufferInfo {};{
 				bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 				bufferInfo.size = bufferSize;
@@ -60,7 +40,30 @@ COMMON_OBJECT_CPP(TextureObject, VkImage)
 				bufferInfo.queueFamilyIndexCount = 0;
 				bufferInfo.pQueueFamilyIndices = nullptr;
 			}
+			
+			switch (componentCount) {
+				case STBI_grey:
+					imageInfo.format = VK_FORMAT_R8_UNORM;
+					break;
+				case STBI_grey_alpha:
+					imageInfo.format = VK_FORMAT_R8G8_UNORM;
+					break;
+				case STBI_rgb:
+					// imageInfo.format = VK_FORMAT_R8G8B8_UNORM; // not supported
+					imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+					bufferInfo.size = width * height * 4;
+					break;
+				case STBI_rgb_alpha: default:
+					imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+					break;
+			}
+			
+			MemoryAllocation stagingBufferAllocation = VK_NULL_HANDLE;
+			VkBuffer stagingBuffer = VK_NULL_HANDLE;
+			
 			device->CreateAndAllocateBuffer(bufferInfo, MEMORY_USAGE_CPU_TO_GPU, stagingBuffer, &stagingBufferAllocation);
+			
+			Instance::CheckVkResult("Create and allocate image", device->CreateAndAllocateImage(imageInfo, memoryUsage, obj, &allocation));
 			
 			{// Copy image data to staging buffer
 				void* stagingData;

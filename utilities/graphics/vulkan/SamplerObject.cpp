@@ -4,7 +4,8 @@
 namespace v4d::graphics::vulkan {
 COMMON_OBJECT_CPP(SamplerObject, VkSampler)
 
-	void SamplerObject::Create() {
+	void SamplerObject::Create(Device* device) {
+		if (device && texture) texture->Create(device);
 		if (texture && texture->device && VkSampler(obj) == VK_NULL_HANDLE) {
 			viewInfo.image = texture->obj;
 			viewInfo.format = texture->imageInfo.format;

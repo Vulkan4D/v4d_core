@@ -227,6 +227,7 @@ void ShaderBindingTable::DestroyRayTracingPipeline() {
 		DestroyShaderStages();
 		bufferOffset = 0;
 		bufferSize = 0;
+		groups.clear();
 	}
 }
 
