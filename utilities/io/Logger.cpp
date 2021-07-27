@@ -35,12 +35,12 @@ void Logger::Log(std::ostream& message, const char* style) {
 			LogToFile(msg);
 		} else {
 			#ifdef _WINDOWS
-				if (strcmp(style, "1"))
+				if (style[0] == '1')
 					std::cerr << msg << std::endl;
 				else
 					std::cout << msg << std::endl;
 			#else
-				if (strcmp(style, "1"))
+				if (style[0] == '1')
 					std::cerr << "\033[" << style << 'm' << msg << "\033[0m" << std::endl;
 				else
 					std::cout << "\033[" << style << 'm' << msg << "\033[0m" << std::endl;

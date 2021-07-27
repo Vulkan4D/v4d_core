@@ -12,6 +12,7 @@
 #include <functional>
 #include "utilities/graphics/vulkan/Loader.h"
 #include "utilities/graphics/vulkan/PhysicalDevice.h"
+// #include "helpers/stacktrace.hpp"
 
 namespace v4d::graphics::vulkan {
 
@@ -84,6 +85,7 @@ namespace v4d::graphics::vulkan {
 		static void CheckVkResult(const char* str, const VkResult& res) {
 			if (res != VK_SUCCESS) {
 				LOG_ERROR(str << ": " << GetVkResultText(res))
+				// STACKTRACE(10)
 				throw res;
 			}
 		}

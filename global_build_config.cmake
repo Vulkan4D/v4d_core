@@ -22,8 +22,16 @@ else()
 	add_definitions(-D_LINUX)
 endif()
 
+add_definitions(-D_V4D_PROJECT_PATH="${V4D_PROJECT_DIR}/")
+
 # Compiler optimizations and CPU Extensions
 set(BUILD_FLAGS "-mavx2")
+
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+	set(BUILD_FLAGS "${BUILD_FLAGS} -O0")
+else()
+	set(BUILD_FLAGS "${BUILD_FLAGS} -O3")
+endif()
 
 # Compiler Warnings
 if(WIN32)

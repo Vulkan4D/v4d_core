@@ -48,6 +48,10 @@ namespace v4d::io {
 		
 		inline void LogError(std::ostream& message) {
 			Log(message, "1;31");
+			if (useLogFile) {
+				// When using a log file, make sure to output errors in stderr too
+				std::cerr << dynamic_cast<std::ostringstream&>(message).str() << std::endl;
+			}
 		}
 
 		inline bool IsVerbose() const {
@@ -88,7 +92,7 @@ V4DLIB std::ostream& operator<<(std::ostream& stream, std::vector<byte> bytes);
 // Logging into console only in debug mode
 #ifdef _DEBUG
 	#define __V4D__LOG_PREPEND_THREAD_ID__ << (V4D_LOGGER_INSTANCE->IsVerbose()? V4D_LOGGER_INSTANCE->GetCurrentThreadIdStr() : std::string(""))
-	#define __V4D__LOG_APPEND_FILE_AND_LINE__ << " [" << __FILE__ << ":" << __LINE__ << "]"
+	#define __V4D__LOG_APPEND_FILE_AND_LINE__ << " [" << (std::string(__FILE__).find(_V4D_PROJECT_PATH)==0? std::string(__FILE__).substr(std::string(_V4D_PROJECT_PATH).length()) : std::string(__FILE__)) << ":" << __LINE__ << "]"
 	#define DEBUG(msg) V4D_LOGGER_INSTANCE->Log(std::ostringstream() << V4D_LOGGER_PREFIX << "DEBUG: " __V4D__LOG_PREPEND_THREAD_ID__ << msg __V4D__LOG_APPEND_FILE_AND_LINE__, "1;33");
 	#define DEBUG_WARN(msg) V4D_LOGGER_INSTANCE->LogError(std::ostringstream() << V4D_LOGGER_PREFIX << "WARNING(debug): " __V4D__LOG_PREPEND_THREAD_ID__ << msg __V4D__LOG_APPEND_FILE_AND_LINE__);
 	#define DEBUG_ERROR(msg) V4D_LOGGER_INSTANCE->LogError(std::ostringstream() << V4D_LOGGER_PREFIX << "ERROR(debug): " __V4D__LOG_PREPEND_THREAD_ID__ << msg __V4D__LOG_APPEND_FILE_AND_LINE__);

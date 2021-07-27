@@ -56,6 +56,7 @@ if(WIN32)
 		PUBLIC
 			gcc
 			stdc++
+			dbghelp
 	)
 else()
 	target_link_libraries(v4d
