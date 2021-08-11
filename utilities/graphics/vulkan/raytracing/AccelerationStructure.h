@@ -72,13 +72,23 @@ namespace v4d::graphics::vulkan::raytracing {
 		
 		void AssignTopLevel();
 		
-		void SetInstanceBuffer(VkBuffer instanceBuffer, uint32_t instanceCount = 0, uint32_t instanceOffset = 0);
-		void SetInstanceBuffer(void* instanceArray, uint32_t instanceCount = 0, uint32_t instanceOffset = 0);
+		void SetInstanceBuffer(VkDeviceOrHostAddressConstKHR instanceBufferAddr, uint32_t instanceCount = 0, uint32_t instanceOffset = 0);
 		void SetInstanceCount(uint32_t count);
 		
 		~AccelerationStructure();
 		
 		void CreateAndAllocate(Device* device, bool topLevel = false);
 		void FreeAndDestroy();
+		
+		void AssignScratchBuffer(VkDeviceOrHostAddressKHR, VkDeviceSize offset = 0);
+		void AllocateScratchBuffer();
+		void FreeScratchBuffer();
+		
+		const VkAccelerationStructureBuildGeometryInfoKHR& GetBuildGeometryInfo() {
+			AllocateScratchBuffer();
+			return buildGeometryInfo;
+		}
+		
+		bool IsAllocated() const {return device != nullptr;}
 	};
 }

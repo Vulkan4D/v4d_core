@@ -75,6 +75,8 @@ class V4DLIB DescriptorSetObject {
 	void Free(VkDescriptorPool);
 	
 	std::vector<VkWriteDescriptorSet> GetUpdateWrites();
+	VkWriteDescriptorSet GetUpdateWrite(uint32_t binding);
+	void Update(uint32_t binding);
 	
 };
 

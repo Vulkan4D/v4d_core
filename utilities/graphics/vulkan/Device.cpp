@@ -254,6 +254,16 @@ void Device::RunSingleTimeCommands(Queue queue, std::function<void(VkCommandBuff
 	EndSingleTimeCommands(queue, cmdBuffer, commandPoolIndex);
 }
 
+#ifdef V4D_VULKAN_USE_VMA
+	void Device::DumpMemoryAllocationStats() {
+		char* str;
+		vmaBuildStatsString(allocator, &str, true);
+		std::ofstream file("vramdump.json");
+		file << str << std::endl;
+		vmaFreeStatsString(allocator, str);
+	}
+#endif
+
 // Allocator
 void Device::CreateAllocator() {
 	#ifdef V4D_VULKAN_USE_VMA

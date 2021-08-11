@@ -38,8 +38,8 @@ class V4DLIB BufferObject {
 	// 	return buffers;
 	// }
 	
-	operator VkDeviceOrHostAddressConstKHR() {return address;}
-	operator VkDeviceAddress() {return address.deviceAddress;}
+	operator VkDeviceOrHostAddressConstKHR() const {return address;}
+	operator VkDeviceAddress() const {return address.deviceAddress;}
 };
 
 template<typename T>

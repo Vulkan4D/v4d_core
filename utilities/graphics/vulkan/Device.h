@@ -125,6 +125,10 @@ namespace v4d::graphics::vulkan {
 			void* pNext = nullptr
 		);
 		~Device();
+		
+		#ifdef V4D_VULKAN_USE_VMA
+			void DumpMemoryAllocationStats();
+		#endif
 
 		VkDevice GetHandle() const;
 		VkPhysicalDevice GetPhysicalDeviceHandle() const;

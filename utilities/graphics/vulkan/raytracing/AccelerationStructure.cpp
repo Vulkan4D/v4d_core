@@ -134,15 +134,8 @@ namespace v4d::graphics::vulkan::raytracing {
 		maxPrimitiveCounts[0] = RAY_TRACING_TLAS_MAX_INSTANCES;
 	}
 	
-	void AccelerationStructure::SetInstanceBuffer(void* instanceArray, uint32_t instanceCount, uint32_t instanceOffset) {
-		VkDeviceOrHostAddressConstKHR addr {};
-		addr.hostAddress = instanceArray;
-		accelerationStructureGeometries[0].geometry.instances.data = addr;
-		buildRangeInfo[0].primitiveCount = instanceCount;
-		buildRangeInfo[0].primitiveOffset = instanceOffset;
-	}
-	void AccelerationStructure::SetInstanceBuffer(VkBuffer instanceBuffer, uint32_t instanceCount, uint32_t instanceOffset) {
-		accelerationStructureGeometries[0].geometry.instances.data = device->GetBufferDeviceOrHostAddressConst(instanceBuffer);
+	void AccelerationStructure::SetInstanceBuffer(VkDeviceOrHostAddressConstKHR instanceBufferAddr, uint32_t instanceCount, uint32_t instanceOffset) {
+		accelerationStructureGeometries[0].geometry.instances.data = instanceBufferAddr;
 		buildRangeInfo[0].primitiveCount = instanceCount;
 		buildRangeInfo[0].primitiveOffset = instanceOffset;
 	}
@@ -202,18 +195,6 @@ namespace v4d::graphics::vulkan::raytracing {
 		
 		// LOG_VERBOSE("Allocated Acceleration Structure " << accelerationStructure << "; deviceAddress " << std::hex << deviceAddress)
 		
-		// Scratch buffer
-		scratchBuffer = std::make_unique<BufferObject>(MEMORY_USAGE_GPU_ONLY, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
-		
-		 	// This seems to fix a validation error with the alignment of the device address... But it may not be the correct solution.
-			|VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR
-			// If we are getting issues with this in the future, try to align the address by adding the alignment to it and then aligning the address when assigning it.
-			// The alignment can be found in VkPhysicalDeviceAccelerationStructurePropertiesKHR::minAccelerationStructureScratchOffsetAlignment
-			
-		, accelerationStructureBuildSizesInfo.buildScratchSize);
-		scratchBuffer->Allocate(device);
-		buildGeometryInfo.scratchData = VkDeviceOrHostAddressKHR(*scratchBuffer);
-		
 		{// Prep Build info
 			buildGeometryInfo.srcAccelerationStructure = accelerationStructure;
 			buildGeometryInfo.dstAccelerationStructure = accelerationStructure;
@@ -231,7 +212,7 @@ namespace v4d::graphics::vulkan::raytracing {
 			if (accelerationStructureAllocation) {
 				device->FreeAndDestroyBuffer(accelerationStructureBuffer, accelerationStructureAllocation);
 			}
-			scratchBuffer = nullptr;
+			FreeScratchBuffer();
 			if (accelerationStructure) {
 				// LOG_VERBOSE("Destroyed Acceleration Structure " << accelerationStructure << "; handle " << std::hex << handle)
 				device->DestroyAccelerationStructureKHR(accelerationStructure, nullptr);
@@ -243,4 +224,31 @@ namespace v4d::graphics::vulkan::raytracing {
 			device = nullptr;
 		}
 	}
+
+	void AccelerationStructure::AssignScratchBuffer(VkDeviceOrHostAddressKHR scratchBufferAddr, VkDeviceSize offset) {
+		buildGeometryInfo.scratchData.deviceAddress = scratchBufferAddr.deviceAddress + offset;
+	}
+	
+	void AccelerationStructure::AllocateScratchBuffer() {
+		if (!scratchBuffer && buildGeometryInfo.scratchData.deviceAddress == 0) {
+			scratchBuffer = std::make_unique<BufferObject>(MEMORY_USAGE_CPU_ONLY, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+			
+				// This seems to fix a validation error with the alignment of the device address... But it may not be the correct solution.
+				|VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR
+				// If we are getting issues with this in the future, try to align the address by adding the alignment to it and then aligning the address when assigning it.
+				// The alignment can be found in VkPhysicalDeviceAccelerationStructurePropertiesKHR::minAccelerationStructureScratchOffsetAlignment
+				
+			, accelerationStructureBuildSizesInfo.buildScratchSize);
+			scratchBuffer->Allocate(device);
+			AssignScratchBuffer(VkDeviceOrHostAddressKHR(*scratchBuffer));
+		}
+	}
+	
+	void AccelerationStructure::FreeScratchBuffer() {
+		if (scratchBuffer) {
+			scratchBuffer = nullptr;
+			buildGeometryInfo.scratchData.deviceAddress = 0;
+		}
+	}
+	
 }

@@ -71,4 +71,21 @@ namespace v4d::graphics::vulkan {
 		return writes;
 	}
 	
+	VkWriteDescriptorSet DescriptorSetObject::GetUpdateWrite(uint32_t binding) {
+		VkWriteDescriptorSet write {};{
+			write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			write.dstSet = obj;
+		}
+		write.dstBinding = binding;
+		write.descriptorType = descriptorBindings[binding]->GetDescriptorType();
+		write.descriptorCount = descriptorBindings[binding]->count;
+		descriptorBindings[binding]->FillWriteInfo(write);
+		return write;
+	}
+	
+	void DescriptorSetObject::Update(uint32_t binding) {
+		VkWriteDescriptorSet write = GetUpdateWrite(binding);
+		device->UpdateDescriptorSets(1, &write, 0, nullptr);
+	}
+	
 }
