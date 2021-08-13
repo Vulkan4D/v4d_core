@@ -8,6 +8,12 @@ COMMON_OBJECT_CPP(TextureObject, VkImage)
 
 	TextureObject::TextureObject(const char* filepath) : obj() {
 		ownedData = stbi_load(filepath, &width, &height, &componentCount, STBI_default);
+		
+		if (componentCount == 3) {
+			ownedData = stbi__convert_format(ownedData, 3, 4, width, height);
+			componentCount = 4;
+		}
+		
 		bufferSize = width * height * componentCount;
 		if (!ownedData){
 			throw std::runtime_error("Failed to load texture '" + std::string(filepath) + "' : " + stbi_failure_reason());
@@ -48,10 +54,8 @@ COMMON_OBJECT_CPP(TextureObject, VkImage)
 				case STBI_grey_alpha:
 					imageInfo.format = VK_FORMAT_R8G8_UNORM;
 					break;
-				case STBI_rgb:
-					// imageInfo.format = VK_FORMAT_R8G8B8_UNORM; // not supported
-					imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
-					bufferInfo.size = width * height * 4;
+				case STBI_rgb: // RGB format is unsupported in Vulkan, we need to convert it to RGBA (done in constructor)...
+					imageInfo.format = VK_FORMAT_R8G8B8_UNORM;
 					break;
 				case STBI_rgb_alpha: default:
 					imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
