@@ -121,11 +121,11 @@ namespace v4d::data {
 			writeBuffer.resize(0);
 			return *this;
 		}
-		virtual Stream& FlushDebug() {
-			std::lock_guard lock(writeMutex);
-			DEBUG("Debug Flush " << writeBuffer.size() << " " << writeBuffer)
-			return Flush();
-		}
+		// virtual Stream& FlushDebug() {
+		// 	std::lock_guard lock(writeMutex);
+		// 	DEBUG("Debug Flush " << writeBuffer.size() << " " << writeBuffer)
+		// 	return Flush();
+		// }
 
 		void ResetReadBuffer() {
 			std::lock_guard lock(readMutex);

@@ -27,9 +27,9 @@ void Logger::LogToFile(const std::string& message) {
 	file << message << std::endl;
 }
 
-void Logger::Log(std::ostream& message, const char* style) {
+void Logger::Log(const std::ostream& message, const char* style) {
 	std::lock_guard lock(mu);
-	std::string msg = dynamic_cast<std::ostringstream&>(message).str();
+	std::string msg = dynamic_cast<const std::ostringstream&>(message).str();
 	try {
 		if (useLogFile) {
 			LogToFile(msg);
@@ -57,10 +57,10 @@ std::string Logger::GetCurrentThreadIdStr() const {
 
 /////////////////////////////////////////////////////////////////////////
 // stream casts
-std::ostream& operator<<(std::ostream& stream, std::vector<byte> bytes) {
+std::ostream& operator<<(std::ostream& stream, const std::vector<byte>& bytes) {
 	stream << "bytes[";
 	bool first = true;
-	for (auto b : bytes) {
+	for (const auto& b : bytes) {
 		if (first) {
 			first = false;
 		} else {

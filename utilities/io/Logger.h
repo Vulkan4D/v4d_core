@@ -37,7 +37,7 @@ namespace v4d::io {
 		
 		static std::shared_ptr<Logger> FileInstance(const std::string& filepath, std::optional<bool> verbose = std::nullopt);
 
-		void Log(std::ostream& message, const char* style = "0");
+		void Log(const std::ostream& message, const char* style = "0");
 
 		std::string GetCurrentThreadIdStr() const;
 
@@ -46,11 +46,11 @@ namespace v4d::io {
 		// 	Log(std::ostringstream() << message, style);
 		// }
 		
-		inline void LogError(std::ostream& message) {
+		inline void LogError(const std::ostream& message) {
 			Log(message, "1;31");
 			if (useLogFile) {
 				// When using a log file, make sure to output errors in stderr too
-				std::cerr << dynamic_cast<std::ostringstream&>(message).str() << std::endl;
+				std::cerr << dynamic_cast<const std::ostringstream&>(message).str() << std::endl;
 			}
 		}
 
@@ -68,8 +68,7 @@ namespace v4d::io {
 
 /////////////////////////////////////////////////////////////////////////
 // stream casts
-V4DLIB std::ostream& operator<<(std::ostream& stream, std::vector<byte> bytes);
-
+V4DLIB std::ostream& operator<<(std::ostream& stream, const std::vector<byte>& bytes);
 
 /////////////////////////////////////////////////////////////////////////
 // MACROS
