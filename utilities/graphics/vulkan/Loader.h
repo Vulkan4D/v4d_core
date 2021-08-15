@@ -48,6 +48,11 @@ namespace v4d::graphics::vulkan {
 			#endif
 		};
 		
+		#ifdef V4D_VULKAN_USE_VALIDATION_LAYERS
+			std::vector<VkValidationFeatureEnableEXT> validationFeaturesEnable {};
+			std::vector<VkValidationFeatureDisableEXT> validationFeaturesDisable {};
+		#endif
+		
 		#ifndef XVK_USE_QT_VULKAN_LOADER
 			void CheckExtensions();
 			void CheckLayers();

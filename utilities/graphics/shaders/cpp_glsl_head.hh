@@ -57,5 +57,6 @@
 
 	#define STATIC_ASSERT_ALIGNED16_SIZE(T, X) static_assert(sizeof(T) == X && sizeof(T) % 16 == 0);
 	#define STATIC_ASSERT_SIZE(T, X) static_assert(sizeof(T) == X);
+	#define BUFFER_REFERENCE(align) struct
 
 #endif

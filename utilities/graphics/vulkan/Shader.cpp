@@ -43,6 +43,7 @@ VkShaderModule Shader::CreateShaderModule(Device* device, VkPipelineShaderStageC
 	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 	createInfo.codeSize = bytecode.size();
 	createInfo.pCode = reinterpret_cast<const uint32_t*>(bytecode.data());
+	LOG("Generating shader module " << filepath)
 	if (device->CreateShaderModule(&createInfo, nullptr, &module) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create Shader Module for shader " + name);
 	}

@@ -87,11 +87,27 @@ using namespace v4d::graphics::vulkan;
 			V4D_ENGINE_VERSION,
 			vulkan::Loader::VULKAN_API_VERSION
 		};
+		
+		#ifdef V4D_VULKAN_USE_VALIDATION_LAYERS
+			VkValidationFeaturesEXT validationFeatures = {};
+			if (loader->validationFeaturesEnable.size() + loader->validationFeaturesDisable.size()) {
+				validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+				validationFeatures.enabledValidationFeatureCount = loader->validationFeaturesEnable.size();
+				validationFeatures.pEnabledValidationFeatures = loader->validationFeaturesEnable.data();
+				validationFeatures.disabledValidationFeatureCount = loader->validationFeaturesDisable.size();
+				validationFeatures.pDisabledValidationFeatures = loader->validationFeaturesDisable.data();
+				loader->requiredInstanceExtensions.push_back(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
+			}
+		#endif
 
 		// Create the Vulkan instance
 		VkInstanceCreateInfo createInfo {
 			VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-			nullptr, // pNext
+			#ifdef V4D_VULKAN_USE_VALIDATION_LAYERS
+				(validationFeatures.sType == VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT)? &validationFeatures : nullptr, // pNext
+			#else
+				nullptr, // pNext
+			#endif
 			0, // flags
 			&appInfo,
 			(uint32_t)loader->requiredInstanceLayers.size(),

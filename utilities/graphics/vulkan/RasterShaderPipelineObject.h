@@ -29,7 +29,7 @@ namespace v4d::graphics::vulkan {
 			nullptr,// const VkPipelineShaderStageCreateInfo* pStages
 			&vertexInputInfo,// const VkPipelineVertexInputStateCreateInfo* pVertexInputState
 			&inputAssembly,// const VkPipelineInputAssemblyStateCreateInfo* pInputAssemblyState
-			nullptr,// const VkPipelineTessellationStateCreateInfo* pTessellationState
+			&tessellation,// const VkPipelineTessellationStateCreateInfo* pTessellationState
 			nullptr,// const VkPipelineViewportStateCreateInfo* pViewportState
 			&rasterizer,// const VkPipelineRasterizationStateCreateInfo* pRasterizationState
 			&multisampling,// const VkPipelineMultisampleStateCreateInfo* pMultisampleState
@@ -116,6 +116,12 @@ namespace v4d::graphics::vulkan {
 			0,//VkPipelineDynamicStateCreateFlags flags
 			0,//uint32_t dynamicStateCount
 			nullptr//const VkDynamicState* pDynamicStates
+		};
+		
+		VkPipelineTessellationStateCreateInfo tessellation {VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO,
+			nullptr,//const void* pNext;
+			0,//VkPipelineTessellationStateCreateFlags flags;
+			3//uint32_t patchControlPoints;
 		};
 		
 		VkPipelineViewportStateCreateInfo viewportState {};

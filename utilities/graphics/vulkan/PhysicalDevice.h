@@ -39,12 +39,14 @@ namespace v4d::graphics::vulkan {
 			
 			// Vulkan 1.2
 			VkPhysicalDeviceVulkan12Features vulkan12DeviceFeatures { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };
+			VkPhysicalDeviceRobustness2FeaturesEXT robustness2Features { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT };
+			VkPhysicalDeviceImageRobustnessFeaturesEXT imageRobustnessFeatures {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_ROBUSTNESS_FEATURES_EXT};
 			VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingPipelineFeatures { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR };
 			VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructureFeatures { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR };
 			VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR };
 			
 		private:
-			const std::array<void*, 7> featuresPNextOrder {
+			const std::array<void*, 9> featuresPNextOrder {
 				&deviceFeatures2,
 				
 				// Vulkan 1.1
@@ -53,6 +55,8 @@ namespace v4d::graphics::vulkan {
 				
 				// Vulkan 1.2
 				&vulkan12DeviceFeatures,
+				&robustness2Features,
+				&imageRobustnessFeatures,
 				&rayTracingPipelineFeatures,
 				&accelerationStructureFeatures,
 				&rayQueryFeatures,
