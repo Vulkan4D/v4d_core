@@ -110,6 +110,9 @@ public:
 		return set[frameIndex];
 	}
 	
+	void Update(uint32_t binding) {
+		for (auto& s : set) s.Update(binding);
+	}
 };
 
 #pragma region Descriptor types
