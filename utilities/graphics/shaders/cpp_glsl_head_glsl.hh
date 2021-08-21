@@ -9,5 +9,7 @@
 	#define STATIC_ASSERT_SIZE(T,X)
 	#define VkDeviceAddress uint64_t
 	#define BUFFER_REFERENCE_STRUCT(align) layout(buffer_reference, std430, buffer_reference_align = align) buffer
+	#define BUFFER_REFERENCE_STRUCT_READONLY(align) layout(buffer_reference, std430, buffer_reference_align = align) buffer readonly
+	#define BUFFER_REFERENCE_STRUCT_WRITEONLY(align) layout(buffer_reference, std430, buffer_reference_align = align) buffer writeonly
 	#define BUFFER_REFERENCE_ADDR(type) type
 #endif

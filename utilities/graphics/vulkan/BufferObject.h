@@ -38,6 +38,17 @@ class V4DLIB BufferObject {
 	// 	return buffers;
 	// }
 	
+	void Swap(BufferObject& other) {
+		assert(memoryUsage == other.memoryUsage);
+		assert(bufferUsage == other.bufferUsage);
+		assert(size == other.size);
+		assert(device == other.device);
+		std::lock_guard lock(UnderlyingCommonObjectContainer::mu);
+		std::swap(obj.obj, other.obj.obj);
+		std::swap(address, other.address);
+		std::swap(allocation, other.allocation);
+	}
+	
 	operator VkDeviceOrHostAddressConstKHR() const {return address;}
 	operator VkDeviceAddress() const {return address.deviceAddress;}
 };
