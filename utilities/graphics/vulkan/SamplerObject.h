@@ -66,9 +66,9 @@ COMMON_OBJECT(SamplerObject, VkSampler, V4DLIB)
 		VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,// VkSamplerAddressMode addressModeU
 		VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,// VkSamplerAddressMode addressModeV
 		VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,// VkSamplerAddressMode addressModeW
-		-1.0f,// float mipLodBias
+		0.0f,// float mipLodBias
 		VK_TRUE,// VkBool32 anisotropyEnable
-		8.0f,// float maxAnisotropy
+		16.0f,// float maxAnisotropy
 		VK_FALSE,// VkBool32 compareEnable
 		VK_COMPARE_OP_NEVER,// VkCompareOp compareOp
 		0.0f,// float minLod
