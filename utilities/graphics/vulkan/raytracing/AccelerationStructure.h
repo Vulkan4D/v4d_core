@@ -68,7 +68,7 @@ namespace v4d::graphics::vulkan::raytracing {
 		};
 		
 		void AssignBottomLevelGeometry(const std::vector<GeometryAccelerationStructureInfo>& geometries);
-		void AssignBottomLevelProceduralVertex(const std::vector<GeometryAccelerationStructureInfo>& geometries);
+		void AssignBottomLevelAabb(const std::vector<GeometryAccelerationStructureInfo>& geometries);
 		
 		void AssignTopLevel();
 		

@@ -136,6 +136,12 @@ public:
 		deviceBuffer.Allocate(device);
 	}
 	
+	void Fill(const std::vector<T>& src) {
+		assert(hostBuffer);
+		assert(src.size() <= Count());
+		memcpy(hostBuffer.operator->(), src.data(), src.size()*sizeof(T));
+	}
+	
 	void Free() {
 		hostBuffer.Free();
 		deviceBuffer.Free();

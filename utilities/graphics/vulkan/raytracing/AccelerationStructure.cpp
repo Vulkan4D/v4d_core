@@ -67,7 +67,7 @@ namespace v4d::graphics::vulkan::raytracing {
 		buildGeometryInfo.geometryCount = geometries.size();
 	}
 	
-	void AccelerationStructure::AssignBottomLevelProceduralVertex(const std::vector<GeometryAccelerationStructureInfo>& geometries) {
+	void AccelerationStructure::AssignBottomLevelAabb(const std::vector<GeometryAccelerationStructureInfo>& geometries) {
 		isTopLevel = false;
 		
 		accelerationStructureGeometries.clear();
