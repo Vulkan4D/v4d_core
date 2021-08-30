@@ -271,7 +271,7 @@ VkDeviceSize ShaderBindingTable::GetSbtBufferSize() {
 }
 
 void ShaderBindingTable::WriteShaderBindingTableToBuffer() {
-	uint32_t sbtSize = GetSbtBufferSize(); // GetSbtBufferSize must be called here, it caches some values used for setting regions
+	uint32_t sbtSize = GetSbtBufferSize(); // This is called first when creating the buffer
 	VkDeviceSize bindingStride = rayTracingPipelineProperties.shaderGroupHandleSize;
 	
 	VkDeviceAddress baseAddress = *buffer;
@@ -309,7 +309,7 @@ void ShaderBindingTable::WriteShaderBindingTableToBuffer() {
 	};
 	
 	uint8_t* data;
-	device->MapMemoryAllocation(buffer->allocation, (void**)&data, bufferOffset, sbtSize);
+	device->MapMemoryAllocation(buffer->allocation, (void**)&data);
 	const size_t shaderHandlerStorageSize = groups.size()*rayTracingPipelineProperties.shaderGroupHandleSize;
 	auto shaderHandleStorage = new uint8_t[shaderHandlerStorageSize];
 	if (device->GetRayTracingShaderGroupHandlesKHR(pipeline, 0, (uint)groups.size(), shaderHandlerStorageSize, shaderHandleStorage) != VK_SUCCESS)
@@ -318,19 +318,19 @@ void ShaderBindingTable::WriteShaderBindingTableToBuffer() {
 	int shaderHandlerStorageOffset = 0;
 	
 	// Ray Gen
-	memcpy(data + rayGenShaderRegionOffset, shaderHandleStorage + shaderHandlerStorageOffset, rayTracingPipelineProperties.shaderGroupHandleSize * rayGenGroups.size());
+	memcpy(data + bufferOffset + rayGenShaderRegionOffset, shaderHandleStorage + shaderHandlerStorageOffset, rayTracingPipelineProperties.shaderGroupHandleSize * rayGenGroups.size());
 	shaderHandlerStorageOffset += rayTracingPipelineProperties.shaderGroupHandleSize * rayGenGroups.size();
 	
 	// Ray Miss
-	memcpy(data + rayMissShaderRegionOffset, shaderHandleStorage + shaderHandlerStorageOffset, rayTracingPipelineProperties.shaderGroupHandleSize * rayMissGroups.size());
+	memcpy(data + bufferOffset + rayMissShaderRegionOffset, shaderHandleStorage + shaderHandlerStorageOffset, rayTracingPipelineProperties.shaderGroupHandleSize * rayMissGroups.size());
 	shaderHandlerStorageOffset += rayTracingPipelineProperties.shaderGroupHandleSize * rayMissGroups.size();
 	
 	// Ray Hit
-	memcpy(data + rayHitShaderRegionOffset, shaderHandleStorage + shaderHandlerStorageOffset, rayTracingPipelineProperties.shaderGroupHandleSize * rayHitGroups.size());
+	memcpy(data + bufferOffset + rayHitShaderRegionOffset, shaderHandleStorage + shaderHandlerStorageOffset, rayTracingPipelineProperties.shaderGroupHandleSize * rayHitGroups.size());
 	shaderHandlerStorageOffset += rayTracingPipelineProperties.shaderGroupHandleSize * rayHitGroups.size();
 	
 	// Ray Callable
-	memcpy(data + rayCallableShaderRegionOffset, shaderHandleStorage + shaderHandlerStorageOffset, rayTracingPipelineProperties.shaderGroupHandleSize * rayCallableGroups.size());
+	memcpy(data + bufferOffset + rayCallableShaderRegionOffset, shaderHandleStorage + shaderHandlerStorageOffset, rayTracingPipelineProperties.shaderGroupHandleSize * rayCallableGroups.size());
 	shaderHandlerStorageOffset += rayTracingPipelineProperties.shaderGroupHandleSize * rayCallableGroups.size();
 	
 	device->UnmapMemoryAllocation(buffer->allocation);
