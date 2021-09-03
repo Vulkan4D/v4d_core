@@ -285,7 +285,7 @@ namespace v4d::graphics {
 
 		void WaitForFence(VkFence& fence) {
 			if (fence == VK_NULL_HANDLE) return;
-			CheckVkResult("Wait for Fence", renderingDevice->WaitForFences(1, &fence, VK_TRUE, /*timeout*/1000UL * 1000 * 1000));
+			CheckVkResult("Wait for Fence", renderingDevice->WaitForFences(1, &fence, VK_TRUE, /*timeout*/1000UL * 1000 * V4D_RENDERER_WAIT_FOR_FENCE_GLOBAL_TIMEOUT_MS));
 		}
 		
 		void ResetFence(const VkFence& fence) {

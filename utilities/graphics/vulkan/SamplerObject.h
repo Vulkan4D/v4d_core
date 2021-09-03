@@ -80,5 +80,9 @@ COMMON_OBJECT(SamplerObject, VkSampler, V4DLIB)
 	void Create(Device* device = nullptr);
 	void Destroy();
 	
+	bool IsLoaded() const {
+		return VkSampler(obj) != VK_NULL_HANDLE;
+	}
+	
 };
 }
