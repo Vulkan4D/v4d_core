@@ -45,8 +45,8 @@ namespace v4d::networking {
 		virtual uint16_t GetVersion() const = 0;
 
 	protected: // Pure-Virtual methods
-		virtual IncomingClientPtr Authenticate(v4d::data::ReadOnlyStream* /*authStream*/) = 0;
-		virtual void Communicate(v4d::io::SocketPtr, std::shared_ptr<IncomingClient>, byte /*clientType*/) = 0;
+		virtual IncomingClientPtr Authenticate(v4d::data::ReadOnlyStream* encryptedStream, v4d::data::ReadOnlyStream* plainStream) = 0;
+		virtual void Communicate(v4d::io::SocketPtr, std::shared_ptr<IncomingClient>, byte clientType) = 0;
 
 	protected:
 		virtual void HandleNewConnection(v4d::io::SocketPtr socket);

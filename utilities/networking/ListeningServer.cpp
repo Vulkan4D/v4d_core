@@ -194,7 +194,7 @@ void ListeningServer::TokenRequest(v4d::io::SocketPtr socket, byte clientType) {
 }
 
 void ListeningServer::AnonymousRequest(v4d::io::SocketPtr socket, byte clientType) {
-	IncomingClientPtr client = Authenticate(nullptr);
+	IncomingClientPtr client = Authenticate(nullptr, nullptr);
 	if (!client) {
 		if (socket->IsTCP()) {
 			*socket << ZAP::DENY;
@@ -214,8 +214,9 @@ void ListeningServer::AnonymousRequest(v4d::io::SocketPtr socket, byte clientTyp
 
 void ListeningServer::AuthRequest(v4d::io::SocketPtr socket, byte clientType) {
 	// Receive AUTH data
-	v4d::data::ReadOnlyStream authStream = rsa? socket->ReadEncryptedStream(rsa.get()) : socket->ReadStream();
-	if (rsa && authStream.GetDataBufferRemaining() == 0) {
+	v4d::data::ReadOnlyStream encryptedStream = rsa? socket->ReadEncryptedStream(rsa.get()) : socket->ReadStream();
+	v4d::data::ReadOnlyStream plainStream = socket->ReadStream();
+	if (rsa && encryptedStream.GetDataBufferRemaining() == 0) {
 		if (socket->IsTCP()) {
 			*socket << ZAP::DENY;
 			*socket << zapdata::Error{ZAP_CODES::AUTH_FAILED_RSA_DECRYPTION, ZAP_CODES::AUTH_FAILED_RSA_DECRYPTION_text};
@@ -224,8 +225,8 @@ void ListeningServer::AuthRequest(v4d::io::SocketPtr socket, byte clientType) {
 		}
 		return;
 	}
-	auto authData = authStream.GetData();
-	IncomingClientPtr client = Authenticate(&authStream);
+	auto authData = encryptedStream.GetData();
+	IncomingClientPtr client = Authenticate(&encryptedStream, &plainStream);
 	if (!client) {
 		if (socket->IsTCP()) {
 			*socket << ZAP::DENY;
@@ -237,7 +238,7 @@ void ListeningServer::AuthRequest(v4d::io::SocketPtr socket, byte clientType) {
 	}
 	// Prepare response
 	client->token = GenerateToken();
-	client->aes = std::make_unique<v4d::crypto::AES>(authStream.Read<std::string>());
+	client->aes = std::make_unique<v4d::crypto::AES>(encryptedStream.Read<std::string>());
 	if (socket->IsTCP()) {
 		v4d::data::Stream tokenAndId(10+client->token.size() + sizeof(client->id));
 		tokenAndId << client->token << client->id;

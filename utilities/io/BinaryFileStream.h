@@ -23,7 +23,7 @@ namespace v4d::io {
 
 		long GetSize();
 		void Truncate();
-		void Reopen();
+		void Reopen(bool seekEnd = false);
 
 		// Stream Overrides
 		std::vector<byte> GetData() override;
@@ -31,13 +31,29 @@ namespace v4d::io {
 		// FilePath Overrides
 		virtual bool Delete() override;
 		
-		inline bool IsEOF() const;
-		
-		inline long GetReadPos();
-		inline long GetWritePos();
+		inline bool IsEOF() const {
+			return file.eof();
+		}
 
-		inline void SetReadPos(long);
-		inline void SetWritePos(long);
+		inline long GetReadPos() {
+			return file.tellg();
+		}
+
+		inline long GetWritePos() {
+			return file.tellp();
+		}
+
+		inline void SetReadPos(long pos) {
+			file.seekg(pos);
+		}
+
+		inline void SetWritePos(long pos) {
+			file.seekp(pos);
+		}
+		
+		inline operator bool() const {
+			return file.good();
+		}
 
 	protected:
 

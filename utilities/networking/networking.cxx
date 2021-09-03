@@ -24,9 +24,9 @@ public:
 		return 168;
 	}
 
-	v4d::networking::IncomingClientPtr Authenticate(v4d::data::ReadOnlyStream* authStream) override {
-		if (authStream) {
-			auto[username, password, stuff] = zapdata::Auth::ConstructFromStream(authStream);
+	v4d::networking::IncomingClientPtr Authenticate(v4d::data::ReadOnlyStream* encryptedStream, v4d::data::ReadOnlyStream* plainStream) override {
+		if (encryptedStream) {
+			auto[username, password, stuff] = zapdata::Auth::ConstructFromStream(encryptedStream);
 			if (username == "bob" && password == "12345") {
 				if (stuff.size() == 3 && stuff[0] == 4 && stuff[1] == 16 && stuff[2] == 512) {
 					uint32_t id;
@@ -60,8 +60,8 @@ public:
 		return 168;
 	}
 
-	void Authenticate(v4d::data::Stream* authStream) override {
-		*authStream << zapdata::Auth{"bob", "12345", {4,16,512}};
+	void Authenticate(v4d::data::Stream* encryptedStream, v4d::data::Stream* plainStream) override {
+		*encryptedStream << zapdata::Auth{"bob", "12345", {4,16,512}};
 	}
 	
 	void Communicate(v4d::io::SocketPtr /*socket*/) override {

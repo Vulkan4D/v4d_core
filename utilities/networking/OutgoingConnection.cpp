@@ -61,16 +61,17 @@ bool OutgoingConnection::Connect(std::string ip, uint16_t port, byte clientType)
 		}
 		return true;
 	} else {
-		v4d::data::Stream authData(rsa? rsa->GetMaxBlockSize() : 256);
-		Authenticate(&authData);
-		if (authData.GetWriteBufferSize() == 0) {
+		v4d::data::Stream encryptedStream(rsa? rsa->GetMaxBlockSize() : 256);
+		v4d::data::Stream plainStream(1024);
+		Authenticate(&encryptedStream, &plainStream);
+		if (encryptedStream.GetWriteBufferSize() == 0 && plainStream.GetWriteBufferSize() == 0) {
 			LOG_VERBOSE("Connecting anonymously....")
 			*socket << ZAP::ANONYM;
 			return AnonymousRequest();
 		} else {
 			LOG_VERBOSE("Connecting using AUTH....")
 			*socket << ZAP::AUTH;
-			return AuthRequest(authData);
+			return AuthRequest(encryptedStream, plainStream);
 		}
 	}
 
@@ -146,13 +147,14 @@ bool OutgoingConnection::AnonymousRequest() {
 	return false;
 }
 
-bool OutgoingConnection::AuthRequest(v4d::data::Stream& authData) {
-	authData << aes.GetHexKey();
+bool OutgoingConnection::AuthRequest(v4d::data::Stream& encryptedStream, v4d::data::Stream& plainStream) {
+	encryptedStream << aes.GetHexKey();
 	if (rsa) {
-		socket->WriteEncryptedStream(rsa.get(), authData);
+		socket->WriteEncryptedStream(rsa.get(), encryptedStream);
 	} else {
-		socket->WriteStream(authData);
+		socket->WriteStream(encryptedStream);
 	}
+	socket->WriteStream(plainStream);
 	socket->Flush();
 	if (socket->IsUDP()) {
 		return HandleConnection();
@@ -165,7 +167,7 @@ bool OutgoingConnection::AuthRequest(v4d::data::Stream& authData) {
 		case ZAP::OK:{
 			if (rsa) {
 				auto signature = socket->Read<std::vector, byte>();
-				if (!rsa->Verify(authData.GetData(), signature)) {
+				if (!rsa->Verify(encryptedStream.GetData(), signature)) {
 					Error(ZAP_CODES::SERVER_SIGNATURE_FAILED, "Error while trying to connect to server. " + ZAP_CODES::SERVER_SIGNATURE_FAILED_text);
 					return false;
 				}

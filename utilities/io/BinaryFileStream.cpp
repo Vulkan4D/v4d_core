@@ -40,26 +40,6 @@ long BinaryFileStream::GetSize() {
 	return size;
 }
 
-bool BinaryFileStream::IsEOF() const {
-	return file.eof();
-}
-
-long BinaryFileStream::GetReadPos() {
-	return file.tellg();
-}
-
-long BinaryFileStream::GetWritePos() {
-	return file.tellp();
-}
-
-void BinaryFileStream::SetReadPos(long pos) {
-	file.seekg(pos);
-}
-
-void BinaryFileStream::SetWritePos(long pos) {
-	file.seekp(pos);
-}
-
 void BinaryFileStream::Truncate() {
 	LockReadWrite();
 		if (file.is_open()) {
@@ -72,12 +52,12 @@ void BinaryFileStream::Truncate() {
 	UnlockReadWrite();
 }
 
-void BinaryFileStream::Reopen() {
+void BinaryFileStream::Reopen(bool seekEnd) {
 	LockReadWrite();
 		if (file.is_open()) {
 			file.close();
 		}
-		file.open(filePath, OPENMODE);
+		file.open(filePath, seekEnd? (OPENMODE | std::fstream::ate) : OPENMODE);
 		if (!file.is_open()) {
 			LOG_ERROR("Cannot open/reopen file '" << filePath << "'")
 		}

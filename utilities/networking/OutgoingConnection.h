@@ -43,7 +43,7 @@ namespace v4d::networking {
 	protected: // Pure-Virtual methods
 		virtual uint64_t GetAppName() const = 0;
 		virtual uint16_t GetVersion() const = 0;
-		virtual void Authenticate(v4d::data::Stream* authStream) = 0;
+		virtual void Authenticate(v4d::data::Stream* encryptedStream, v4d::data::Stream* plainStream) = 0;
 		virtual void Communicate(v4d::io::SocketPtr socket) = 0;
 
 	public:
@@ -54,7 +54,7 @@ namespace v4d::networking {
 
 		virtual bool TokenRequest();
 		virtual bool AnonymousRequest();
-		virtual bool AuthRequest(v4d::data::Stream&);
+		virtual bool AuthRequest(v4d::data::Stream& encrypted, v4d::data::Stream& plain);
 
 		virtual bool HandleConnection();
 

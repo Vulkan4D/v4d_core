@@ -28,12 +28,17 @@ namespace v4d::crypto {
 
 		std::vector<byte> Encrypt(const byte* data, size_t) override;
 		std::vector<byte> Decrypt(const byte* data, size_t) override;
-
+		
 		std::vector<byte> Sign(const byte* data, size_t size);
 		bool Verify(const byte* data, size_t size, const std::vector<byte>& signature);
 
 		std::vector<byte> Sign(const std::vector<byte>& data);
 		bool Verify(const std::vector<byte>& data, const std::vector<byte>& signature);
+		
+		template<typename T>
+		std::vector<byte> Sign(const T& data) {return Sign(reinterpret_cast<const byte* const>(&data), sizeof(T));}
+		template<typename T>
+		bool Verify(const T& data, const std::vector<byte>& signature) {return Verify(reinterpret_cast<const byte* const>(&data), sizeof(T), signature);}
 	};
 
 }
