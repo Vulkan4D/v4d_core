@@ -165,6 +165,7 @@ namespace v4d::graphics::vulkan {
 		VkCommandBuffer BeginSingleTimeCommands(Queue, uint commandPoolIndex = 0);
 		void EndSingleTimeCommands(Queue, VkCommandBuffer, uint commandPoolIndex = 0);
 		void RunSingleTimeCommands(Queue, std::function<void(VkCommandBuffer)>&&, uint commandPoolIndex = 0);
+		bool TryRunSingleTimeCommands(Queue, std::function<bool(VkCommandBuffer)>&&, uint commandPoolIndex = 0);
 		
 		// Allocator
 		void CreateAllocator();

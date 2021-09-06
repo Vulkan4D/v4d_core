@@ -254,6 +254,17 @@ void Device::RunSingleTimeCommands(Queue queue, std::function<void(VkCommandBuff
 	EndSingleTimeCommands(queue, cmdBuffer, commandPoolIndex);
 }
 
+bool Device::TryRunSingleTimeCommands(Queue queue, std::function<bool(VkCommandBuffer)>&& func, uint commandPoolIndex) {
+	auto cmdBuffer = BeginSingleTimeCommands(queue, commandPoolIndex);
+	bool result = func(cmdBuffer);
+	if (result) {
+		EndSingleTimeCommands(queue, cmdBuffer, commandPoolIndex);
+	} else {
+		FreeCommandBuffers(queue.commandPools[commandPoolIndex], 1, &cmdBuffer);
+	}
+	return result;
+}
+
 #ifdef V4D_VULKAN_USE_VMA
 	void Device::DumpMemoryAllocationStats() {
 		char* str;
