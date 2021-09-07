@@ -33,6 +33,7 @@
 	#include <openssl/rand.h>
 #endif
 #ifdef _WINDOWS
+	#define WIN32_LEAN_AND_MEAN
 	#include <winsock2.h>
 	#include <windows.h>
 	#define MAXFLOAT std::numeric_limits<float>::max()
