@@ -5,7 +5,7 @@
 #include "utilities/data/Stream.h"
 #include "utilities/io/Socket.h"
 #include "utilities/crypto/Crypto.h"
-#include "utilities/data/ReadOnlyStream.hpp"
+#include "utilities/data/ReadOnlyStream.h"
 #include "helpers/STREAMABLE.hpp"
 
 // ZAP Ain't a Protocol

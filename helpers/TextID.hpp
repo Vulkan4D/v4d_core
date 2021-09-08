@@ -45,6 +45,10 @@ namespace v4d {
 			return BaseN::DecodeStringFromUInt64(numericValue, BASECHARS);
 		}
 		
+		explicit operator bool() const {
+			return numericValue != 0;
+		}
+		
 		bool operator==(const TextID& other) {
 			return numericValue == other.numericValue;
 		}

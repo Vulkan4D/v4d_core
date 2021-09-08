@@ -7,7 +7,7 @@
 #include <mutex>
 #include <unordered_map>
 #include "utilities/crypto/RSA.h"
-#include "utilities/data/ReadOnlyStream.hpp"
+#include "utilities/data/ReadOnlyStream.h"
 #include "utilities/io/Socket.h"
 #include "utilities/networking/IncomingClient.h"
 #include "utilities/networking/ZAP.hh"
@@ -21,7 +21,8 @@ namespace v4d::networking {
 		v4d::io::SocketPtr listeningSocket;
 		std::shared_ptr<v4d::crypto::RSA> rsa;
 
-		const ulong REQ_INCREMENT_MAX_DIFF = 100000; // maximum acceptable difference in the increment index between two requests
+		const int64_t REQ_INCREMENT_LT_MAX_DIFF = 10; // maximum acceptable difference in the increment index between two requests, when the request increment is smaller than the last received increment
+		const int64_t REQ_INCREMENT_GT_MAX_DIFF = 100000; // maximum acceptable difference in the increment index between two requests, when the request increment is larger than the last received increment
 		
 	public:
 

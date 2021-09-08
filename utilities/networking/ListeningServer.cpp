@@ -174,8 +174,8 @@ void ListeningServer::TokenRequest(v4d::io::SocketPtr socket, byte clientType) {
 			}
 			return;
 		}
-		// Compare encrypted increment to prevent hackers from reusing previously sent token headers to send data on behalf of someone else (some kind of nonce)
-		if (increment <= client->requestIncrement || increment > client->requestIncrement + REQ_INCREMENT_MAX_DIFF) {
+		// Compare encrypted increment to prevent hackers from reusing previously sent token headers to send data on behalf of someone else (some kind of nonce, although with an acceptable deadzone)
+		if (int64_t(increment) < int64_t(client->requestIncrement) - REQ_INCREMENT_LT_MAX_DIFF || increment > client->requestIncrement + REQ_INCREMENT_GT_MAX_DIFF) {
 			if (socket->IsTCP()) {
 				*socket << ZAP::DENY;
 				*socket << zapdata::Error{ZAP_CODES::AUTH_FAILED_REQ_INCREMENT, ZAP_CODES::AUTH_FAILED_REQ_INCREMENT_text};

@@ -1,6 +1,6 @@
 #include "Crypto.h"
 #include "utilities/data/Stream.h"
-#include "utilities/data/ReadOnlyStream.hpp"
+#include "utilities/data/ReadOnlyStream.h"
 
 v4d::crypto::Crypto::Crypto() {}
 v4d::crypto::Crypto::~Crypto() {}

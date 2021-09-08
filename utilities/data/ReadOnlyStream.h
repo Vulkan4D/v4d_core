@@ -11,17 +11,11 @@ namespace v4d::data {
 
 	public:
 
-		ReadOnlyStream() : Stream(0) {}
-
-		ReadOnlyStream(size_t bufferSize) : Stream(0), dataBuffer(bufferSize) {}
-
-		ReadOnlyStream(const std::vector<byte>& bytes) : Stream(0), dataBuffer(bytes.size()) {
-			ImportData(bytes.data(), bytes.size());
-		}
-
-		ReadOnlyStream(const byte* data, size_t size) : Stream(0), dataBuffer(size) {
-			ImportData(data, size);
-		}
+		ReadOnlyStream();
+		ReadOnlyStream(size_t bufferSize);
+		ReadOnlyStream(const std::vector<byte>& bytes);
+		ReadOnlyStream(const byte* data, size_t size);
+		virtual ~ReadOnlyStream();
 
 		void ImportData(const byte* data, size_t size) {
 			dataBuffer.resize(size);

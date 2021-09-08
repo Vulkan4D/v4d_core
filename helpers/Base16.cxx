@@ -1,6 +1,6 @@
 #include <v4d.h>
 #include "utilities/data/Stream.h"
-#include "utilities/data/ReadOnlyStream.hpp"
+#include "utilities/data/ReadOnlyStream.h"
 
 namespace v4d::tests {
 

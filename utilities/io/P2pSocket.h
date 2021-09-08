@@ -8,7 +8,7 @@
 #include <string>
 
 #include "utilities/data/Stream.h"
-#include "utilities/data/ReadOnlyStream.hpp"
+#include "utilities/data/ReadOnlyStream.h"
 
 #ifdef _WINDOWS
 	#include <winsock2.h>
