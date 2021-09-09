@@ -21,7 +21,7 @@ namespace v4d::networking {
 		v4d::io::SocketPtr listeningSocket;
 		std::shared_ptr<v4d::crypto::RSA> rsa;
 
-		const int64_t REQ_INCREMENT_LT_MAX_DIFF = 10; // maximum acceptable difference in the increment index between two requests, when the request increment is smaller than the last received increment
+		const int64_t REQ_INCREMENT_LT_MAX_DIFF = 50; // maximum acceptable difference in the increment index between two requests, when the request increment is smaller than the last received increment
 		const int64_t REQ_INCREMENT_GT_MAX_DIFF = 100000; // maximum acceptable difference in the increment index between two requests, when the request increment is larger than the last received increment
 		
 	public:
