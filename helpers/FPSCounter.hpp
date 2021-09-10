@@ -2,6 +2,7 @@
 
 #include <v4d.h>
 #include <cmath>
+#include <sstream>
 
 namespace v4d {
 	class FPSCounter {
@@ -44,13 +45,20 @@ namespace v4d {
 		}
 		
 		operator double() const {
-			return std::round(avgFramerate*10)*0.1;
+			return avgFramerate;
 		}
 		
 		operator int() const {
 			return int(std::round(avgFramerate));
 		}
 		
+		operator std::string () const {
+			std::stringstream out {};
+			out.precision(1);
+			out << std::fixed << (std::round(avgFramerate*10)*0.1);
+			return out.str();
+		}
+
 	};
 }
 
