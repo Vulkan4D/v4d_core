@@ -99,27 +99,42 @@ uint32_t ShaderBindingTable::AddMissShader(const ShaderInfo& rmiss) {
 	return nextMissShaderOffset++;
 }
 
-uint32_t ShaderBindingTable::AddHitShader(const char* filePath) {
-	std::vector<ShaderInfo> files = ShaderPipelineMetaFile{filePath, this};
-	
+struct RayTracingShaderProgram {
 	ShaderInfo rchit {""};
 	ShaderInfo rahit {""};
 	ShaderInfo rint {""};
+};
+
+uint32_t ShaderBindingTable::AddHitShader(const char* filePath) {
+	std::vector<ShaderInfo> files = ShaderPipelineMetaFile{filePath, this};
+	
+	std::map<int/*subpass/offset*/, RayTracingShaderProgram> shaders {};
 	
 	for (auto& shaderFile : files) {
 		v4d::io::FilePath filePath(shaderFile.filepath);
 		if (filePath.GetExtension() == ".rchit") {
-			rchit = shaderFile;
+			shaders[shaderFile.subpass].rchit = shaderFile;
 		}
 		else if (filePath.GetExtension() == ".rahit") {
-			rahit = shaderFile;
+			shaders[shaderFile.subpass].rahit = shaderFile;
 		}
 		else if (filePath.GetExtension() == ".rint") {
-			rint = shaderFile;
+			shaders[shaderFile.subpass].rint = shaderFile;
 		}
 	}
 	
-	return AddHitShader(rchit, rahit, rint);
+	int32_t index = -1;
+	for (auto& [offset, shader] : shaders) {
+		uint32_t i = AddHitShader(shader.rchit, shader.rahit, shader.rint);
+		if (offset == 0) {
+			assert(index == -1);
+			index = i;
+		} else {
+			assert(index+offset == i);
+		}
+	}
+	assert(index >= 0);
+	return uint32_t(index);
 }
 
 uint32_t ShaderBindingTable::AddHitShader(const ShaderInfo& rchit, const ShaderInfo& rahit, const ShaderInfo& rint) {

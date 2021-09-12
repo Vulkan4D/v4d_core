@@ -20,11 +20,12 @@ namespace v4d::graphics::vulkan {
 
 	struct V4DLIB ShaderInfo {
 		std::string filepath;
+		int subpass;
 		std::string entryPoint;
 		
-		ShaderInfo(const std::string& filepath, const std::string& entryPoint);
-		ShaderInfo(const std::string& filepath);
-		ShaderInfo(const char* filepath);
+		ShaderInfo(const std::string& filepath, int subpass, const std::string& entryPoint);
+		ShaderInfo(const std::string& filepath, int subpass = 0);
+		ShaderInfo(const char* filepath, int subpass = 0);
 	};
 	
 	class ShaderPipelineObject;
@@ -52,8 +53,16 @@ namespace v4d::graphics::vulkan {
 			std::vector<ShaderInfo> vec {};
 			std::string path = file.GetParentPath();
 			v4d::io::StringListFile::Instance(file)->Load([&path,&vec](v4d::io::ASCIIFile* file){
-				for (auto& shader : ((v4d::io::StringListFile*)file)->lines) {
-					vec.emplace_back(path + "/" + shader);
+				for (auto& lineStr : ((v4d::io::StringListFile*)file)->lines) {
+					std::stringstream line {lineStr};
+					int subpass;
+					std::string shader;
+					std::string entryPoint;
+					line >> subpass;
+					line >> shader;
+					line >> entryPoint;
+					if (entryPoint == "") entryPoint = "main";
+					vec.emplace_back(path + "/" + shader, subpass, entryPoint);
 				}
 			});
 			return vec;
