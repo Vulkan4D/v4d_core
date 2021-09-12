@@ -130,7 +130,8 @@ uint32_t ShaderBindingTable::AddHitShader(const char* filePath) {
 			assert(index == -1);
 			index = i;
 		} else {
-			assert(index+offset == i);
+			assert(index >= 0);
+			assert(uint32_t(index) + offset == i);
 		}
 	}
 	assert(index >= 0);
@@ -323,8 +324,6 @@ void ShaderBindingTable::WriteShaderBindingTableToBuffer() {
 		rayCallableShaderRegionSize
 	};
 	
-	uint8_t* data;
-	device->MapMemoryAllocation(buffer->allocation, (void**)&data);
 	const size_t shaderHandlerStorageSize = groups.size()*rayTracingPipelineProperties.shaderGroupHandleSize;
 	auto shaderHandleStorage = new uint8_t[shaderHandlerStorageSize];
 	if (device->GetRayTracingShaderGroupHandlesKHR(pipeline, 0, (uint)groups.size(), shaderHandlerStorageSize, shaderHandleStorage) != VK_SUCCESS)
@@ -333,23 +332,39 @@ void ShaderBindingTable::WriteShaderBindingTableToBuffer() {
 	int shaderHandlerStorageOffset = 0;
 	
 	// Ray Gen
-	memcpy(data + bufferOffset + rayGenShaderRegionOffset, shaderHandleStorage + shaderHandlerStorageOffset, rayTracingPipelineProperties.shaderGroupHandleSize * rayGenGroups.size());
+	buffer->Fill(
+		/*SrcPtr*/shaderHandleStorage + shaderHandlerStorageOffset, 
+		/*SizeBytes*/rayTracingPipelineProperties.shaderGroupHandleSize * rayGenGroups.size(), 
+		/*OffsetBytes*/bufferOffset + rayGenShaderRegionOffset
+	);
 	shaderHandlerStorageOffset += rayTracingPipelineProperties.shaderGroupHandleSize * rayGenGroups.size();
 	
 	// Ray Miss
-	memcpy(data + bufferOffset + rayMissShaderRegionOffset, shaderHandleStorage + shaderHandlerStorageOffset, rayTracingPipelineProperties.shaderGroupHandleSize * rayMissGroups.size());
+	buffer->Fill(
+		/*SrcPtr*/shaderHandleStorage + shaderHandlerStorageOffset, 
+		/*SizeBytes*/rayTracingPipelineProperties.shaderGroupHandleSize * rayMissGroups.size(), 
+		/*OffsetBytes*/bufferOffset + rayMissShaderRegionOffset
+	);
 	shaderHandlerStorageOffset += rayTracingPipelineProperties.shaderGroupHandleSize * rayMissGroups.size();
 	
 	// Ray Hit
-	memcpy(data + bufferOffset + rayHitShaderRegionOffset, shaderHandleStorage + shaderHandlerStorageOffset, rayTracingPipelineProperties.shaderGroupHandleSize * rayHitGroups.size());
+	buffer->Fill(
+		/*SrcPtr*/shaderHandleStorage + shaderHandlerStorageOffset, 
+		/*SizeBytes*/rayTracingPipelineProperties.shaderGroupHandleSize * rayHitGroups.size(), 
+		/*OffsetBytes*/bufferOffset + rayHitShaderRegionOffset
+	);
 	shaderHandlerStorageOffset += rayTracingPipelineProperties.shaderGroupHandleSize * rayHitGroups.size();
 	
 	// Ray Callable
-	memcpy(data + bufferOffset + rayCallableShaderRegionOffset, shaderHandleStorage + shaderHandlerStorageOffset, rayTracingPipelineProperties.shaderGroupHandleSize * rayCallableGroups.size());
+	buffer->Fill(
+		/*SrcPtr*/shaderHandleStorage + shaderHandlerStorageOffset, 
+		/*SizeBytes*/rayTracingPipelineProperties.shaderGroupHandleSize * rayCallableGroups.size(), 
+		/*OffsetBytes*/bufferOffset + rayCallableShaderRegionOffset
+	);
 	shaderHandlerStorageOffset += rayTracingPipelineProperties.shaderGroupHandleSize * rayCallableGroups.size();
 	
-	device->UnmapMemoryAllocation(buffer->allocation);
 	delete[] shaderHandleStorage;
+	dirty = true;
 }
 
 
@@ -369,10 +384,17 @@ void ShaderBindingTable::Create(Device* device) {
 	if (this->device == nullptr) {
 		this->device = device;
 		CreateRayTracingPipeline();
-		buffer = std::make_unique<BufferObject>(MEMORY_USAGE_CPU_TO_GPU, VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR, GetSbtBufferSize());
+		buffer = std::make_unique<StagingBuffer<uint8_t>>(VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR, GetSbtBufferSize());
 		buffer->Allocate(device);
 		assert(buffer);
 		WriteShaderBindingTableToBuffer();
+	}
+}
+
+void ShaderBindingTable::Push(VkCommandBuffer cmdBuffer) {
+	assert(buffer);
+	if (dirty) {
+		buffer->Push(cmdBuffer);
 	}
 }
 

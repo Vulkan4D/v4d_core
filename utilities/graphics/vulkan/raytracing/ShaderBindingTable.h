@@ -49,7 +49,8 @@ namespace v4d::graphics::vulkan::raytracing {
 		VkPipeline pipeline = VK_NULL_HANDLE;
 		
 		Device* device = nullptr;
-		std::unique_ptr<BufferObject> buffer = nullptr;
+		std::unique_ptr<StagingBuffer<uint8_t>> buffer = nullptr;
+		bool dirty = false;
 		
 		VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties {};
 		VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties {};
@@ -100,6 +101,7 @@ namespace v4d::graphics::vulkan::raytracing {
 		
 		void Configure(v4d::graphics::Renderer*, Device*);
 		void Create(Device* device);
+		void Push(VkCommandBuffer);
 		void Reload();
 		void Destroy();
 	};

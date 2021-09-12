@@ -83,6 +83,19 @@ public:
 		}
 	}
 	
+	void Fill(const void* src, size_t size, size_t dstOffset = 0) {
+		assert(data);
+		assert(src);
+		assert(size + dstOffset <= this->size);
+		memcpy(data + dstOffset, src, size);
+	}
+	
+	void Fill(const std::vector<T>& src) {
+		assert(data);
+		assert(src.size() <= Count());
+		memcpy(data, src.data(), src.size()*sizeof(T));
+	}
+	
 	virtual void Free() override {
 		if (device && data) {
 			device->UnmapMemoryAllocation(allocation);
@@ -111,6 +124,8 @@ public:
 	T& operator=(const OTHER& other) {
 		return data[0] = other;
 	}
+	operator VkDeviceOrHostAddressConstKHR() const {return address;}
+	operator VkDeviceAddress() const {return address.deviceAddress;}
 };
 
 template<typename T>
@@ -136,10 +151,12 @@ public:
 		deviceBuffer.Allocate(device);
 	}
 	
+	void Fill(const void* src, size_t size, size_t dstOffset = 0) {
+		hostBuffer.Fill(src, size, dstOffset);
+	}
+	
 	void Fill(const std::vector<T>& src) {
-		assert(hostBuffer);
-		assert(src.size() <= Count());
-		memcpy(hostBuffer.operator->(), src.data(), src.size()*sizeof(T));
+		hostBuffer.Fill(src);
 	}
 	
 	void Free() {
