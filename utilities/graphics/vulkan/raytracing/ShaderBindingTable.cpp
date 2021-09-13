@@ -31,7 +31,7 @@ ShaderBindingTable::ShaderBindingTable(PipelineLayoutObject* pipelineLayout, con
 		else if (filePath.GetExtension() == ".rchit") {
 			shaders[shaderFile.subpass].rchit = shaderFile;
 		}
-		else if (filePath.GetExtension() == ".rachit") {
+		else if (filePath.GetExtension() == ".rahit") {
 			shaders[shaderFile.subpass].rahit = shaderFile;
 		}
 		else if (filePath.GetExtension() == ".rint") {
