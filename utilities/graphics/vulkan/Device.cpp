@@ -72,9 +72,7 @@ Device::Device(
 	createInfo.enabledLayerCount = layers.size();
 	createInfo.ppEnabledLayerNames = layers.data();
 
-	if (physicalDevice->CreateDevice(&createInfo, nullptr, &handle) != VK_SUCCESS) {
-		throw std::runtime_error("Failed to create logical device");
-	}
+	Instance::CheckVkResult("Failed to create logical device", physicalDevice->CreateDevice(&createInfo, nullptr, &handle));
 	
 	LoadFunctionPointers();
 

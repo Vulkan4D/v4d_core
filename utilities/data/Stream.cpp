@@ -78,15 +78,20 @@ Stream& Stream::ReadBytes(byte* data, size_t n) {
 ReadOnlyStream Stream::ReadStream() {
 	std::lock_guard lock(readMutex);
 	size_t size = ReadSize();
-	byte data[size];
-	ReadBytes(data, size);
-	return ReadOnlyStream(data, size);
+	if (size > 0) {
+		byte data[size];
+		ReadBytes(data, size);
+		return ReadOnlyStream(data, size);
+	}
+	return {};
 }
 void Stream::ReadStream(ReadOnlyStream& stream) {
 	std::lock_guard lock(readMutex);
 	size_t size = ReadSize();
-	stream._GetReadBuffer_().resize(size);
-	ReadBytes(stream._GetReadBuffer_().data(), size);
+	if (size > 0) {
+		stream._GetReadBuffer_().resize(size);
+		ReadBytes(stream._GetReadBuffer_().data(), size);
+	}
 }
 void Stream::WriteStream(Stream& stream) {
 	std::lock_guard lock(writeMutex);

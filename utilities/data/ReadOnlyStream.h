@@ -18,8 +18,11 @@ namespace v4d::data {
 		virtual ~ReadOnlyStream();
 
 		void ImportData(const byte* data, size_t size) {
-			dataBuffer.resize(size);
-			memcpy(dataBuffer.data(), data, size);
+			assert(data);
+			if (size > 0) {
+				dataBuffer.resize(size);
+				memcpy(dataBuffer.data(), data, size);
+			}
 		}
 
 		size_t GetDataBufferRemaining() const {

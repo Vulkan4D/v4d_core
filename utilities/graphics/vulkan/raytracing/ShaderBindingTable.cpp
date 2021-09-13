@@ -6,9 +6,7 @@ using namespace v4d::graphics::vulkan::raytracing;
 ShaderBindingTable::ShaderBindingTable(PipelineLayoutObject* pipelineLayout, const char* shaderFile) : shaderPipelineMetaFile(shaderFile, this), pipelineLayout(pipelineLayout) {
 	std::vector<ShaderInfo> files = shaderPipelineMetaFile;
 	
-	ShaderInfo rchit {""};
-	ShaderInfo rahit {""};
-	ShaderInfo rint {""};
+	RayTracingShaderPrograms shaders {};
 	
 	for (auto& shaderFile : files) {
 		v4d::io::FilePath filePath(shaderFile.filepath);
@@ -31,18 +29,17 @@ ShaderBindingTable::ShaderBindingTable(PipelineLayoutObject* pipelineLayout, con
 			AddCallableShader(shaderFile);
 		}
 		else if (filePath.GetExtension() == ".rchit") {
-			rchit = shaderFile;
+			shaders[shaderFile.subpass].rchit = shaderFile;
 		}
 		else if (filePath.GetExtension() == ".rachit") {
-			rahit = shaderFile;
+			shaders[shaderFile.subpass].rahit = shaderFile;
 		}
 		else if (filePath.GetExtension() == ".rint") {
-			rint = shaderFile;
+			shaders[shaderFile.subpass].rint = shaderFile;
 		}
 	}
-	if (rchit.filepath != "" || rahit.filepath != "") {
-		AddHitShader(rchit, rahit, rint);
-	}
+	
+	if (shaders.size() > 0) AddHitShaders(shaders);
 }
 
 VkPipeline ShaderBindingTable::GetPipeline() const {
@@ -99,16 +96,10 @@ uint32_t ShaderBindingTable::AddMissShader(const ShaderInfo& rmiss) {
 	return nextMissShaderOffset++;
 }
 
-struct RayTracingShaderProgram {
-	ShaderInfo rchit {""};
-	ShaderInfo rahit {""};
-	ShaderInfo rint {""};
-};
-
 uint32_t ShaderBindingTable::AddHitShader(const char* filePath) {
 	std::vector<ShaderInfo> files = ShaderPipelineMetaFile{filePath, this};
 	
-	std::map<int/*subpass/offset*/, RayTracingShaderProgram> shaders {};
+	RayTracingShaderPrograms shaders {};
 	
 	for (auto& shaderFile : files) {
 		v4d::io::FilePath filePath(shaderFile.filepath);
@@ -123,6 +114,10 @@ uint32_t ShaderBindingTable::AddHitShader(const char* filePath) {
 		}
 	}
 	
+	return AddHitShaders(shaders);
+}
+
+uint32_t ShaderBindingTable::AddHitShaders(const RayTracingShaderPrograms& shaders) {
 	int32_t index = -1;
 	for (auto& [offset, shader] : shaders) {
 		uint32_t i = AddHitShader(shader.rchit, shader.rahit, shader.rint);
@@ -210,7 +205,7 @@ VkPipeline ShaderBindingTable::CreateRayTracingPipeline() {
 	
 	assert(rayGenGroups.size() == 1);
 	
-	groups.reserve(rayGenGroups.size() + rayMissGroups.size() + rayHitGroups.size());
+	groups.reserve(rayGenGroups.size() + rayMissGroups.size() + rayHitGroups.size() + rayCallableGroups.size());
 	for (auto& group : rayGenGroups) groups.push_back(group);
 	for (auto& group : rayMissGroups) groups.push_back(group);
 	for (auto& group : rayHitGroups) groups.push_back(group);
@@ -226,10 +221,7 @@ VkPipeline ShaderBindingTable::CreateRayTracingPipeline() {
 		rayTracingPipelineInfo.pGroups = groups.data();
 		rayTracingPipelineInfo.maxPipelineRayRecursionDepth = 1;
 		rayTracingPipelineInfo.layout = pipelineLayout->obj;
-		
-		// const VkRayTracingPipelineInterfaceCreateInfoKHR*    pLibraryInterface;
-		// VkPipeline                                           basePipelineHandle;
-		// int32_t                                              basePipelineIndex;
+		// rayTracingPipelineInfo.flags = 
 		
 	if (device->CreateRayTracingPipelinesKHR(VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &rayTracingPipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
 		throw std::runtime_error("Failed to create ray tracing pipelines");
@@ -241,7 +233,6 @@ void ShaderBindingTable::DestroyRayTracingPipeline() {
 	if (device) {
 		device->DestroyPipeline(pipeline, nullptr);
 		DestroyShaderStages();
-		bufferOffset = 0;
 		bufferSize = 0;
 		groups.clear();
 	}
@@ -292,8 +283,9 @@ void ShaderBindingTable::WriteShaderBindingTableToBuffer() {
 	
 	VkDeviceAddress baseAddress = *buffer;
 	// Align
+	size_t bufferOffset = 0;
 	if (rayTracingPipelineProperties.shaderGroupBaseAlignment > 0) {
-		bufferOffset += rayTracingPipelineProperties.shaderGroupBaseAlignment - (baseAddress % rayTracingPipelineProperties.shaderGroupBaseAlignment);
+		bufferOffset = rayTracingPipelineProperties.shaderGroupBaseAlignment - (baseAddress % rayTracingPipelineProperties.shaderGroupBaseAlignment);
 	}
 	
 	// Ray Gen
@@ -384,7 +376,7 @@ void ShaderBindingTable::Create(Device* device) {
 	if (this->device == nullptr) {
 		this->device = device;
 		CreateRayTracingPipeline();
-		buffer = std::make_unique<StagingBuffer<uint8_t>>(VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR, GetSbtBufferSize());
+		buffer = std::make_unique<StagingBuffer<uint8_t>>(VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, GetSbtBufferSize());
 		buffer->Allocate(device);
 		assert(buffer);
 		WriteShaderBindingTableToBuffer();
@@ -395,6 +387,21 @@ void ShaderBindingTable::Push(VkCommandBuffer cmdBuffer) {
 	assert(buffer);
 	if (dirty) {
 		buffer->Push(cmdBuffer);
+		dirty = false;
+		{// Wait for SBT Push to finish build before tracing rays
+			VkMemoryBarrier memoryBarrier {
+				VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+				nullptr,// pNext
+				VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,// VkAccessFlags srcAccessMask
+				VK_ACCESS_SHADER_READ_BIT,// VkAccessFlags dstAccessMask
+			};
+			device->CmdPipelineBarrier(
+				cmdBuffer,
+				VK_PIPELINE_STAGE_TRANSFER_BIT,
+				VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR,
+				0, 1, &memoryBarrier, 0, 0, 0, 0
+			);
+		}
 	}
 }
 

@@ -119,7 +119,7 @@ public:
 	}
 	T* operator->() {assert(data); return data;}
 	operator T&() {assert(data); return *data;}
-	operator bool() {return size > 0 && data;}
+	explicit operator bool() {return size > 0 && data;}
 	template<typename OTHER>
 	T& operator=(const OTHER& other) {
 		return data[0] = other;
@@ -179,7 +179,7 @@ public:
 	operator VkBuffer&() {return deviceBuffer;}
 	operator BufferObject&() {return deviceBuffer;}
 	operator const BufferObject&() const {return deviceBuffer;}
-	operator bool() {return hostBuffer;}
+	explicit operator bool() {return bool(hostBuffer);}
 	operator VkDeviceOrHostAddressConstKHR() {return deviceBuffer;}
 	operator VkDeviceAddress() {return deviceBuffer;}
 	

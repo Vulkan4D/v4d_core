@@ -30,7 +30,6 @@ namespace v4d::graphics::vulkan::raytracing {
 		uint32_t nextMissShaderOffset = 0;
 		uint32_t nextCallableShaderOffset = 0;
 		
-		VkDeviceSize bufferOffset = 0;
 		VkDeviceSize bufferSize = 0;
 		VkDeviceSize rayGenShaderRegionOffset = 0;
 		VkDeviceSize rayGenShaderRegionSize = 0;
@@ -65,6 +64,13 @@ namespace v4d::graphics::vulkan::raytracing {
 		VkDeviceSize GetSbtBufferSize();
 		void WriteShaderBindingTableToBuffer();
 		
+		struct RayTracingShaderProgram {
+			ShaderInfo rchit {""};
+			ShaderInfo rahit {""};
+			ShaderInfo rint {""};
+		};
+		using RayTracingShaderPrograms = std::map<int/*subpass/offset*/, RayTracingShaderProgram>;
+
 	public:
 
 		operator ShaderPipelineMetaFile() {
@@ -97,6 +103,7 @@ namespace v4d::graphics::vulkan::raytracing {
 		uint32_t AddMissShader(const ShaderInfo& rmiss);
 		uint32_t AddHitShader(const char* filePath);
 		uint32_t AddHitShader(const ShaderInfo& rchit, const ShaderInfo& rahit, const ShaderInfo& rint);
+		uint32_t AddHitShaders(const RayTracingShaderPrograms&);
 		uint32_t AddCallableShader(const ShaderInfo& rcall);
 		
 		void Configure(v4d::graphics::Renderer*, Device*);
