@@ -284,6 +284,8 @@ void ShaderBindingTable::WriteShaderBindingTableToBuffer() {
 	uint64_t alignment = rayTracingPipelineProperties.shaderGroupBaseAlignment;
 	uint32_t stride = handleSize;
 	if (alignment > 0) stride = (handleSize + (alignment - 1)) & ~(alignment - 1);
+	assert(stride >= handleSize);
+	assert(stride >= alignment);
 	
 	VkDeviceAddress baseAddress = *buffer;
 	// Align
@@ -320,11 +322,12 @@ void ShaderBindingTable::WriteShaderBindingTableToBuffer() {
 		/*size*/rayCallableShaderRegionSize
 	};
 	
+	assert(groups.size() > 0);
 	const size_t shaderHandlerStorageSize = groups.size()*stride;
 	auto shaderHandleStorage = new uint8_t[shaderHandlerStorageSize];
 	if (device->GetRayTracingShaderGroupHandlesKHR(pipeline, 0, (uint)groups.size(), shaderHandlerStorageSize, shaderHandleStorage) != VK_SUCCESS)
 		throw std::runtime_error("Failed to get ray tracing shader group handles");
-		
+	
 	buffer->ZeroInitialize();
 	
 	// Ray Gen
