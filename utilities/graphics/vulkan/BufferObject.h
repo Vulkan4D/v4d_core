@@ -83,6 +83,15 @@ public:
 		}
 	}
 	
+	void ZeroInitialize() {
+		ZeroInitialize(size);
+	}
+	
+	void ZeroInitialize(size_t size, size_t offset = 0) {
+		assert(data);
+		memset(data + offset, 0, size);
+	}
+	
 	void Fill(const void* src, size_t size, size_t dstOffset = 0) {
 		assert(data);
 		assert(src);
@@ -149,6 +158,14 @@ public:
 	void Allocate(Device* device) {
 		hostBuffer.Allocate(device);
 		deviceBuffer.Allocate(device);
+	}
+	
+	void ZeroInitialize() {
+		hostBuffer.ZeroInitialize();
+	}
+	
+	void ZeroInitialize(size_t size, size_t offset = 0) {
+		hostBuffer.ZeroInitialize(size, offset);
 	}
 	
 	void Fill(const void* src, size_t size, size_t dstOffset = 0) {

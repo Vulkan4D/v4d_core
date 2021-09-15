@@ -71,6 +71,7 @@ std::vector<VkPipelineShaderStageCreateInfo> ShaderBindingTable::GetStages() con
 uint32_t ShaderBindingTable::GetOrAddShaderFileIndex(const ShaderInfo& shader) {
 	uint32_t index = 0;
 	for (auto&[i, s] : shaderFiles) {
+		assert(i == index);
 		if (s.filepath == shader.filepath) {
 			break;
 		}
@@ -202,16 +203,18 @@ VkPipeline ShaderBindingTable::CreateRayTracingPipeline() {
 	CreateShaderStages();
 	
 	assert(stages.size() > 0);
-	
 	assert(rayGenGroups.size() == 1);
+	size_t nbShaders = rayGenGroups.size() + rayMissGroups.size() + rayHitGroups.size() + rayCallableGroups.size();
+	assert(stages.size() == shaderFiles.size());
+	assert(stages.size() == shaderObjects.size());
 	
-	groups.reserve(rayGenGroups.size() + rayMissGroups.size() + rayHitGroups.size() + rayCallableGroups.size());
+	groups.reserve(nbShaders);
 	for (auto& group : rayGenGroups) groups.push_back(group);
 	for (auto& group : rayMissGroups) groups.push_back(group);
 	for (auto& group : rayHitGroups) groups.push_back(group);
 	for (auto& group : rayCallableGroups) groups.push_back(group);
 	
-	assert(groups.size() > 0);
+	assert(groups.size() == nbShaders);
 	
 	VkRayTracingPipelineCreateInfoKHR rayTracingPipelineInfo {};
 		rayTracingPipelineInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
@@ -254,17 +257,15 @@ VkStridedDeviceAddressRegionKHR* ShaderBindingTable::GetRayCallableDeviceAddress
 VkDeviceSize ShaderBindingTable::GetSbtBufferSize() {
 	if (bufferSize > 0) return bufferSize;
 	
-	auto addAlignedShaderRegion = [this](VkDeviceSize& offset, VkDeviceSize& size, size_t n) {
+	const uint32_t& handleSize = rayTracingPipelineProperties.shaderGroupHandleSize;
+	const uint32_t& alignment = rayTracingPipelineProperties.shaderGroupBaseAlignment;
+	uint32_t stride = handleSize;
+	if (alignment > 0) stride = (handleSize + (alignment - 1)) & ~(alignment - 1);
+	
+	auto addAlignedShaderRegion = [this,stride](VkDeviceSize& offset, VkDeviceSize& size, size_t n) {
 		offset = bufferSize;
-		bufferSize += size = n * rayTracingPipelineProperties.shaderGroupHandleSize;
-		// Align
-		if (rayTracingPipelineProperties.shaderGroupBaseAlignment > 0) {
-			if (bufferSize <= rayTracingPipelineProperties.shaderGroupBaseAlignment) {
-				bufferSize = rayTracingPipelineProperties.shaderGroupBaseAlignment;
-			} else if (bufferSize % rayTracingPipelineProperties.shaderGroupBaseAlignment > 0) {
-				bufferSize += rayTracingPipelineProperties.shaderGroupBaseAlignment - (bufferSize % rayTracingPipelineProperties.shaderGroupBaseAlignment);
-			}
-		}
+		size = stride * n;
+		bufferSize += size;
 	};
 	
 	addAlignedShaderRegion(rayGenShaderRegionOffset, rayGenShaderRegionSize, rayGenGroups.size());
@@ -272,93 +273,102 @@ VkDeviceSize ShaderBindingTable::GetSbtBufferSize() {
 	addAlignedShaderRegion(rayHitShaderRegionOffset, rayHitShaderRegionSize, rayHitGroups.size());
 	addAlignedShaderRegion(rayCallableShaderRegionOffset, rayCallableShaderRegionSize, rayCallableGroups.size());
 	
-	bufferSize += rayTracingPipelineProperties.shaderGroupBaseAlignment;
+	bufferSize += alignment; // to allow base address alignment
 	
 	return bufferSize;
 }
 
 void ShaderBindingTable::WriteShaderBindingTableToBuffer() {
 	uint32_t sbtSize = GetSbtBufferSize(); // This is called first when creating the buffer
-	VkDeviceSize bindingStride = rayTracingPipelineProperties.shaderGroupHandleSize;
+	uint32_t handleSize = rayTracingPipelineProperties.shaderGroupHandleSize;
+	uint64_t alignment = rayTracingPipelineProperties.shaderGroupBaseAlignment;
+	uint32_t stride = handleSize;
+	if (alignment > 0) stride = (handleSize + (alignment - 1)) & ~(alignment - 1);
 	
 	VkDeviceAddress baseAddress = *buffer;
 	// Align
 	size_t bufferOffset = 0;
-	if (rayTracingPipelineProperties.shaderGroupBaseAlignment > 0) {
-		bufferOffset = rayTracingPipelineProperties.shaderGroupBaseAlignment - (baseAddress % rayTracingPipelineProperties.shaderGroupBaseAlignment);
+	if (alignment > 0) {
+		bufferOffset = ((baseAddress + (alignment - 1)) & ~(alignment - 1)) - baseAddress;
 	}
 	
 	// Ray Gen
 	rayGenDeviceAddressRegion = {
-		baseAddress + bufferOffset + rayGenShaderRegionOffset,
-		bindingStride, 
-		rayGenShaderRegionSize
+		/*deviceAddress*/baseAddress + bufferOffset + rayGenShaderRegionOffset,
+		/*stride*/rayGenShaderRegionSize,
+		/*size*/rayGenShaderRegionSize
 	};
 	
 	// Ray Miss
 	rayMissDeviceAddressRegion = {
-		baseAddress + bufferOffset + rayMissShaderRegionOffset,
-		bindingStride,
-		rayMissShaderRegionSize
+		/*deviceAddress*/baseAddress + bufferOffset + rayMissShaderRegionOffset,
+		/*stride*/stride,
+		/*size*/rayMissShaderRegionSize
 	};
 	
 	// Ray Hit
 	rayHitDeviceAddressRegion = {
-		baseAddress + bufferOffset + rayHitShaderRegionOffset,
-		bindingStride,
-		rayHitShaderRegionSize
+		/*deviceAddress*/baseAddress + bufferOffset + rayHitShaderRegionOffset,
+		/*stride*/stride,
+		/*size*/rayHitShaderRegionSize
 	};
 	
 	// Ray Callable
 	rayCallableDeviceAddressRegion = {
-		baseAddress + bufferOffset + rayCallableShaderRegionOffset,
-		bindingStride,
-		rayCallableShaderRegionSize
+		/*deviceAddress*/baseAddress + bufferOffset + rayCallableShaderRegionOffset,
+		/*stride*/stride,
+		/*size*/rayCallableShaderRegionSize
 	};
 	
-	const size_t shaderHandlerStorageSize = groups.size()*rayTracingPipelineProperties.shaderGroupHandleSize;
+	const size_t shaderHandlerStorageSize = groups.size()*stride;
 	auto shaderHandleStorage = new uint8_t[shaderHandlerStorageSize];
 	if (device->GetRayTracingShaderGroupHandlesKHR(pipeline, 0, (uint)groups.size(), shaderHandlerStorageSize, shaderHandleStorage) != VK_SUCCESS)
 		throw std::runtime_error("Failed to get ray tracing shader group handles");
-	
-	int shaderHandlerStorageOffset = 0;
+		
+	buffer->ZeroInitialize();
 	
 	// Ray Gen
 	buffer->Fill(
-		/*SrcPtr*/shaderHandleStorage + shaderHandlerStorageOffset, 
-		/*SizeBytes*/rayTracingPipelineProperties.shaderGroupHandleSize * rayGenGroups.size(), 
+		/*SrcPtr*/shaderHandleStorage,
+		/*SizeBytes*/handleSize,
 		/*OffsetBytes*/bufferOffset + rayGenShaderRegionOffset
 	);
-	shaderHandlerStorageOffset += rayTracingPipelineProperties.shaderGroupHandleSize * rayGenGroups.size();
+	
+	uint32_t shaderHandlerStorageOffset = handleSize * rayGenGroups.size();
 	
 	// Ray Miss
-	buffer->Fill(
-		/*SrcPtr*/shaderHandleStorage + shaderHandlerStorageOffset, 
-		/*SizeBytes*/rayTracingPipelineProperties.shaderGroupHandleSize * rayMissGroups.size(), 
-		/*OffsetBytes*/bufferOffset + rayMissShaderRegionOffset
-	);
-	shaderHandlerStorageOffset += rayTracingPipelineProperties.shaderGroupHandleSize * rayMissGroups.size();
+	for (size_t i = 0; i < rayMissGroups.size(); ++i) {
+		buffer->Fill(
+			/*SrcPtr*/shaderHandleStorage + shaderHandlerStorageOffset,
+			/*SizeBytes*/handleSize,
+			/*OffsetBytes*/bufferOffset + rayMissShaderRegionOffset + stride * i
+		);
+		shaderHandlerStorageOffset += handleSize;
+	}
 	
 	// Ray Hit
-	buffer->Fill(
-		/*SrcPtr*/shaderHandleStorage + shaderHandlerStorageOffset, 
-		/*SizeBytes*/rayTracingPipelineProperties.shaderGroupHandleSize * rayHitGroups.size(), 
-		/*OffsetBytes*/bufferOffset + rayHitShaderRegionOffset
-	);
-	shaderHandlerStorageOffset += rayTracingPipelineProperties.shaderGroupHandleSize * rayHitGroups.size();
+	for (size_t i = 0; i < rayHitGroups.size(); ++i) {
+		buffer->Fill(
+			/*SrcPtr*/shaderHandleStorage + shaderHandlerStorageOffset,
+			/*SizeBytes*/handleSize,
+			/*OffsetBytes*/bufferOffset + rayHitShaderRegionOffset + stride * i
+		);
+		shaderHandlerStorageOffset += handleSize;
+	}
 	
 	// Ray Callable
-	buffer->Fill(
-		/*SrcPtr*/shaderHandleStorage + shaderHandlerStorageOffset, 
-		/*SizeBytes*/rayTracingPipelineProperties.shaderGroupHandleSize * rayCallableGroups.size(), 
-		/*OffsetBytes*/bufferOffset + rayCallableShaderRegionOffset
-	);
-	shaderHandlerStorageOffset += rayTracingPipelineProperties.shaderGroupHandleSize * rayCallableGroups.size();
+	for (size_t i = 0; i < rayCallableGroups.size(); ++i) {
+		buffer->Fill(
+			/*SrcPtr*/shaderHandleStorage + shaderHandlerStorageOffset,
+			/*SizeBytes*/handleSize,
+			/*OffsetBytes*/bufferOffset + rayCallableShaderRegionOffset + stride * i
+		);
+		shaderHandlerStorageOffset += handleSize;
+	}
 	
 	delete[] shaderHandleStorage;
 	dirty = true;
 }
-
 
 void ShaderBindingTable::Configure(v4d::graphics::Renderer* renderer, Device* device) {
 	// Query the ray tracing properties of the current implementation

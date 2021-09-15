@@ -31,6 +31,8 @@ Shader::Shader(std::string filepath, std::string entryPoint)
 		throw std::runtime_error("Invalid Shader Type " + type);
 	}
 	size_t fileSize = (size_t) file.tellg();
+	assert(fileSize > 0);
+	assert(fileSize % 4 == 0);
 	bytecode.resize(fileSize);
 	file.seekg(0);
 	file.read(bytecode.data(), fileSize);
@@ -49,6 +51,8 @@ VkShaderModule Shader::CreateShaderModule(Device* device, VkPipelineShaderStageC
 	}
 	LOG_VERBOSE("Generated shader module " << std::hex << module)
 	
+	device->SetDebugName(module, name.c_str());
+	
 	// Specialization
 	specialization.specializationInfo.mapEntryCount = specialization.specializationMap.size();
 	specialization.specializationInfo.pMapEntries = specialization.specializationMap.data();
@@ -59,10 +63,12 @@ VkShaderModule Shader::CreateShaderModule(Device* device, VkPipelineShaderStageC
 	stageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	stageInfo.pNext = nullptr;
 	stageInfo.flags = flags;
-	stageInfo.stage = SHADER_TYPES[type];
+	stageInfo.stage = SHADER_TYPES.at(type);
 	stageInfo.module = module;
 	stageInfo.pName = entryPoint.c_str();
 	stageInfo.pSpecializationInfo = specialization.specializationInfo.dataSize>0? &specialization.specializationInfo : nullptr;
+	
+	assert(entryPoint != "");
 	
 	return module;
 }

@@ -122,7 +122,7 @@ namespace v4d::graphics::vulkan {
 		std::string name; // the shader file name without directory nor extension
 		std::string type; // string key in SHADER_TYPES
 		
-		VkPipelineShaderStageCreateInfo stageInfo;
+		VkPipelineShaderStageCreateInfo stageInfo {};
 
 		ShaderSpecialization specialization {};
 		

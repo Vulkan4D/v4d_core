@@ -274,17 +274,19 @@ void Renderer::LoadRenderer() {
 }
 
 void Renderer::UnloadRenderer() {
-	std::lock_guard lock(frameSyncMutex2);
-	renderingDevice->DeviceWaitIdle();
-	
-	v4d::graphics::renderer::event::Unload(this);
-	UnloadGraphicsFromDevice();
-	DestroySwapChain();
-	UnloadTextures();
-	UnloadBuffers();
-	DestroyBuffers();
-	DestroyCommandPools();
-	DestroyDevices();
+	if (renderingDevice) {
+		std::lock_guard lock(frameSyncMutex2);
+		renderingDevice->DeviceWaitIdle();
+		
+		v4d::graphics::renderer::event::Unload(this);
+		UnloadGraphicsFromDevice();
+		DestroySwapChain();
+		UnloadTextures();
+		UnloadBuffers();
+		DestroyBuffers();
+		DestroyCommandPools();
+		DestroyDevices();
+	}
 }
 
 void Renderer::ReloadShaderPipelines(bool forceReloadAllShaders) {
