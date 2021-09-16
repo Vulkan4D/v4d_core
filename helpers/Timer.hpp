@@ -9,7 +9,7 @@ namespace v4d {
 		typedef std::chrono::duration<double, std::milli> duration;
 		typedef std::chrono::time_point<std::chrono::system_clock, duration> time_point;
 		mutable std::mutex mutex;
-		time_point timePoint;
+		time_point timePoint {};
 
 	public:
 		/**
