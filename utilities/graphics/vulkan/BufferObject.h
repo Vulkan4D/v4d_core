@@ -57,7 +57,7 @@ template<typename T>
 class MappedBufferObject : public BufferObject {
 protected:
 	T* data;
-	
+	std::vector<T> temporaryData {};
 public:
 	MappedBufferObject(MemoryUsage memoryUsage, VkBufferUsageFlags bufferUsage, uint32_t count = 1)
 	 : BufferObject(
@@ -80,6 +80,9 @@ public:
 		if (size > 0 && this->device == nullptr) {
 			BufferObject::Allocate(device);
 			device->MapMemoryAllocation(allocation, (void**)&data, 0, size);
+			if (temporaryData.size() == Count()) {
+				Fill(temporaryData);
+			}
 		}
 	}
 	
@@ -107,6 +110,9 @@ public:
 	
 	virtual void Free() override {
 		if (device && data) {
+			if (size > 0 && temporaryData.size() == Count()) {
+				memcpy(temporaryData.data(), data, size);
+			}
 			device->UnmapMemoryAllocation(allocation);
 			data = nullptr;
 		}
@@ -119,19 +125,34 @@ public:
 	
 	virtual void Resize(size_t newCount) {
 		assert(device == nullptr);
+		if (size > 0 && temporaryData.size() == Count()) {
+			temporaryData.resize(newCount);
+		}
 		BufferObject::Resize(newCount * sizeof(T));
 	}
 	
 	T& operator[](size_t index) {
 		assert(index * sizeof(T) < size);
-		return data[index];
+		if (data) {
+			return data[index];
+		}
+		if (temporaryData.size() != Count()) temporaryData.resize(Count());
+		return temporaryData[index];
 	}
-	T* operator->() {assert(data); return data;}
-	operator T&() {assert(data); return *data;}
+	T* operator->() {
+		if (data) return data;
+		if (temporaryData.size() != Count()) temporaryData.resize(Count());
+		return temporaryData.data();
+	}
+	operator T&() {
+		return *this->operator->();
+	}
 	explicit operator bool() {return size > 0 && data;}
 	template<typename OTHER>
 	T& operator=(const OTHER& other) {
-		return data[0] = other;
+		if (data) return data[0] = other;
+		if (temporaryData.size() != Count()) temporaryData.resize(Count());
+		return temporaryData[0] = other;
 	}
 	operator VkDeviceOrHostAddressConstKHR() const {return address;}
 	operator VkDeviceAddress() const {return address.deviceAddress;}
@@ -188,7 +209,6 @@ public:
 	}
 	
 	T& operator[](size_t index) {
-		assert(hostBuffer);
 		return hostBuffer[index];
 	}
 	T* operator->() {return hostBuffer.operator->();}
