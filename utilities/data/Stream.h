@@ -28,6 +28,7 @@ namespace v4d::data {
 	public: // optional Begin/End lambdas for safe and flexible usage when passing socket ptr to a module or function for it to send streams
 		std::function<void()> Begin = [](){};
 		std::function<void()> End = [](){};
+		bool autoFlush = true;
 
 	protected: // Virtual methods to override for data sources
 

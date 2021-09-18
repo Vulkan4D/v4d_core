@@ -7,7 +7,7 @@ using namespace v4d::data;
 Stream& Stream::WriteBytes(const byte* data, size_t n) {
 	if (n == 0) return *this;
 	std::lock_guard lock(writeMutex);
-	if ((writeBuffer.size() + n) > writeBuffer.capacity()) {
+	if (autoFlush && (writeBuffer.size() + n) > writeBuffer.capacity()) {
 		Flush();
 	}
 	writeBuffer.insert(writeBuffer.end(), data, data+n);

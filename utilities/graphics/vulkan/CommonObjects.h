@@ -168,4 +168,34 @@ namespace v4d::graphics::vulkan {
 		}
 	};
 
+	class QueryPoolObject {
+		COMMON_OBJECT(QueryPoolObject, VkQueryPool, V4DLIB)
+		COMMON_OBJECT_MOVEABLE(QueryPoolObject)
+		COMMON_OBJECT_COPYABLE(QueryPoolObject)
+		
+		VkQueryType type;
+		uint32_t count;
+		QueryPoolObject(VkQueryType type, uint32_t count) : obj(), type(type), count(count) {}
+		
+		Device* device = nullptr;
+		
+		void Create(Device* device) {
+			assert(this->device == nullptr);
+			this->device = device;
+			
+			VkQueryPoolCreateInfo queryPoolInfo {};
+				queryPoolInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+				queryPoolInfo.queryType = type;
+				queryPoolInfo.queryCount = count;
+			Instance::CheckVkResult("Create QueryPool", device->CreateQueryPool(&queryPoolInfo, nullptr, obj));
+		}
+		void Destroy() {
+			if (device) {
+				device->DestroyQueryPool(obj, nullptr);
+				device = nullptr;
+			}
+		}
+	};
+
+
 }
