@@ -37,6 +37,7 @@ endif()
 # Compiler Warnings
 if(WIN32)
 	set(BUILD_FLAGS "${BUILD_FLAGS} -W")
+	set(BUILD_FLAGS "${BUILD_FLAGS} -Wa,-mbig-obj")
 	set(BUILD_FLAGS "${BUILD_FLAGS} -Wno-attribute-warning")
 	set(BUILD_FLAGS "${BUILD_FLAGS} -Wno-cast-function-type")
 else()

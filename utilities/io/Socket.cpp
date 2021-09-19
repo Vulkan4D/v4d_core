@@ -1,5 +1,6 @@
 #include "Socket.h"
 #include "utilities/io/Logger.h"
+#include <errno.h>
 
 using namespace v4d::io;
 
@@ -99,20 +100,32 @@ void Socket::Send() {
 			}
 		} else 
 		if (IsUDP()) {
+			int64_t sent;
 			#ifdef _WINDOWS
 			
 				#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
-					::sendto(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
+					sent = ::sendto(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
 				#else
 					size_t size = _GetWriteBuffer_().size();
 					char data[size];
 					memcpy(data, _GetWriteBuffer_().data(), size);
-					::sendto(socket, data, (int)size, MSG_CONFIRM | MSG_DONTWAIT, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
+					sent = ::sendto(socket, data, (int)size, MSG_CONFIRM | MSG_DONTWAIT, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
 				#endif
 
 			#else
-				::sendto(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
+				sent = ::sendto(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
 			#endif
+			if (sent == -1) {
+				auto err = errno;
+				switch (err) {
+					case EMSGSIZE: {
+						LOG_ERROR("UDP send error EMSGSIZE")
+					}break;
+					default:{
+						LOG_ERROR("UDP send error: " << err)
+					}
+				}
+			}
 		}
 	} else {
 		LOG_ERROR_VERBOSE("Cannot Send Data over Socket: Not Connected")
@@ -220,6 +233,7 @@ void Socket::StartListeningThread(int waitIntervalMilliseconds, ListeningThreadC
 		std::shared_ptr<Socket> s = std::make_shared<Socket>(socket, remoteAddr, type, protocol);
 		listeningThread = new std::thread([this, waitIntervalMilliseconds, s=s](ListeningThreadCallbackFunc&& newSocketCallback){
 			while (IsListening()) {
+				ResetReadBuffer();
 
 				// Check if there is a connection waiting in the socket
 				int polled = s->Poll(waitIntervalMilliseconds);
@@ -227,7 +241,6 @@ void Socket::StartListeningThread(int waitIntervalMilliseconds, ListeningThreadC
 				if (polled == -1) { // error, stop here
 					LOG_ERROR("UDP Socket Listening Poll error")
 					listening = false;
-					ResetReadBuffer();
 					break;
 				}
 

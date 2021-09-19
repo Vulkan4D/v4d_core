@@ -25,7 +25,7 @@
 #endif
 
 #ifndef SOCKET_BUFFER_SIZE
-	#define SOCKET_BUFFER_SIZE 1024
+	#define SOCKET_BUFFER_SIZE 1400 // Typical MTU size minus header
 #endif
 
 #ifdef _WINDOWS
