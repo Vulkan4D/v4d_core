@@ -229,6 +229,19 @@ namespace v4d::graphics::vulkan {
 			};
 		}
 		
+		static VkPipelineColorBlendAttachmentState AttachmentBlendStateMax(VkColorComponentFlags colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT) {
+			return {
+				/*VkBool32 blendEnable*/ VK_TRUE,
+				/*VkBlendFactor srcColorBlendFactor*/ VK_BLEND_FACTOR_ONE,
+				/*VkBlendFactor dstColorBlendFactor*/ VK_BLEND_FACTOR_ONE,
+				/*VkBlendOp colorBlendOp*/ VK_BLEND_OP_MAX,
+				/*VkBlendFactor srcAlphaBlendFactor*/ VK_BLEND_FACTOR_ONE,
+				/*VkBlendFactor dstAlphaBlendFactor*/ VK_BLEND_FACTOR_ONE,
+				/*VkBlendOp alphaBlendOp*/ VK_BLEND_OP_MAX,
+				/*VkColorComponentFlags colorWriteMask*/ colorWriteMask
+			};
+		}
+		
 		void SetColorBlendAttachmentStates(int colorAttachmentCount, VkPipelineColorBlendAttachmentState colorAttachmentBlendState = DefaultColorAttachmentBlendState()) {
 			colorBlendAttachments.clear();
 			for (int i = 0; i < colorAttachmentCount; ++i)
