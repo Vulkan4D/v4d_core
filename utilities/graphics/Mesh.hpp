@@ -12,6 +12,11 @@ namespace v4d::graphics {
 		typedef uint16_t Index16;
 		typedef uint32_t Index32;
 		
+		struct Node {
+			glm::dmat4 transform {1};
+			std::unordered_map<std::string, std::unique_ptr<Node>> children {};
+		};
+		
 		struct VertexPositionF32Vec3 {
 			glm::f32 x;
 			glm::f32 y;

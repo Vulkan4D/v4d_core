@@ -3,8 +3,7 @@
 
 namespace v4d::graphics {
 
-static glm::dmat4 GetLocalTransform(std::vector<tinygltf::Node>& nodes, int nodeIndex) {
-	auto& node = nodes[nodeIndex];
+static glm::dmat4 GetLocalTransform(const tinygltf::Node& node) {
 	glm::dvec3 translation {0};
 	glm::dquat rotation {1,0,0,0};
 	glm::dvec3 scale {1};
@@ -41,11 +40,24 @@ static glm::dmat4 GetLocalTransform(std::vector<tinygltf::Node>& nodes, int node
 	}
 }
 
+static glm::dmat4 GetLocalTransform(const std::vector<tinygltf::Node>& nodes, int nodeIndex) {
+	return GetLocalTransform(nodes[nodeIndex]);
+}
+
 static glm::dmat4 GetAbsoluteTransform(std::map<int/*child*/, int/*parent*/>& childParentMap, std::vector<tinygltf::Node>& nodes, int nodeIndex) {
 	if (childParentMap.contains(nodeIndex)) {
 		return GetAbsoluteTransform(childParentMap, nodes, childParentMap[nodeIndex]) * GetLocalTransform(nodes, nodeIndex);
 	} else {
 		return GetLocalTransform(nodes, nodeIndex);
+	}
+}
+
+static void FillNodeHierarchy(std::unique_ptr<mesh::Node>& root, const tinygltf::Node& node, const std::vector<tinygltf::Node>& allNodes) {
+	root = std::make_unique<mesh::Node>();
+	root->transform = GetLocalTransform(node);
+	for (auto& childIndex : node.children) {
+		auto& childNode = allNodes[childIndex];
+		FillNodeHierarchy(root->children[childNode.name], childNode, allNodes);
 	}
 }
 
@@ -98,6 +110,10 @@ bool MeshFile::Load() {
 		for (auto& child : gltfModel.nodes[i].children) {
 			childParentMap[child] = i;
 		}
+	}
+	for (size_t i = 0; i < gltfModel.nodes.size(); ++i) if (!childParentMap.contains(i)) {
+		auto& childNode = gltfModel.nodes[i];
+		FillNodeHierarchy(rootNode.children[childNode.name], childNode, gltfModel.nodes);
 	}
 	
 	// Load meshes and transforms

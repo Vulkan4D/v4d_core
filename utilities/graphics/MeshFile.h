@@ -25,6 +25,7 @@ class V4DLIB MeshFile {
 	std::unordered_map<std::string, Mesh> meshes {};
 	std::unordered_map<std::string, glm::dmat4> transforms {};
 	std::vector<std::shared_ptr<TextureObject>> textures {};
+	mesh::Node rootNode;
 	
 	bool Load();
 public:
@@ -53,6 +54,10 @@ public:
 		for (auto&[nodeName, mesh] : meshes) {
 			func(nodeName, mesh, transforms[nodeName]);
 		}
+	}
+	
+	const auto& GetNodeHierarchy() const {
+		return rootNode.children;
 	}
 	
 	uint32_t GetMesh_geometriesCount(const std::string& nodeName) const {
