@@ -37,6 +37,10 @@ namespace v4d {
 			numericValue = BaseN::TryEncodeStringToUInt64(str, BASECHARS);
 			return *this;
 		}
+		TextID& operator=(const TextID& other) {
+			numericValue = other.numericValue;
+			return *this;
+		}
 		
 		operator uint64_t () const {
 			return numericValue;

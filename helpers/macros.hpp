@@ -77,7 +77,7 @@
 	static std::unordered_map<std::decay<decltype(key)>::type, std::weak_ptr<ClassName>> instances {}; \
 	auto ptr = instances[key].lock(); \
 	if (!ptr) { \
-		instances[key] = ptr = std::make_shared<ClassName>(__VA_ARGS__); \
+		instances[key] = ptr = std::shared_ptr<ClassName>(new ClassName(__VA_ARGS__)); \
 	} \
 	return ptr; \
 }
@@ -96,7 +96,7 @@
 	std::lock_guard staticLock(staticCommonInstancesMutex); \
 	auto ptr = commonInstances[key].lock(); \
 	if (!ptr) { \
-		commonInstances[key] = ptr = std::make_shared<ClassName>(__VA_ARGS__); \
+		commonInstances[key] = ptr = std::shared_ptr<ClassName>(new ClassName(__VA_ARGS__)); \
 	} \
 	return ptr; \
 } \

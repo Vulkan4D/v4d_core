@@ -28,8 +28,8 @@ class V4DLIB MeshFile {
 	mesh::Node rootNode;
 	
 	bool Load();
-public:
 	MeshFile(const std::string& filePath);
+public:
 	static MeshFilePtr GetInstance(const std::string& filePath);
 	
 	std::string GetFilePath() const {return filePath;}

@@ -39,6 +39,13 @@ namespace v4d::modular {
 			return tmp.vendor != 0 && tmp.module != 0;
 		}
 		
+		bool operator==(const char* str) const {
+			return String() == str;
+		}
+		bool operator!=(const char* str) const {
+			return String() != str;
+		}
+		
 		STREAMABLE(ModuleID, vendor, module)
 	};
 	struct ModuleClassID {
