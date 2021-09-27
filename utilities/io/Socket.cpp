@@ -81,22 +81,22 @@ void Socket::Send() {
 			try {
 			#ifdef _WINDOWS
 				#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
-					sent = ::send(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT);
+					sent = ::send(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), 0);
 				#else
 					size_t size = _GetWriteBuffer_().size();
 					char data[size];
 					memcpy(data, _GetWriteBuffer_().data(), size);
-					sent = ::send(socket, data, (int)size, MSG_CONFIRM | MSG_DONTWAIT);
+					sent = ::send(socket, data, (int)size, 0);
 				#endif
 			#else
-				sent = ::send(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT);
+				sent = ::send(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_DONTWAIT);
 			#endif
 			} catch (...) {
 				sent = -1;
 			}
 			if (sent == -1) {
 				connected = false;
-				LOG_ERROR_VERBOSE("Disconnected in socket Send")
+				LOG_ERROR("Socket Send Error: " << GetLastError())
 			}
 		} else 
 		if (IsUDP()) {
@@ -104,16 +104,16 @@ void Socket::Send() {
 			#ifdef _WINDOWS
 			
 				#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
-					sent = ::sendto(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
+					sent = ::sendto(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), 0, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
 				#else
 					size_t size = _GetWriteBuffer_().size();
 					char data[size];
 					memcpy(data, _GetWriteBuffer_().data(), size);
-					sent = ::sendto(socket, data, (int)size, MSG_CONFIRM | MSG_DONTWAIT, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
+					sent = ::sendto(socket, data, (int)size, 0, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
 				#endif
 
 			#else
-				sent = ::sendto(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_CONFIRM | MSG_DONTWAIT, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
+				sent = ::sendto(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_DONTWAIT, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
 			#endif
 			if (sent == -1) {
 				auto err = errno;
@@ -122,7 +122,7 @@ void Socket::Send() {
 						LOG_ERROR("UDP send error EMSGSIZE")
 					}break;
 					default:{
-						LOG_ERROR("UDP send error: " << err)
+						LOG_ERROR("UDP send error: " << err << ", " << GetLastError())
 					}
 				}
 			}
@@ -328,7 +328,8 @@ bool Socket::Connect(const std::string& host, uint16_t port) {
 	}
 
 	if (IsTCP()) {
-		connected = (::connect(socket, (struct sockaddr*)&remoteAddr, sizeof(remoteAddr)) >= 0);
+		auto connectResult = ::connect(socket, (struct sockaddr*)&remoteAddr, sizeof(remoteAddr));
+		connected = (connectResult >= 0);
 	} else if (IsUDP()) connected = true;
 	
 	return connected;
