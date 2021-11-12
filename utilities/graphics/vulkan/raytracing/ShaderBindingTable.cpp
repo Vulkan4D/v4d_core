@@ -279,7 +279,6 @@ VkDeviceSize ShaderBindingTable::GetSbtBufferSize() {
 }
 
 void ShaderBindingTable::WriteShaderBindingTableToBuffer() {
-	uint32_t sbtSize = GetSbtBufferSize(); // This is called first when creating the buffer
 	uint32_t handleSize = rayTracingPipelineProperties.shaderGroupHandleSize;
 	uint64_t alignment = rayTracingPipelineProperties.shaderGroupBaseAlignment;
 	uint32_t stride = handleSize;
