@@ -16,9 +16,15 @@ COMMON_OBJECT(TextureObject, VkImage, V4DLIB)
 	byte* ownedData = nullptr;
 	size_t bufferSize = 0;
 	
+	bool keepStagingBufferAlive = false;
+	bool dirty = false;
+	std::mutex mu;
+	
 	MemoryUsage memoryUsage = MEMORY_USAGE_GPU_ONLY;
 	MemoryAllocation allocation = VK_NULL_HANDLE;
 	Device* device = nullptr;
+	VkBuffer stagingBuffer = VK_NULL_HANDLE;
+	MemoryAllocation stagingBufferAllocation = VK_NULL_HANDLE;
 	
 	VkImageCreateInfo imageInfo {
 		VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -38,13 +44,18 @@ COMMON_OBJECT(TextureObject, VkImage, V4DLIB)
 		VK_IMAGE_LAYOUT_UNDEFINED// VkImageLayout initialLayout
 	};
 	
-	TextureObject(const char* filepath);
+	TextureObject(uint32_t width, uint32_t height, int componentCount);
+	TextureObject(const char* filepath, uint32_t mipLevels = 8);
 	TextureObject(uint32_t width, uint32_t height, int componentCount, byte* data, size_t bufferSize);
 	
 	~TextureObject();
 	
 	void Create(Device* device);
 	void Destroy();
+	void Load(const char* filepath);
+	
+	// Image must have the exact same dimensions as used with the constructor, or it's Undefined Behaviour
+	void Load(const byte* fileContent, size_t fileSize);
 	
 	void GenerateMipmaps(VkCommandBuffer);
 	

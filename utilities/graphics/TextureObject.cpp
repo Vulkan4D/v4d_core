@@ -6,19 +6,16 @@
 namespace v4d::graphics {
 COMMON_OBJECT_CPP(TextureObject, VkImage)
 
-	TextureObject::TextureObject(const char* filepath) : obj() {
-		ownedData = stbi_load(filepath, &width, &height, &componentCount, STBI_default);
-		
-		if (componentCount == 3) {
-			ownedData = stbi__convert_format(ownedData, 3, 4, width, height);
-			componentCount = 4;
-		}
-		
+	TextureObject::TextureObject(uint32_t width, uint32_t height, int componentCount)
+	: obj(), width(width), height(height), componentCount(componentCount), data(nullptr), bufferSize(0), keepStagingBufferAlive(true) {
+		imageInfo.mipLevels = 1;
 		bufferSize = width * height * componentCount;
-		if (!ownedData){
-			throw std::runtime_error("Failed to load texture '" + std::string(filepath) + "' : " + stbi_failure_reason());
-		}
-		data = ownedData;
+	}
+	
+	TextureObject::TextureObject(const char* filepath, uint32_t mipLevels) : obj() {
+		imageInfo.mipLevels = mipLevels;
+		Load(filepath);
+		bufferSize = width * height * componentCount;
 	}
 	
 	TextureObject::TextureObject(uint32_t width, uint32_t height, int componentCount, byte* data, size_t bufferSize)
@@ -28,15 +25,46 @@ COMMON_OBJECT_CPP(TextureObject, VkImage)
 		if (ownedData) stbi_image_free(ownedData);
 	}
 	
-
+	void TextureObject::Load(const char* filepath) {
+		std::lock_guard lock(mu);
+		if (ownedData) stbi_image_free(ownedData);
+		ownedData = stbi_load(filepath, &width, &height, &componentCount, STBI_default);
+		
+		if (componentCount == 3) {
+			ownedData = stbi__convert_format(ownedData, 3, 4, width, height);
+			componentCount = 4;
+		}
+		
+		if (!ownedData){
+			throw std::runtime_error("Failed to load texture '" + std::string(filepath) + "' : " + stbi_failure_reason());
+		}
+		
+		data = ownedData;
+		dirty = true;
+	}
+	
+	void TextureObject::Load(const byte* fileContent, size_t fileSize) {
+		std::lock_guard lock(mu);
+		if (ownedData) stbi_image_free(ownedData);
+		ownedData = stbi_load_from_memory(fileContent, fileSize, &width, &height, &componentCount, STBI_default);
+		
+		if (componentCount == 3) {
+			ownedData = stbi__convert_format(ownedData, 3, 4, width, height);
+			componentCount = 4;
+		}
+		
+		if (!ownedData){
+			throw std::runtime_error(std::string("Failed to load dynamic texture: ") + stbi_failure_reason());
+		}
+		
+		data = ownedData;
+		dirty = true;
+	}
+	
 	void TextureObject::Create(Device* device) {
-		if (this->device == nullptr) {
+		if (this->device == nullptr || dirty) {
 			this->device = device;
-			
-			imageInfo.extent.width = uint32_t(width);
-			imageInfo.extent.height = uint32_t(height);
-			
-			imageInfo.mipLevels = glm::min(imageInfo.mipLevels, uint32_t(glm::floor(glm::log2(glm::max(imageInfo.extent.width, imageInfo.extent.height, imageInfo.extent.depth))))+1);
+			dirty = false;
 			
 			VkBufferCreateInfo bufferInfo {};{
 				bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -47,33 +75,41 @@ COMMON_OBJECT_CPP(TextureObject, VkImage)
 				bufferInfo.pQueueFamilyIndices = nullptr;
 			}
 			
-			switch (componentCount) {
-				case STBI_grey:
-					imageInfo.format = VK_FORMAT_R8_UNORM;
-					break;
-				case STBI_grey_alpha:
-					imageInfo.format = VK_FORMAT_R8G8_UNORM;
-					break;
-				case STBI_rgb: // RGB format is unsupported in Vulkan, we need to convert it to RGBA (done in constructor)...
-					imageInfo.format = VK_FORMAT_R8G8B8_UNORM;
-					break;
-				case STBI_rgb_alpha: default:
-					imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
-					break;
+			if (!stagingBuffer) {
+				device->CreateAndAllocateBuffer(bufferInfo, MEMORY_USAGE_CPU_ONLY, stagingBuffer, &stagingBufferAllocation);
 			}
 			
-			MemoryAllocation stagingBufferAllocation = VK_NULL_HANDLE;
-			VkBuffer stagingBuffer = VK_NULL_HANDLE;
-			
-			device->CreateAndAllocateBuffer(bufferInfo, MEMORY_USAGE_CPU_TO_GPU, stagingBuffer, &stagingBufferAllocation);
-			
-			Instance::CheckVkResult("Create and allocate image", device->CreateAndAllocateImage(imageInfo, memoryUsage, obj, &allocation));
+			if (VkImage(obj) == VK_NULL_HANDLE) {
+				imageInfo.extent.width = uint32_t(width);
+				imageInfo.extent.height = uint32_t(height);
+				imageInfo.mipLevels = glm::min(imageInfo.mipLevels, uint32_t(glm::floor(glm::log2(glm::max(imageInfo.extent.width, imageInfo.extent.height, imageInfo.extent.depth))))+1);
+				switch (componentCount) {
+					case STBI_grey:
+						imageInfo.format = VK_FORMAT_R8_UNORM;
+						break;
+					case STBI_grey_alpha:
+						imageInfo.format = VK_FORMAT_R8G8_UNORM;
+						break;
+					case STBI_rgb: // RGB format is unsupported in Vulkan, we need to convert it to RGBA (done in Load())...
+						imageInfo.format = VK_FORMAT_R8G8B8_UNORM;
+						break;
+					case STBI_rgb_alpha: default:
+						imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+						break;
+				}
+				Instance::CheckVkResult("Create and allocate image", device->CreateAndAllocateImage(imageInfo, memoryUsage, obj, &allocation));
+			} else {
+				assert(imageInfo.extent.width == uint32_t(width) && imageInfo.extent.height == uint32_t(height));
+			}
 			
 			{// Copy image data to staging buffer
-				void* stagingData;
-				device->MapMemoryAllocation(stagingBufferAllocation, &stagingData, 0, bufferSize);
+				std::lock_guard lock(mu);
+				if (data) {
+					void* stagingData;
+					device->MapMemoryAllocation(stagingBufferAllocation, &stagingData, 0, bufferSize);
 					memcpy(stagingData, data, bufferSize);
-				device->UnmapMemoryAllocation(stagingBufferAllocation);
+					device->UnmapMemoryAllocation(stagingBufferAllocation);
+				}
 			}
 			
 			// Copy staging buffer to image and generate mip maps
@@ -105,8 +141,10 @@ COMMON_OBJECT_CPP(TextureObject, VkImage)
 				ImageObject::TransitionImageLayout(device, cmdBuffer, obj, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL, imageInfo.mipLevels, imageInfo.arrayLayers);
 			});
 			
-			// Destroy staging buffer
-			device->FreeAndDestroyBuffer(stagingBuffer, stagingBufferAllocation);
+			if (!keepStagingBufferAlive) {
+				// Destroy staging buffer
+				device->FreeAndDestroyBuffer(stagingBuffer, stagingBufferAllocation);
+			}
 		}
 	}
 
@@ -114,6 +152,9 @@ COMMON_OBJECT_CPP(TextureObject, VkImage)
 		if (device) {
 			if (VkImage(obj) != VK_NULL_HANDLE) {
 				device->FreeAndDestroyImage(obj, allocation);
+			}
+			if (stagingBuffer != VK_NULL_HANDLE) {
+				device->FreeAndDestroyBuffer(stagingBuffer, stagingBufferAllocation);
 			}
 			device = nullptr;
 		}
