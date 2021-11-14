@@ -146,6 +146,7 @@ namespace v4d::io {
 	protected: // Class members
 
 		std::atomic<int> autoReloadInterval;
+		mutable std::recursive_mutex mu;
 
 	public: // Virtual methods
 
@@ -169,7 +170,6 @@ namespace v4d::io {
 		static const int DEFAULT_AUTORELOAD_INTERVAL = 0; // in milliseconds, 0 = disabled
 		static int globalAutoReloadInterval;
 
-		mutable std::recursive_mutex mu;
 		std::thread* autoReloadThread = nullptr;
 		double lastWriteTimeCache = 0;
 
