@@ -1,6 +1,7 @@
 #pragma once
 
 // TinyGltfLoader
+#ifdef _ENABLE_TINYGLTF
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #define TINYGLTF_NO_INCLUDE_STB_IMAGE_WRITE
 #define TINYGLTF_NO_EXTERNAL_IMAGE
@@ -98,3 +99,5 @@ public:
 	}
 };
 }
+
+#endif

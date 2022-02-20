@@ -18,6 +18,11 @@ else()
 		${V4DCoreSourceFiles}
 	)
 endif()
+if(ENABLE_TINYGLTF)
+	target_compile_definitions(v4d
+		PUBLIC -D_ENABLE_TINYGLTF
+	)
+endif()
 target_link_libraries(v4d
 	PRIVATE
 		ssl

@@ -1,3 +1,5 @@
+#ifdef _ENABLE_TINYGLTF
+
 #define TINYGLTF_IMPLEMENTATION
 #include "MeshFile.h"
 
@@ -305,3 +307,5 @@ bool MeshFile::Load() {
 }
 
 }
+
+#endif
