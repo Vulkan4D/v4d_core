@@ -13,11 +13,11 @@
 #include <filesystem>
 #include "utilities/io/FilePath.h"
 
-// // Dependencies for V4D_Mod
+// Dependencies for V4D_Mod
 #include "utilities/graphics/vulkan/Loader.h"
 #include "utilities/graphics/Window.h"
 #include "utilities/graphics/Renderer.h"
-
+#include "utilities/graphics/vulkan/PhysicalDevice.h"
 
 class V4DLIB V4D_Mod {
 	V4D_MODULE_CLASS_HEADER(V4D_Mod
@@ -45,8 +45,8 @@ class V4DLIB V4D_Mod {
 	
 	// Renderer configuration
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_ConfigureDeviceExtensions)
-	V4D_MODULE_FUNC_DECLARE(void, Renderer_ScorePhysicalDeviceSelection)
-	V4D_MODULE_FUNC_DECLARE(void, Renderer_ConfigureDeviceFeatures)
+	V4D_MODULE_FUNC_DECLARE(void, Renderer_ScorePhysicalDeviceSelection, int& score, v4d::graphics::vulkan::PhysicalDevice* device)
+	V4D_MODULE_FUNC_DECLARE(void, Renderer_ConfigureDeviceFeatures, v4d::graphics::vulkan::PhysicalDevice::DeviceFeatures* deviceFeaturesToEnable, const v4d::graphics::vulkan::PhysicalDevice::DeviceFeatures* availableDeviceFeatures)
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_ConfigureRenderer)
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_ConfigureLayouts)
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_ConfigureShaders)

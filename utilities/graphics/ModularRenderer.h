@@ -24,17 +24,17 @@ using Renderer::Renderer;
 	}
 	
 	void ScorePhysicalDeviceSelection(int& score, PhysicalDevice* device) override {
-		V4D_Mod::ForEachSortedModule([](auto* mod){
+		V4D_Mod::ForEachSortedModule([&](auto* mod){
 			if (mod->Renderer_ScorePhysicalDeviceSelection) {
-				mod->Renderer_ScorePhysicalDeviceSelection();
+				mod->Renderer_ScorePhysicalDeviceSelection(score, device);
 			}
 		});
 	}
 	
 	void ConfigureDeviceFeatures(PhysicalDevice::DeviceFeatures* deviceFeaturesToEnable, const PhysicalDevice::DeviceFeatures* availableDeviceFeatures) override {
-		V4D_Mod::ForEachSortedModule([](auto* mod){
+		V4D_Mod::ForEachSortedModule([&](auto* mod){
 			if (mod->Renderer_ConfigureDeviceFeatures) {
-				mod->Renderer_ConfigureDeviceFeatures();
+				mod->Renderer_ConfigureDeviceFeatures(deviceFeaturesToEnable, availableDeviceFeatures);
 			}
 		});
 	}
