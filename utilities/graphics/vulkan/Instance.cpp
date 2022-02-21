@@ -57,6 +57,7 @@ using namespace v4d::graphics::vulkan;
 						// Ignored errors
 						if (std::string("VUID-VkSwapchainCreateInfoKHR-imageExtent-01274") == pCallbackData->pMessageIdName) break; // Error happening while resizing the window on Linux...
 						if (std::string("VUID_Undefined") == pCallbackData->pMessageIdName) break; // False error when using DLSS on Linux
+						if (std::string("VUID-VkCuLaunchInfoNVX-paramCount-arraylength") == pCallbackData->pMessageIdName) break; // False error when using DLSS on Linux
 						if (std::string("UNASSIGNED-CoreValidation-Shader-InterfaceTypeMismatch") == pCallbackData->pMessageIdName) break; // Error caused by ImGui, doesn't seem to be causing any issue...
 						
 						LOG_ERROR("VULKAN_ERROR" << type << ": " << pCallbackData->pMessage);
