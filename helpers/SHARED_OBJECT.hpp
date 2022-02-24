@@ -50,7 +50,7 @@
  * 		// It is also possible to extend a shared object class, while they all share the same global instance list as the parent-most shared object (the class that has the SHARED_OBJECT_H macro defined)
  * 		// To do this, child classes must simply have the macro SHARED_OBJECT_EXT(ChildClass, ParentClass)
  * 		// and define a constructor that invokes a parent constructor
- * 		// The Parent-most shared object must have a virtual destructor, which happens to calls Destroy(this)
+ * 		// The Parent-most shared object must have a virtual destructor, which happens to call Destroy(this)
  * 
  * 		class Child : public Parent {
  * 			SHARED_OBJECT_EXT(Child, Parent)

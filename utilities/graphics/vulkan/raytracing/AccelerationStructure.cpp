@@ -95,7 +95,7 @@ namespace v4d::graphics::vulkan::raytracing {
 			range.primitiveCount = (uint32_t)geom.vertexCount;
 			range.primitiveOffset = (uint32_t)(geom.vertexOffset * geom.vertexStride);
 			range.firstVertex = 0;
-			range.transformOffset = (uint32_t)geom.transformOffset;
+			range.transformOffset = (uint32_t)geom.transformOffset; // UNUSED????
 			
 			maxPrimitiveCounts.emplace_back(range.primitiveCount);
 		}

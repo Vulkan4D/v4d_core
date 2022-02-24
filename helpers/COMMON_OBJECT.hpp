@@ -229,7 +229,7 @@ Usage:
 	ObjClass& operator= (const ObjClass& other) = delete;
 	
 #define COMMON_OBJECT_CLASS(ObjClass, UnderlyingClass, .../* may optionally have a 3rd argument with either __declspec(dllexport) or __declspec(dllimport) */) \
-	class ObjClass {\
+	class __VA_ARGS__ ObjClass {\
 		COMMON_OBJECT(ObjClass, UnderlyingClass, __VA_ARGS__)\
 		COMMON_OBJECT_MOVEABLE(ObjClass)\
 		COMMON_OBJECT_COPYABLE(ObjClass)\

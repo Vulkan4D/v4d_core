@@ -30,21 +30,21 @@ namespace v4d::graphics::vulkan {
 	
 	class ShaderPipelineObject;
 	namespace raytracing {
-		class ShaderBindingTable;
+		class RayTracingPipeline;
 	};
 	using namespace raytracing;
 	
 	struct ShaderPipelineMetaFile {
 		v4d::io::FilePath file;
 		std::vector<ShaderPipelineObject*> shaders;
-		ShaderBindingTable* sbt;
+		RayTracingPipeline* sbt;
 		double mtime;
 		
 		ShaderPipelineMetaFile(v4d::io::FilePath metaFile, std::vector<ShaderPipelineObject*>&& shaders)
 		: file(metaFile), shaders(shaders), sbt(nullptr), mtime(0) {}
 		ShaderPipelineMetaFile(const std::string& shaderProgram, ShaderPipelineObject* shaderPipeline)
 		: file(shaderProgram+".meta"), shaders({shaderPipeline}), sbt(nullptr), mtime(0) {}
-		ShaderPipelineMetaFile(const std::string& shaderProgram, ShaderBindingTable* sbt)
+		ShaderPipelineMetaFile(const std::string& shaderProgram, RayTracingPipeline* sbt)
 		: file(shaderProgram+".meta"), shaders(), sbt(sbt), mtime(0) {}
 		
 		operator const std::vector<ShaderInfo> () const {

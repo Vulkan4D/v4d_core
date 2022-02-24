@@ -1,6 +1,6 @@
 #include "Renderer.h"
 #include "utilities/graphics/vulkan/DescriptorSetObject.h"
-#include "utilities/graphics/vulkan/raytracing/ShaderBindingTable.h"
+#include "utilities/graphics/vulkan/raytracing/RayTracingPipeline.h"
 
 using namespace v4d::graphics;
 
@@ -218,7 +218,7 @@ void Renderer::DestroySwapChain() {
 void Renderer::WatchModifiedShadersForReload(const std::vector<ShaderPipelineMetaFile>& shaderWatchers) {
 	shaderWatcherThreads.emplace_back(std::make_unique<std::thread>([watchers=shaderWatchers,this]() mutable {
 		std::vector<ShaderPipelineObject*> shadersToReload {};
-		std::vector<ShaderBindingTable*> sbtsToReload {};
+		std::vector<RayTracingPipeline*> sbtsToReload {};
 		while (state != STATE::NONE) {
 			for (auto& watcher : watchers) {
 				if (watcher.mtime == 0) {

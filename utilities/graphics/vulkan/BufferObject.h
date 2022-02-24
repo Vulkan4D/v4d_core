@@ -12,16 +12,18 @@ class V4DLIB BufferObject {
 	MemoryUsage memoryUsage;
 	VkBufferUsageFlags bufferUsage;
 	VkDeviceSize size;
+	uint32_t alignment;
 	
 	Device* device = nullptr;
 	MemoryAllocation allocation = VK_NULL_HANDLE;
 	VkDeviceOrHostAddressConstKHR address {};
+	VkDeviceSize alignedOffset = 0;
 	
-	BufferObject(MemoryUsage memoryUsage, VkBufferUsageFlags bufferUsage, VkDeviceSize size)
-	 : obj(), memoryUsage(memoryUsage), bufferUsage(bufferUsage), size(size) {}
+	BufferObject(MemoryUsage memoryUsage, VkBufferUsageFlags bufferUsage, VkDeviceSize size, uint32_t alignment = 0)
+	 : obj(), memoryUsage(memoryUsage), bufferUsage(bufferUsage), size(size), alignment(alignment) {}
 	
 	BufferObject()
-	 : obj(), memoryUsage(MEMORY_USAGE_UNKNOWN), bufferUsage(0), size(0) {}
+	 : obj(), memoryUsage(MEMORY_USAGE_UNKNOWN), bufferUsage(0), size(0), alignment(0) {}
 	
 	virtual void Allocate(Device* device);
 	virtual void Free();
@@ -43,10 +45,12 @@ class V4DLIB BufferObject {
 		assert(bufferUsage == other.bufferUsage);
 		assert(size == other.size);
 		assert(device == other.device);
+		assert(alignment == other.alignment);
 		std::lock_guard lock(UnderlyingCommonObjectContainer::mu);
 		std::swap(obj.obj, other.obj.obj);
 		std::swap(address, other.address);
 		std::swap(allocation, other.allocation);
+		std::swap(alignedOffset, other.alignedOffset);
 	}
 	
 	operator VkDeviceOrHostAddressConstKHR() const {return address;}
@@ -164,9 +168,9 @@ protected:
 	MappedBufferObject<T> hostBuffer;
 	BufferObject deviceBuffer;
 public:
-	StagingBuffer(VkBufferUsageFlags bufferUsage, uint32_t count = 1)
+	StagingBuffer(VkBufferUsageFlags bufferUsage, uint32_t count = 1, uint32_t alignment = 0)
 	 : hostBuffer(MEMORY_USAGE_CPU_ONLY, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, count)
-	 , deviceBuffer(MEMORY_USAGE_GPU_ONLY, bufferUsage | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, sizeof(T) * count)
+	 , deviceBuffer(MEMORY_USAGE_GPU_ONLY, bufferUsage | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, sizeof(T) * count, alignment)
 	{}
 	StagingBuffer() {}
 	
@@ -232,7 +236,7 @@ public:
 			assert(count * int32_t(sizeof(T)) <= int32_t(hostBuffer.size));
 			VkBufferCopy region = {};{
 				region.srcOffset = offset;
-				region.dstOffset = offset;
+				region.dstOffset = offset + deviceBuffer.alignedOffset;
 				region.size = count > 0? (uint32_t(count) * sizeof(T)) : hostBuffer.size;
 			}
 			hostBuffer.device->CmdCopyBuffer(cmdBuffer, hostBuffer, deviceBuffer, 1, &region);
@@ -245,7 +249,7 @@ public:
 			assert(hostBuffer.device);
 			assert(count * int32_t(sizeof(T)) <= int32_t(hostBuffer.size));
 			VkBufferCopy region = {};{
-				region.srcOffset = offset;
+				region.srcOffset = offset + deviceBuffer.alignedOffset;
 				region.dstOffset = offset;
 				region.size = count > 0? (uint32_t(count) * sizeof(T)) : hostBuffer.size;
 			}
