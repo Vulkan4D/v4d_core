@@ -77,6 +77,10 @@ namespace v4d::graphics::vulkan::raytracing {
 
 		template<typename BufferType> 
 		void WriteHitGroupsToSBT(StagingBuffer<BufferType>& buffer, const std::vector<uint32_t>& hitGroupsUsed) {
+			if (buffer.Count() < hitGroupsUsed.size()) {
+				buffer.Resize(hitGroupsUsed.size() * 2, true);
+			}
+			
 			const VkDeviceAddress& addr = buffer;
 			const size_t& stride = buffer.TypeSize;
 			const size_t count = hitGroupsUsed.size();

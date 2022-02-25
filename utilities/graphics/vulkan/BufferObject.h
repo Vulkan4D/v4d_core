@@ -27,9 +27,14 @@ class V4DLIB BufferObject {
 	
 	virtual void Allocate(Device* device);
 	virtual void Free();
-	virtual void Resize(size_t newSize) {
-		assert(device == nullptr);
+	virtual void Resize(size_t newSize, bool allowReallocation = false) {
+		assert(device == nullptr || allowReallocation);
 		size = newSize;
+		if (device != nullptr && allowReallocation) {
+			auto dev = device;
+			Free();
+			Allocate(dev);
+		}
 	}
 	
 	virtual ~BufferObject();
@@ -127,12 +132,12 @@ public:
 		Free();
 	}
 	
-	virtual void Resize(size_t newCount) {
-		assert(device == nullptr);
+	virtual void Resize(size_t newCount, bool allowReallocation = false) {
+		assert(device == nullptr || allowReallocation);
 		if (size > 0 && temporaryData.size() == Count()) {
 			temporaryData.resize(newCount);
 		}
-		BufferObject::Resize(newCount * sizeof(T));
+		BufferObject::Resize(newCount * sizeof(T), allowReallocation);
 	}
 	
 	T& operator[](size_t index) {
@@ -206,10 +211,10 @@ public:
 		deviceBuffer.Free();
 	}
 	
-	void Resize(size_t newCount) {
-		assert(hostBuffer.device == nullptr);
-		hostBuffer.Resize(newCount);
-		deviceBuffer.Resize(newCount * sizeof(T));
+	void Resize(size_t newCount, bool allowReallocation = false) {
+		assert(hostBuffer.device == nullptr || allowReallocation);
+		hostBuffer.Resize(newCount, allowReallocation);
+		deviceBuffer.Resize(newCount * sizeof(T), allowReallocation);
 	}
 	
 	T& operator[](size_t index) {
