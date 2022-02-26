@@ -244,6 +244,40 @@ void Renderer::WatchModifiedShadersForReload(const std::vector<ShaderPipelineMet
 	}));
 }
 
+void Renderer::WatchModifiedShadersForReload(RayTracingPipeline& rtPipeline) {
+	shaderWatcherThreads.emplace_back(std::make_unique<std::thread>([&rtPipeline,this]() mutable {
+		double rgenModifiedTime = 0;
+		while (state != STATE::NONE) {
+			bool modified = false;
+			{
+				std::lock_guard<std::mutex> lock(rtPipeline.sharedHitGroupsMutex);
+				for (auto& [filePath, hitGroup] : rtPipeline.sharedHitGroups) {
+					if (hitGroup.modifiedTime == 0) {
+						hitGroup.modifiedTime = v4d::io::FilePath(filePath+".meta").GetLastWriteTime();
+					} else if (hitGroup.modifiedTime < v4d::io::FilePath(filePath+".meta").GetLastWriteTime()) {
+						hitGroup.modifiedTime = 0;
+						modified = true;
+					}
+				}
+			}
+			if (rgenModifiedTime == 0) {
+				rgenModifiedTime = ShaderPipelineMetaFile(rtPipeline).file.GetLastWriteTime();
+			} else if (rgenModifiedTime < ShaderPipelineMetaFile(rtPipeline).file.GetLastWriteTime()) {
+				rgenModifiedTime = 0;
+				modified = true;
+			}
+			if (modified) {
+				modified = false;
+				RunSynchronized([&rtPipeline,this](){
+					rtPipeline.Reload();
+					LOG("Reloaded modified ray-tracing shaders")
+				});
+			}
+			SLEEP(100ms)
+		}
+	}));
+}
+
 void Renderer::RecreateSwapChain() {
 	std::lock_guard lock(frameSyncMutex2);
 	UnloadGraphicsFromDevice();

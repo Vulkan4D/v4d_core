@@ -162,6 +162,15 @@ uint32_t RayTracingPipeline::AddCallableShader(const ShaderInfo& rcall) {
 	return nextCallableShaderOffset++;
 }
 
+uint32_t RayTracingPipeline::GetOrAddHitGroup(const char* filePath) {
+	std::lock_guard<std::mutex> lock(sharedHitGroupsMutex);
+	if (!sharedHitGroups.contains(filePath)) {
+		sharedHitGroups.emplace(filePath, AddHitShader(filePath));
+		hitGroupsDirty = true;
+	}
+	return sharedHitGroups.at(filePath).index;
+}
+
 void RayTracingPipeline::ReadShaders() {
 	shaderObjects.clear();
 	for (auto&[i, shader] : shaderFiles) {
@@ -191,6 +200,7 @@ void RayTracingPipeline::Reload() {
 	if (this->device) {
 		LOG("Reloading Ray Tracing Pipeline...")
 		Device* device = this->device;
+		std::lock_guard<std::mutex> lock(sharedHitGroupsMutex);
 		Destroy();
 		Create(device);
 	}

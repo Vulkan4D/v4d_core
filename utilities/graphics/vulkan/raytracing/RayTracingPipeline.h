@@ -81,6 +81,11 @@ namespace v4d::graphics::vulkan::raytracing {
 				buffer.Resize(hitGroupsUsed.size() * 2, true);
 			}
 			
+			if (hitGroupsDirty) {
+				Reload();
+				hitGroupsDirty = false;
+			}
+			
 			const VkDeviceAddress& addr = buffer;
 			const size_t& stride = buffer.TypeSize;
 			const size_t count = hitGroupsUsed.size();
@@ -89,6 +94,7 @@ namespace v4d::graphics::vulkan::raytracing {
 			// Check Size & Alignment
 			const uint32_t& handleSize = rayTracingPipelineProperties.shaderGroupHandleSize;
 			const uint64_t& alignment = rayTracingPipelineProperties.shaderGroupBaseAlignment;
+			assert(sizeof(BufferType::sbtHandle) >= handleSize);
 			assert(stride >= handleSize);
 			assert(stride >= alignment);
 			assert(buffer.Count() >= count);
@@ -102,16 +108,12 @@ namespace v4d::graphics::vulkan::raytracing {
 			
 			// Fill
 			assert(rayHitGroups.size() > 0);
-			const size_t shaderHandlerStorageSize = rayHitGroups.size()*stride;
+			const size_t shaderHandlerStorageSize = rayHitGroups.size()*handleSize;
 			auto shaderHandleStorage = new uint8_t[shaderHandlerStorageSize];
 			if (device->GetRayTracingShaderGroupHandlesKHR(pipeline, (uint)pipelineGroups.size(), (uint)rayHitGroups.size(), shaderHandlerStorageSize, shaderHandleStorage) != VK_SUCCESS)
 				throw std::runtime_error("Failed to get ray tracing shader group handles");
 			for (size_t i = 0; i < hitGroupsUsed.size(); ++i) {
-				buffer.Fill(
-					/*SrcPtr*/shaderHandleStorage + hitGroupsUsed[i]*handleSize,
-					/*SizeBytes*/handleSize,
-					/*OffsetBytes*/stride * i
-				);
+				memcpy(buffer[i].sbtHandle, shaderHandleStorage + hitGroupsUsed[i]*handleSize, handleSize);
 			}
 			delete[] shaderHandleStorage;
 		}
@@ -154,6 +156,19 @@ namespace v4d::graphics::vulkan::raytracing {
 		uint32_t AddHitShader(const ShaderInfo& rchit, const ShaderInfo& rahit, const ShaderInfo& rint);
 		uint32_t AddHitShaders(const RayTracingShaderPrograms&);
 		uint32_t AddCallableShader(const ShaderInfo& rcall);
+		
+		// This one can be dynamic
+		uint32_t GetOrAddHitGroup(const char* filePath);
+		struct SharedHitGroup {
+			uint32_t index;
+			double modifiedTime;
+			SharedHitGroup(uint32_t index)
+			 : index(index), modifiedTime(0)
+			{}
+		};
+		std::mutex sharedHitGroupsMutex;
+		std::unordered_map<std::string, SharedHitGroup> sharedHitGroups {};
+		bool hitGroupsDirty = false;
 		
 		void Configure(v4d::graphics::Renderer*, Device*);
 		void Create(Device* device);
