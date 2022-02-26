@@ -149,7 +149,6 @@ namespace v4d::graphics::vulkan::raytracing {
 	
 	void AccelerationStructure::CreateAndAllocate(Device* device, bool topLevel) {
 		isTopLevel = topLevel;
-		this->device = device;
 		
 		{// Prep Build info
 			buildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
@@ -164,33 +163,43 @@ namespace v4d::graphics::vulkan::raytracing {
 				&buildGeometryInfo,
 				maxPrimitiveCounts.data(),
 				&accelerationStructureBuildSizesInfo);
+			if (built && update && accelerationStructureSize < accelerationStructureBuildSizesInfo.accelerationStructureSize) {
+				FreeAndDestroy();
+				update = false;
+			}
 			accelerationStructureSize = accelerationStructureBuildSizesInfo.accelerationStructureSize;
 		}
 		
-		{// Create and Allocate Buffer
-			VkBufferCreateInfo bufferCreateInfo{};{
-				bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-				bufferCreateInfo.size = accelerationStructureSize;
-				bufferCreateInfo.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+		this->device = device;
+		
+		if (update) {
+			built = false;
+		} else {
+			{// Create and Allocate Buffer
+				VkBufferCreateInfo bufferCreateInfo{};{
+					bufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+					bufferCreateInfo.size = accelerationStructureSize;
+					bufferCreateInfo.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+				}
+				device->CreateAndAllocateBuffer(bufferCreateInfo, MEMORY_USAGE_GPU_ONLY, accelerationStructureBuffer, &accelerationStructureAllocation, true);
 			}
-			device->CreateAndAllocateBuffer(bufferCreateInfo, MEMORY_USAGE_GPU_ONLY, accelerationStructureBuffer, &accelerationStructureAllocation, true);
-		}
-		
-		{// Create acceleration structure
-			createInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
-			createInfo.buffer = accelerationStructureBuffer;
-			createInfo.size = accelerationStructureSize;
-			createInfo.offset = accelerationStructureOffset;
-			createInfo.type = isTopLevel? VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR : VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-			if (device->CreateAccelerationStructureKHR(&createInfo, nullptr, &accelerationStructure) != VK_SUCCESS)
-				throw std::runtime_error("Failed to create top level acceleration structure");
-		}
-		
-		// Get acceleration structure handle/deviceAddress for use in instances
-		VkAccelerationStructureDeviceAddressInfoKHR devAddrInfo {};{
-			devAddrInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
-			devAddrInfo.accelerationStructure = accelerationStructure;
-			deviceAddress = device->GetAccelerationStructureDeviceAddressKHR(&devAddrInfo);
+			
+			{// Create acceleration structure
+				createInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+				createInfo.buffer = accelerationStructureBuffer;
+				createInfo.size = accelerationStructureSize;
+				createInfo.offset = accelerationStructureOffset;
+				createInfo.type = isTopLevel? VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR : VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+				if (device->CreateAccelerationStructureKHR(&createInfo, nullptr, &accelerationStructure) != VK_SUCCESS)
+					throw std::runtime_error("Failed to create top level acceleration structure");
+			}
+			
+			// Get acceleration structure handle/deviceAddress for use in instances
+			VkAccelerationStructureDeviceAddressInfoKHR devAddrInfo {};{
+				devAddrInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
+				devAddrInfo.accelerationStructure = accelerationStructure;
+				deviceAddress = device->GetAccelerationStructureDeviceAddressKHR(&devAddrInfo);
+			}
 		}
 		
 		// LOG_VERBOSE("Allocated Acceleration Structure " << accelerationStructure << "; deviceAddress " << std::hex << deviceAddress)

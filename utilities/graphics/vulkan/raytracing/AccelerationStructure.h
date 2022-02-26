@@ -46,6 +46,7 @@ namespace v4d::graphics::vulkan::raytracing {
 		// State
 		bool built = false;
 		bool update = false;
+		bool dirty = false;
 		std::vector<uint32_t> maxPrimitiveCounts {};
 		
 		Device* device = nullptr;
