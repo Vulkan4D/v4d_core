@@ -1,5 +1,5 @@
 /**
- * Shared Objects helper v1.1
+ * Shared Objects helper v1.2
  * Author: Olivier St-Laurent
  * 
  * This helper will add to a class the ability to loop through all instances of it and keep track of them, in a thread-safe manner.
@@ -9,7 +9,8 @@
  * 		* Self() // returns the shared_ptr of this shared object, to be called within another member method
  * 		* Create(...) // Used to instantiate the object, it's the public version of the constructor and takes any argument list compatible with the constructors you define
  * 		* Destroy(this) // To be called in the destructor, specifically with the "this" argument, it effectively removes the object from the global instance list
- * 		* ForEach(func<void|bool(Ptr&)>) // To allow looping through all instances of a shared object using a lambda
+ * 		* ForEach(func<void(Ptr&)>) // To allow looping through all instances of a shared object using a lambda
+ * 		* ForEachOrBreak(func<bool(Ptr&)>) // To allow looping through all instances of a shared object using a lambda
  * 		* Sort(func<bool(Ptr&, Ptr&)>) // Sort the global instance list before looping through them, using the usual sorting lambdas (return TRUE if the first argument should be placed BEFORE the second)
  * 
  * Usage:
@@ -40,6 +41,10 @@
  * 			Test::ForEach([](Test::Ptr& test){ // Loops through all existing and non-destroyed references to objects of type Test
  * 				// do stuff here with test (it's a shared pointer to your object)
  * 				// optionally return bool here (return false to break the loop)
+ * 			});
+ * 			Test::ForEachOrBreak([](Test::Ptr& test) -> bool { // Loops through all existing and non-destroyed references to objects of type Test, with the possibility to break the loop by returning false
+ * 				// do stuff here with test (it's a shared pointer to your object)
+ * 				// return bool here (return true to continue, false to break the loop)
  * 			});
  * 			//...
  * 			// myTestObject gets destroyed automatically when all references to it are destroyed
@@ -90,7 +95,7 @@
 			_sharedObjects.emplace_back(sharedPtr);\
 			return sharedPtr;\
 		}\
-		static void ForEach(std::function<bool(Ptr&)>&& func) {\
+		static void ForEachOrBreak(std::function<bool(Ptr&)>&& func) {\
 			std::lock_guard lock(_sharedObjectsMutex);\
 			for (auto& t : _sharedObjects) if (auto sharedPtr = t.lock(); sharedPtr) {\
 				if (!func(sharedPtr)) break;\

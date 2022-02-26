@@ -181,6 +181,8 @@ public:
 	
 	static inline const size_t TypeSize = sizeof(T);
 	
+	bool dirty = false; // For your own usage
+	
 	size_t Count() const {
 		return hostBuffer.Count();
 	}
