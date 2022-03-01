@@ -100,6 +100,11 @@ uint32_t RayTracingPipeline::AddMissShader(const ShaderInfo& rmiss) {
 uint32_t RayTracingPipeline::AddHitShader(const char* filePath) {
 	std::vector<ShaderInfo> files = ShaderPipelineMetaFile{filePath, this};
 	
+	if (files.size() == 0) {
+		LOG_WARN("Shader program not found at '" << filePath << "'. Using default hit group 0.")
+		return 0;
+	}
+	
 	RayTracingShaderPrograms shaders {};
 	
 	for (auto& shaderFile : files) {
