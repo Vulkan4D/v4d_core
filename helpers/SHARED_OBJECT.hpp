@@ -1,5 +1,5 @@
 /**
- * Shared Objects helper v1.2
+ * Shared Objects helper v1.3 - 2022-03-01
  * Author: Olivier St-Laurent
  * 
  * This helper will add to a class the ability to loop through all instances of it and keep track of them, in a thread-safe manner.
@@ -12,6 +12,7 @@
  * 		* ForEach(func<void(Ptr&)>) // To allow looping through all instances of a shared object using a lambda
  * 		* ForEachOrBreak(func<bool(Ptr&)>) // To allow looping through all instances of a shared object using a lambda
  * 		* Sort(func<bool(Ptr&, Ptr&)>) // Sort the global instance list before looping through them, using the usual sorting lambdas (return TRUE if the first argument should be placed BEFORE the second)
+ * 		* Count() // Returns the current number of instances of this type
  * 
  * Usage:
  * 
@@ -89,9 +90,9 @@
 	public:\
 		template<class C = ClassName, typename...Args>\
 		static Ptr Create(Args&&...args) {\
-			std::lock_guard lock(_sharedObjectsMutex);\
 			Ptr sharedPtr((ClassName*)new C(std::forward<Args>(args)...));\
 			sharedPtr->_self = sharedPtr;\
+			std::lock_guard lock(_sharedObjectsMutex);\
 			_sharedObjects.emplace_back(sharedPtr);\
 			return sharedPtr;\
 		}\
@@ -104,6 +105,10 @@
 		static void ForEach(std::function<void(Ptr&)>&& func) {\
 			std::lock_guard lock(_sharedObjectsMutex);\
 			for (auto& t : _sharedObjects) if (auto sharedPtr = t.lock(); sharedPtr) func(sharedPtr);\
+		}\
+		static size_t Count() {\
+			std::lock_guard lock(_sharedObjectsMutex);\
+			return _sharedObjects.size();\
 		}\
 		static void Sort(std::function<bool(Ptr&, Ptr&)>&& func) {\
 			std::lock_guard lock(_sharedObjectsMutex);\
@@ -121,12 +126,11 @@
 	std::recursive_mutex ClassName::_sharedObjectsMutex {};\
 	void ClassName::Destroy(ClassName* ptr) {\
 		std::lock_guard lock(_sharedObjectsMutex);\
-		for (auto it = _sharedObjects.begin(); it != _sharedObjects.end(); ++it) if (auto sharedPtr = it->lock(); sharedPtr) {\
-			if (sharedPtr.get() == ptr) {\
+		for (auto it = _sharedObjects.begin(); it != _sharedObjects.end();) {\
+			if (auto sharedPtr = it->lock(); !sharedPtr || sharedPtr.get() == ptr) {\
 				it->swap(_sharedObjects.back());\
 				_sharedObjects.pop_back();\
-				break;\
-			}\
+			} else ++it;\
 		}\
 	}
 #define SHARED_OBJECT_EXT(ChildClass, ParentClass) \
