@@ -75,8 +75,8 @@ namespace v4d::graphics::vulkan::raytracing {
 
 	public:
 
-		template<typename BufferType> 
-		void WriteHitGroupsToSBT(StagingBuffer<BufferType>& buffer, const std::vector<uint32_t>& hitGroupsUsed) {
+		template<template<class> class BufferContainerType, class MappedType>
+		void WriteHitGroupsToSBT(BufferContainerType<MappedType>& buffer, const std::vector<uint32_t>& hitGroupsUsed) {
 			if (buffer.Count() < hitGroupsUsed.size()) {
 				buffer.Resize(hitGroupsUsed.size() * 2, true);
 			}
@@ -94,7 +94,7 @@ namespace v4d::graphics::vulkan::raytracing {
 			// Check Size & Alignment
 			const uint32_t& handleSize = rayTracingPipelineProperties.shaderGroupHandleSize;
 			const uint64_t& alignment = rayTracingPipelineProperties.shaderGroupBaseAlignment;
-			assert(sizeof(BufferType::sbtHandle) >= handleSize);
+			assert(sizeof(MappedType::sbtHandle) >= handleSize);
 			assert(stride >= handleSize);
 			assert(stride >= alignment);
 			assert(buffer.Count() >= count);

@@ -85,6 +85,8 @@ namespace v4d::processing {
 				}
 			}
 		}
+		
+		size_t GetNumberOfThreads() const {return numThreads;}
 
 	};
 	
