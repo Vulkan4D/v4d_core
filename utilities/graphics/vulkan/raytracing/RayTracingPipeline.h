@@ -76,8 +76,9 @@ namespace v4d::graphics::vulkan::raytracing {
 	public:
 
 		template<template<class> class BufferContainerType, class MappedType>
-		void WriteHitGroupsToSBT(BufferContainerType<MappedType>& buffer, const std::vector<uint32_t>& hitGroupsUsed) {
+		void WriteHitGroupsToSBT(BufferContainerType<MappedType>& buffer, const std::vector<uint32_t>& hitGroupsUsed, bool mayReallocate = false) {
 			if (buffer.Count() < hitGroupsUsed.size()) {
+				assert(mayReallocate);
 				buffer.Resize(hitGroupsUsed.size() * 2, true);
 			}
 			
