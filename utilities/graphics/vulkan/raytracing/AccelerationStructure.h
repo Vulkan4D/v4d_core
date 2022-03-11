@@ -55,7 +55,7 @@ namespace v4d::graphics::vulkan::raytracing {
 		std::unique_ptr<BufferObject> scratchBuffer = nullptr;
 		
 		struct GeometryAccelerationStructureInfo {
-			VkGeometryFlagsKHR flags = VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR;
+			VkGeometryFlagsKHR flags = 0; // VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR
 			VkDeviceOrHostAddressConstKHR indexBuffer {};
 			size_t indexOffset = 0;
 			size_t indexCount = 0;
