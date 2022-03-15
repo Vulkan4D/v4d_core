@@ -80,7 +80,7 @@ void Socket::Send() {
 			int sent;
 			try {
 			#ifdef _WINDOWS
-				#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
+				#ifdef V4D_STREAM_UNSAFE_FAST_REINTERPRET_CAST
 					sent = ::send(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), 0);
 				#else
 					size_t size = _GetWriteBuffer_().size();
@@ -103,7 +103,7 @@ void Socket::Send() {
 			int64_t sent;
 			#ifdef _WINDOWS
 			
-				#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
+				#ifdef V4D_STREAM_UNSAFE_FAST_REINTERPRET_CAST
 					sent = ::sendto(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), 0, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
 				#else
 					size_t size = _GetWriteBuffer_().size();
@@ -138,7 +138,7 @@ size_t Socket::Receive(byte* data, size_t maxBytesToRead) {
 	if (IsConnected()) {
 		if (IsTCP()) {
 			#ifdef _WINDOWS
-				#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
+				#ifdef V4D_STREAM_UNSAFE_FAST_REINTERPRET_CAST
 					int rec = ::recv(socket, reinterpret_cast<char*>(data), (int)maxBytesToRead, MSG_WAITALL);
 				#else
 					char bytes[maxBytesToRead];
@@ -162,7 +162,7 @@ size_t Socket::Receive(byte* data, size_t maxBytesToRead) {
 		if (IsUDP()) {
 			memset(&incomingAddr, 0, addrLen=sizeof(incomingAddr));
 			#ifdef _WINDOWS
-				#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
+				#ifdef V4D_STREAM_UNSAFE_FAST_REINTERPRET_CAST
 					int rec = ::recvfrom(socket, reinterpret_cast<char*>(data), (int)maxBytesToRead, 0, (struct sockaddr*) &incomingAddr, &addrLen);
 				#else
 					char bytes[maxBytesToRead];

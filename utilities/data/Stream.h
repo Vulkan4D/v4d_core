@@ -145,7 +145,7 @@ namespace v4d::data {
 				// std::string
 				std::lock_guard lock(writeMutex);
 				WriteSize(data.size());
-				#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
+				#ifdef V4D_STREAM_UNSAFE_FAST_REINTERPRET_CAST
 					return WriteBytes(reinterpret_cast<const byte*>(data.c_str()), data.size());
 				#else
 					if (data.size() > 0) {
@@ -158,7 +158,7 @@ namespace v4d::data {
 				#endif
 			} else {
 				// Any other type
-				#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
+				#ifdef V4D_STREAM_UNSAFE_FAST_REINTERPRET_CAST
 					return WriteBytes(reinterpret_cast<const byte*>(&data), sizeof(T));
 				#else
 					byte bytes[sizeof(T)];
@@ -178,7 +178,7 @@ namespace v4d::data {
 					return *this;
 				}
 				byte bytes[size];
-				#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
+				#ifdef V4D_STREAM_UNSAFE_FAST_REINTERPRET_CAST
 					ReadBytes(bytes, size);
 					data = std::string(reinterpret_cast<char const*>(bytes), size);
 				#else
@@ -191,7 +191,7 @@ namespace v4d::data {
 				return *this;
 			} else {
 				// Any other type
-				#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
+				#ifdef V4D_STREAM_UNSAFE_FAST_REINTERPRET_CAST
 					return ReadBytes(reinterpret_cast<byte*>(&data), sizeof(T));
 				#else
 					byte bytes[sizeof(T)];
@@ -257,16 +257,25 @@ namespace v4d::data {
 		Stream& Write(const Container<T, std::allocator<T>>& data) {
 			std::lock_guard lock(writeMutex);
 			WriteSize(data.size());
-			for (const T& item : data) Write<T>(item);
+			#ifdef V4D_STREAM_UNSAFE_FAST_RW_BYTES_FOR_CONTAINERS
+				WriteBytes(reinterpret_cast<const byte*>(data.data()), data.size() * sizeof(T));
+			#else
+				for (const T& item : data) Write<T>(item);
+			#endif
 			return *this;
 		}
 		template<template<typename, typename> class Container, typename T>
 		Stream& Read(Container<T, std::allocator<T>>& data) {
 			std::lock_guard lock(readMutex);
-			size_t size{ReadSize()};
-			data.clear();
-			data.reserve(size);
-			for (size_t i = 0; i < size; i++) data.push_back(Read<T>());
+			size_t size {ReadSize()};
+			#ifdef V4D_STREAM_UNSAFE_FAST_RW_BYTES_FOR_CONTAINERS
+				data.resize(size);
+				ReadBytes(reinterpret_cast<byte*>(data.data()), size * sizeof(T));
+			#else
+				data.clear();
+				data.reserve(size);
+				for (size_t i = 0; i < size; i++) data.push_back(Read<T>());
+			#endif
 			return *this;
 		}
 		// Return-Read with container
@@ -330,7 +339,7 @@ namespace v4d::data {
 				return Write<std::vector, byte>(crypto->EncryptString(data));
 			} else {
 				// Any other type
-				#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
+				#ifdef V4D_STREAM_UNSAFE_FAST_REINTERPRET_CAST
 					return Write<std::vector, byte>(crypto->Encrypt(reinterpret_cast<const byte*>(&data), sizeof(T)));
 				#else
 					byte bytes[sizeof(T)];

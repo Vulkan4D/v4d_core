@@ -49,7 +49,7 @@ std::string P2pSocket::GetLastError() const {
 void P2pSocket::Send() {
 	if (_GetWriteBuffer_().size() == 0) return;
 	#ifdef _WINDOWS
-		#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
+		#ifdef V4D_STREAM_UNSAFE_FAST_REINTERPRET_CAST
 			::sendto(socket, reinterpret_cast<const char*>(_GetWriteBuffer_().data()), (int)_GetWriteBuffer_().size(), MSG_DONTWAIT, (struct sockaddr*) &outgoingAddr, sizeof(outgoingAddr));
 		#else
 			size_t size = _GetWriteBuffer_().size();
@@ -67,7 +67,7 @@ size_t P2pSocket::Receive(byte* data, size_t maxBytesToRead) {
 	ssize_t bytesRead = 0;
 	memset(&incomingAddr, 0, incomingAddrLen=sizeof(incomingAddr));
 	#ifdef _WINDOWS
-		#ifdef ZAP_USE_REINTERPRET_CAST_INSTEAD_OF_MEMCPY
+		#ifdef V4D_STREAM_UNSAFE_FAST_REINTERPRET_CAST
 			int rec = ::recvfrom(socket, reinterpret_cast<char*>(data), (int)maxBytesToRead, 0, (struct sockaddr*) &incomingAddr, &incomingAddrLen);
 		#else
 			char bytes[maxBytesToRead];
