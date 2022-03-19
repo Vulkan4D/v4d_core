@@ -37,27 +37,7 @@ namespace v4d::processing {
 		 * Frees all threads and tasks
 		 */
 		virtual ~ThreadPoolBase() {
-			std::lock_guard threadsLock(threadsMutex);
-			
-			{
-				std::lock_guard lock(eventMutex);
-				stopping = true;
-			}
-
-			eventVar.notify_all();
-
-			try {
-				for (auto& [index, thread] : threads) {
-					if (thread.joinable()) {
-						thread.join();
-					}
-				}
-			} catch (std::exception& e) {
-				// LOG_ERROR("Error while joining ThreadPool threads: " << e.what())
-			} catch (...) {
-				// LOG_ERROR("Unknown Error while joining ThreadPool threads")
-			}
-			std::lock_guard lock(eventMutex);
+			Shutdown();
 		}
 
 		/**
@@ -84,6 +64,31 @@ namespace v4d::processing {
 					thread.join();
 				}
 			}
+		}
+		
+		void Shutdown() {
+			std::lock_guard threadsLock(threadsMutex);
+			
+			{
+				std::lock_guard lock(eventMutex);
+				stopping = true;
+				numThreads = 0;
+			}
+
+			eventVar.notify_all();
+
+			try {
+				for (auto& [index, thread] : threads) {
+					if (thread.joinable()) {
+						thread.join();
+					}
+				}
+			} catch (std::exception& e) {
+				// LOG_ERROR("Error while joining ThreadPool threads: " << e.what())
+			} catch (...) {
+				// LOG_ERROR("Unknown Error while joining ThreadPool threads")
+			}
+			std::lock_guard lock(eventMutex);
 		}
 		
 		size_t GetNumberOfThreads() const {return numThreads;}
