@@ -101,7 +101,7 @@ namespace v4d::graphics::vulkan {
 			0,//uint32_t vertexAttributeDescriptionCount
 			nullptr//const VkVertexInputAttributeDescription* pVertexAttributeDescriptions
 		};
-		std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments {};
+		std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments {DefaultColorAttachmentBlendState()};
 		VkPipelineColorBlendStateCreateInfo colorBlending {VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
 			nullptr,//const void* pNext
 			0,//VkPipelineColorBlendStateCreateFlags flags

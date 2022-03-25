@@ -10,8 +10,14 @@ COMMON_OBJECT(SamplerObject, VkSampler, V4DLIB)
 	VkImageView view = VK_NULL_HANDLE;
 	std::shared_ptr<TextureObject> texture = nullptr;
 	
-	SamplerObject(std::shared_ptr<TextureObject> texture, VkFilter magFilter, VkFilter minFilter, VkSamplerAddressMode addrModeU, VkSamplerAddressMode addrModeV, VkSamplerAddressMode addrModeW)
-	 : obj(), view(), texture(texture)
+	SamplerObject(
+		std::shared_ptr<TextureObject> texture,
+		VkFilter magFilter = VK_FILTER_LINEAR,
+		VkFilter minFilter = VK_FILTER_LINEAR,
+		VkSamplerAddressMode addrModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+		VkSamplerAddressMode addrModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+		VkSamplerAddressMode addrModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT
+	) : obj(), view(), texture(texture)
 	{
 		samplerInfo.magFilter = magFilter;
 		samplerInfo.minFilter = minFilter;
@@ -20,8 +26,14 @@ COMMON_OBJECT(SamplerObject, VkSampler, V4DLIB)
 		samplerInfo.addressModeW = addrModeW;
 	}
 
-	SamplerObject(const char* textureFilePath, VkFilter magFilter, VkFilter minFilter, VkSamplerAddressMode addrModeU, VkSamplerAddressMode addrModeV, VkSamplerAddressMode addrModeW)
-	 : obj(), view(), texture(std::make_shared<TextureObject>(textureFilePath))
+	SamplerObject(
+		const char* textureFilePath,
+		VkFilter magFilter = VK_FILTER_LINEAR,
+		VkFilter minFilter = VK_FILTER_LINEAR,
+		VkSamplerAddressMode addrModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+		VkSamplerAddressMode addrModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+		VkSamplerAddressMode addrModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT
+	) : obj(), view(), texture(std::make_shared<TextureObject>(textureFilePath))
 	{
 		samplerInfo.magFilter = magFilter;
 		samplerInfo.minFilter = minFilter;

@@ -58,6 +58,7 @@
 
 	#define STATIC_ASSERT_ALIGNED16_SIZE(T, X) static_assert(sizeof(T) == X && sizeof(T) % 16 == 0);
 	#define STATIC_ASSERT_SIZE(T, X) static_assert(sizeof(T) == X);
+	#define PUSH_CONSTANT_STRUCT struct
 	#define BUFFER_REFERENCE_STRUCT(align) struct
 	#define BUFFER_REFERENCE_STRUCT_READONLY(align) struct
 	#define BUFFER_REFERENCE_STRUCT_WRITEONLY(align) struct
@@ -128,6 +129,7 @@
 	
 	#define STATIC_ASSERT_ALIGNED16_SIZE(T,X)
 	#define STATIC_ASSERT_SIZE(T,X)
+	#define PUSH_CONSTANT_STRUCT layout(push_constant) uniform
 	#define BUFFER_REFERENCE_STRUCT(align) layout(buffer_reference, std430, buffer_reference_align = align) buffer
 	#define BUFFER_REFERENCE_STRUCT_READONLY(align) layout(buffer_reference, std430, buffer_reference_align = align) buffer readonly
 	#define BUFFER_REFERENCE_STRUCT_WRITEONLY(align) layout(buffer_reference, std430, buffer_reference_align = align) buffer writeonly
