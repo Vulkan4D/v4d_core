@@ -1,5 +1,5 @@
 /**
- * Shared Objects helper v1.3 - 2022-03-01
+ * Shared Objects helper v1.4 - 2022-03-25
  * Author: Olivier St-Laurent
  * 
  * This helper will add to a class the ability to loop through all instances of it and keep track of them, in a thread-safe manner.
@@ -13,6 +13,8 @@
  * 		* ForEachOrBreak(func<bool(Ptr&)>) // To allow looping through all instances of a shared object using a lambda
  * 		* Sort(func<bool(Ptr&, Ptr&)>) // Sort the global instance list before looping through them, using the usual sorting lambdas (return TRUE if the first argument should be placed BEFORE the second)
  * 		* Count() // Returns the current number of instances of this type
+ * 
+ * TODO: refactor Create to Make
  * 
  * Usage:
  * 
@@ -89,8 +91,8 @@
 		Ptr Self() {return _self.lock();}\
 	public:\
 		template<class C = ClassName, typename...Args>\
-		static Ptr Create(Args&&...args) {\
-			Ptr sharedPtr((ClassName*)new C(std::forward<Args>(args)...));\
+		static auto Create(Args&&...args)/*TODO refactor Create to Make*/ {\
+			typename C::Ptr sharedPtr(new C(std::forward<Args>(args)...));\
 			sharedPtr->_self = sharedPtr;\
 			std::lock_guard lock(_sharedObjectsMutex);\
 			_sharedObjects.emplace_back(sharedPtr);\
@@ -135,8 +137,10 @@
 	}
 #define SHARED_OBJECT_EXT(ChildClass, ParentClass) \
 	public:\
-	template<typename...Args>\
-	static ParentClass::Ptr Create(Args&&...args) {\
+	using Ptr = std::shared_ptr<ChildClass>;\
+	using WeakPtr = std::weak_ptr<ChildClass>;\
+	template<typename...Args>/*TODO refactor Create to Make*/\
+	static ChildClass::Ptr Create(Args&&...args) {\
 		return ParentClass::Create<ChildClass, Args...>(std::forward<Args>(args)...);\
 	}\
 	friend class ParentClass;\
