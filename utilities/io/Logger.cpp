@@ -34,7 +34,7 @@ void Logger::Log(const std::ostream& message, const char* style) {
 		if (useLogFile) {
 			LogToFile(msg);
 		} else {
-			#ifdef _WINDOWS
+			#if defined(_WINDOWS) || defined(V4D_LOGGER_DONT_STYLE)
 				if (style[0] == '1')
 					std::cerr << msg << std::endl;
 				else
