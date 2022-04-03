@@ -1,5 +1,6 @@
 #include <v4d.h>
 #include <future>
+#include "EntityComponentSystem.hpp"
 
 struct Test1 {
 	int a;

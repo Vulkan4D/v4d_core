@@ -3,6 +3,7 @@
 #include <v4d.h>
 #include <cmath>
 #include <sstream>
+#include <atomic>
 
 namespace v4d {
 	class FPSCounter {

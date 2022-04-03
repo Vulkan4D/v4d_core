@@ -1,5 +1,5 @@
 /**
- * Shared Objects helper v1.4 - 2022-03-25
+ * Shared Objects helper v1.5 - 2022-04-02
  * Author: Olivier St-Laurent
  * 
  * This helper will add to a class the ability to loop through all instances of it and keep track of them, in a thread-safe manner.
@@ -13,6 +13,7 @@
  * 		* ForEachOrBreak(func<bool(Ptr&)>) // To allow looping through all instances of a shared object using a lambda
  * 		* Sort(func<bool(Ptr&, Ptr&)>) // Sort the global instance list before looping through them, using the usual sorting lambdas (return TRUE if the first argument should be placed BEFORE the second)
  * 		* Count() // Returns the current number of instances of this type
+ * 		* GetLock() // static method that returns a lock on all instances of this type for Add/Remove/ForEach operations (but not Create/Destroy)
  * 
  * TODO: refactor Create to Make
  * 
@@ -21,9 +22,9 @@
  * 	// Test.h
  * 		class Test {
  * 			SHARED_OBJECT_H(Test) // Define this class as a shared object here.
- * 			Test() {} // You may define any number of constructors with any number of arguments, with protected accessibility
- * 			// Any other protected members here
- * 			// You may call Self() from within a member method (except constructor) to get the shared pointer.
+ * 			Test() {} // You may define any number of constructors with any number of arguments, with private/protected accessibility
+ * 			// Any other private/protected members here
+ * 			// You may call Self() from within a member method (except the constructors/destructor) to get the shared pointer.
  * 		public:
  * 			~Test() { // Destructor must have public accessibility. Also, the destructor must be virtual if we are planning on extending this class.
  * 				Destroy(this); // Must call this first in your destructor
@@ -43,7 +44,6 @@
  * 			//...
  * 			Test::ForEach([](Test::Ptr& test){ // Loops through all existing and non-destroyed references to objects of type Test
  * 				// do stuff here with test (it's a shared pointer to your object)
- * 				// optionally return bool here (return false to break the loop)
  * 			});
  * 			Test::ForEachOrBreak([](Test::Ptr& test) -> bool { // Loops through all existing and non-destroyed references to objects of type Test, with the possibility to break the loop by returning false
  * 				// do stuff here with test (it's a shared pointer to your object)
@@ -56,7 +56,7 @@
  * 
  * // Inheritance
  * 		// It is also possible to extend a shared object class, while they all share the same global instance list as the parent-most shared object (the class that has the SHARED_OBJECT_H macro defined)
- * 		// To do this, child classes must simply have the macro SHARED_OBJECT_EXT(ChildClass, ParentClass)
+ * 		// To do this, child classes must simply have the macro SHARED_OBJECT_EXT(ChildClass, ParentMostClass)
  * 		// and define a constructor that invokes a parent constructor
  * 		// The Parent-most shared object must have a virtual destructor, which happens to call Destroy(this)
  * 
@@ -122,7 +122,11 @@
 				return func(a, b);\
 			});\
 		}\
-	protected:
+		static std::unique_lock<std::recursive_mutex> GetLock() {\
+			return std::unique_lock<std::recursive_mutex>{_sharedObjectsMutex};\
+		}\
+	protected:\
+
 #define SHARED_OBJECT_CPP(ClassName) \
 	std::vector<ClassName::WeakPtr> ClassName::_sharedObjects {};\
 	std::recursive_mutex ClassName::_sharedObjectsMutex {};\
@@ -134,15 +138,16 @@
 				_sharedObjects.pop_back();\
 			} else ++it;\
 		}\
-	}
-#define SHARED_OBJECT_EXT(ChildClass, ParentClass) \
+	}\
+
+#define SHARED_OBJECT_EXT(ChildClass, ParentMostClass) \
 	public:\
 	using Ptr = std::shared_ptr<ChildClass>;\
 	using WeakPtr = std::weak_ptr<ChildClass>;\
 	template<typename...Args>/*TODO refactor Create to Make*/\
 	static ChildClass::Ptr Create(Args&&...args) {\
-		return ParentClass::Create<ChildClass, Args...>(std::forward<Args>(args)...);\
+		return ParentMostClass::Create<ChildClass, Args...>(std::forward<Args>(args)...);\
 	}\
-	friend class ParentClass;\
+	friend class ParentMostClass;\
 	protected:\
-	static void Destroy(ChildClass* ptr) {ParentClass::Destroy(ptr);}
+	static void Destroy(ChildClass* ptr) {ParentMostClass::Destroy(ptr);}
