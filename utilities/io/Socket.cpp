@@ -89,7 +89,7 @@ void Socket::Send() {
 					sent = ::send(socket, data, (int)size, 0);
 				#endif
 			#else
-				sent = ::send(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_DONTWAIT);
+				sent = ::send(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), 0);
 			#endif
 			} catch (...) {
 				sent = -1;
@@ -113,7 +113,7 @@ void Socket::Send() {
 				#endif
 
 			#else
-				sent = ::sendto(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), MSG_DONTWAIT, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
+				sent = ::sendto(socket, _GetWriteBuffer_().data(), _GetWriteBuffer_().size(), 0, (struct sockaddr*) &remoteAddr, sizeof(remoteAddr));
 			#endif
 			if (sent == -1) {
 				auto err = errno;
