@@ -1,20 +1,22 @@
 /**
- * Static Objects helper v1.0 - 2022-04-02
+ * Static Objects helper v1.1 - 2022-04-08
  * Author: Olivier St-Laurent
  * 
  * This helper will add to a class the ability to loop through all instances of it and keep track of them, in a thread-safe manner.
  * (Instances are NOT contiguous in memory, hence not cache friendly, so this helper is most useful for code clarity, not performance)
  * 
  * It consists simply of the macros STATIC_OBJECT_[H|CPP|EXT](), and using them will basically add the following reserved methods:
- * 		* Self() // returns the shared_ptr of this static object, to be called within another member method
+ * 		* Self() // returns the shared_ptr of this static object, to be called within another member method (except the constructor/destructor). Also availabe is SelfWeak() which returns the weak ptr.
  * 		* Create(...) // static method used to instantiate the object, it's the public version of the constructor and takes any argument list compatible with the constructors you define
+ * 		* GetOrCreate(id, ...) // static method used to get or instantiate the object if it doesn't exist, it takes any argument list compatible with the constructors you define after the id
  * 		* Destroy(id) // static method that effectively removes the object from the global instance list, using either its id or the shared pointer
- * 		* Destroy() // protected instance method that effectively removes the current object from the global instance list
+ * 		* Destroy() // protected instance method that effectively removes the current object from the global instance list. If we want to do if from a ForEach, it's faster to just reset() the ptr, or just assign it to nullptr.
  * 		* ForEach(func<void(Ptr&)>) // static method that allows looping through all instances of a static object using a lambda
  * 		* ClearAll() // static method that removes all objects of this type from the global instance list
  * 		* Count() // static method that returns the current number of instances of this type
  * 		* GetID() // static method that returns the current id of this instance
  * 		* Get(id) // static method that returns the shared pointer of the object with the specified id (or null if it doesn't exist or if it's not the correct type)
+ * 		* Exists(id) // static method that returns true if the object exists or false if it doesn't exist or if it's not the correct type
  * 		* GetLock() // static method that returns a lock on all instances of this type for Add/Remove/ForEach operations (but not Create/Destroy)
  * 
  * Usage:
@@ -87,6 +89,7 @@
 		} id;\
 	protected:\
 		Ptr Self() {return _self.lock();}\
+		WeakPtr SelfWeak() {return _self;}\
 	public:\
 		Id GetID() const {return id;}\
 		template<class C = ClassName>\
@@ -97,6 +100,14 @@
 			}\
 			return typename C::Ptr{};\
 		}\
+		template<class C = ClassName>\
+		static bool Exists(Id id) {\
+			std::lock_guard lock(_sharedObjectsMutex);\
+			if (_sharedObjects.contains(id)) {\
+				return !!std::dynamic_pointer_cast<C>(_sharedObjects.at(id));\
+			}\
+			return false;\
+		}\
 		template<class C = ClassName, typename...Args>\
 		static auto Create(Args&&...args) {\
 			typename C::Ptr sharedPtr(new C(std::forward<Args>(args)...));\
@@ -105,9 +116,25 @@
 			_sharedObjects.emplace(sharedPtr->GetID(), sharedPtr);\
 			return sharedPtr;\
 		}\
+		template<class C = ClassName, typename...Args>\
+		static auto GetOrCreate(Id id, Args&&...args) {\
+			std::lock_guard lock(_sharedObjectsMutex);\
+			if (_sharedObjects.contains(id)) {\
+				return std::dynamic_pointer_cast<C>(_sharedObjects.at(id));\
+			}\
+			typename C::Ptr sharedPtr(new C(id, std::forward<Args>(args)...));\
+			sharedPtr->_self = sharedPtr;\
+			_sharedObjects.emplace(id, sharedPtr);\
+			return sharedPtr;\
+		}\
 		static void ForEach(std::function<void(Ptr&)>&& func) {\
 			std::lock_guard lock(_sharedObjectsMutex);\
-			for (auto& [id,ptr] : _sharedObjects) func(ptr);\
+			for (auto it = _sharedObjects.begin(); it != _sharedObjects.end();) {\
+				if (it->second) func(it->second);\
+				if (!it->second) {\
+					it = _sharedObjects.erase(it);\
+				} else ++it;\
+			}\
 		}\
 		static size_t Count() {\
 			std::lock_guard lock(_sharedObjectsMutex);\
@@ -119,7 +146,9 @@
 		}\
 		static void Destroy(Id id) {\
 			std::lock_guard lock(_sharedObjectsMutex);\
-			_sharedObjects.erase(id);\
+			if (_sharedObjects.contains(id)) {\
+				_sharedObjects.at(id).reset();\
+			}\
 		}\
 		static void Destroy(Ptr& ptr) {\
 			Destroy(ptr->GetID());\
@@ -141,7 +170,7 @@
 			lastId = _id = id;\
 		}\
 	}\
-	std::unordered_map<Id, ClassName::Ptr> ClassName::_sharedObjects {};\
+	std::unordered_map<ClassName::Id, ClassName::Ptr> ClassName::_sharedObjects {};\
 	std::recursive_mutex ClassName::_sharedObjectsMutex {};\
 
 #define STATIC_OBJECT_EXT(ChildClass, ParentMostClass) \
@@ -153,9 +182,14 @@
 	static ChildClass::Ptr Create(Args&&...args) {\
 		return ParentMostClass::Create<ChildClass, Args...>(std::forward<Args>(args)...);\
 	}\
+	template<typename...Args>\
+	static ChildClass::Ptr GetOrCreate(Id id, Args&&...args) {\
+		return ParentMostClass::GetOrCreate<ChildClass, Args...>(id, std::forward<Args>(args)...);\
+	}\
 	friend class ParentMostClass;\
 	static void Destroy(ChildClass::Ptr& ptr) {ParentMostClass::Destroy(ptr->GetID());}\
 	static ChildClass::Ptr Get(Id id) {return ParentMostClass::Get<ChildClass>(id);}\
+	static bool Exists(Id id) {return ParentMostClass::Exists<ChildClass>(id);}\
 	operator ParentMostClass::Ptr () {return ParentMostClass::Self();}\
 	static void ForEach(std::function<void(ChildClass::Ptr&)>&& func) {\
 		ParentMostClass::ForEach([&func](auto& ptr) {\
