@@ -12,7 +12,8 @@
  * 		* Destroy(id) // static method that effectively removes the object from the global instance list, using either its id or the shared pointer
  * 		* Destroy() // protected instance method that effectively removes the current object from the global instance list. If we want to do if from a ForEach, it's faster to just reset() the ptr, or just assign it to nullptr.
  * 		* ForEach(func<void(Ptr&)>) // static method that allows looping through all instances of a static object using a lambda
- * 		* ClearAll() // static method that removes all objects of this type from the global instance list
+ * 		* ClearUnused() // static method that removes all objects that are unused from the global instance list
+ * 		* ClearAll() // static method that removes all objects from the global instance list
  * 		* Count() // static method that returns the current number of instances of this type
  * 		* GetID() // static method that returns the current id of this instance
  * 		* Get(id) // static method that returns the shared pointer of the object with the specified id (or null if it doesn't exist or if it's not the correct type)
@@ -140,6 +141,13 @@
 			std::lock_guard lock(_sharedObjectsMutex);\
 			return _sharedObjects.size();\
 		}\
+		static void ClearUnused() {\
+			std::lock_guard lock(_sharedObjectsMutex);\
+			for (auto it = _sharedObjects.begin(); it != _sharedObjects.end();) {\
+				if (!it->second || it->second.use_count() == 1) it = _sharedObjects.erase(it);\
+				else ++it;\
+			}\
+		}\
 		static void ClearAll() {\
 			std::lock_guard lock(_sharedObjectsMutex);\
 			_sharedObjects.clear();\
@@ -193,7 +201,10 @@
 	operator ParentMostClass::Ptr () {return ParentMostClass::Self();}\
 	static void ForEach(std::function<void(ChildClass::Ptr&)>&& func) {\
 		ParentMostClass::ForEach([&func](auto& ptr) {\
-			if (auto p = std::dynamic_pointer_cast<ChildClass>(ptr); p) func(p);\
+			if (auto p = std::dynamic_pointer_cast<ChildClass>(ptr); p) {\
+				func(p);\
+				if (!p) ptr.reset();\
+			}\
 		});\
 	}\
 	protected:\
