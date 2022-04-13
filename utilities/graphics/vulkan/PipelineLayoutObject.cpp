@@ -14,7 +14,7 @@ void PipelineLayoutObject::Create(Device* device) {
 		if (set) {
 			descriptorSetsLayouts.push_back(set->layout);
 		} else if (framebufferedSet) {
-			descriptorSetsLayouts.push_back((*framebufferedSet)[0].layout);
+			descriptorSetsLayouts.push_back(framebufferedSet->layout);
 		}
 	}
 	
@@ -37,22 +37,19 @@ void PipelineLayoutObject::Create(Device* device) {
 	Instance::CheckVkResult("Create pipeline layout", device->CreatePipelineLayout(&pipelineLayoutInfo, nullptr, obj));
 	
 	// Descriptor sets array
-	for (size_t i = 0; i < rawDescriptorSets.size(); ++i) {
-		auto& rawSets = rawDescriptorSets[i];
-		rawSets.reserve(descriptorSets.size());
-		for (auto[set,framebufferedSet] : descriptorSets) {
-			if (set) {
-				rawSets.push_back(set->obj);
-			} else if (framebufferedSet) {
-				rawSets.push_back((*framebufferedSet)[i].obj);
-			}
+	rawDescriptorSets.reserve(descriptorSets.size());
+	for (auto[set,framebufferedSet] : descriptorSets) {
+		if (set) {
+			rawDescriptorSets.push_back(set->obj);
+		} else if (framebufferedSet) {
+			rawDescriptorSets.push_back(framebufferedSet->obj);
 		}
 	}
 }
 
 void PipelineLayoutObject::Destroy() {
 	if (device) {
-		for (auto& sets : rawDescriptorSets) sets.clear();
+		rawDescriptorSets.clear();
 		device->DestroyPipelineLayout(obj, nullptr);
 		device = nullptr;
 	}

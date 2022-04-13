@@ -18,8 +18,8 @@ namespace v4d::graphics::vulkan {
 		COMMON_OBJECT_MOVEABLE(PipelineLayoutObject)
 		COMMON_OBJECT_COPYABLE(PipelineLayoutObject)
 		
-		std::vector<std::tuple<DescriptorSetObject*, Framebuffered_DescriptorSetObject*>> descriptorSets {};
-		std::array<std::vector<VkDescriptorSet>, V4D_RENDERER_FRAMEBUFFERS_MAX_FRAMES> rawDescriptorSets {};
+		std::vector<std::tuple<DescriptorSetObject*, DescriptorSetObject*>> descriptorSets {};
+		std::vector<VkDescriptorSet> rawDescriptorSets {};
 		std::vector<VkPushConstantRange> pushConstants {};
 
 		Device* device = nullptr;
@@ -29,10 +29,6 @@ namespace v4d::graphics::vulkan {
 		
 		void AddDescriptorSet(DescriptorSetObject* descriptorSet) {
 			descriptorSets.emplace_back(descriptorSet, nullptr);
-		}
-
-		void AddDescriptorSet(Framebuffered_DescriptorSetObject* descriptorSet) {
-			descriptorSets.emplace_back(nullptr, descriptorSet);
 		}
 
 		int AddPushConstant(const VkPushConstantRange& pushConstant) {
@@ -45,17 +41,16 @@ namespace v4d::graphics::vulkan {
 			return AddPushConstant({flags, offset, sizeof(T)});
 		}
 		
-		void Bind(uint32_t frameIndex, VkCommandBuffer commandBuffer, VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS) {
+		void Bind(VkCommandBuffer commandBuffer, VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS) {
 			assert(device);
-			assert(frameIndex < V4D_RENDERER_FRAMEBUFFERS_MAX_FRAMES);
-			if (rawDescriptorSets[frameIndex].size() > 0) {
-				device->CmdBindDescriptorSets(commandBuffer, bindPoint, obj, 0, (uint)rawDescriptorSets[frameIndex].size(), rawDescriptorSets[frameIndex].data(), 0, nullptr);
+			if (rawDescriptorSets.size() > 0) {
+				device->CmdBindDescriptorSets(commandBuffer, bindPoint, obj, 0, (uint)rawDescriptorSets.size(), rawDescriptorSets.data(), 0, nullptr);
 			}
 		}
 
 		void Reset() {
 			descriptorSets.clear();
-			for (auto& sets : rawDescriptorSets) sets.clear();
+			rawDescriptorSets.clear();
 			pushConstants.clear();
 		}
 		

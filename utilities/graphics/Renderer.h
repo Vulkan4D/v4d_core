@@ -20,7 +20,6 @@
 #include <utilities/graphics/vulkan/RasterShaderPipelineObject.h>
 #include "utilities/graphics/vulkan/CommonObjects.h"
 #include "utilities/graphics/vulkan/BufferObject.h"
-#include "utilities/graphics/FramebufferedObject.hpp"
 
 // Useful macro to be used in ConfigureDeviceFeatures()
 #define V4D_ENABLE_DEVICE_FEATURE(F) \
@@ -95,8 +94,6 @@ namespace v4d::graphics {
 		// Swap Chains
 		SwapChain* swapChain = nullptr;
 		uint32_t swapChainImageIndex;
-		static constexpr int NB_FRAMES_IN_FLIGHT = V4D_RENDERER_FRAMEBUFFERS_MAX_FRAMES;
-		uint32_t currentFrame = 0;
 		std::vector<VkPresentModeKHR> preferredPresentModes {
 			VK_PRESENT_MODE_MAILBOX_KHR,	// TripleBuffering (No Tearing, low latency)
 			VK_PRESENT_MODE_IMMEDIATE_KHR,	// VSync OFF (With Tearing, no latency)

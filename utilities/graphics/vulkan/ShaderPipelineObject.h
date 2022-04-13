@@ -75,7 +75,7 @@ namespace v4d::graphics::vulkan {
 		
 		std::string GetShaderPath(std::string type) const;
 		
-		virtual void Bind(VkCommandBuffer, uint32_t frameIndex = 0) = 0;
+		virtual void Bind(VkCommandBuffer) = 0;
 	};
 	
 }

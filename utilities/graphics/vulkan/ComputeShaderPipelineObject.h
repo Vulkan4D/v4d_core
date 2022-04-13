@@ -25,10 +25,10 @@ namespace v4d::graphics::vulkan {
 		virtual void Create(Device* device) override;
 		virtual void Destroy() override;
 		
-		virtual void Bind(VkCommandBuffer cmdBuffer, uint32_t frameIndex = 0) override {
+		virtual void Bind(VkCommandBuffer cmdBuffer) override {
 			assert(device);
 			device->CmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, obj);
-			GetPipelineLayout()->Bind(frameIndex, cmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE);
+			GetPipelineLayout()->Bind(cmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE);
 		}
 		virtual void Dispatch(VkCommandBuffer cmdBuffer, uint32_t groupCountX = 1, uint32_t groupCountY = 1, uint32_t groupCountZ = 1) {
 			assert(device);

@@ -5,8 +5,6 @@
 
 namespace v4d::graphics::vulkan {
 
-using FramebufferedBuffer = std::array<VkBuffer, V4D_RENDERER_FRAMEBUFFERS_MAX_FRAMES>;
-
 class V4DLIB BufferObject {
 	COMMON_OBJECT(BufferObject, VkBuffer, V4DLIB)
 	MemoryUsage memoryUsage;
@@ -38,12 +36,6 @@ class V4DLIB BufferObject {
 	}
 	
 	virtual ~BufferObject();
-	
-	// operator FramebufferedBuffer() const {
-	// 	FramebufferedBuffer buffers;
-	// 	buffers.fill(obj); // fills the array with VkBuffer pointers, not data...
-	// 	return buffers;
-	// }
 	
 	void Swap(BufferObject& other) {
 		assert(memoryUsage == other.memoryUsage);

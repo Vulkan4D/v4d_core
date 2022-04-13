@@ -15,7 +15,6 @@
 #include "utilities/graphics/vulkan/SwapChain.h"
 #include "utilities/graphics/vulkan/ShaderPipelineObject.h"
 #include "utilities/graphics/vulkan/BufferObject.h"
-#include "utilities/graphics/FramebufferedObject.hpp"
 
 namespace v4d::graphics::vulkan {
 
@@ -252,10 +251,10 @@ namespace v4d::graphics::vulkan {
 			colorBlendAttachments = colorAttachmentsBlendings;
 		}
 		
-		virtual void Bind(VkCommandBuffer cmdBuffer, uint32_t frameIndex = 0) override {
+		virtual void Bind(VkCommandBuffer cmdBuffer) override {
 			assert(device);
 			device->CmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, obj);
-			GetPipelineLayout()->Bind(frameIndex, cmdBuffer);
+			GetPipelineLayout()->Bind(cmdBuffer);
 		}
 		
 		virtual void Draw(VkCommandBuffer cmdBuffer, uint32_t vertexOrIndexCount = 0, uint32_t instanceCount = 1, uint32_t firstVertex = 0, uint32_t firstInstance = 0) {

@@ -25,7 +25,7 @@ void RenderPassObject::Create(Device* device) {
 		shader->SetRenderPass(obj, subpass);
 	}
 	
-	// Create Framebuffers
+	// Create Framebuffer
 	VkFramebufferCreateInfo framebufferCreateInfo = {};
 		framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		framebufferCreateInfo.renderPass = obj;
@@ -43,25 +43,19 @@ void RenderPassObject::Create(Device* device) {
 		framebufferCreateInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
 	}
 	
-	for (size_t i = 0; i < framebuffers.size(); ++i) {
-		if (imageless) {
-			framebufferCreateInfo.pAttachments = nullptr;
-		} else {
-			assert(framebufferCreateInfo.attachmentCount == imageViews[i].size());
-			framebufferCreateInfo.pAttachments = imageViews[i].data();
-		}
-		Instance::CheckVkResult("Create framebuffer", device->CreateFramebuffer(&framebufferCreateInfo, nullptr, &framebuffers[i]));
+	if (imageless) {
+		framebufferCreateInfo.pAttachments = nullptr;
+	} else {
+		assert(framebufferCreateInfo.attachmentCount == imageViews.size());
+		framebufferCreateInfo.pAttachments = imageViews.data();
 	}
+	Instance::CheckVkResult("Create framebuffer", device->CreateFramebuffer(&framebufferCreateInfo, nullptr, &framebuffer));
 }
 
 void RenderPassObject::Destroy() {
 	if (device) {
-		for (auto framebuffer : framebuffers) {
-			device->DestroyFramebuffer(framebuffer, nullptr);
-		}
-		
+		device->DestroyFramebuffer(framebuffer, nullptr);
 		device->DestroyRenderPass(obj, nullptr);
-		framebuffers.clear();
 		subpasses.clear();
 		subpassDependencies.clear();
 		attachments.clear();

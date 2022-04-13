@@ -5,7 +5,6 @@
 #include "utilities/graphics/vulkan/ImageObject.h"
 #include "utilities/graphics/vulkan/SamplerObject.h"
 #include "utilities/graphics/vulkan/BufferObject.h"
-#include "utilities/graphics/FramebufferedObject.hpp"
 #include "utilities/graphics/vulkan/raytracing/AccelerationStructure.h"
 
 namespace v4d::graphics::vulkan {
@@ -78,41 +77,6 @@ class V4DLIB DescriptorSetObject {
 	VkWriteDescriptorSet GetUpdateWrite(uint32_t binding);
 	void Update(uint32_t binding);
 	
-};
-
-class V4DLIB Framebuffered_DescriptorSetObject {
-	std::array<DescriptorSetObject, V4D_RENDERER_FRAMEBUFFERS_MAX_FRAMES> set;
-	
-public:
-	
-	template<class DescriptorType, class ObjectType>
-	inline void SetBinding(uint32_t binding, const ObjectType& obj, VkShaderStageFlags stageFlags) {
-		for (auto& s : set) s.SetBinding<DescriptorType>(binding, obj, stageFlags);
-	}
-	
-	template<class DescriptorType>
-	inline void SetBindingArray(uint32_t binding, uint32_t count, VkShaderStageFlags stageFlags) {
-		for (auto& s : set) s.SetBindingArray<DescriptorType>(binding, count, stageFlags);
-	}
-	
-	template<class DescriptorType, class ObjectType>
-	inline void SetBinding(uint32_t binding, const FramebufferedObject<ObjectType>& obj, VkShaderStageFlags stageFlags) {
-		for (size_t i = 0; i < set.size(); ++i) set[i].SetBinding<DescriptorType>(binding, obj[i], stageFlags);
-	}
-	
-	template<class DescriptorType>
-	inline void SetBinding(uint32_t binding, const Framebuffered_ImageObject& obj, VkShaderStageFlags stageFlags) {
-		for (size_t i = 0; i < set.size(); ++i) set[i].SetBinding<DescriptorType, ImageObject>(binding, obj[i], stageFlags);
-	}
-	
-	inline DescriptorSetObject& operator[](size_t frameIndex) {
-		assert(frameIndex < set.size());
-		return set[frameIndex];
-	}
-	
-	void Update(uint32_t binding) {
-		for (auto& s : set) s.Update(binding);
-	}
 };
 
 #pragma region Descriptor types

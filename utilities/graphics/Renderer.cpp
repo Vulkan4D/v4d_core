@@ -382,7 +382,6 @@ void Renderer::LoadGraphicsToDevice() {
 	
 	LoadScene();
 	
-	currentFrame = 0;
 	state = STATE::LOADED;
 }
 
@@ -604,8 +603,6 @@ bool Renderer::EndFrame(const std::vector<VkSemaphore>& waitSemaphores) {
 	} else if (result != VK_SUCCESS) {
 		throw std::runtime_error(std::string("Failed to present: ") + GetVkResultText(result));
 	}
-	
-	currentFrame = (currentFrame+1) % NB_FRAMES_IN_FLIGHT;
 	
 	return true;
 }
