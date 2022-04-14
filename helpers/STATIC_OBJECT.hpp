@@ -1,5 +1,5 @@
 /**
- * Static Objects helper v1.1 - 2022-04-08
+ * Static Objects helper v1.2 - 2022-04-13
  * Author: Olivier St-Laurent
  * 
  * This helper will add to a class the ability to loop through all instances of it and keep track of them, in a thread-safe manner.
@@ -64,6 +64,12 @@
  * 			~Child() {}
  * 		};
  * 
+ *
+ *	// Special usage:
+ *		// Compiling a shared library (DLL) on windows to store the global object list:
+ *		// you may optionally add a 2nd argument to the macro STATIC_OBJECT_H with either __declspec(dllexport) or __declspec(dllimport)
+ *		// depending on whether you are compiling the shared library or the executable, respectively.
+ *
  */
 
 #pragma once
@@ -73,7 +79,7 @@
 #include <memory>
 #include <atomic>
 
-#define STATIC_OBJECT_H(ClassName) \
+#define STATIC_OBJECT_H(ClassName, .../* may optionally have a 2nd argument with either __declspec(dllexport) or __declspec(dllimport) */) \
 	public:\
 		using Ptr = std::shared_ptr<ClassName>;\
 		using WeakPtr = std::weak_ptr<ClassName>;\
@@ -82,7 +88,7 @@
 		static std::unordered_map<Id, Ptr> _sharedObjects;\
 		static std::recursive_mutex _sharedObjectsMutex;\
 		WeakPtr _self;\
-		class AutoIncrementID {\
+		class __VA_ARGS__ AutoIncrementID {\
 			ClassName::Id _id;\
 		public:\
 			AutoIncrementID(ClassName::Id = -1);\
