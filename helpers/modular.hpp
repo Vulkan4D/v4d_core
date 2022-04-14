@@ -322,9 +322,6 @@ namespace v4d::modular {
 		operator std::string () const {
 			return String();
 		}
-		operator const char* () const {
-			return String().c_str();
-		}
 		std::string String() const {
 			if (vendor == 0 || module == 0) return "";
 			return v4d::BaseN::DecodeStringFromUInt64(vendor, BASE36_UPPER_CHARS) + "_" + v4d::BaseN::DecodeStringFromUInt64(module, BASE36_LOWER_CHARS);

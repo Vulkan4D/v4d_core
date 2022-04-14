@@ -81,7 +81,7 @@ namespace v4d::graphics::vulkan::raytracing {
 		void CreateAndAllocate(Device* device, bool topLevel = false);
 		void FreeAndDestroy();
 		
-		void AssignScratchBuffer(VkDeviceOrHostAddressKHR, VkDeviceSize offset = 0);
+		void AssignScratchBuffer(VkDeviceOrHostAddressConstKHR, VkDeviceSize offset = 0);
 		void AllocateScratchBuffer();
 		void FreeScratchBuffer();
 		

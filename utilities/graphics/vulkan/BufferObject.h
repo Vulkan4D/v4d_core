@@ -124,7 +124,7 @@ public:
 		Free();
 	}
 	
-	virtual void Resize(size_t newCount, bool allowReallocation = false) {
+	virtual void Resize(size_t newCount, bool allowReallocation = false) override {
 		assert(device == nullptr || allowReallocation);
 		if (size > 0 && temporaryData.size() == Count()) {
 			temporaryData.resize(newCount);

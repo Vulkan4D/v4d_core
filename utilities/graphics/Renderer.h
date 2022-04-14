@@ -188,7 +188,7 @@ namespace v4d::graphics {
 			CommandBufferObject::ForEach([this](CommandBufferObject*o){o->Allocate(renderingDevice);});
 		}
 		virtual void DestroyCommandBuffers() {
-			CommandBufferObject::ForEach([this](CommandBufferObject*o){o->Free();});
+			CommandBufferObject::ForEach([](CommandBufferObject*o){o->Free();});
 		}
 		// Synchronization objects
 		virtual void CreateSyncObjects() {
@@ -198,24 +198,24 @@ namespace v4d::graphics {
 			QueryPoolObject::ForEach([this](QueryPoolObject*o){o->Create(renderingDevice);});
 		}
 		virtual void DestroySyncObjects() {
-			TimelineSemaphoreObject::ForEach([this](TimelineSemaphoreObject*o){o->Destroy();});
-			SemaphoreObject::ForEach([this](SemaphoreObject*o){o->Destroy();});
-			FenceObject::ForEach([this](FenceObject*o){o->Destroy();});
-			QueryPoolObject::ForEach([this](QueryPoolObject*o){o->Destroy();});
+			TimelineSemaphoreObject::ForEach([](TimelineSemaphoreObject*o){o->Destroy();});
+			SemaphoreObject::ForEach([](SemaphoreObject*o){o->Destroy();});
+			FenceObject::ForEach([](FenceObject*o){o->Destroy();});
+			QueryPoolObject::ForEach([](QueryPoolObject*o){o->Destroy();});
 		}
 		// Pipeline layouts
 		virtual void CreatePipelineLayouts() {
 			PipelineLayoutObject::ForEach([this](PipelineLayoutObject*o){o->Create(renderingDevice);});
 		}
 		virtual void DestroyPipelineLayouts() {
-			PipelineLayoutObject::ForEach([this](PipelineLayoutObject*o){o->Destroy();});
+			PipelineLayoutObject::ForEach([](PipelineLayoutObject*o){o->Destroy();});
 		}
 		// Shader Pipelines
 		virtual void CreateShaderPipelines() {
 			ShaderPipelineObject::ForEach([this](ShaderPipelineObject*o){o->Create(renderingDevice);});
 		}
 		virtual void DestroyShaderPipelines() {
-			ShaderPipelineObject::ForEach([this](ShaderPipelineObject*o){o->Destroy();});
+			ShaderPipelineObject::ForEach([](ShaderPipelineObject*o){o->Destroy();});
 		}
 		virtual void ReadShaders() {
 			ShaderPipelineObject::ForEach([](ShaderPipelineObject*o){o->ReadShaders();});
@@ -262,14 +262,14 @@ namespace v4d::graphics {
 				if (img->height == 0) img->height = img->scale!=1.0? uint32_t(std::round(img->scale * float(swapChain->extent.height))) : swapChain->extent.height;
 				img->Create(renderingDevice);
 			});
-			RunSingleTimeCommands(queues[0][0], [this](VkCommandBuffer cmdBuffer){
-				ImageObject::ForEach([this,&cmdBuffer](ImageObject*img){
+			RunSingleTimeCommands(queues[0][0], [](VkCommandBuffer cmdBuffer){
+				ImageObject::ForEach([&cmdBuffer](ImageObject*img){
 					img->TransitionLayout(cmdBuffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
 				});
 			});
 		}
 		virtual void DestroyImages() {
-			ImageObject::ForEach([this](ImageObject*img){
+			ImageObject::ForEach([](ImageObject*img){
 				img->Destroy();
 			});
 		}

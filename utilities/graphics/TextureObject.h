@@ -6,7 +6,7 @@
 
 namespace v4d::graphics {
 using namespace vulkan;
-struct V4DLIB TextureObject {
+class V4DLIB TextureObject {
 COMMON_OBJECT(TextureObject, VkImage, V4DLIB)
 
 	int width = 0;

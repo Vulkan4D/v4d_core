@@ -5,7 +5,7 @@
 
 namespace v4d::graphics::vulkan {
 using namespace v4d::graphics;
-struct V4DLIB SamplerObject {
+class V4DLIB SamplerObject {
 COMMON_OBJECT(SamplerObject, VkSampler, V4DLIB)
 	VkImageView view = VK_NULL_HANDLE;
 	std::shared_ptr<TextureObject> texture = nullptr;

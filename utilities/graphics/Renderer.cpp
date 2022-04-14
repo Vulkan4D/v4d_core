@@ -268,7 +268,7 @@ void Renderer::WatchModifiedShadersForReload(RayTracingPipeline& rtPipeline) {
 			}
 			if (modified) {
 				modified = false;
-				RunSynchronized([&rtPipeline,this](){
+				RunSynchronized([&rtPipeline](){
 					rtPipeline.Reload();
 					LOG("Reloaded modified ray-tracing shaders")
 				});

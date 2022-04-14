@@ -27,14 +27,14 @@ Device::Device(
 					q.index = i;
 					queuesCreateInfoPriorities[createInfoIndex].push_back(q.priority);
 				}
-				queuesCreateInfo.emplace_back(
+				queuesCreateInfo.emplace_back(VkDeviceQueueCreateInfo{
 					VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, // VkStructureType sType
 					nullptr, // const void* pNext
 					0, // VkDeviceQueueCreateFlags flags
-					(uint)queueFamilyIndex, // uint32_t queueFamilyIndex
-					qs.size(), // uint32_t queueCount
+					(uint32_t)queueFamilyIndex, // uint32_t queueFamilyIndex
+					(uint32_t)qs.size(), // uint32_t queueCount
 					queuesCreateInfoPriorities[createInfoIndex].data() // const float* pQueuePriorities
-				);
+				});
 				foundQueueFamilyIndex = true;
 				break;
 			}
@@ -146,7 +146,7 @@ void Device::CreateDescriptorPool(std::map<VkDescriptorType, uint>& types, VkDes
 	poolInfo.flags = flags;
 	poolInfo.maxSets = 0;
 	for (auto [type, count] : types) {
-		poolSizes.emplace_back(type, count);
+		poolSizes.emplace_back(VkDescriptorPoolSize{type, count});
 		poolInfo.maxSets += count;
 	}
 	poolInfo.poolSizeCount = poolSizes.size();

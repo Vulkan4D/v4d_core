@@ -186,7 +186,7 @@ namespace v4d::graphics::vulkan {
 			VkDependencyFlags dependencyFlags = 0
 		){
 			uint32_t index = AddSubpass(subpass);
-			subpassDependencies.emplace_back(
+			subpassDependencies.emplace_back(VkSubpassDependency{
 				/*srcSubpass*/srcSubpassDependency,
 				/*dstSubpass*/index,
 				srcStageMask,
@@ -194,7 +194,7 @@ namespace v4d::graphics::vulkan {
 				srcAccessMask,
 				dstAccessMask,
 				dependencyFlags
-			);
+			});
 			return index;
 		}
 		
@@ -209,7 +209,7 @@ namespace v4d::graphics::vulkan {
 			VkAccessFlags dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
 			VkDependencyFlags dependencyFlags = 0
 		) {
-			subpassDependencies.emplace_back(
+			subpassDependencies.emplace_back(VkSubpassDependency{
 				srcSubpass,
 				dstSubpass,
 				srcStageMask,
@@ -217,7 +217,7 @@ namespace v4d::graphics::vulkan {
 				srcAccessMask,
 				dstAccessMask,
 				dependencyFlags
-			);
+			});
 		}
 		
 		[[nodiscard]] uint32_t AddAttachment(
@@ -232,7 +232,7 @@ namespace v4d::graphics::vulkan {
 			VkAttachmentLoadOp stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
 			VkAttachmentStoreOp stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
 			VkAttachmentDescriptionFlags flags = 0,
-			VkClearValue clear = {0,0,0,0}
+			VkClearValue clear = {}
 		) {
 			assert(imageless || imageViews.size() > 0);
 			
@@ -240,7 +240,7 @@ namespace v4d::graphics::vulkan {
 			
 			if (imageless) {
 				framebufferAttachmentsFormats[index] = format;
-				framebufferAttachments.emplace_back(
+				framebufferAttachments.emplace_back(VkFramebufferAttachmentImageInfo{
 					VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO,
 					nullptr,		 // const void*           pNext
 					0,				 // VkImageCreateFlags    flags
@@ -250,19 +250,19 @@ namespace v4d::graphics::vulkan {
 					renderLayers,	 // uint32_t              layerCount
 					1,				 // uint32_t              viewFormatCount
 					&framebufferAttachmentsFormats[index]	// const VkFormat*       pViewFormats
-				);
+				});
 			} else {
 				this->imageViews = imageViews;
 			}
 			
-			attachments.emplace_back(
+			attachments.emplace_back(VkAttachmentDescription{
 				flags,
 				format,
 				samples,
 				loadOp, storeOp,
 				stencilLoadOp, stencilStoreOp,
 				initialLayout, finalLayout
-			);
+			});
 			
 			clearValues.emplace_back(clear);
 			
@@ -279,7 +279,7 @@ namespace v4d::graphics::vulkan {
 			VkAttachmentLoadOp stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
 			VkAttachmentStoreOp stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
 			VkAttachmentDescriptionFlags flags = 0,
-			VkClearValue clear = {0,0,0,0}
+			VkClearValue clear = {}
 		) {
 			assert(imagePtr);
 			return AddAttachment({imagePtr->view}, imagePtr->format, imagePtr->usage, initialLayout,finalLayout,samples,loadOp,storeOp,stencilLoadOp,stencilStoreOp,flags,clear);
@@ -296,7 +296,7 @@ namespace v4d::graphics::vulkan {
 			VkAttachmentLoadOp stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
 			VkAttachmentStoreOp stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
 			VkAttachmentDescriptionFlags flags = 0,
-			VkClearValue clear = {0,0,0,0}
+			VkClearValue clear = {}
 		) {
 			assert(imageless);
 			return AddAttachment({}, format, imageUsageFlags, initialLayout,finalLayout,samples,loadOp,storeOp,stencilLoadOp,stencilStoreOp,flags,clear);
@@ -312,7 +312,7 @@ namespace v4d::graphics::vulkan {
 			VkAttachmentLoadOp stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
 			VkAttachmentStoreOp stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
 			VkAttachmentDescriptionFlags flags = 0,
-			VkClearValue clear = {0,0,0,0}
+			VkClearValue clear = {}
 		) {
 			return AddAttachment(&image, initialLayout,finalLayout,samples,loadOp,storeOp,stencilLoadOp,stencilStoreOp,flags,clear);
 		}
@@ -325,7 +325,7 @@ namespace v4d::graphics::vulkan {
 			VkAttachmentLoadOp stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
 			VkAttachmentStoreOp stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
 			VkAttachmentDescriptionFlags flags = 0,
-			VkClearValue clear = {0,0,0,0}
+			VkClearValue clear = {}
 		) {
 			return AddAttachment(swapChain->imageViews, swapChain->format.format, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT|VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_IMAGE_LAYOUT_UNDEFINED,VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,samples,loadOp,storeOp,stencilLoadOp,stencilStoreOp,flags,clear);
 		}

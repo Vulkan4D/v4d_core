@@ -13,7 +13,7 @@
 
 namespace v4d::graphics::vulkan {
 	
-	struct V4DLIB PipelineLayoutObject {
+	class V4DLIB PipelineLayoutObject {
 		COMMON_OBJECT(PipelineLayoutObject, VkPipelineLayout, V4DLIB)
 		COMMON_OBJECT_MOVEABLE(PipelineLayoutObject)
 		COMMON_OBJECT_COPYABLE(PipelineLayoutObject)

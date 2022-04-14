@@ -136,7 +136,7 @@ namespace v4d::graphics::vulkan {
 		virtual void Create(Device* device) override;
 		virtual void Destroy() override;
 		
-		void Reload() {
+		void Reload() override {
 			assert(device);
 			device->DestroyPipeline(obj, nullptr);
 			shaderProgram.DestroyShaderStages(device);
