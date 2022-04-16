@@ -423,6 +423,7 @@ void RayTracingPipeline::Configure(v4d::graphics::Renderer* renderer, Device* de
 }
 
 void RayTracingPipeline::Create(Device* device) {
+	hitGroupsDirty = false;
 	if (this->device == nullptr) {
 		this->device = device;
 		CreateRayTracingPipeline();

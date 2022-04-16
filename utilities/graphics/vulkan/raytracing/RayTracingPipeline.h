@@ -84,7 +84,6 @@ namespace v4d::graphics::vulkan::raytracing {
 			
 			if (hitGroupsDirty) {
 				Reload();
-				hitGroupsDirty = false;
 			}
 			
 			const VkDeviceAddress& addr = buffer;

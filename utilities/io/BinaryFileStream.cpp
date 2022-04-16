@@ -12,7 +12,7 @@ BinaryFileStream::BinaryFileStream(const std::string& filePath, size_t bufferSiz
 }
 
 BinaryFileStream::~BinaryFileStream() {
-	if (!file.is_open()) {
+	if (file.is_open()) {
 		file.close();
 	}
 }
