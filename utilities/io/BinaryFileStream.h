@@ -23,6 +23,8 @@ namespace v4d::io {
 
 		long GetSize();
 		void Truncate();
+		bool Open();
+		void Close();
 		void Reopen(bool seekEnd = false);
 
 		// Stream Overrides
