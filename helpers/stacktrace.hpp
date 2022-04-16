@@ -1,6 +1,6 @@
 #pragma once
 
-
+#include <iostream>
 
 #ifdef _DEBUG
 	namespace dbg {

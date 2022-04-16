@@ -1,5 +1,6 @@
 #include "Instance.h"
 #include "utilities/io/Logger.h"
+#include "helpers/stacktrace.hpp"
 
 using namespace v4d::graphics::vulkan;
 
@@ -63,6 +64,7 @@ using namespace v4d::graphics::vulkan;
 						LOG_ERROR("VULKAN_ERROR" << type << ": " << pCallbackData->pMessage);
 						#ifndef _WINDOWS
 							#ifdef V4D_VULKAN_VALIDATION_ABORT_ON_ERROR
+								STACKTRACE(20)
 								std::abort();
 							#endif
 						#endif
