@@ -71,6 +71,11 @@ namespace v4d {
 			return time.time_since_epoch().count() * 0.001;
 		}
 
+		bool IsElapsedMillisecondsBetween(double from, double to) const {
+			auto elapsed = GetElapsedMilliseconds();
+			return elapsed >= from && elapsed <= to;
+		}
+
 	private:
 		/**
 		 * @returns the duration between the current system time and the time point
