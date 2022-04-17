@@ -26,12 +26,12 @@ std::vector<byte> BinaryFileStream::GetData() {
 	return data;
 };
 
-long BinaryFileStream::GetSize() {
+size_t BinaryFileStream::GetSize() {
 	if (!Open()) return 0;
 	LockReadWrite();
-		long pos = (long)file.tellg();
+		size_t pos = (size_t)file.tellg();
 		file.seekg(0, std::ios::end);
-		long size = (long)file.tellg();
+		size_t size = (size_t)file.tellg();
 		file.seekg(pos);
 	UnlockReadWrite();
 	return size;

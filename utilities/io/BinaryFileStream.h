@@ -21,7 +21,7 @@ namespace v4d::io {
 
 		DELETE_COPY_MOVE_CONSTRUCTORS(BinaryFileStream)
 
-		long GetSize();
+		size_t GetSize();
 		void Truncate();
 		bool Open();
 		void Close();
