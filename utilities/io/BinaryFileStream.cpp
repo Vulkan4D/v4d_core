@@ -4,6 +4,7 @@
 using namespace v4d::io;
 
 BinaryFileStream::BinaryFileStream(const std::string& filePath, size_t bufferSize) : Stream(bufferSize), FilePath(filePath) {
+	autoFlush = false;
 	AutoCreateFile();
 	Open();
  }
