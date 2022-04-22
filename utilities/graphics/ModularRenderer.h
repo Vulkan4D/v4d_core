@@ -85,6 +85,18 @@ using Renderer::Renderer;
 	
 #pragma endregion
 
+#pragma region Scene
+
+	void ConfigureScene() override {
+		V4D_Mod::ForEachSortedModule([](auto* mod){
+			if (mod->Renderer_ConfigureScene) {
+				mod->Renderer_ConfigureScene();
+			}
+		});
+	}
+	
+#pragma endregion
+
 #pragma region Buffers
 
 	void LoadBuffers() override {
@@ -117,25 +129,43 @@ using Renderer::Renderer;
 	
 #pragma endregion
 	
-#pragma region Scene (final stuff to load when renderer is ready)
+#pragma region Start/End (final stuff to load when renderer is ready)
 	
-	void LoadScene() override {
+	void Start() override {
 		V4D_Mod::ForEachSortedModule([](auto* mod){
-			if (mod->Renderer_LoadScene) {
-				mod->Renderer_LoadScene();
+			if (mod->Renderer_Start) {
+				mod->Renderer_Start();
 			}
 		});
 	}
 	
-	void UnloadScene() override {
+	void End() override {
 		V4D_Mod::ForEachSortedModule([](auto* mod){
-			if (mod->Renderer_UnloadScene) {
-				mod->Renderer_UnloadScene();
+			if (mod->Renderer_End) {
+				mod->Renderer_End();
 			}
 		});
 	}
 	
 #pragma endregion
 
+	void Render() override {
+		//TODO: implement a basic renderer that calls all the other module functions, with proper synchronization in between
+		/*
+		Renderer_BeforeUpdate()
+		Renderer_DrawUi()
+		Renderer_BeforeFrame()
+		Renderer_FrameUpdate()
+		Renderer_PushCommands()
+		Renderer_BuildCommands()
+		Renderer_RenderCommands()
+		Renderer_ResolveCommands()
+		Renderer_BlitCommands()
+		Renderer_PostCommands()
+		Renderer_AfterFrame()
+		Renderer_AfterUpdate()
+		*/
+	}
+	
 };
 }

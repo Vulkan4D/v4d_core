@@ -24,20 +24,36 @@ class V4DLIB V4D_Mod {
 		,Mod_RunFromConsole
 		,Mod_Sort
 		
-		// Renderer configuration
-		,Renderer_ConfigureDeviceExtensions
-		,Renderer_ScorePhysicalDeviceSelection
-		,Renderer_ConfigureDeviceFeatures
+		// Init Renderer
 		,Renderer_ConfigureRenderer
 		,Renderer_ConfigureLayouts
 		,Renderer_ConfigureShaders
-		,Renderer_ConfigureRenderPasses
+		
+		// Load renderer
+		,Renderer_ConfigureDeviceExtensions
+		,Renderer_ScorePhysicalDeviceSelection
+		,Renderer_ConfigureDeviceFeatures
+		,Renderer_ConfigureScene
 		,Renderer_LoadBuffers
 		,Renderer_UnloadBuffers
 		,Renderer_ConfigureImages
-		,Renderer_LoadScene
-		,Renderer_UnloadScene
+		,Renderer_ConfigureRenderPasses
+		,Renderer_Start
+		,Renderer_End
 		
+		// Frame (Called from GameRenderer for now, will move into the engine at some point in the future)
+		,Renderer_BeforeUpdate
+		,Renderer_DrawUi
+		,Renderer_BeforeFrame
+		,Renderer_FrameUpdate
+		,Renderer_PushCommands
+		,Renderer_BuildCommands
+		,Renderer_RenderCommands
+		,Renderer_ResolveCommands
+		,Renderer_BlitCommands
+		,Renderer_PostCommands
+		,Renderer_AfterFrame
+		,Renderer_AfterUpdate
 	)
 	
 	V4D_MODULE_FUNC_DECLARE(int, Mod_RunFromConsole, const int argc, const char** argv)
@@ -51,10 +67,25 @@ class V4DLIB V4D_Mod {
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_ConfigureLayouts)
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_ConfigureShaders)
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_ConfigureRenderPasses)
+	V4D_MODULE_FUNC_DECLARE(void, Renderer_ConfigureScene)
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_LoadBuffers)
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_UnloadBuffers)
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_ConfigureImages, uint32_t swapChainWidth, uint32_t swapChainHeight)
-	V4D_MODULE_FUNC_DECLARE(void, Renderer_LoadScene)
-	V4D_MODULE_FUNC_DECLARE(void, Renderer_UnloadScene)
+	V4D_MODULE_FUNC_DECLARE(void, Renderer_Start)
+	V4D_MODULE_FUNC_DECLARE(void, Renderer_End)
 
+	// Called on every rendering frame
+	V4D_MODULE_FUNC_DECLARE(void, Renderer_BeforeUpdate)
+	V4D_MODULE_FUNC_DECLARE(void, Renderer_DrawUi)
+	V4D_MODULE_FUNC_DECLARE(void, Renderer_BeforeFrame)
+	V4D_MODULE_FUNC_DECLARE(void, Renderer_FrameUpdate)
+	V4D_MODULE_FUNC_DECLARE(void, Renderer_PushCommands, VkCommandBuffer cmdBuffer)
+	V4D_MODULE_FUNC_DECLARE(void, Renderer_BuildCommands, VkCommandBuffer cmdBuffer)
+	V4D_MODULE_FUNC_DECLARE(void, Renderer_RenderCommands, VkCommandBuffer cmdBuffer)
+	V4D_MODULE_FUNC_DECLARE(void, Renderer_ResolveCommands, VkCommandBuffer cmdBuffer)
+	V4D_MODULE_FUNC_DECLARE(void, Renderer_BlitCommands, VkCommandBuffer cmdBuffer)
+	V4D_MODULE_FUNC_DECLARE(void, Renderer_PostCommands, VkCommandBuffer cmdBuffer)
+	V4D_MODULE_FUNC_DECLARE(void, Renderer_AfterFrame)
+	V4D_MODULE_FUNC_DECLARE(void, Renderer_AfterUpdate)
+	
 };

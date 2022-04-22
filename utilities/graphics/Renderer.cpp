@@ -6,13 +6,6 @@ using namespace v4d::graphics;
 
 Device* Renderer::mainRenderingDevice = nullptr;
 
-#pragma region Static maps
-
-	// Ray-Tracing Shaders
-	std::unordered_map<std::string, uint32_t> Renderer::sbtOffsets {};
-
-#pragma endregion
-
 #pragma region Virtual INIT Methods
 
 void Renderer::CreateDevices() {
@@ -279,9 +272,7 @@ void Renderer::WatchModifiedShadersForReload(RayTracingPipeline& rtPipeline) {
 }
 
 void Renderer::RecreateSwapChain() {
-	std::lock_guard lock(frameSyncMutex2);
 	UnloadGraphicsFromDevice();
-	v4d::graphics::renderer::event::Resize(this);
 	CreateSwapChain();
 	LoadGraphicsToDevice();
 }
@@ -297,22 +288,19 @@ void Renderer::InitRenderer() {
 void Renderer::LoadRenderer() {
 	CreateDevices();
 	CreateCommandPools();
+	ConfigureScene();
 	CreateBuffers();
 	LoadBuffers();
 	LoadTextures();
 	CreateSwapChain();
 	LoadGraphicsToDevice();
 	
-	v4d::graphics::renderer::event::Load(this);
 	LOG_SUCCESS("Vulkan Renderer is Ready !")
 }
 
 void Renderer::UnloadRenderer() {
 	if (renderingDevice) {
-		std::lock_guard lock(frameSyncMutex2);
 		renderingDevice->DeviceWaitIdle();
-		
-		v4d::graphics::renderer::event::Unload(this);
 		UnloadGraphicsFromDevice();
 		DestroySwapChain();
 		UnloadTextures();
@@ -333,37 +321,6 @@ void Renderer::ReloadShaderPipelines(bool forceReloadAllShaders) {
 	}
 }
 
-void Renderer::ReloadRenderer() {
-	LOG("Reloading renderer...")
-	
-	std::lock_guard lock(frameSyncMutex2);
-	renderingDevice->DeviceWaitIdle();
-	
-	v4d::graphics::renderer::event::Unload(this);
-	UnloadGraphicsFromDevice();
-	DestroySwapChain();
-	UnloadTextures();
-	UnloadBuffers();
-	DestroyBuffers();
-	DestroyCommandPools();
-	DestroyDevices();
-	
-	v4d::graphics::renderer::event::Reload(this);
-	
-	ReadShaders();
-	
-	CreateDevices();
-	CreateCommandPools();
-	CreateBuffers();
-	LoadBuffers();
-	LoadTextures();
-	CreateSwapChain();
-	LoadGraphicsToDevice();
-	
-	v4d::graphics::renderer::event::Load(this);
-	LOG_SUCCESS("Vulkan Renderer is Ready !")
-}
-
 void Renderer::LoadGraphicsToDevice() {
 	CreateSyncObjects();
 	ConfigureImages(swapChain->extent.width, swapChain->extent.height);
@@ -373,14 +330,10 @@ void Renderer::LoadGraphicsToDevice() {
 	ConfigureRenderPasses();
 	CreateRenderPasses();
 	CreateShaderPipelines();
-	
-	v4d::graphics::renderer::event::PipelinesCreate(this);
-	
 	UpdateDescriptorSets();
-	
 	CreateCommandBuffers();
 	
-	LoadScene();
+	Start();
 	
 	state = STATE::LOADED;
 }
@@ -389,11 +342,9 @@ void Renderer::UnloadGraphicsFromDevice() {
 	state = STATE::UNLOADED;
 	renderingDevice->DeviceWaitIdle();
 	
-	UnloadScene();
+	End();
 	
 	DestroyCommandBuffers();
-	
-	v4d::graphics::renderer::event::PipelinesDestroy(this);
 	
 	DestroyShaderPipelines();
 	DestroyRenderPasses();
@@ -411,10 +362,6 @@ bool Renderer::BeginFrame(VkSemaphore signalSemaphore, VkFence triggerFence) {
 	{// Sync queue
 		std::unique_lock lock1(frameSyncMutex);
 		if (!syncQueue.empty()) {
-			lock1.unlock();
-			THREAD_YIELD
-			std::lock_guard lock2(frameSyncMutex2);
-			lock1.lock();
 			renderingDevice->DeviceWaitIdle();
 			while (!syncQueue.empty()) {
 				syncQueue.front()();
@@ -690,83 +637,3 @@ Renderer::~Renderer() {
 }
 
 #pragma endregion
-
-#pragma region Pack Helpers
-namespace v4d::graphics {
-	
-	glm::f32 PackColorAsFloat(glm::vec4 color) {
-		color *= 255.0f;
-		glm::uvec4 pack {
-			glm::clamp(glm::u32(color.r), (glm::u32)0, (glm::u32)255),
-			glm::clamp(glm::u32(color.g), (glm::u32)0, (glm::u32)255),
-			glm::clamp(glm::u32(color.b), (glm::u32)0, (glm::u32)255),
-			glm::clamp(glm::u32(color.a), (glm::u32)0, (glm::u32)255),
-		};
-		return glm::uintBitsToFloat((pack.r << 24) | (pack.g << 16) | (pack.b << 8) | pack.a);
-	}
-
-	glm::u32 PackColorAsUint(glm::vec4 color) {
-		color *= 255.0f;
-		glm::uvec4 pack {
-			glm::clamp(glm::u32(color.r), (glm::u32)0, (glm::u32)255),
-			glm::clamp(glm::u32(color.g), (glm::u32)0, (glm::u32)255),
-			glm::clamp(glm::u32(color.b), (glm::u32)0, (glm::u32)255),
-			glm::clamp(glm::u32(color.a), (glm::u32)0, (glm::u32)255),
-		};
-		return (pack.r << 24) | (pack.g << 16) | (pack.b << 8) | pack.a;
-	}
-
-	glm::f32 PackUVasFloat(glm::vec2 uv) {
-		uv *= 65535.0f;
-		glm::uvec2 pack {
-			glm::clamp(glm::u32(uv.s), (glm::u32)0, (glm::u32)65535),
-			glm::clamp(glm::u32(uv.t), (glm::u32)0, (glm::u32)65535),
-		};
-		return glm::uintBitsToFloat((pack.s << 16) | pack.t);
-	}
-
-	glm::u32 PackUVasUint(glm::vec2 uv) {
-		uv *= 65535.0f;
-		glm::uvec2 pack {
-			glm::clamp(glm::u32(uv.s), (glm::u32)0, (glm::u32)65535),
-			glm::clamp(glm::u32(uv.t), (glm::u32)0, (glm::u32)65535),
-		};
-		return (pack.s << 16) | pack.t;
-	}
-
-	glm::vec4 UnpackColorFromFloat(glm::f32 color) {
-		glm::u32 packed = glm::floatBitsToUint(color);
-		return glm::vec4(
-			(packed & 0xff000000) >> 24,
-			(packed & 0x00ff0000) >> 16,
-			(packed & 0x0000ff00) >> 8,
-			(packed & 0x000000ff) >> 0
-		) / 255.0f;
-	}
-
-	glm::vec4 UnpackColorFromUint(glm::u32 color) {
-		return glm::vec4(
-			(color & 0xff000000) >> 24,
-			(color & 0x00ff0000) >> 16,
-			(color & 0x0000ff00) >> 8,
-			(color & 0x000000ff) >> 0
-		) / 255.0f;
-	}
-
-	glm::vec2 UnpackUVfromFloat(glm::f32 uv) {
-		glm::u32 packed = glm::floatBitsToUint(uv);
-		return glm::vec2(
-			(packed & 0xffff0000) >> 16,
-			(packed & 0x0000ffff) >> 0
-		) / 65535.0f;
-	}
-
-	glm::vec2 UnpackUVfromUint(glm::u32 uv) {
-		return glm::vec2(
-			(uv & 0xffff0000) >> 16,
-			(uv & 0x0000ffff) >> 0
-		) / 65535.0f;
-	}
-}
-#pragma endregion
-

@@ -33,39 +33,6 @@
 namespace v4d::graphics {
 	using namespace v4d::graphics::vulkan;
 
-	#pragma region Pack Helpers
-	
-	V4DLIB glm::f32 PackColorAsFloat(glm::vec4 color);
-	V4DLIB glm::u32 PackColorAsUint(glm::vec4 color);
-	V4DLIB glm::vec4 UnpackColorFromFloat(glm::f32 color);
-	V4DLIB glm::vec4 UnpackColorFromUint(glm::u32 color);
-	V4DLIB glm::f32 PackUVasFloat(glm::vec2 uv);
-	V4DLIB glm::u32 PackUVasUint(glm::vec2 uv);
-	V4DLIB glm::vec2 UnpackUVfromFloat(glm::f32 uv);
-	V4DLIB glm::vec2 UnpackUVfromUint(glm::u32 uv);
-
-	#pragma endregion
-	
-	// struct RayCast {
-	// 	uint64_t moduleVen = 0;
-	// 	uint64_t moduleId = 0;
-	// 	uint64_t objId = 0;
-	// 	uint64_t raycastCustomData = 0;
-	// 	glm::vec3 localSpaceHitPosition;
-	// 	glm::f32 distance;
-	// 	glm::vec4 localSpaceHitSurfaceNormal; // w component is unused
-		
-	// 	bool operator==(const RayCast& other) const {
-	// 		return moduleVen == other.moduleVen && moduleId == other.moduleId && objId == other.objId;
-	// 	}
-	// 	bool operator!=(const RayCast& other) const {
-	// 		return !(*this == other);
-	// 	}
-	// 	operator bool () const {
-	// 		return moduleVen && moduleId;
-	// 	}
-	// };
-	
 	class V4DLIB Renderer : public Instance {
 	protected:
 	
@@ -74,7 +41,6 @@ namespace v4d::graphics {
 		
 		// Synchronized frame execution
 		std::recursive_mutex frameSyncMutex;
-		std::recursive_mutex frameSyncMutex2;
 		std::queue<std::function<void()>> syncQueue {};
 		std::vector<std::unique_ptr<std::thread>> shaderWatcherThreads {};
 		
@@ -115,9 +81,6 @@ namespace v4d::graphics {
 		// Descriptor sets
 		VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
 		
-		// Ray-Tracing Shaders
-		static std::unordered_map<std::string, uint32_t> sbtOffsets;
-
 	public: // Device Extensions and features
 	
 		void RequiredDeviceExtension(const char* ext) {
@@ -138,14 +101,16 @@ namespace v4d::graphics {
 		virtual void ScorePhysicalDeviceSelection(int& score, PhysicalDevice*) = 0;
 		virtual void ConfigureDeviceFeatures(PhysicalDevice::DeviceFeatures* deviceFeaturesToEnable, const PhysicalDevice::DeviceFeatures* availableDeviceFeatures) = 0;
 		virtual void ConfigureRenderer() = 0;
+		virtual void ConfigureScene() = 0;
 		virtual void ConfigureLayouts() = 0;
 		virtual void ConfigureShaders() = 0;
 		virtual void ConfigureRenderPasses() = 0;
 		virtual void ConfigureImages(uint32_t swapChainWidth, uint32_t swapChainHeight) = 0;
 		virtual void LoadBuffers() = 0;
 		virtual void UnloadBuffers() = 0;
-		virtual void LoadScene() = 0;
-		virtual void UnloadScene() = 0;
+		virtual void Start() = 0;
+		virtual void End() = 0;
+		virtual void Render() = 0;
 		
 	protected: // Virtual INIT Methods
 
@@ -384,7 +349,6 @@ namespace v4d::graphics {
 		virtual void InitRenderer();
 		virtual void LoadRenderer();
 		virtual void UnloadRenderer();
-		virtual void ReloadRenderer();
 		virtual void ReloadShaderPipelines(bool forceReloadAllShaders = false);
 		void WatchModifiedShadersForReload(const std::vector<ShaderPipelineMetaFile>&);
 		void WatchModifiedShadersForReload(RayTracingPipeline&);
@@ -413,10 +377,3 @@ namespace v4d::graphics {
 		
 	};
 }
-
-DEFINE_EVENT(v4d::graphics::renderer, PipelinesCreate, Renderer*)
-DEFINE_EVENT(v4d::graphics::renderer, PipelinesDestroy, Renderer*)
-DEFINE_EVENT(v4d::graphics::renderer, Load, Renderer*)
-DEFINE_EVENT(v4d::graphics::renderer, Unload, Renderer*)
-DEFINE_EVENT(v4d::graphics::renderer, Reload, Renderer*)
-DEFINE_EVENT(v4d::graphics::renderer, Resize, Renderer*)
