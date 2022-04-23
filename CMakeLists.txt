@@ -70,7 +70,5 @@ endif()
 
 # Dependencies
 set(OPENSSL_USE_STATIC_LIBS TRUE)
-set(ZLIB_USE_STATIC_LIBS TRUE)
 find_package(OpenSSL REQUIRED)
 find_package(glfw3 REQUIRED)
-find_package(zlib)
