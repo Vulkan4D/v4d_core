@@ -1,7 +1,7 @@
 # V4D Core
 file(GLOB_RECURSE V4DCoreSourceFiles **.cpp)
 if(ENABLE_IMGUI)
-	add_library(v4d SHARED 
+	add_library(v4d SHARED
 		${V4DCoreSourceFiles}
 		"${PROJECT_SOURCE_DIR}/src/imgui/backends/imgui_impl_glfw.cpp"
 		"${PROJECT_SOURCE_DIR}/src/imgui/imgui.cpp"
@@ -14,7 +14,7 @@ if(ENABLE_IMGUI)
 		PUBLIC -DIMGUI_USER_CONFIG="imgui_v4d_config.hh"
 	)
 else()
-	add_library(v4d SHARED 
+	add_library(v4d SHARED
 		${V4DCoreSourceFiles}
 	)
 endif()
@@ -25,12 +25,11 @@ if(ENABLE_TINYGLTF)
 endif()
 target_link_libraries(v4d
 	PRIVATE
-		ssl
-		crypto
+		OpenSSL::Crypto
 	PUBLIC
 		pthread
 		glfw
-		zlib
+		z
 )
 target_include_directories(v4d
 	PUBLIC
@@ -38,9 +37,6 @@ target_include_directories(v4d
 		"${PROJECT_SOURCE_DIR}/src"
 		"${PROJECT_SOURCE_DIR}/src/v4d/xvk"
 		"${PROJECT_SOURCE_DIR}/src/imgui"
-		"${PROJECT_SOURCE_DIR}/src/zlib"
-	PRIVATE
-		# "${PROJECT_SOURCE_DIR}/src/openssl/include"
 )
 target_compile_definitions(v4d
 	PRIVATE -D_V4D_CORE
@@ -72,5 +68,9 @@ else()
 	)
 endif()
 
-# OpenSSL
-find_package(OpenSSL 1.1.1 REQUIRED)
+# Dependencies
+set(OPENSSL_USE_STATIC_LIBS TRUE)
+set(ZLIB_USE_STATIC_LIBS TRUE)
+find_package(OpenSSL REQUIRED)
+find_package(glfw3 REQUIRED)
+find_package(zlib)
