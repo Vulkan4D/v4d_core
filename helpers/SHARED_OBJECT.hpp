@@ -1,5 +1,5 @@
 /**
- * Shared Objects helper v1.5 - 2022-04-02
+ * Shared Objects helper v2.0 - 2022-04-25
  * Author: Olivier St-Laurent
  * 
  * This helper will add to a class the ability to loop through all instances of it and keep track of them, in a thread-safe manner.
@@ -7,15 +7,12 @@
  * 
  * It consists simply of the macros SHARED_OBJECT_[H|CPP|EXT](), and using them will basically add the following reserved methods:
  * 		* Self() // returns the shared_ptr of this shared object, to be called within another member method
- * 		* Create(...) // Used to instantiate the object, it's the public version of the constructor and takes any argument list compatible with the constructors you define
- * 		* Destroy(this) // To be called in the destructor, specifically with the "this" argument, it effectively removes the object from the global instance list
+ * 		* Make(...) // Used to instantiate the object, it's the public version of the constructor and takes any argument list compatible with the constructors you define
  * 		* ForEach(func<void(Ptr&)>) // To allow looping through all instances of a shared object using a lambda
  * 		* ForEachOrBreak(func<bool(Ptr&)>) // To allow looping through all instances of a shared object using a lambda
  * 		* Sort(func<bool(Ptr&, Ptr&)>) // Sort the global instance list before looping through them, using the usual sorting lambdas (return TRUE if the first argument should be placed BEFORE the second)
  * 		* Count() // Returns the current number of instances of this type
- * 		* GetLock() // static method that returns a lock on all instances of this type for Add/Remove/ForEach operations (but not Create/Destroy)
- * 
- * TODO: refactor Create to Make
+ * 		* GetLock() // static method that returns a lock on all instances of this type for Add/Remove/ForEach operations (but not Make)
  * 
  * Usage:
  * 
@@ -26,10 +23,7 @@
  * 			// Any other private/protected members here
  * 			// You may call Self() from within a member method (except the constructors/destructor) to get the shared pointer.
  * 		public:
- * 			~Test() { // Destructor must have public accessibility. Also, the destructor must be virtual if we are planning on extending this class.
- * 				Destroy(this); // Must call this first in your destructor
- * 				// Other stuff to do here when destroying the object
- * 			}
+ * 			virtual ~Test() {} // Destructor must have public accessibility, if defined. Also, the destructor must be virtual if we are planning on extending this class.
  * 			// Any other public members here
  * 		};
  * 
@@ -39,7 +33,7 @@
  * 	// main.cpp
  * 		#include "Test.h"
  * 		int main() {
- * 			Test::Ptr myTestObject = Test::Create(); // you may pass any argument list that are compatible with your constructors in Create()
+ * 			Test::Ptr myTestObject = Test::Make(); // you may pass any argument list that are compatible with your constructors in Make()
  * 			// myTestObject is a shared pointer to your newly created object
  * 			//...
  * 			Test::ForEach([](Test::Ptr& test){ // Loops through all existing and non-destroyed references to objects of type Test
@@ -58,14 +52,13 @@
  * 		// It is also possible to extend a shared object class, while they all share the same global instance list as the parent-most shared object (the class that has the SHARED_OBJECT_H macro defined)
  * 		// To do this, child classes must simply have the macro SHARED_OBJECT_EXT(ChildClass, ParentMostClass)
  * 		// and define a constructor that invokes a parent constructor
- * 		// The Parent-most shared object must have a virtual destructor, which happens to call Destroy(this)
+ * 		// The Parent-most shared object must have a virtual destructor
  * 
  * 		class Child : public Parent {
  * 			SHARED_OBJECT_EXT(Child, Parent)
- * 			Child() : Parent() {} // Again, you may have any number of arguments that are forwarded from when you call Child::Create()
+ * 			Child() : Parent() {} // Again, you may have any number of arguments that are forwarded from when you call Child::Make()
  * 		  public: // Again, destructor must have public accessibility
  * 			~Child() {
- * 				Destroy(this); // Even though it would have been taken care of in the parent's destructor, it's better that we make sure that the object is gone from the global instance list before we start destroying anything.
  * 				// delete stuff...
  * 			}
  * 		};
@@ -87,11 +80,10 @@
 		static std::recursive_mutex _sharedObjectsMutex;\
 		WeakPtr _self;\
 	protected:\
-		static void Destroy(ClassName*);\
 		Ptr Self() {return _self.lock();}\
 	public:\
 		template<class C = ClassName, typename...Args>\
-		static auto Create(Args&&...args)/*TODO refactor Create to Make*/ {\
+		static auto Make(Args&&...args) {\
 			typename C::Ptr sharedPtr(new C(std::forward<Args>(args)...));\
 			sharedPtr->_self = sharedPtr;\
 			std::lock_guard lock(_sharedObjectsMutex);\
@@ -130,24 +122,14 @@
 #define SHARED_OBJECT_CPP(ClassName) \
 	std::vector<ClassName::WeakPtr> ClassName::_sharedObjects {};\
 	std::recursive_mutex ClassName::_sharedObjectsMutex {};\
-	void ClassName::Destroy(ClassName* ptr) {\
-		std::lock_guard lock(_sharedObjectsMutex);\
-		for (auto it = _sharedObjects.begin(); it != _sharedObjects.end();) {\
-			if (auto sharedPtr = it->lock(); !sharedPtr || sharedPtr.get() == ptr) {\
-				it->swap(_sharedObjects.back());\
-				_sharedObjects.pop_back();\
-			} else ++it;\
-		}\
-	}\
 
 #define SHARED_OBJECT_EXT(ChildClass, ParentMostClass) \
 	public:\
 	using Ptr = std::shared_ptr<ChildClass>;\
 	using WeakPtr = std::weak_ptr<ChildClass>;\
-	template<typename...Args>/*TODO refactor Create to Make*/\
-	static ChildClass::Ptr Create(Args&&...args) {\
-		return ParentMostClass::Create<ChildClass, Args...>(std::forward<Args>(args)...);\
+	template<typename...Args>\
+	static ChildClass::Ptr Make(Args&&...args) {\
+		return ParentMostClass::Make<ChildClass, Args...>(std::forward<Args>(args)...);\
 	}\
 	friend class ParentMostClass;\
-	protected:\
-	static void Destroy(ChildClass* ptr) {ParentMostClass::Destroy(ptr);}
+	protected:
