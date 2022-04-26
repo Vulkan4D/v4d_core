@@ -9,11 +9,12 @@
  * 		* Self() // returns the shared_ptr of this shared object, to be called within another member method
  * 		* Make(...) // Used to instantiate the object, it's the public version of the constructor and takes any argument list compatible with the constructors you define
  * 		* ForEach(func<void(Ptr&)>) // To allow looping through all instances of a shared object using a lambda
- * 		* ForEachOrBreak(func<bool(Ptr&)>) // To allow looping through all instances of a shared object using a lambda
- * 		* Sort(func<bool(Ptr&, Ptr&)>) // Sort the global instance list before looping through them, using the usual sorting lambdas (return TRUE if the first argument should be placed BEFORE the second)
+ * 		* ForEachOrBreak(func<bool(Ptr&)>) // To allow looping through all instances of a shared object using a lambda, only loops through valid object pointers
+ * 		* ForEachWeak(func<bool(size_t index, Ptr)>) // To allow looping through all instances of a shared object using a lambda, also includes the index, and ensures the lambda is called for each and every object, hence we MUST check if the ptr is valid before using it
+ * 		* Sort(func<bool(Ptr&, Ptr&)>) // Sort the global instance list before looping through them, using the usual sorting lambdas (return TRUE if the first argument should be placed BEFORE the second) and also collects the garbage
  * 		* Count() // Returns the current number of instances of this type
  * 		* GetLock() // static method that returns a lock on all instances of this type for Add/Remove/ForEach operations (but not Make)
- * 
+ * 		* CollectGarbage() // Removes all invalid (expired) pointers from the global instance list (this is also done during Sort)
  * Usage:
  * 
  * 	// Test.h
@@ -42,6 +43,11 @@
  * 			Test::ForEachOrBreak([](Test::Ptr& test) -> bool { // Loops through all existing and non-destroyed references to objects of type Test, with the possibility to break the loop by returning false
  * 				// do stuff here with test (it's a shared pointer to your object)
  * 				// return bool here (return true to continue, false to break the loop)
+ * 			});
+ * 			Test::ForEachWeak([](size_t index, Test::Ptr test){ // Loops through all references to objects of type Test, even if it's invalid (expired)
+ * 				if (test) { // We must make sure the pointer is not expired
+ * 					// do stuff here with test (it's a shared pointer to your object) or with it's index which will NOT change until a call to Sort() or CollectGarbage()
+ * 				}
  * 			});
  * 			//...
  * 			// myTestObject gets destroyed automatically when all references to it are destroyed
@@ -87,8 +93,14 @@
 			typename C::Ptr sharedPtr(new C(std::forward<Args>(args)...));\
 			sharedPtr->_self = sharedPtr;\
 			std::lock_guard lock(_sharedObjectsMutex);\
-			_sharedObjects.emplace_back(sharedPtr);\
+			auto availableSlot = std::find_if(_sharedObjects.begin(), _sharedObjects.end(), [](WeakPtr& o){return o.expired();});\
+			if (availableSlot == _sharedObjects.end()) _sharedObjects.emplace_back(sharedPtr);\
+			else *availableSlot = sharedPtr;\
 			return sharedPtr;\
+		}\
+		static void ForEach(std::function<void(Ptr&)>&& func) {\
+			std::lock_guard lock(_sharedObjectsMutex);\
+			for (auto& t : _sharedObjects) if (auto sharedPtr = t.lock(); sharedPtr) func(sharedPtr);\
 		}\
 		static void ForEachOrBreak(std::function<bool(Ptr&)>&& func) {\
 			std::lock_guard lock(_sharedObjectsMutex);\
@@ -96,9 +108,9 @@
 				if (!func(sharedPtr)) break;\
 			}\
 		}\
-		static void ForEach(std::function<void(Ptr&)>&& func) {\
+		static void ForEachWeak(std::function<void(size_t index, Ptr)>&& func) {\
 			std::lock_guard lock(_sharedObjectsMutex);\
-			for (auto& t : _sharedObjects) if (auto sharedPtr = t.lock(); sharedPtr) func(sharedPtr);\
+			for (size_t i = 0; i < _sharedObjects.size(); ++i) func(i, _sharedObjects[i].lock());\
 		}\
 		static size_t Count() {\
 			std::lock_guard lock(_sharedObjectsMutex);\
@@ -107,12 +119,19 @@
 		static void Sort(std::function<bool(Ptr&, Ptr&)>&& func) {\
 			std::lock_guard lock(_sharedObjectsMutex);\
 			std::sort(_sharedObjects.begin(), _sharedObjects.end(), [&func](WeakPtr& _a, WeakPtr& _b){\
-				Ptr a = _a.lock();\
-				if (!a) return false;\
 				Ptr b = _b.lock();\
 				if (!b) return true;\
+				Ptr a = _a.lock();\
+				if (!a) return false;\
 				return func(a, b);\
 			});\
+			/*After a sort, All expired pointers will be at the end, hence it is safe to erase from the first expired all the way until the end*/\
+			_sharedObjects.erase(std::find_if(_sharedObjects.begin(), _sharedObjects.end(), [](WeakPtr& o){return o.expired();}), _sharedObjects.end());\
+		}\
+		/*NOTE: Sort() will also collect the garbage*/\
+		static void CollectGarbage() {\
+			std::lock_guard lock(_sharedObjectsMutex);\
+			_sharedObjects.erase(std::remove_if(_sharedObjects.begin(), _sharedObjects.end(), [](WeakPtr& o){return o.expired();}), _sharedObjects.end());\
 		}\
 		static std::unique_lock<std::recursive_mutex> GetLock() {\
 			return std::unique_lock<std::recursive_mutex>{_sharedObjectsMutex};\
@@ -132,4 +151,6 @@
 		return ParentMostClass::Make<ChildClass, Args...>(std::forward<Args>(args)...);\
 	}\
 	friend class ParentMostClass;\
-	protected:
+	protected:\
+
+//
