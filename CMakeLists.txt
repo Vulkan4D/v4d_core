@@ -59,15 +59,19 @@ if(WIN32)
 		PUBLIC
 			stdc++
 			dbghelp
+			OpenAL32
 	)
 else()
 	target_link_libraries(v4d
 		PUBLIC
 			dl
+			openal
 	)
 endif()
 
 # Dependencies
 set(OPENSSL_USE_STATIC_LIBS TRUE)
+ADD_DEFINITIONS(-DAL_LIBTYPE_STATIC)
 find_package(OpenSSL REQUIRED)
 find_package(glfw3 REQUIRED)
+find_package(OpenAL REQUIRED)
