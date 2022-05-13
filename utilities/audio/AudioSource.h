@@ -324,51 +324,80 @@ namespace v4d::audio {
 	
 	protected:
 
-		std::shared_ptr<AudioBuffer> buffer;
+		std::vector<std::shared_ptr<AudioBuffer>> buffers;
 		ALuint source = 0;
 		ALint state = AL_INITIAL;
+		
+		static std::shared_ptr<AudioSource::AudioBuffer> GetAudioBuffer(const char* waveFilePath);
 		
 	public:
 		
 		AudioSource(const char* waveFilePath);
+		AudioSource(const std::vector<const char*>& waveFiles);
 		AudioSource(const AudioSource&) = delete;
 		AudioSource(AudioSource&&) = delete;
+		
 		virtual ~AudioSource();
 		
 		void Play() {
-			alCall(alSourcePlay, source);
-			state = AL_PLAYING;
+			if (source) {
+				alCall(alSourceStop, source);
+				alCall(alSourcePlay, source);
+				state = AL_PLAYING;
+			}
 		}
 		
 		void Stop() {
-			alCall(alSourceStop, source);
-			state = AL_STOPPED;
+			if (source) {
+				alCall(alSourceStop, source);
+				state = AL_STOPPED;
+			}
+		}
+		
+		void Select(uint index) {
+			if (source) {
+				alCall(alSourcei, source, AL_BUFFER, buffers[index % buffers.size()]->GetHandle());
+			}
 		}
 		
 		void SetPitch(float pitch) {
-			alCall(alSourcef, source, AL_PITCH, pitch);
+			if (source) {
+				alCall(alSourcef, source, AL_PITCH, pitch);
+			}
 		}
 		
 		void SetGain(float gain) {
-			alCall(alSourcef, source, AL_GAIN, gain);
+			if (source) {
+				alCall(alSourcef, source, AL_GAIN, gain);
+			}
 		}
 		
 		void SetPosition(float x, float y, float z) {
-			alCall(alSource3f, source, AL_POSITION, x, y, z);
+			if (source) {
+				alCall(alSource3f, source, AL_POSITION, x, y, z);
+			}
 		}
 		void SetPosition(const glm::vec3& position) {
-			SetPosition(position);
+			if (source) {
+				SetPosition(position);
+			}
 		}
 		
 		void SetVelocity(float x, float y, float z) {
-			alCall(alSource3f, source, AL_VELOCITY, x, y, z);
+			if (source) {
+				alCall(alSource3f, source, AL_VELOCITY, x, y, z);
+			}
 		}
 		void SetVelocity(const glm::vec3& velocity) {
-			SetVelocity(velocity);
+			if (source) {
+				SetVelocity(velocity);
+			}
 		}
 		
 		void SetLooping(bool looping) {
-			alCall(alSourcei, source, AL_LOOPING, looping);
+			if (source) {
+				alCall(alSourcei, source, AL_LOOPING, looping);
+			}
 		}
 	};
 }
