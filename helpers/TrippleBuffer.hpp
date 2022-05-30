@@ -28,5 +28,6 @@ namespace v4d {
 		}
 		Buffer& Back() {return back;}
 		Buffer& Front() {return front;}
+		bool IsDirty() const {return dirty;}
 	};
 }
