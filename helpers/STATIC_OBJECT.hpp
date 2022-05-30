@@ -1,5 +1,5 @@
 /**
- * Static Objects helper v1.2 - 2022-04-13
+ * Static Objects helper v1.3 - 2022-05-20
  * Author: Olivier St-Laurent
  * 
  * This helper will add to a class the ability to loop through all instances of it and keep track of them, in a thread-safe manner.
@@ -9,8 +9,7 @@
  * 		* Self() // returns the shared_ptr of this static object, to be called within another member method (except the constructor/destructor). Also availabe is SelfWeak() which returns the weak ptr.
  * 		* Create(...) // static method used to instantiate the object, it's the public version of the constructor and takes any argument list compatible with the constructors you define
  * 		* GetOrCreate(id, ...) // static method used to get or instantiate the object if it doesn't exist, it takes any argument list compatible with the constructors you define after the id. This may return nullptr if the object exists but is not of the correct type.
- * 		* Destroy(id) // static method that effectively removes the object from the global instance list, using either its id or the shared pointer
- * 		* Destroy() // protected instance method that effectively removes the current object from the global instance list. If we want to do if from a ForEach, it's faster to just reset() the ptr, or just assign it to nullptr.
+ * 		* Destroy(id) // static method that effectively removes the object from the global instance list, using either its id or the shared pointer. If we want to destroy an instance from inside a ForEach, we should call reset() on the ptr instead, or just assign it to nullptr.
  * 		* ForEach(func<void(Ptr&)>) // static method that allows looping through all instances of a static object using a lambda
  * 		* ClearUnused() // static method that removes all objects that are unused from the global instance list
  * 		* ClearAll() // static method that removes all objects from the global instance list
@@ -164,12 +163,13 @@
 				_sharedObjects.at(id).reset();\
 			}\
 		}\
+		bool IsDestroyed() {\
+			std::lock_guard lock(_sharedObjectsMutex);\
+			return !_sharedObjects.contains(id);\
+		}\
 		static void Destroy(Ptr& ptr) {\
 			Destroy(ptr->GetID());\
 		}\
-		void Destroy() {\
-			Destroy(GetID());\
-		};\
 		static std::unique_lock<std::recursive_mutex> GetLock() {\
 			return std::unique_lock<std::recursive_mutex>{_sharedObjectsMutex};\
 		}\
