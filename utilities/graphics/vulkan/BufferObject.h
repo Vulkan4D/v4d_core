@@ -145,7 +145,7 @@ public:
 		if (temporaryData.size() != Count()) temporaryData.resize(Count());
 		return temporaryData.data();
 	}
-	operator T&() {
+	T& operator*() {
 		return *this->operator->();
 	}
 	explicit operator bool() {return size > 0 && data;}

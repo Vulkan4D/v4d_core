@@ -186,7 +186,7 @@ namespace v4d::processing {
 				}
 				items.emplace(item);
 			}
-			eventVar.notify_all();
+			eventVar.notify_one();
 		}
 		
 		/**
