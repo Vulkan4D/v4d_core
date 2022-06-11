@@ -50,6 +50,7 @@ namespace v4d::graphics::vulkan::raytracing {
 		
 		Device* device = nullptr;
 		std::unique_ptr<StagingBuffer<uint8_t>> pipelineBuffer = nullptr;
+		bool pipelineDirty = false;
 		bool dirty = false;
 		
 		VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties {};
@@ -116,6 +117,8 @@ namespace v4d::graphics::vulkan::raytracing {
 				memcpy(buffer[i].sbtHandle, shaderHandleStorage + hitGroupsUsed[i]*handleSize, handleSize);
 			}
 			delete[] shaderHandleStorage;
+			
+			dirty = true;
 		}
 		
 		void WriteSingleHitGroupHandle(void* dstBuffer, uint32_t sbtHitGroup) {

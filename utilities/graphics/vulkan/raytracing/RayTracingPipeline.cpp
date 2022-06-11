@@ -279,7 +279,7 @@ VkPipeline RayTracingPipeline::CreateRayTracingPipeline() {
 	if (device->CreateRayTracingPipelinesKHR(VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &rayTracingPipelineInfo, nullptr, &pipeline) != VK_SUCCESS)
 		throw std::runtime_error("Failed to create ray tracing pipelines");
 	
-	pipelineBuffer = std::make_unique<StagingBuffer<uint8_t>>(VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, GetSbtBufferSize());
+	pipelineBuffer = std::make_unique<StagingBuffer<uint8_t>>(VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, GetSbtPipelineBufferSize());
 	pipelineBuffer->Allocate(device);
 	assert(pipelineBuffer);
 	
@@ -407,7 +407,7 @@ void RayTracingPipeline::WritePipelineToSBT() {
 	}
 	
 	delete[] shaderHandleStorage;
-	dirty = true;
+	pipelineDirty = true;
 }
 
 void RayTracingPipeline::Configure(v4d::graphics::Renderer* renderer, Device* device) {
@@ -433,9 +433,9 @@ void RayTracingPipeline::Create(Device* device) {
 
 void RayTracingPipeline::Push(VkCommandBuffer cmdBuffer) {
 	assert(pipelineBuffer);
-	if (dirty) {
+	if (pipelineDirty) {
 		pipelineBuffer->Push(cmdBuffer);
-		dirty = false;
+		pipelineDirty = false;
 		{// Wait for SBT Push to finish build before tracing rays
 			VkMemoryBarrier memoryBarrier {
 				VK_STRUCTURE_TYPE_MEMORY_BARRIER,
@@ -454,10 +454,8 @@ void RayTracingPipeline::Push(VkCommandBuffer cmdBuffer) {
 }
 
 void RayTracingPipeline::PushSBT(VkCommandBuffer cmdBuffer, StagingBuffer<uint8_t>& sbtBuffer) {
-	assert(pipelineBuffer);
 	assert(sbtBuffer);
 	if (dirty) {
-		pipelineBuffer->Push(cmdBuffer);
 		sbtBuffer.Push(cmdBuffer);
 		dirty = false;
 		{// Wait for SBT Push to finish before tracing rays
