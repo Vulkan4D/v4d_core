@@ -272,7 +272,7 @@ VkPipeline RayTracingPipeline::CreateRayTracingPipeline() {
 		rayTracingPipelineInfo.pStages = stages.data();
 		rayTracingPipelineInfo.groupCount = (uint)allGroups.size();
 		rayTracingPipelineInfo.pGroups = allGroups.data();
-		rayTracingPipelineInfo.maxPipelineRayRecursionDepth = 2;
+		rayTracingPipelineInfo.maxPipelineRayRecursionDepth = 8;
 		rayTracingPipelineInfo.layout = pipelineLayout->obj;
 		// rayTracingPipelineInfo.flags = 
 		
