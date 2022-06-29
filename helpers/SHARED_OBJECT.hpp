@@ -6,7 +6,8 @@
  * (Instances are NOT contiguous in memory, hence not cache friendly, so this helper is most useful for code clarity, not performance)
  * 
  * It consists simply of the macros SHARED_OBJECT_[H|CPP|EXT](), and using them will basically add the following reserved methods:
- * 		* Self() // returns the shared_ptr of this shared object, to be called within another member method
+ * 		* Self() // returns the shared_ptr of this shared object, to be called within another member method (except the constructor/destructor)
+ * 		* SelfWeak() // returns the weak_ptr of this shared object, to be called within another member method (except the constructor/destructor)
  * 		* Make(...) // Used to instantiate the object, it's the public version of the constructor and takes any argument list compatible with the constructors you define
  * 		* ForEach(func<void(Ptr&)>) // To allow looping through all instances of a shared object using a lambda
  * 		* ForEachOrBreak(func<bool(Ptr&)>) // To allow looping through all instances of a shared object using a lambda, only loops through valid object pointers
@@ -87,6 +88,7 @@
 		WeakPtr _self;\
 	protected:\
 		Ptr Self() {return _self.lock();}\
+		WeakPtr SelfWeak() {return _self;}\
 	public:\
 		template<class C = ClassName, typename...Args>\
 		static auto Make(Args&&...args) {\

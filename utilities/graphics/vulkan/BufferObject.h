@@ -140,10 +140,13 @@ public:
 		if (temporaryData.size() != Count()) temporaryData.resize(Count());
 		return temporaryData[index];
 	}
-	T* operator->() {
+	T* Data() {
 		if (data) return data;
 		if (temporaryData.size() != Count()) temporaryData.resize(Count());
 		return temporaryData.data();
+	}
+	T* operator->() {
+		return Data();
 	}
 	T& operator*() {
 		return *this->operator->();

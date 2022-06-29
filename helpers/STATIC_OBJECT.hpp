@@ -6,7 +6,8 @@
  * (Instances are NOT contiguous in memory, hence not cache friendly, so this helper is most useful for code clarity, not performance)
  * 
  * It consists simply of the macros STATIC_OBJECT_[H|CPP|EXT](), and using them will basically add the following reserved methods:
- * 		* Self() // returns the shared_ptr of this static object, to be called within another member method (except the constructor/destructor). Also availabe is SelfWeak() which returns the weak ptr.
+ * 		* Self() // returns the shared_ptr of this static object, to be called within another member method (except the constructor/destructor).
+ * 		* SelfWeak() // returns the weak_ptr of this static object, to be called within another member method (except the constructor/destructor).
  * 		* Create(...) // static method used to instantiate the object, it's the public version of the constructor and takes any argument list compatible with the constructors you define
  * 		* GetOrCreate(id, ...) // static method used to get or instantiate the object if it doesn't exist, it takes any argument list compatible with the constructors you define after the id. This may return nullptr if the object exists but is not of the correct type.
  * 		* Destroy(id) // static method that effectively removes the object from the global instance list, using either its id or the shared pointer. If we want to destroy an instance from inside a ForEach, we should call reset() on the ptr instead, or just assign it to nullptr.
