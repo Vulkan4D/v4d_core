@@ -217,7 +217,8 @@ public:
 	T& operator[](size_t index) {
 		return hostBuffer[index];
 	}
-	T* operator->() {return hostBuffer.operator->();}
+	T* Data() {return hostBuffer.Data();}
+	T* operator->() {return hostBuffer.Data();}
 	operator T&() {return hostBuffer;}
 	operator VkBuffer&() {return deviceBuffer;}
 	operator BufferObject&() {return deviceBuffer;}
