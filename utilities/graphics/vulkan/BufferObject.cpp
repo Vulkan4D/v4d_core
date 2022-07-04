@@ -5,7 +5,9 @@ namespace v4d::graphics::vulkan {
 	COMMON_OBJECT_CPP(BufferObject, VkBuffer)
 
 	void BufferObject::Allocate(Device* device) {
+		std::lock_guard lock(allocationMutex);
 		if (this->device == nullptr) {
+			assert(device);
 			this->device = device;
 			if (size > 0) {
 				VkBufferCreateInfo bufferInfo {};{
@@ -38,6 +40,7 @@ namespace v4d::graphics::vulkan {
 	}
 
 	void BufferObject::Free() {
+		std::lock_guard lock(allocationMutex);
 		if (device) {
 			if ((VkBuffer)obj != VK_NULL_HANDLE) {
 				device->FreeAndDestroyBuffer(obj, allocation);

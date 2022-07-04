@@ -17,6 +17,12 @@ class V4DLIB BufferObject {
 	VkDeviceOrHostAddressConstKHR address {};
 	VkDeviceSize alignedOffset = 0;
 	
+	std::recursive_mutex allocationMutex;
+	
+	auto Lock() {
+		return std::unique_lock<std::recursive_mutex>(allocationMutex);
+	}
+	
 	BufferObject(MemoryUsage memoryUsage, VkBufferUsageFlags bufferUsage, VkDeviceSize size, uint32_t alignment = 0)
 	 : obj(), memoryUsage(memoryUsage), bufferUsage(bufferUsage), size(size), alignment(alignment) {}
 	
@@ -50,6 +56,10 @@ class V4DLIB BufferObject {
 		std::swap(alignedOffset, other.alignedOffset);
 	}
 	
+	void ZeroInitialize(VkCommandBuffer cmdBuffer) {
+		device->CmdFillBuffer(cmdBuffer, obj, 0, VK_WHOLE_SIZE, 0);
+	}
+	
 	operator VkDeviceOrHostAddressConstKHR() const {return address;}
 	operator VkDeviceAddress() const {return address.deviceAddress;}
 };
@@ -77,12 +87,24 @@ public:
 		return size / sizeof(T);
 	}
 	
+	void UseTemporaryData() {
+		assert(!data);
+		assert(size);
+		if (temporaryData.size() != Count()) temporaryData.resize(Count());
+		data = temporaryData.data();
+	}
+	
 	virtual void Allocate(Device* device) override {
+		std::lock_guard lock(allocationMutex);
 		if (size > 0 && this->device == nullptr) {
-			BufferObject::Allocate(device);
-			device->MapMemoryAllocation(allocation, (void**)&data, 0, size);
-			if (temporaryData.size() == Count()) {
-				Fill(temporaryData);
+			if (device) {
+				BufferObject::Allocate(device);
+				device->MapMemoryAllocation(allocation, (void**)&data, 0, size);
+				if (temporaryData.size() == Count()) {
+					Fill(temporaryData);
+				}
+			} else {
+				UseTemporaryData();
 			}
 		}
 	}
@@ -92,32 +114,35 @@ public:
 	}
 	
 	void ZeroInitialize(size_t size, size_t offset = 0) {
-		assert(data);
+		if (!data) UseTemporaryData();
 		memset(data + offset, 0, size);
 	}
 	
 	void Fill(const void* src, size_t size, size_t dstOffset = 0) {
-		assert(data);
+		if (!data) UseTemporaryData();
 		assert(src);
 		assert(size + dstOffset <= this->size);
 		memcpy(data + dstOffset, src, size);
 	}
 	
 	void Fill(const std::vector<T>& src) {
-		assert(data);
+		if (!data) UseTemporaryData();
 		assert(src.size() <= Count());
 		memcpy(data, src.data(), src.size()*sizeof(T));
 	}
 	
 	virtual void Free() override {
-		if (device && data) {
-			if (size > 0 && temporaryData.size() == Count()) {
-				memcpy(temporaryData.data(), data, size);
+		std::lock_guard lock(allocationMutex);
+		if (device) {
+			if (data) {
+				data = nullptr;
+				device->UnmapMemoryAllocation(allocation);
 			}
-			device->UnmapMemoryAllocation(allocation);
+			BufferObject::Free();
+		} else {
 			data = nullptr;
+			temporaryData = std::vector<T>(); // Forces deallocation
 		}
-		BufferObject::Free();
 	}
 	
 	virtual ~MappedBufferObject() {
@@ -133,30 +158,25 @@ public:
 	}
 	
 	T& operator[](size_t index) {
+		assert(data);
 		assert(index * sizeof(T) < size);
-		if (data) {
-			return data[index];
-		}
-		if (temporaryData.size() != Count()) temporaryData.resize(Count());
-		return temporaryData[index];
+		return data[index];
 	}
 	T* Data() {
-		if (data) return data;
-		if (temporaryData.size() != Count()) temporaryData.resize(Count());
-		return temporaryData.data();
+		assert(data);
+		return data;
 	}
 	T* operator->() {
 		return Data();
 	}
 	T& operator*() {
-		return *this->operator->();
+		return *this->Data();
 	}
 	explicit operator bool() {return size > 0 && data;}
 	template<typename OTHER>
 	T& operator=(const OTHER& other) {
-		if (data) return data[0] = other;
-		if (temporaryData.size() != Count()) temporaryData.resize(Count());
-		return temporaryData[0] = other;
+		assert(data);
+		return *data = other;
 	}
 	operator VkDeviceOrHostAddressConstKHR() const {return address;}
 	operator VkDeviceAddress() const {return address.deviceAddress;}
@@ -182,9 +202,14 @@ public:
 		return hostBuffer.Count();
 	}
 	
+	auto Lock() {
+		return hostBuffer.Lock();
+	}
+	
 	void Allocate(Device* device) {
+		std::lock_guard lock(hostBuffer.allocationMutex);
 		hostBuffer.Allocate(device);
-		deviceBuffer.Allocate(device);
+		if (device) deviceBuffer.Allocate(device);
 	}
 	
 	void ZeroInitialize() {
@@ -204,11 +229,13 @@ public:
 	}
 	
 	void Free() {
+		std::lock_guard lock(hostBuffer.allocationMutex);
 		hostBuffer.Free();
 		deviceBuffer.Free();
 	}
 	
 	void Resize(size_t newCount, bool allowReallocation = false) {
+		std::lock_guard lock(hostBuffer.allocationMutex);
 		assert(hostBuffer.device == nullptr || allowReallocation);
 		hostBuffer.Resize(newCount, allowReallocation);
 		deviceBuffer.Resize(newCount * sizeof(T), allowReallocation);
