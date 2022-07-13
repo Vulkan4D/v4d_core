@@ -171,7 +171,7 @@ uint32_t RayTracingPipeline::GetOrAddHitGroup(const char* filePath) {
 	std::lock_guard<std::mutex> lock(sharedHitGroupsMutex);
 	if (!sharedHitGroups.contains(filePath)) {
 		sharedHitGroups.emplace(filePath, AddHitShader(filePath));
-		hitGroupsDirty = true;
+		shadersDirty = true;
 	}
 	return sharedHitGroups.at(filePath).index;
 }
@@ -332,7 +332,7 @@ VkDeviceSize RayTracingPipeline::GetSbtPipelineBufferSize() {
 	return pipelineBufferSize;
 }
 
-void RayTracingPipeline::WritePipelineToSBT() {
+void RayTracingPipeline::WritePipelineBuffer() {
 	uint32_t handleSize = rayTracingPipelineProperties.shaderGroupHandleSize;
 	uint64_t alignment = rayTracingPipelineProperties.shaderGroupBaseAlignment;
 	uint32_t stride = handleSize;
@@ -423,12 +423,12 @@ void RayTracingPipeline::Configure(v4d::graphics::Renderer* renderer, Device* de
 }
 
 void RayTracingPipeline::Create(Device* device) {
-	hitGroupsDirty = false;
 	if (this->device == nullptr) {
 		this->device = device;
 		CreateRayTracingPipeline();
-		WritePipelineToSBT();
+		WritePipelineBuffer();
 	}
+	shadersDirty = false;
 }
 
 void RayTracingPipeline::Push(VkCommandBuffer cmdBuffer) {
@@ -437,28 +437,6 @@ void RayTracingPipeline::Push(VkCommandBuffer cmdBuffer) {
 		pipelineBuffer->Push(cmdBuffer);
 		pipelineDirty = false;
 		{// Wait for SBT Push to finish build before tracing rays
-			VkMemoryBarrier memoryBarrier {
-				VK_STRUCTURE_TYPE_MEMORY_BARRIER,
-				nullptr,// pNext
-				VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT,// VkAccessFlags srcAccessMask
-				VK_ACCESS_SHADER_READ_BIT,// VkAccessFlags dstAccessMask
-			};
-			device->CmdPipelineBarrier(
-				cmdBuffer,
-				VK_PIPELINE_STAGE_TRANSFER_BIT,
-				VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR,
-				0, 1, &memoryBarrier, 0, 0, 0, 0
-			);
-		}
-	}
-}
-
-void RayTracingPipeline::PushSBT(VkCommandBuffer cmdBuffer, StagingBuffer<uint8_t>& sbtBuffer) {
-	assert(sbtBuffer);
-	if (dirty) {
-		sbtBuffer.Push(cmdBuffer);
-		dirty = false;
-		{// Wait for SBT Push to finish before tracing rays
 			VkMemoryBarrier memoryBarrier {
 				VK_STRUCTURE_TYPE_MEMORY_BARRIER,
 				nullptr,// pNext

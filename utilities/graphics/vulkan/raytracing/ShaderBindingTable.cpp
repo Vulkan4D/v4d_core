@@ -94,7 +94,7 @@ void ShaderBindingTable::WriteShaderBindingTableToBuffer() {
 	}
 	
 	delete[] shaderHandleStorage;
-	dirty = true;
+	pipelineDirty = true;
 }
 
 void ShaderBindingTable::Create(Device* device) {

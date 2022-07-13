@@ -51,7 +51,6 @@ namespace v4d::graphics::vulkan::raytracing {
 		Device* device = nullptr;
 		std::unique_ptr<StagingBuffer<uint8_t>> pipelineBuffer = nullptr;
 		bool pipelineDirty = false;
-		bool dirty = false;
 		
 		VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingPipelineProperties {};
 		VkPhysicalDeviceAccelerationStructurePropertiesKHR accelerationStructureProperties {};
@@ -65,7 +64,7 @@ namespace v4d::graphics::vulkan::raytracing {
 		
 		VkDeviceSize GetSbtPipelineBufferSize();
 		VkDeviceSize GetSbtBufferSize();
-		void WritePipelineToSBT();
+		void WritePipelineBuffer();
 		
 		struct RayTracingShaderProgram {
 			ShaderInfo rchit {""};
@@ -83,7 +82,7 @@ namespace v4d::graphics::vulkan::raytracing {
 				buffer.Resize(hitGroupsUsed.size() * 2, true);
 			}
 			
-			if (hitGroupsDirty) {
+			if (shadersDirty) {
 				Reload();
 			}
 			
@@ -109,23 +108,21 @@ namespace v4d::graphics::vulkan::raytracing {
 			
 			// Fill
 			assert(rayHitGroups.size() > 0);
-			const size_t shaderHandlerStorageSize = rayHitGroups.size()*handleSize;
-			auto shaderHandleStorage = new uint8_t[shaderHandlerStorageSize];
-			if (device->GetRayTracingShaderGroupHandlesKHR(pipeline, (uint)pipelineGroups.size(), (uint)rayHitGroups.size(), shaderHandlerStorageSize, shaderHandleStorage) != VK_SUCCESS)
+			const size_t shaderHandleStorageSize = rayHitGroups.size()*handleSize;
+			auto shaderHandleStorage = new uint8_t[shaderHandleStorageSize];
+			if (device->GetRayTracingShaderGroupHandlesKHR(pipeline, (uint)pipelineGroups.size(), (uint)rayHitGroups.size(), shaderHandleStorageSize, shaderHandleStorage) != VK_SUCCESS)
 				throw std::runtime_error("Failed to get ray tracing shader group handles");
 			for (size_t i = 0; i < hitGroupsUsed.size(); ++i) {
 				memcpy(buffer[i].sbtHandle, shaderHandleStorage + hitGroupsUsed[i]*handleSize, handleSize);
 			}
 			delete[] shaderHandleStorage;
-			
-			dirty = true;
 		}
 		
-		void WriteSingleHitGroupHandle(void* dstBuffer, uint32_t sbtHitGroup) {
-			assert(dstBuffer);
-			if (device->GetRayTracingShaderGroupHandlesKHR(pipeline, sbtHitGroup, 1, rayTracingPipelineProperties.shaderGroupHandleSize, dstBuffer) != VK_SUCCESS)
-				throw std::runtime_error("Failed to get ray tracing shader group handle");
-		}
+		// void WriteSingleHitGroupHandle(void* dstBuffer, uint32_t hitGroupIndex) {
+		// 	assert(dstBuffer);
+		// 	if (device->GetRayTracingShaderGroupHandlesKHR(pipeline, (uint)pipelineGroups.size() + hitGroupIndex, 1, rayTracingPipelineProperties.shaderGroupHandleSize, dstBuffer) != VK_SUCCESS)
+		// 		throw std::runtime_error("Failed to get ray tracing shader group handle");
+		// }
 		
 		operator ShaderPipelineMetaFile() {
 			return shaderPipelineMetaFile;
@@ -171,7 +168,7 @@ namespace v4d::graphics::vulkan::raytracing {
 		};
 		std::mutex sharedHitGroupsMutex;
 		std::unordered_map<std::string, SharedHitGroup> sharedHitGroups {};
-		bool hitGroupsDirty = false;
+		bool shadersDirty = false;
 		
 		void Configure(v4d::graphics::Renderer*, Device*);
 		void Create(Device* device);
