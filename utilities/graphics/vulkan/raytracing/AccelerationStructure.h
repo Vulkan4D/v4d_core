@@ -4,7 +4,7 @@
 #include <vector>
 #include "utilities/graphics/vulkan/Loader.h"
 #include "utilities/graphics/vulkan/Device.h"
-#include "utilities/graphics/vulkan/BufferObject.h"
+#include "utilities/graphics/vulkan/Buffer.h"
 
 #ifndef RAY_TRACING_TLAS_MAX_INSTANCES
 	#define RAY_TRACING_TLAS_MAX_INSTANCES 1'048'576
@@ -52,7 +52,7 @@ namespace v4d::graphics::vulkan::raytracing {
 		Device* device = nullptr;
 		
 		// Scratch Buffer
-		std::unique_ptr<BufferObject> scratchBuffer = nullptr;
+		std::unique_ptr<Buffer> scratchBuffer = nullptr;
 		
 		struct GeometryAccelerationStructureInfo {
 			VkGeometryFlagsKHR flags = 0; // VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR

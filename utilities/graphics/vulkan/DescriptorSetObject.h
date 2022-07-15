@@ -4,7 +4,7 @@
 #include "utilities/graphics/vulkan/Device.h"
 #include "utilities/graphics/vulkan/ImageObject.h"
 #include "utilities/graphics/vulkan/SamplerObject.h"
-#include "utilities/graphics/vulkan/BufferObject.h"
+#include "utilities/graphics/vulkan/Buffer.h"
 #include "utilities/graphics/vulkan/raytracing/AccelerationStructure.h"
 
 namespace v4d::graphics::vulkan {
@@ -96,8 +96,8 @@ class V4DLIB DescriptorSetObject {
 		explicit StorageBufferDescriptor(uint32_t count, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL)
 			: Descriptor(stageFlags, count, true), bufferPtr(nullptr), bufferSize(0), bufferOffset(0) {}
 			
-		StorageBufferDescriptor(const BufferObject& buffer, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL)
-			: StorageBufferDescriptor(buffer.obj, buffer.size, 0, stageFlags) {}
+		StorageBufferDescriptor(const Buffer& buffer, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL)
+			: StorageBufferDescriptor(buffer, buffer.size, 0, stageFlags) {}
 			
 		constexpr VkDescriptorType GetDescriptorType() const override {return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;}
 		void FillWriteInfo(VkWriteDescriptorSet& write) override {
@@ -125,8 +125,8 @@ class V4DLIB DescriptorSetObject {
 		explicit UniformBufferDescriptor(uint32_t count, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL)
 			: Descriptor(stageFlags, count, true), bufferPtr(nullptr), bufferSize(0), bufferOffset(0) {}
 			
-		UniformBufferDescriptor(const BufferObject& buffer, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL)
-			: UniformBufferDescriptor(buffer.obj, buffer.size, 0, stageFlags) {}
+		UniformBufferDescriptor(const Buffer& buffer, VkShaderStageFlags stageFlags = VK_SHADER_STAGE_ALL)
+			: UniformBufferDescriptor(buffer, buffer.size, 0, stageFlags) {}
 			
 		constexpr VkDescriptorType GetDescriptorType() const override {return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;}
 		void FillWriteInfo(VkWriteDescriptorSet& write) override {

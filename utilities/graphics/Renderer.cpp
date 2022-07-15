@@ -283,7 +283,6 @@ void Renderer::LoadRenderer() {
 	CreateDevices();
 	CreateCommandPools();
 	ConfigureScene();
-	CreateBuffers();
 	LoadBuffers();
 	LoadTextures();
 	CreateSwapChain();
@@ -299,7 +298,6 @@ void Renderer::UnloadRenderer() {
 		DestroySwapChain();
 		UnloadTextures();
 		UnloadBuffers();
-		DestroyBuffers();
 		DestroyCommandPools();
 		DestroyDevices();
 	}

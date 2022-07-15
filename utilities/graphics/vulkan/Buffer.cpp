@@ -1,10 +1,8 @@
-#include "BufferObject.h"
+#include "Buffer.h"
 
 namespace v4d::graphics::vulkan {
 
-	COMMON_OBJECT_CPP(BufferObject, VkBuffer)
-
-	void BufferObject::Allocate(Device* device) {
+	void Buffer::Allocate(Device* device) {
 		std::lock_guard lock(allocationMutex);
 		if (this->device == nullptr) {
 			assert(device);
@@ -22,9 +20,9 @@ namespace v4d::graphics::vulkan {
 				if (device->GetPhysicalDevice()->deviceFeatures.vulkan12DeviceFeatures.bufferDeviceAddress)
 					bufferInfo.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 				
-				device->CreateAndAllocateBuffer(bufferInfo, memoryUsage, obj, &allocation);
+				device->CreateAndAllocateBuffer(bufferInfo, memoryUsage, handle, &allocation);
 				if (device->GetPhysicalDevice()->deviceFeatures.vulkan12DeviceFeatures.bufferDeviceAddress) {
-					address = device->GetBufferDeviceOrHostAddressConst(obj);
+					address = device->GetBufferDeviceOrHostAddressConst(handle);
 					if (alignment > 0 && address.deviceAddress % alignment != 0) {
 						alignedOffset = ((address.deviceAddress + (alignment - 1)) & ~(alignment - 1)) - address.deviceAddress;
 						address.deviceAddress += alignedOffset;
@@ -39,17 +37,17 @@ namespace v4d::graphics::vulkan {
 		}
 	}
 
-	void BufferObject::Free() {
+	void Buffer::Free() {
 		std::lock_guard lock(allocationMutex);
 		if (device) {
-			if ((VkBuffer)obj != VK_NULL_HANDLE) {
-				device->FreeAndDestroyBuffer(obj, allocation);
+			if (handle) {
+				device->FreeAndDestroyBuffer(handle, allocation);
 			}
 			device = nullptr;
 		}
 	}
 
-	BufferObject::~BufferObject() {
+	Buffer::~Buffer() {
 		Free();
 	}
 	

@@ -240,7 +240,7 @@ namespace v4d::graphics::vulkan::raytracing {
 	
 	void AccelerationStructure::AllocateScratchBuffer() {
 		if (!scratchBuffer && buildGeometryInfo.scratchData.deviceAddress == 0) {
-			scratchBuffer = std::make_unique<BufferObject>(MEMORY_USAGE_CPU_ONLY, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+			scratchBuffer = std::make_unique<Buffer>(MEMORY_USAGE_CPU_ONLY, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
 			
 				// This seems to fix a validation error with the alignment of the device address... But it may not be the correct solution.
 				|VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR

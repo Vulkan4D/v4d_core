@@ -19,7 +19,7 @@
 #include "utilities/graphics/vulkan/RenderPassObject.h"
 #include <utilities/graphics/vulkan/RasterShaderPipelineObject.h>
 #include "utilities/graphics/vulkan/CommonObjects.h"
-#include "utilities/graphics/vulkan/BufferObject.h"
+#include "utilities/graphics/vulkan/Buffer.h"
 
 // Useful macro to be used in ConfigureDeviceFeatures()
 #define V4D_ENABLE_DEVICE_FEATURE(F) \
@@ -191,13 +191,6 @@ namespace v4d::graphics {
 		}
 		virtual void DestroyRenderPasses() {
 			RenderPassObject::ForEach([](RenderPassObject*o){o->Destroy();});
-		}
-		// Buffers
-		virtual void CreateBuffers() {
-			BufferObject::ForEach([this](BufferObject*o){o->Allocate(renderingDevice);});
-		}
-		virtual void DestroyBuffers() {
-			BufferObject::ForEach([](BufferObject*o){o->Free();});
 		}
 		// Textures
 		virtual void LoadTextures() {

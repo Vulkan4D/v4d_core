@@ -7,7 +7,7 @@
 #include "utilities/graphics/vulkan/Device.h"
 #include "utilities/graphics/vulkan/Shader.h"
 #include "utilities/graphics/vulkan/PipelineLayoutObject.h"
-#include "utilities/graphics/vulkan/BufferObject.h"
+#include "utilities/graphics/vulkan/Buffer.h"
 #include "utilities/graphics/Renderer.h"
 #include "RayTracingPipeline.h"
 

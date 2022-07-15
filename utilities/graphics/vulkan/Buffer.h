@@ -5,8 +5,9 @@
 
 namespace v4d::graphics::vulkan {
 
-class V4DLIB BufferObject {
-	COMMON_OBJECT(BufferObject, VkBuffer, V4DLIB)
+struct V4DLIB Buffer {
+	VkBuffer handle;
+	
 	MemoryUsage memoryUsage;
 	VkBufferUsageFlags bufferUsage;
 	VkDeviceSize size;
@@ -23,11 +24,13 @@ class V4DLIB BufferObject {
 		return std::unique_lock<std::recursive_mutex>(allocationMutex);
 	}
 	
-	BufferObject(MemoryUsage memoryUsage, VkBufferUsageFlags bufferUsage, VkDeviceSize size, uint32_t alignment = 0)
-	 : obj(), memoryUsage(memoryUsage), bufferUsage(bufferUsage), size(size), alignment(alignment) {}
+	Buffer(MemoryUsage memoryUsage, VkBufferUsageFlags bufferUsage, VkDeviceSize size, uint32_t alignment = 0)
+	 : memoryUsage(memoryUsage), bufferUsage(bufferUsage), size(size), alignment(alignment) {}
 	
-	BufferObject()
-	 : obj(), memoryUsage(MEMORY_USAGE_UNKNOWN), bufferUsage(0), size(0), alignment(0) {}
+	Buffer()
+	 : memoryUsage(MEMORY_USAGE_UNKNOWN), bufferUsage(0), size(0), alignment(0) {}
+	
+	DELETE_COPY_MOVE_CONSTRUCTORS(Buffer)
 	
 	virtual void Allocate(Device* device);
 	virtual void Free();
@@ -41,37 +44,42 @@ class V4DLIB BufferObject {
 		}
 	}
 	
-	virtual ~BufferObject();
+	virtual ~Buffer();
 	
-	void Swap(BufferObject& other) {
+	// NOT Thread-Safe
+	void Swap(Buffer& other) {
 		assert(memoryUsage == other.memoryUsage);
 		assert(bufferUsage == other.bufferUsage);
 		assert(size == other.size);
 		assert(device == other.device);
 		assert(alignment == other.alignment);
-		std::lock_guard lock(UnderlyingCommonObjectContainer::mu);
-		std::swap(obj.obj, other.obj.obj);
+		std::swap(handle, other.handle);
 		std::swap(address, other.address);
 		std::swap(allocation, other.allocation);
 		std::swap(alignedOffset, other.alignedOffset);
 	}
 	
 	void ZeroInitialize(VkCommandBuffer cmdBuffer) {
-		device->CmdFillBuffer(cmdBuffer, obj, 0, VK_WHOLE_SIZE, 0);
+		device->CmdFillBuffer(cmdBuffer, handle, 0, VK_WHOLE_SIZE, 0);
 	}
 	
 	operator VkDeviceOrHostAddressConstKHR() const {return address;}
 	operator VkDeviceAddress() const {return address.deviceAddress;}
+	
+	operator const VkBuffer&() const {return handle;}
+	operator VkBuffer&() {return handle;}
+	operator const VkBuffer* const() const {return &handle;}
+	operator VkBuffer*() {return &handle;}
 };
 
 template<typename T>
-class MappedBufferObject : public BufferObject {
+class MappedBuffer : public Buffer {
 protected:
 	T* data;
 	std::vector<T> temporaryData {};
 public:
-	MappedBufferObject(MemoryUsage memoryUsage, VkBufferUsageFlags bufferUsage, uint32_t count = 1)
-	 : BufferObject(
+	MappedBuffer(MemoryUsage memoryUsage, VkBufferUsageFlags bufferUsage, uint32_t count = 1)
+	 : Buffer(
 			memoryUsage,
 			bufferUsage
 				| VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT // This forces the memory alignment to 16 bytes for all mapped buffers (fixes lots of issues with -O3 compiler optimisations)... Maybe find a better solution in the future...
@@ -79,7 +87,9 @@ public:
 			sizeof(T) * count
 		), data(nullptr) {}
 	
-	MappedBufferObject() {}
+	MappedBuffer() {}
+	
+	DELETE_COPY_MOVE_CONSTRUCTORS(MappedBuffer)
 	
 	static inline const size_t TypeSize = sizeof(T);
 	
@@ -98,7 +108,7 @@ public:
 		std::lock_guard lock(allocationMutex);
 		if (size > 0 && this->device == nullptr) {
 			if (device) {
-				BufferObject::Allocate(device);
+				Buffer::Allocate(device);
 				device->MapMemoryAllocation(allocation, (void**)&data, 0, size);
 				if (temporaryData.size() == Count()) {
 					Fill(temporaryData);
@@ -138,14 +148,14 @@ public:
 				data = nullptr;
 				device->UnmapMemoryAllocation(allocation);
 			}
-			BufferObject::Free();
+			Buffer::Free();
 		} else {
 			data = nullptr;
 			temporaryData = std::vector<T>(); // Forces deallocation
 		}
 	}
 	
-	virtual ~MappedBufferObject() {
+	virtual ~MappedBuffer() {
 		Free();
 	}
 	
@@ -154,7 +164,7 @@ public:
 		if (size > 0 && temporaryData.size() == Count()) {
 			temporaryData.resize(newCount);
 		}
-		BufferObject::Resize(newCount * sizeof(T), allowReallocation);
+		Buffer::Resize(newCount * sizeof(T), allowReallocation);
 	}
 	
 	T& operator[](size_t index) {
@@ -185,14 +195,16 @@ public:
 template<typename T>
 class StagingBuffer {
 protected:
-	MappedBufferObject<T> hostBuffer;
-	BufferObject deviceBuffer;
+	MappedBuffer<T> hostBuffer;
+	Buffer deviceBuffer;
 public:
 	StagingBuffer(VkBufferUsageFlags bufferUsage, uint32_t count = 1, uint32_t alignment = 0)
 	 : hostBuffer(MEMORY_USAGE_CPU_ONLY, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, count)
 	 , deviceBuffer(MEMORY_USAGE_GPU_ONLY, bufferUsage | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, sizeof(T) * count, alignment)
 	{}
 	StagingBuffer() {}
+	
+	DELETE_COPY_MOVE_CONSTRUCTORS(StagingBuffer)
 	
 	static inline const size_t TypeSize = sizeof(T);
 	
@@ -248,8 +260,8 @@ public:
 	T* operator->() {return hostBuffer.Data();}
 	operator T&() {return hostBuffer;}
 	operator VkBuffer&() {return deviceBuffer;}
-	operator BufferObject&() {return deviceBuffer;}
-	operator const BufferObject&() const {return deviceBuffer;}
+	operator Buffer&() {return deviceBuffer;}
+	operator const Buffer&() const {return deviceBuffer;}
 	explicit operator bool() {return bool(hostBuffer);}
 	operator VkDeviceOrHostAddressConstKHR() {return deviceBuffer;}
 	operator VkDeviceAddress() {return deviceBuffer;}
