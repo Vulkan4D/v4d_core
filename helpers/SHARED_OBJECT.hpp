@@ -148,6 +148,7 @@
 	public:\
 	using Ptr = std::shared_ptr<ChildClass>;\
 	using WeakPtr = std::weak_ptr<ChildClass>;\
+	ChildClass::Ptr Self() {return std::dynamic_pointer_cast<ChildClass>(ParentMostClass::Self());}\
 	template<typename...Args>\
 	static ChildClass::Ptr Make(Args&&...args) {\
 		return ParentMostClass::Make<ChildClass, Args...>(std::forward<Args>(args)...);\

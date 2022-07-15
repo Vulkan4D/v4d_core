@@ -93,7 +93,8 @@
 		public:\
 			AutoIncrementID(ClassName::Id = -1);\
 			operator ClassName::Id() const {return _id;}\
-		} id;\
+		};\
+		const AutoIncrementID id;\
 	protected:\
 		Ptr Self() {return _self.lock();}\
 		WeakPtr SelfWeak() {return _self;}\

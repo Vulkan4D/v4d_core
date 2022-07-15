@@ -13,6 +13,8 @@ typedef uint8_t byte;
 	typedef uint64_t ulong;
 #endif
 
+#define TYPEOF(T) std::decay<decltype(T)>::type
+
 // template<class T> inline constexpr T operator~ (T a) { return (T)~(int)a; }
 // template<class T> inline constexpr T operator| (T a, T b) { return (T)((int)a | (int)b); }
 // template<class T> inline constexpr T operator& (T a, T b) { return (T)((int)a & (int)b); }
