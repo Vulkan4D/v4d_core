@@ -61,10 +61,11 @@ namespace v4d::graphics::vulkan::raytracing {
 			maxPrimitiveCounts.emplace_back(range.primitiveCount);
 		}
 		
-		buildGeometryInfo.pGeometries = accelerationStructureGeometries.data();
 		buildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
 		buildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-		buildGeometryInfo.geometryCount = geometries.size();
+		buildGeometryInfo.geometryCount = accelerationStructureGeometries.size();
+		buildGeometryInfo.pGeometries = accelerationStructureGeometries.data();
+		buildGeometryInfo.ppGeometries = nullptr;
 	}
 	
 	void AccelerationStructure::AssignBottomLevelAabb(const std::vector<GeometryAccelerationStructureInfo>& geometries) {
@@ -82,6 +83,7 @@ namespace v4d::graphics::vulkan::raytracing {
 			auto& range = buildRangeInfo.emplace_back();
 			
 			accelerationStructureGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+			accelerationStructureGeometry.pNext = nullptr;
 			accelerationStructureGeometry.flags = geom.flags;
 			accelerationStructureGeometry.geometryType = VK_GEOMETRY_TYPE_AABBS_KHR;
 			accelerationStructureGeometry.geometry = {};
@@ -100,10 +102,11 @@ namespace v4d::graphics::vulkan::raytracing {
 			maxPrimitiveCounts.emplace_back(range.primitiveCount);
 		}
 		
-		buildGeometryInfo.pGeometries = accelerationStructureGeometries.data();
 		buildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
 		buildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
-		buildGeometryInfo.geometryCount = geometries.size();
+		buildGeometryInfo.geometryCount = accelerationStructureGeometries.size();
+		buildGeometryInfo.pGeometries = accelerationStructureGeometries.data();
+		buildGeometryInfo.ppGeometries = nullptr;
 	}
 	
 	void AccelerationStructure::AssignTopLevel() {
