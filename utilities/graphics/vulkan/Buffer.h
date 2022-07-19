@@ -112,6 +112,7 @@ public:
 				device->MapMemoryAllocation(allocation, (void**)&data, 0, size);
 				if (temporaryData.size() == Count()) {
 					Fill(temporaryData);
+					temporaryData = {};
 				}
 			} else {
 				UseTemporaryData();

@@ -151,7 +151,7 @@
 		static void ClearUnused() {\
 			std::lock_guard lock(_sharedObjectsMutex);\
 			for (auto it = _sharedObjects.begin(); it != _sharedObjects.end();) {\
-				if (!it->second || it->second.use_count() == 1) it = _sharedObjects.erase(it);\
+				if (!it->second || it->second.unique()) it = _sharedObjects.erase(it);\
 				else ++it;\
 			}\
 		}\

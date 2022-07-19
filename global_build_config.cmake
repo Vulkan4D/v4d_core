@@ -32,6 +32,7 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 	set(BUILD_FLAGS "${BUILD_FLAGS} -O0")
 else()
 	set(BUILD_FLAGS "${BUILD_FLAGS} -O3")
+	add_definitions(-DNDEBUG)
 endif()
 
 # Compiler Warnings

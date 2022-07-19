@@ -10,6 +10,7 @@ namespace v4d {
 		typedef std::chrono::time_point<std::chrono::system_clock, duration> time_point;
 		mutable std::mutex mutex;
 		time_point timePoint {};
+		bool started = false;
 
 	public:
 		/**
@@ -42,6 +43,7 @@ namespace v4d {
 		void Start() {
 			std::lock_guard lock(mutex);
 			timePoint = std::chrono::high_resolution_clock::now();
+			started = true;
 		}
 
 		/**
@@ -75,6 +77,8 @@ namespace v4d {
 			auto elapsed = GetElapsedMilliseconds();
 			return elapsed >= from && elapsed <= to;
 		}
+		
+		operator bool() const {return started;}
 
 	private:
 		/**
