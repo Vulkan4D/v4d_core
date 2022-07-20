@@ -47,7 +47,7 @@ namespace v4d::graphics::vulkan {
 			Instance::CheckVkResult("Signal Semaphore", device->SignalSemaphore(&signalInfo));
 		}
 		
-		[[nodiscard]] bool Wait(uint64_t value, VkSemaphoreWaitFlags flags = 0, uint64_t timeout = UINT64_MAX) const {
+		[[nodiscard]] bool Wait(uint64_t value, VkSemaphoreWaitFlags flags = 0, uint64_t timeoutMilliseconds = UINT64_MAX/1000000) const {
 			assert(device);
 			VkSemaphoreWaitInfo waitInfo {};
 				waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
@@ -55,7 +55,7 @@ namespace v4d::graphics::vulkan {
 				waitInfo.pSemaphores = obj;
 				waitInfo.pValues = &value;
 				waitInfo.flags = flags;
-			VkResult res = device->WaitSemaphores(&waitInfo, timeout);
+			VkResult res = device->WaitSemaphores(&waitInfo, timeoutMilliseconds*1000000);
 			if (res != VK_SUCCESS) {
 				if (res == VK_TIMEOUT) {
 					return false;

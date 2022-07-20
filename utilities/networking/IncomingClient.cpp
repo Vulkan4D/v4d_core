@@ -8,7 +8,7 @@ IncomingClient::~IncomingClient() {
 	std::lock_guard lock(threadsMutex);
 	for (std::thread& t : threads) {
 		if (t.joinable()) {
-			t.join();
+			t.join(); //TODO: Fix resource deadlock here
 		}
 	}
 }
