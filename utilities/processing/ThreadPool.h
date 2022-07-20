@@ -19,7 +19,7 @@
 
 namespace v4d::processing {
 	
-	class ThreadPoolBase {
+	class V4DLIB ThreadPoolBase {
 	protected:
 		bool stopping = false;
 		size_t numThreads = 0;
@@ -27,24 +27,27 @@ namespace v4d::processing {
 		std::unordered_map<uint32_t, std::thread> threads {};
 		std::recursive_mutex threadsMutex {};
 		std::condition_variable eventVar {};
+		const char* name;
 		
-		virtual void StartNewThread(uint32_t) = 0;
+		virtual void StartNewThread(uint32_t, std::function<void()> init = nullptr) = 0;
 		
 	public:
+		
+		ThreadPoolBase(const char* name = "ThreadPool") : name(name) {
+			assert(strlen(name) < 16);
+		}
 
 		/**
 		 * ThreadPoolBase destructor
 		 * Frees all threads and tasks
 		 */
-		virtual ~ThreadPoolBase() {
-			Shutdown();
-		}
+		virtual ~ThreadPoolBase();
 
 		/**
 		 * Set a new number of threads
 		 * @param number of threads
 		 */
-		virtual void RunThreads(size_t numThreads) {
+		virtual void RunThreads(size_t numThreads, std::function<void()> initPerThread = nullptr) {
 			if (numThreads == this->numThreads) return;
 			
 			std::lock_guard threadsLock(threadsMutex);
@@ -53,7 +56,7 @@ namespace v4d::processing {
 				std::lock_guard lock(eventMutex);
 				this->numThreads = numThreads;
 				while (threads.size() < numThreads) {
-					StartNewThread(threads.size());
+					StartNewThread(threads.size(), initPerThread);
 				}
 			}
 
@@ -102,10 +105,12 @@ namespace v4d::processing {
 		std::function<void(QueuedElementType& item)> taskRunFunction;
 		QueueType items {};
 		
-		virtual void StartNewThread(uint32_t index) override {
+		virtual void StartNewThread(uint32_t index, std::function<void()> init = nullptr) override {
 			std::lock_guard threadsLock(threadsMutex);
-			threads.emplace(index, 
-				[this, index] {
+			threads.emplace(index,
+				[this, index, init] {
+					pthread_setname_np(pthread_self(), name);
+					if (init) init();
 					while(true) {
 						try {
 							QueuedElementType item;
@@ -157,8 +162,9 @@ namespace v4d::processing {
 				if constexpr (std::is_same_v<QueuedElementType, std::function<void()>>) {
 					item();
 				}
-			}
-		) : taskRunFunction(perItemFunc) {}
+			},
+			const char* name = "ThreadPool"
+		) : ThreadPoolBase(name), taskRunFunction(perItemFunc) {}
 		
 		size_t Count() const {
 			std::lock_guard lock(eventMutex);
@@ -245,8 +251,9 @@ namespace v4d::processing {
 	
 		ThreadPoolPriorityQueue(
 			std::function<void(QueuedElementType& item)> perItemFunc, 
-			std::function<bool(QueuedElementType& a, QueuedElementType& b)> queueParam
-		) : THREADPOOL_PRIORITYQUEUE_TEMPLATE(perItemFunc) {
+			std::function<bool(QueuedElementType& a, QueuedElementType& b)> queueParam,
+			const char* name = "ThreadPool"
+		) : THREADPOOL_PRIORITYQUEUE_TEMPLATE(perItemFunc, name) {
 			THREADPOOL_PRIORITYQUEUE_TEMPLATE::items = THREADPOOL_PRIORITYQUEUE_TYPE{queueParam};
 		}
 		

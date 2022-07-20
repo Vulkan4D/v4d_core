@@ -205,6 +205,8 @@ void Socket::StartListeningThread(int waitIntervalMilliseconds, ListeningThreadC
 			return;
 		}
 		listeningThread = new std::thread([this, waitIntervalMilliseconds](ListeningThreadCallbackFunc&& newSocketCallback){
+			THREAD_NAME("TcpListenSocket")
+			
 			while (IsListening()) {
 
 				// Check if there is a connection waiting in the socket
@@ -232,6 +234,8 @@ void Socket::StartListeningThread(int waitIntervalMilliseconds, ListeningThreadC
 		listening = true;
 		std::shared_ptr<Socket> s = std::make_shared<Socket>(socket, remoteAddr, type, protocol);
 		listeningThread = new std::thread([this, waitIntervalMilliseconds, s=s](ListeningThreadCallbackFunc&& newSocketCallback){
+			THREAD_NAME("UdpListenSocket")
+			
 			while (IsListening()) {
 				ResetReadBuffer();
 

@@ -210,6 +210,7 @@ void Renderer::DestroySwapChain() {
 
 void Renderer::WatchModifiedShadersForReload(const std::vector<ShaderPipelineMetaFile>& shaderWatchers) {
 	shaderWatcherThreads.emplace_back(std::make_unique<std::thread>([watchers=shaderWatchers,this]() mutable {
+		THREAD_NAME("RastrShadrWatch")
 		std::vector<ShaderPipelineObject*> shadersToReload {};
 		std::vector<RayTracingPipeline*> sbtsToReload {};
 		while (state != STATE::NONE) {
@@ -239,6 +240,7 @@ void Renderer::WatchModifiedShadersForReload(const std::vector<ShaderPipelineMet
 
 void Renderer::WatchModifiedShadersForReload(RayTracingPipeline& rtPipeline) {
 	shaderWatcherThreads.emplace_back(std::make_unique<std::thread>([&rtPipeline,this]() mutable {
+		THREAD_NAME("RtShadrWatch")
 		double rgenModifiedTime = 0;
 		while (state != STATE::NONE) {
 			if (!rtPipeline.shadersDirty) {

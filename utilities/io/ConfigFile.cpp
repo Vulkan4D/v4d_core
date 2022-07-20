@@ -52,6 +52,7 @@ bool ConfigFile::FileHasChanged() const {
 
 void ConfigFile::StartAutoReloadThread() {
 	autoReloadThread = new std::thread([this]{
+		THREAD_NAME("ConfigAutoRload")
 		int interval = autoReloadInterval;
 		for (;;) {
 			if (interval <= 0) return;

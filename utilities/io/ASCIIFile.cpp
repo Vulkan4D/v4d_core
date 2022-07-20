@@ -54,6 +54,7 @@ bool ASCIIFile::FileHasChanged() const {
 
 void ASCIIFile::StartAutoReloadThread() {
 	autoReloadThread = new std::thread([this]{
+		THREAD_NAME("ASCIIAutoRload")
 		int interval;
 		{
 			std::lock_guard lock(mu);
