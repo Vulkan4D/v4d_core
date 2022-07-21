@@ -2,6 +2,8 @@
 
 #include <string>
 #include <algorithm>
+#include <cassert>
+#include <cstring>
 
 #define TRIM_CHARS " \f\n\r\t\v"
 
@@ -45,6 +47,35 @@ namespace v4d {
 			return rc;
 		}
 	
+		static consteval uint16_t Interpret2CharsAsUInt16(const char* str) {
+			assert(strlen(str) == 2);
+			return uint64_t(str[0])
+				| (uint64_t(str[1]) << 8)
+			;
+		}
+
+		static consteval uint32_t Interpret4CharsAsUInt32(const char* str) {
+			assert(strlen(str) == 4);
+			return uint64_t(str[0])
+				| (uint64_t(str[1]) << 8)
+				| (uint64_t(str[2]) << 16)
+				| (uint64_t(str[3]) << 24)
+			;
+		}
+
+		static consteval uint64_t Interpret8CharsAsUInt64(const char* str) {
+			assert(strlen(str) == 8);
+			return uint64_t(str[0])
+				| (uint64_t(str[1]) << 8)
+				| (uint64_t(str[2]) << 16)
+				| (uint64_t(str[3]) << 24)
+				| (uint64_t(str[4]) << 32)
+				| (uint64_t(str[5]) << 40)
+				| (uint64_t(str[6]) << 48)
+				| (uint64_t(str[7]) << 56)
+			;
+		}
+
 	};
 	
 }
