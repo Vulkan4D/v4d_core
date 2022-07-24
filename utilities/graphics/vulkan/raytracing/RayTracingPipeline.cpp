@@ -72,7 +72,7 @@ uint32_t RayTracingPipeline::GetOrAddShaderFileIndex(const ShaderInfo& shader) {
 	uint32_t index = 0;
 	for (auto&[i, s] : shaderFiles) {
 		assert(i == index);
-		if (s.filepath == shader.filepath) {
+		if (s.filepath == shader.filepath && s.specialization == shader.specialization) {
 			break;
 		}
 		index++;
@@ -179,7 +179,7 @@ uint32_t RayTracingPipeline::GetOrAddHitGroup(const char* filePath) {
 void RayTracingPipeline::ReadShaders() {
 	shaderObjects.clear();
 	for (auto&[i, shader] : shaderFiles) {
-		shaderObjects.emplace_back(shader.filepath, shader.entryPoint);
+		shaderObjects.emplace_back(shader.filepath, shader.entryPoint).specialization = shader.specialization;
 	}
 }
 

@@ -18,14 +18,42 @@
 
 namespace v4d::graphics::vulkan {
 
+	struct ShaderSpecialization {
+		std::vector<byte> specializationData {};
+		std::vector<VkSpecializationMapEntry> specializationMap {};
+		VkSpecializationInfo specializationInfo {};
+		
+		bool operator==(const ShaderSpecialization& other) const {
+			return specializationData == other.specializationData;
+		}
+		
+		template<typename T>
+		void SetValue(uint32_t id, const T& value) {
+			size_t offset;
+			if (auto it = std::find_if(specializationMap.begin(), specializationMap.end(), [id](auto&s){
+				return s.constantID == id;
+			}); it != specializationMap.end()) {
+				assert(it->size == sizeof(T));
+				offset = it->offset;
+			} else {
+				offset = specializationData.size();
+				specializationData.resize(offset + sizeof(T));
+				specializationMap.emplace_back(id, offset, sizeof(T));
+			}
+			memcpy(specializationData.data() + offset, &value, sizeof(T));
+		}
+	};
+
 	struct V4DLIB ShaderInfo {
 		std::string filepath;
 		int subpass;
 		std::string entryPoint;
+		ShaderSpecialization specialization;
 		
-		ShaderInfo(const std::string& filepath, int subpass, const std::string& entryPoint);
-		ShaderInfo(const std::string& filepath, int subpass = 0);
-		ShaderInfo(const char* filepath, int subpass = 0);
+		ShaderInfo(const std::string& filepath, int subpass, const std::string& entryPoint, const ShaderSpecialization& = {});
+		ShaderInfo(const std::string& filepath, int subpass, const ShaderSpecialization& = {});
+		ShaderInfo(const char* filepath, int subpass, const ShaderSpecialization& = {});
+		ShaderInfo(const char* filepath, const ShaderSpecialization& = {});
 	};
 	
 	class ShaderPipelineObject;
@@ -66,28 +94,6 @@ namespace v4d::graphics::vulkan {
 				}
 			});
 			return vec;
-		}
-	};
-
-	struct ShaderSpecialization {
-		std::vector<byte> specializationData {};
-		std::vector<VkSpecializationMapEntry> specializationMap {};
-		VkSpecializationInfo specializationInfo {};
-		
-		template<typename T>
-		void SetValue(uint32_t id, const T& value) {
-			size_t offset;
-			if (auto it = std::find_if(specializationMap.begin(), specializationMap.end(), [id](auto&s){
-				return s.constantID == id;
-			}); it != specializationMap.end()) {
-				assert(it->size == sizeof(T));
-				offset = it->offset;
-			} else {
-				offset = specializationData.size();
-				specializationData.resize(offset + sizeof(T));
-				specializationMap.emplace_back(id, offset, sizeof(T));
-			}
-			memcpy(specializationData.data() + offset, &value, sizeof(T));
 		}
 	};
 

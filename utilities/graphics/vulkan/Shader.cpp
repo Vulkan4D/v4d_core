@@ -77,11 +77,14 @@ void Shader::DestroyShaderModule(Device* device) {
 	device->DestroyShaderModule(module, nullptr);
 }
 
-ShaderInfo::ShaderInfo(const std::string& filepath, int subpass, const std::string& entryPoint) 
-: filepath(filepath), subpass(subpass), entryPoint(entryPoint) {}
+ShaderInfo::ShaderInfo(const std::string& filepath, int subpass, const std::string& entryPoint, const ShaderSpecialization& specialization) 
+: filepath(filepath), subpass(subpass), entryPoint(entryPoint), specialization(specialization) {}
 
-ShaderInfo::ShaderInfo(const std::string& filepath, int subpass)
-: filepath(filepath), subpass(subpass), entryPoint("main") {}
+ShaderInfo::ShaderInfo(const std::string& filepath, int subpass, const ShaderSpecialization& specialization)
+: filepath(filepath), subpass(subpass), entryPoint("main"), specialization(specialization) {}
 
-ShaderInfo::ShaderInfo(const char* filepath, int subpass)
-: filepath(filepath), subpass(subpass), entryPoint("main") {}
+ShaderInfo::ShaderInfo(const char* filepath, int subpass, const ShaderSpecialization& specialization)
+: filepath(filepath), subpass(subpass), entryPoint("main"), specialization(specialization) {}
+
+ShaderInfo::ShaderInfo(const char* filepath, const ShaderSpecialization& specialization)
+: filepath(filepath), subpass(0), entryPoint("main"), specialization(specialization) {}
