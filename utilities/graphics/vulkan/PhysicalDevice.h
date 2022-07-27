@@ -129,6 +129,7 @@ namespace v4d::graphics::vulkan {
 		VkResult GetPhysicalDeviceSurfacePresentModesKHR (VkSurfaceKHR surface, uint32_t* pPresentModeCount, VkPresentModeKHR* pPresentModes);
 		void GetPhysicalDeviceFormatProperties (VkFormat format, VkFormatProperties* pFormatProperties);
 
+		uint FindMemoryType(VkMemoryPropertyFlags properties);
 		uint FindMemoryType(uint typeFilter, VkMemoryPropertyFlags properties);
 		VkFormat FindSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 

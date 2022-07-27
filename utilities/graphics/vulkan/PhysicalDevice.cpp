@@ -174,6 +174,17 @@ void PhysicalDevice::GetPhysicalDeviceFormatProperties (VkFormat format, VkForma
 	vulkanInstance->GetPhysicalDeviceFormatProperties(handle, format, pFormatProperties);
 }
 
+uint PhysicalDevice::FindMemoryType(VkMemoryPropertyFlags properties) {
+	VkPhysicalDeviceMemoryProperties memProperties;
+	vulkanInstance->GetPhysicalDeviceMemoryProperties(handle, &memProperties);
+	for (uint i = 0; i < memProperties.memoryTypeCount; i++) {
+		if ((memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+			return i;
+		}
+	}
+	throw std::runtime_error("Failed to find suitable memory type");
+}
+
 uint PhysicalDevice::FindMemoryType(uint typeFilter, VkMemoryPropertyFlags properties) {
 	VkPhysicalDeviceMemoryProperties memProperties;
 	vulkanInstance->GetPhysicalDeviceMemoryProperties(handle, &memProperties);

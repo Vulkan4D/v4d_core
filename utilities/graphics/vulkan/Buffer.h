@@ -20,12 +20,17 @@ struct V4DLIB Buffer {
 	
 	std::recursive_mutex allocationMutex;
 	
+	VmaPool pool = VK_NULL_HANDLE;
+	
 	auto Lock() {
 		return std::unique_lock<std::recursive_mutex>(allocationMutex);
 	}
 	
 	Buffer(MemoryUsage memoryUsage, VkBufferUsageFlags bufferUsage, VkDeviceSize size, uint32_t alignment = 0)
 	 : memoryUsage(memoryUsage), bufferUsage(bufferUsage), size(size), alignment(alignment) {}
+	
+	Buffer(VmaPool pool, VkBufferUsageFlags bufferUsage, VkDeviceSize size, uint32_t alignment = 0)
+	 : memoryUsage(MEMORY_USAGE_UNKNOWN), bufferUsage(bufferUsage), size(size), alignment(alignment), pool(pool) {}
 	
 	Buffer()
 	 : memoryUsage(MEMORY_USAGE_UNKNOWN), bufferUsage(0), size(0), alignment(0) {}
@@ -86,6 +91,9 @@ public:
 				,
 			sizeof(T) * count
 		), data(nullptr) {}
+	
+	MappedBuffer(VmaPool pool, VkBufferUsageFlags bufferUsage, uint32_t count = 1)
+	 : Buffer(pool, bufferUsage, sizeof(T) * count), data(nullptr) {}
 	
 	MappedBuffer() {}
 	
@@ -203,6 +211,13 @@ public:
 	 : hostBuffer(MEMORY_USAGE_CPU_ONLY, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, count)
 	 , deviceBuffer(MEMORY_USAGE_GPU_ONLY, bufferUsage | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, sizeof(T) * count, alignment)
 	{}
+	StagingBuffer(VmaPool hostPool, VmaPool devicePool, VkBufferUsageFlags bufferUsage, uint32_t count = 1, uint32_t alignment = 0)
+	 : hostBuffer(hostPool, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, count)
+	 , deviceBuffer(devicePool, bufferUsage | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, sizeof(T) * count, alignment)
+	{
+		if (!hostPool) hostBuffer.memoryUsage = MEMORY_USAGE_CPU_ONLY;
+		if (!devicePool) deviceBuffer.memoryUsage = MEMORY_USAGE_GPU_ONLY;
+	}
 	StagingBuffer() {}
 	
 	DELETE_COPY_MOVE_CONSTRUCTORS(StagingBuffer)

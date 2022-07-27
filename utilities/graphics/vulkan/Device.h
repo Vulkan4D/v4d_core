@@ -127,6 +127,7 @@ namespace v4d::graphics::vulkan {
 		
 		#ifdef V4D_VULKAN_USE_VMA
 			void DumpMemoryAllocationStats();
+			VmaAllocator GetAllocator() const {return allocator;}
 		#endif
 
 		VkDevice GetHandle() const;
@@ -169,6 +170,7 @@ namespace v4d::graphics::vulkan {
 		// Allocator
 		void CreateAllocator();
 		void DestroyAllocator();
+		VkResult CreateAndAllocateBuffer(const VkBufferCreateInfo&, VmaPool, VkBuffer&, MemoryAllocation*);
 		VkResult CreateAndAllocateBuffer(const VkBufferCreateInfo&, MemoryUsage, VkBuffer&, MemoryAllocation*, bool weakAllocation = false);
 		VkResult CreateAndAllocateImage(const VkImageCreateInfo&, MemoryUsage, VkImage&, MemoryAllocation*, bool weakAllocation = true);
 		void FreeAndDestroyBuffer(VkBuffer&, MemoryAllocation&);

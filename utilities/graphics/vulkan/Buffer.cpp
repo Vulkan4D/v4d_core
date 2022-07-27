@@ -20,7 +20,16 @@ namespace v4d::graphics::vulkan {
 				if (device->GetPhysicalDevice()->deviceFeatures.vulkan12DeviceFeatures.bufferDeviceAddress)
 					bufferInfo.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 				
-				device->CreateAndAllocateBuffer(bufferInfo, memoryUsage, handle, &allocation);
+				if (pool) {
+					if (device->CreateAndAllocateBuffer(bufferInfo, pool, handle, &allocation) != VK_SUCCESS) {
+						throw std::runtime_error("Failed to Create/Allocate Buffer");
+					}
+				} else {
+					if (device->CreateAndAllocateBuffer(bufferInfo, memoryUsage, handle, &allocation) != VK_SUCCESS) {
+						throw std::runtime_error("Failed to Create/Allocate Buffer");
+					}
+				}
+				
 				if (device->GetPhysicalDevice()->deviceFeatures.vulkan12DeviceFeatures.bufferDeviceAddress) {
 					address = device->GetBufferDeviceOrHostAddressConst(handle);
 					if (alignment > 0 && address.deviceAddress % alignment != 0) {
