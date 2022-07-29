@@ -243,14 +243,7 @@ namespace v4d::graphics::vulkan::raytracing {
 	
 	void AccelerationStructure::AllocateScratchBuffer() {
 		if (!scratchBuffer && buildGeometryInfo.scratchData.deviceAddress == 0) {
-			scratchBuffer = std::make_unique<Buffer>(MEMORY_USAGE_CPU_ONLY, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
-			
-				// This seems to fix a validation error with the alignment of the device address... But it may not be the correct solution.
-				|VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR
-				// If we are getting issues with this in the future, try to align the address by adding the alignment to it and then aligning the address when assigning it.
-				// The alignment can be found in VkPhysicalDeviceAccelerationStructurePropertiesKHR::minAccelerationStructureScratchOffsetAlignment
-				
-			, accelerationStructureBuildSizesInfo.buildScratchSize);
+			scratchBuffer = std::make_unique<Buffer>(MEMORY_USAGE_CPU_ONLY, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, accelerationStructureBuildSizesInfo.buildScratchSize);
 			scratchBuffer->Allocate(device);
 			AssignScratchBuffer(VkDeviceOrHostAddressConstKHR(*scratchBuffer));
 		}
