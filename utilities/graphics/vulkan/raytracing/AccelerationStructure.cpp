@@ -237,8 +237,9 @@ namespace v4d::graphics::vulkan::raytracing {
 		}
 	}
 
-	void AccelerationStructure::AssignScratchBuffer(VkDeviceOrHostAddressConstKHR scratchBufferAddr, VkDeviceSize offset) {
+	VkDeviceSize AccelerationStructure::AssignScratchBuffer(VkDeviceOrHostAddressConstKHR scratchBufferAddr, VkDeviceSize offset) {
 		buildGeometryInfo.scratchData.deviceAddress = scratchBufferAddr.deviceAddress + offset;
+		return accelerationStructureBuildSizesInfo.buildScratchSize;
 	}
 	
 	void AccelerationStructure::AllocateScratchBuffer() {

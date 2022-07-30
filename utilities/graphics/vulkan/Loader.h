@@ -41,12 +41,12 @@ namespace v4d::graphics::vulkan {
 			#endif
 		};
 		
+		#ifdef V4D_VULKAN_USE_VALIDATION_LAYERS
+			bool enable_validation_layers = true;
+		#endif
+		
 		// Required Instance Layers
-		std::vector<const char*> requiredInstanceLayers {
-			#ifdef V4D_VULKAN_USE_VALIDATION_LAYERS
-				"VK_LAYER_KHRONOS_validation",
-			#endif
-		};
+		std::vector<const char*> requiredInstanceLayers {};
 		
 		#ifdef V4D_VULKAN_USE_VALIDATION_LAYERS
 			std::vector<VkValidationFeatureEnableEXT> validationFeaturesEnable {};

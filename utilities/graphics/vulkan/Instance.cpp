@@ -95,13 +95,16 @@ using namespace v4d::graphics::vulkan;
 		
 		#ifdef V4D_VULKAN_USE_VALIDATION_LAYERS
 			VkValidationFeaturesEXT validationFeatures = {};
-			if (loader->validationFeaturesEnable.size() + loader->validationFeaturesDisable.size()) {
-				validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
-				validationFeatures.enabledValidationFeatureCount = loader->validationFeaturesEnable.size();
-				validationFeatures.pEnabledValidationFeatures = loader->validationFeaturesEnable.data();
-				validationFeatures.disabledValidationFeatureCount = loader->validationFeaturesDisable.size();
-				validationFeatures.pDisabledValidationFeatures = loader->validationFeaturesDisable.data();
-				loader->requiredInstanceExtensions.push_back(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
+			if (loader->enable_validation_layers) {
+				if (loader->validationFeaturesEnable.size() + loader->validationFeaturesDisable.size()) {
+					validationFeatures.sType = VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT;
+					validationFeatures.enabledValidationFeatureCount = loader->validationFeaturesEnable.size();
+					validationFeatures.pEnabledValidationFeatures = loader->validationFeaturesEnable.data();
+					validationFeatures.disabledValidationFeatureCount = loader->validationFeaturesDisable.size();
+					validationFeatures.pDisabledValidationFeatures = loader->validationFeaturesDisable.data();
+					loader->requiredInstanceExtensions.push_back(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
+				}
+				loader->requiredInstanceLayers.push_back("VK_LAYER_KHRONOS_validation");
 			}
 		#endif
 

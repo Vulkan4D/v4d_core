@@ -26,7 +26,7 @@ endif()
 add_definitions(-D_V4D_PROJECT_PATH="${V4D_PROJECT_DIR}/")
 
 # Compiler optimizations and CPU Extensions
-set(BUILD_FLAGS "-mf16c -mavx2 -mfma -mlzcnt -mbmi -mbmi2")
+set(BUILD_FLAGS "-mavx2 -msse3 -mf16c -mfma -mlzcnt -mbmi")
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 	set(BUILD_FLAGS "${BUILD_FLAGS} -O0")
