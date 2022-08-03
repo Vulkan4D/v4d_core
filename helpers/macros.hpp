@@ -402,6 +402,7 @@ std::unordered_map<KeyType, std::weak_ptr<ClassName>> ClassName::commonInstances
 	#define __V4D__CPU_AFFINITY_REMOVE___(n) CPU_CLR((n) % std::thread::hardware_concurrency(), &cpuset);
 	#define UNSET_CPU_AFFINITY(...) {\
 		cpu_set_t cpuset;\
+		CPU_ZERO(&cpuset);\
 		for (int i = 0; i < std::thread::hardware_concurrency(); ++i) __V4D__CPU_AFFINITY_ADD___(i)\
 		FOR_EACH(__V4D__CPU_AFFINITY_REMOVE___, __VA_ARGS__)\
 		int rc = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);\
