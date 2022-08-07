@@ -112,7 +112,7 @@ void SwapChain::Create(SwapChain* oldSwapChain) {
 	}
 
 	// Get Images and generate ImageViews
-	uint imageCount;
+	uint imageCount {};
 	device->GetSwapchainImagesKHR(handle, &imageCount, nullptr);
 	images.resize(imageCount);
 	imageViews.resize(imageCount);
@@ -153,7 +153,7 @@ void SwapChain::ResolveCapabilities() {
 }
 
 void SwapChain::ResolveFormats() {
-	uint formatCount;
+	uint formatCount {};
 	device->GetPhysicalDevice()->GetPhysicalDeviceSurfaceFormatsKHR(surface, &formatCount, nullptr);
 	if (formatCount > 0) {
 		formats.resize(formatCount);
@@ -162,7 +162,7 @@ void SwapChain::ResolveFormats() {
 }
 
 void SwapChain::ResolvePresentModes() {
-	uint presentModeCount;
+	uint presentModeCount {};
 	device->GetPhysicalDevice()->GetPhysicalDeviceSurfacePresentModesKHR(surface, &presentModeCount, nullptr);
 	if (presentModeCount > 0) {
 		presentModes.resize(presentModeCount);
