@@ -14,10 +14,8 @@ void Renderer::CreateDevices() {
 	// Prepare enabled extensions
 	requiredDeviceExtensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-		#ifdef V4D_VULKAN_USE_VMA
-			VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
-			VK_KHR_BIND_MEMORY_2_EXTENSION_NAME,
-		#endif
+		VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
+		VK_KHR_BIND_MEMORY_2_EXTENSION_NAME,
 	};
 	optionalDeviceExtensions = {};
 	ConfigureDeviceExtensions();
@@ -285,6 +283,7 @@ void Renderer::LoadRenderer() {
 	CreateDevices();
 	CreateCommandPools();
 	ConfigureScene();
+	CreateResources();
 	LoadBuffers();
 	LoadTextures();
 	CreateSwapChain();
@@ -300,6 +299,7 @@ void Renderer::UnloadRenderer() {
 		DestroySwapChain();
 		UnloadTextures();
 		UnloadBuffers();
+		DestroyResources();
 		DestroyCommandPools();
 		DestroyDevices();
 	}

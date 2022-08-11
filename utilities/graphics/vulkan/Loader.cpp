@@ -1,10 +1,8 @@
 #include "../v4dconfig.hh"
 
-#ifdef V4D_VULKAN_USE_VMA
-	#define XVK_INCLUDE_VMA
-	#ifdef _V4D_CORE
-		#define VMA_IMPLEMENTATION
-	#endif
+#define XVK_INCLUDE_VMA
+#ifdef _V4D_CORE
+	#define VMA_IMPLEMENTATION
 #endif
 
 #include <v4d.h>

@@ -75,6 +75,14 @@ struct V4DLIB Buffer {
 	operator VkBuffer&() {return handle;}
 	operator const VkBuffer* const() const {return &handle;}
 	operator VkBuffer*() {return &handle;}
+	
+	// for deferred deallocation
+	void Touch() {
+		touchedInFrameIndex = currentFrameIndex;
+	}
+private: friend class Device;
+	uint64_t touchedInFrameIndex = 0;
+	static uint64_t currentFrameIndex;
 };
 
 template<typename T>
@@ -191,7 +199,6 @@ public:
 	T& operator*() {
 		return *this->Data();
 	}
-	explicit operator bool() {return size > 0 && data;}
 	template<typename OTHER>
 	T& operator=(const OTHER& other) {
 		assert(data);
@@ -278,7 +285,7 @@ public:
 	operator VkBuffer&() {return deviceBuffer;}
 	operator Buffer&() {return deviceBuffer;}
 	operator const Buffer&() const {return deviceBuffer;}
-	explicit operator bool() {return bool(hostBuffer);}
+	explicit operator bool() {return !!VkBuffer(hostBuffer);}
 	operator VkDeviceOrHostAddressConstKHR() {return deviceBuffer;}
 	operator VkDeviceAddress() {return deviceBuffer;}
 	
@@ -313,6 +320,11 @@ public:
 			}
 			hostBuffer.device->CmdCopyBuffer(cmdBuffer, deviceBuffer, hostBuffer, 1, &region);
 		}
+	}
+	
+	void Touch() {
+		hostBuffer.Touch();
+		deviceBuffer.Touch();
 	}
 };
 

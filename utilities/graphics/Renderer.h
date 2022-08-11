@@ -106,6 +106,8 @@ namespace v4d::graphics {
 		virtual void ConfigureShaders() = 0;
 		virtual void ConfigureRenderPasses() = 0;
 		virtual void ConfigureImages(uint32_t swapChainWidth, uint32_t swapChainHeight) = 0;
+		virtual void CreateResources() = 0;
+		virtual void DestroyResources() = 0;
 		virtual void LoadBuffers() = 0;
 		virtual void UnloadBuffers() = 0;
 		virtual void Start() = 0;

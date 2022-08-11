@@ -1,5 +1,6 @@
 #include "Device.h"
 #include "Instance.h"
+#include "Buffer.h"
 
 using namespace v4d::graphics::vulkan;
 
@@ -263,68 +264,62 @@ bool Device::TryRunSingleTimeCommands(Queue queue, std::function<bool(VkCommandB
 	return result;
 }
 
-#ifdef V4D_VULKAN_USE_VMA
-	void Device::DumpMemoryAllocationStats() {
-		char* str;
-		vmaBuildStatsString(allocator, &str, true);
-		std::ofstream file("vramdump.json");
-		file << str << std::endl;
-		vmaFreeStatsString(allocator, str);
-	}
-#endif
+void Device::DumpMemoryAllocationStats() {
+	char* str;
+	vmaBuildStatsString(allocator, &str, true);
+	std::ofstream file("vramdump.json");
+	file << str << std::endl;
+	vmaFreeStatsString(allocator, str);
+}
 
 // Allocator
 void Device::CreateAllocator() {
-	#ifdef V4D_VULKAN_USE_VMA
-		VmaVulkanFunctions vulkanFunctions {};{
-			vulkanFunctions.vkGetPhysicalDeviceProperties = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkGetPhysicalDeviceProperties;
-			vulkanFunctions.vkGetPhysicalDeviceMemoryProperties = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkGetPhysicalDeviceMemoryProperties;
-			vulkanFunctions.vkAllocateMemory = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkAllocateMemory;
-			vulkanFunctions.vkFreeMemory = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkFreeMemory;
-			vulkanFunctions.vkMapMemory = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkMapMemory;
-			vulkanFunctions.vkUnmapMemory = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkUnmapMemory;
-			vulkanFunctions.vkFlushMappedMemoryRanges = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkFlushMappedMemoryRanges;
-			vulkanFunctions.vkInvalidateMappedMemoryRanges = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkInvalidateMappedMemoryRanges;
-			vulkanFunctions.vkBindBufferMemory = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkBindBufferMemory;
-			vulkanFunctions.vkBindImageMemory = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkBindImageMemory;
-			vulkanFunctions.vkGetBufferMemoryRequirements = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkGetBufferMemoryRequirements;
-			vulkanFunctions.vkGetImageMemoryRequirements = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkGetImageMemoryRequirements;
-			vulkanFunctions.vkCreateBuffer = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkCreateBuffer;
-			vulkanFunctions.vkDestroyBuffer = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkDestroyBuffer;
-			vulkanFunctions.vkCreateImage = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkCreateImage;
-			vulkanFunctions.vkDestroyImage = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkDestroyImage;
-			vulkanFunctions.vkCmdCopyBuffer = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkCmdCopyBuffer;
-			#if VMA_DEDICATED_ALLOCATION || VMA_VULKAN_VERSION >= 1001000
-				vulkanFunctions.vkGetBufferMemoryRequirements2KHR = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkGetBufferMemoryRequirements2KHR;
-				vulkanFunctions.vkGetImageMemoryRequirements2KHR = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkGetImageMemoryRequirements2KHR;
-			#endif
-			#if VMA_BIND_MEMORY2 || VMA_VULKAN_VERSION >= 1001000
-				vulkanFunctions.vkBindBufferMemory2KHR = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkBindBufferMemory2KHR;
-				vulkanFunctions.vkBindImageMemory2KHR = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkBindImageMemory2KHR;
-			#endif
-			#if VMA_MEMORY_BUDGET || VMA_VULKAN_VERSION >= 1001000
-				vulkanFunctions.vkGetPhysicalDeviceMemoryProperties2KHR = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkGetPhysicalDeviceMemoryProperties2KHR;
-			#endif
+	VmaVulkanFunctions vulkanFunctions {};{
+		vulkanFunctions.vkGetPhysicalDeviceProperties = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkGetPhysicalDeviceProperties;
+		vulkanFunctions.vkGetPhysicalDeviceMemoryProperties = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkGetPhysicalDeviceMemoryProperties;
+		vulkanFunctions.vkAllocateMemory = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkAllocateMemory;
+		vulkanFunctions.vkFreeMemory = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkFreeMemory;
+		vulkanFunctions.vkMapMemory = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkMapMemory;
+		vulkanFunctions.vkUnmapMemory = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkUnmapMemory;
+		vulkanFunctions.vkFlushMappedMemoryRanges = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkFlushMappedMemoryRanges;
+		vulkanFunctions.vkInvalidateMappedMemoryRanges = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkInvalidateMappedMemoryRanges;
+		vulkanFunctions.vkBindBufferMemory = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkBindBufferMemory;
+		vulkanFunctions.vkBindImageMemory = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkBindImageMemory;
+		vulkanFunctions.vkGetBufferMemoryRequirements = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkGetBufferMemoryRequirements;
+		vulkanFunctions.vkGetImageMemoryRequirements = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkGetImageMemoryRequirements;
+		vulkanFunctions.vkCreateBuffer = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkCreateBuffer;
+		vulkanFunctions.vkDestroyBuffer = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkDestroyBuffer;
+		vulkanFunctions.vkCreateImage = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkCreateImage;
+		vulkanFunctions.vkDestroyImage = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkDestroyImage;
+		vulkanFunctions.vkCmdCopyBuffer = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkCmdCopyBuffer;
+		#if VMA_DEDICATED_ALLOCATION || VMA_VULKAN_VERSION >= 1001000
+			vulkanFunctions.vkGetBufferMemoryRequirements2KHR = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkGetBufferMemoryRequirements2KHR;
+			vulkanFunctions.vkGetImageMemoryRequirements2KHR = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkGetImageMemoryRequirements2KHR;
+		#endif
+		#if VMA_BIND_MEMORY2 || VMA_VULKAN_VERSION >= 1001000
+			vulkanFunctions.vkBindBufferMemory2KHR = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkBindBufferMemory2KHR;
+			vulkanFunctions.vkBindImageMemory2KHR = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkBindImageMemory2KHR;
+		#endif
+		#if VMA_MEMORY_BUDGET || VMA_VULKAN_VERSION >= 1001000
+			vulkanFunctions.vkGetPhysicalDeviceMemoryProperties2KHR = XVK_EXPOSE_NATIVE_VULKAN_FUNCTIONS_NAMESPACE::vkGetPhysicalDeviceMemoryProperties2KHR;
+		#endif
+	}
+	VmaAllocatorCreateInfo allocatorInfo {};{
+		allocatorInfo.vulkanApiVersion = Loader::VULKAN_API_VERSION;
+		allocatorInfo.physicalDevice = physicalDevice->GetHandle();
+		allocatorInfo.device = handle;
+		allocatorInfo.instance = instance->handle;
+		allocatorInfo.frameInUseCount = 1;
+		allocatorInfo.pVulkanFunctions = &vulkanFunctions;
+		if (Loader::VULKAN_API_VERSION >= VK_API_VERSION_1_2) {
+			allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 		}
-		VmaAllocatorCreateInfo allocatorInfo {};{
-			allocatorInfo.vulkanApiVersion = Loader::VULKAN_API_VERSION;
-			allocatorInfo.physicalDevice = physicalDevice->GetHandle();
-			allocatorInfo.device = handle;
-			allocatorInfo.instance = instance->handle;
-			allocatorInfo.frameInUseCount = 1;
-			allocatorInfo.pVulkanFunctions = &vulkanFunctions;
-			if (Loader::VULKAN_API_VERSION >= VK_API_VERSION_1_2) {
-				allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
-			}
-		}
-		vmaCreateAllocator(&allocatorInfo, &allocator);
-	#endif
+	}
+	vmaCreateAllocator(&allocatorInfo, &allocator);
 }
 void Device::DestroyAllocator() {
-	#ifdef V4D_VULKAN_USE_VMA
-		vmaDestroyAllocator(allocator);
-		allocator = VK_NULL_HANDLE;
-	#endif
+	vmaDestroyAllocator(allocator);
+	allocator = VK_NULL_HANDLE;
 }
 VkResult Device::CreateAndAllocateBuffer(const VkBufferCreateInfo& bufferCreateInfo, VmaPool pool, VkBuffer& buffer, MemoryAllocation* pAllocation) {
 	VmaAllocationCreateInfo allocInfo {};
@@ -332,172 +327,101 @@ VkResult Device::CreateAndAllocateBuffer(const VkBufferCreateInfo& bufferCreateI
 	return vmaCreateBuffer(allocator, &bufferCreateInfo, &allocInfo, &buffer, pAllocation, nullptr);
 }
 VkResult Device::CreateAndAllocateBuffer(const VkBufferCreateInfo& bufferCreateInfo, MemoryUsage memoryUsage, VkBuffer& buffer, MemoryAllocation* pAllocation, bool weakAllocation) {
-	#ifdef V4D_VULKAN_USE_VMA
-		VmaAllocationCreateInfo allocInfo {};
-			allocInfo.usage = (VmaMemoryUsage)memoryUsage;
-			if (weakAllocation && memoryUsage == MEMORY_USAGE_GPU_ONLY) {
-				allocInfo.flags |= VMA_ALLOCATION_CREATE_CAN_BECOME_LOST_BIT | VMA_ALLOCATION_CREATE_CAN_MAKE_OTHER_LOST_BIT;
-			}
-		return vmaCreateBuffer(allocator, &bufferCreateInfo, &allocInfo, &buffer, pAllocation, nullptr);
-	#else
-		if (CreateBuffer(&bufferCreateInfo, nullptr, &buffer) != VK_SUCCESS) {
-			throw std::runtime_error("Failed to create buffer");
+	VmaAllocationCreateInfo allocInfo {};
+		allocInfo.usage = (VmaMemoryUsage)memoryUsage;
+		if (weakAllocation && memoryUsage == MEMORY_USAGE_GPU_ONLY) {
+			allocInfo.flags |= VMA_ALLOCATION_CREATE_CAN_BECOME_LOST_BIT | VMA_ALLOCATION_CREATE_CAN_MAKE_OTHER_LOST_BIT;
 		}
-
-		VkMemoryRequirements memRequirements;
-		GetBufferMemoryRequirements(buffer, &memRequirements);
-		
-		VkDeviceSize allocSize = memRequirements.size;
-		if ((allocSize % memRequirements.alignment) > 0) {
-			allocSize += memRequirements.alignment - (allocSize % memRequirements.alignment);
-		}
-		
-		VkMemoryAllocateFlagsInfo memoryAllocateFlagsInfo {};
-			memoryAllocateFlagsInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO;
-			if (Loader::VULKAN_API_VERSION >= VK_API_VERSION_1_2 && (bufferCreateInfo.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)) {
-				memoryAllocateFlagsInfo.flags = VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT_KHR;
-			}
-
-		VkMemoryAllocateInfo allocInfo = {};
-			allocInfo.pNext = memoryAllocateFlagsInfo.flags > 0 ? &memoryAllocateFlagsInfo : nullptr;
-			allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-			allocInfo.allocationSize = allocSize;
-			VkMemoryPropertyFlags properties = 0;
-			switch (memoryUsage) {
-				case MEMORY_USAGE_UNKNOWN: 
-					properties = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-					break;
-				case MEMORY_USAGE_GPU_ONLY: 
-					properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-					break;
-				case MEMORY_USAGE_CPU_ONLY: 
-					properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-					break;
-				case MEMORY_USAGE_CPU_TO_GPU: 
-					properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-					break;
-				case MEMORY_USAGE_GPU_TO_CPU: 
-					properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-					break;
-				case MEMORY_USAGE_CPU_COPY: 
-					properties = VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-					break;
-				case MEMORY_USAGE_GPU_LAZILY_ALLOCATED: 
-					properties = VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
-					break;
-				case MEMORY_USAGE_MAX_ENUM: 
-					properties = VK_MEMORY_PROPERTY_FLAG_BITS_MAX_ENUM;
-					break;
-			}
-			allocInfo.memoryTypeIndex = GetPhysicalDevice()->FindMemoryType(memRequirements.memoryTypeBits, properties);
-
-		if (AllocateMemory(&allocInfo, nullptr, pAllocation) != VK_SUCCESS) {
-			throw std::runtime_error("Failed to allocate buffer memory");
-		}
-		
-		return BindBufferMemory(buffer, *pAllocation, 0);
-	#endif
+	return vmaCreateBuffer(allocator, &bufferCreateInfo, &allocInfo, &buffer, pAllocation, nullptr);
 }
 VkResult Device::CreateAndAllocateImage(const VkImageCreateInfo& imageCreateInfo, MemoryUsage memoryUsage, VkImage& image, MemoryAllocation* pAllocation, bool weakAllocation) {
-	#ifdef V4D_VULKAN_USE_VMA
-		VmaAllocationCreateInfo allocInfo {};
-			allocInfo.usage = (VmaMemoryUsage)memoryUsage;
-			if (weakAllocation && memoryUsage == MEMORY_USAGE_GPU_ONLY) {
-				allocInfo.flags |= VMA_ALLOCATION_CREATE_CAN_BECOME_LOST_BIT | VMA_ALLOCATION_CREATE_CAN_MAKE_OTHER_LOST_BIT;
-			}
-			if (Loader::VULKAN_API_VERSION >= VK_API_VERSION_1_2 && (imageCreateInfo.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)) {
-				allocInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
-			}
-		return vmaCreateImage(allocator, &imageCreateInfo, &allocInfo, &image, pAllocation, nullptr);
-	#else
-		if ((CreateImage(&imageCreateInfo, nullptr, &image)) != VK_SUCCESS) {
-			throw std::runtime_error("Failed to create image");
+	VmaAllocationCreateInfo allocInfo {};
+		allocInfo.usage = (VmaMemoryUsage)memoryUsage;
+		if (weakAllocation && memoryUsage == MEMORY_USAGE_GPU_ONLY) {
+			allocInfo.flags |= VMA_ALLOCATION_CREATE_CAN_BECOME_LOST_BIT | VMA_ALLOCATION_CREATE_CAN_MAKE_OTHER_LOST_BIT;
 		}
-
-		VkMemoryRequirements memRequirements;
-		GetImageMemoryRequirements(image, &memRequirements);
-
-		VkMemoryAllocateInfo allocInfo = {};
-		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = GetPhysicalDevice()->FindMemoryType(memRequirements.memoryTypeBits, memoryUsage);
-		if ((AllocateMemory(&allocInfo, nullptr, pAllocation)) != VK_SUCCESS) {
-			throw std::runtime_error("Failed to allocate image memory");
+		if (Loader::VULKAN_API_VERSION >= VK_API_VERSION_1_2 && (imageCreateInfo.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)) {
+			allocInfo.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 		}
-
-		return BindImageMemory(image, *pAllocation, 0);
-	#endif
+	return vmaCreateImage(allocator, &imageCreateInfo, &allocInfo, &image, pAllocation, nullptr);
 }
-void Device::FreeAndDestroyBuffer(VkBuffer& buffer, MemoryAllocation& allocation) {
-	#ifdef V4D_VULKAN_USE_VMA
-		if (allocator) {
-			vmaDestroyBuffer(allocator, buffer, allocation);
-		// } else {
-			// LOG_DEBUG("FreeAndDestroyBuffer called after allocator has been destroyed")
-		}
-	#else
-		DestroyBuffer(buffer, nullptr);
-		if (allocation) FreeMemory(allocation, nullptr);
-	#endif
+void Device::FreeAndDestroyBuffer(VkBuffer& buffer, MemoryAllocation& allocation, uint64_t frameIndex) {
+	assert(allocator);
+	if (frameIndex == 0 || frameIndex + 1 < deferredDeallocationCurrentFrame) {
+		vmaDestroyBuffer(allocator, buffer, allocation);
+	} else {
+		DeferDeallocation(buffer, allocation, frameIndex + 1);
+	}
 	buffer = VK_NULL_HANDLE;
 	allocation = VK_NULL_HANDLE;
 }
-void Device::FreeAndDestroyImage(VkImage& image, MemoryAllocation& allocation) {
-	#ifdef V4D_VULKAN_USE_VMA
-		if (allocator) {
-			vmaDestroyImage(allocator, image, allocation);
-		// } else {
-			// LOG_DEBUG("FreeAndDestroyImage called after allocator has been destroyed")
-		}
-	#else
-		DestroyImage(image, nullptr);
-		if (allocation) FreeMemory(allocation, nullptr);
-	#endif
+void Device::FreeAndDestroyImage(VkImage& image, MemoryAllocation& allocation, uint64_t frameIndex) {
+	assert(allocator);
+	if (frameIndex == 0 || frameIndex + 1 < deferredDeallocationCurrentFrame) {
+		vmaDestroyImage(allocator, image, allocation);
+	} else {
+		DeferDeallocation(image, allocation, frameIndex + 1);
+	}
 	image = VK_NULL_HANDLE;
 	allocation = VK_NULL_HANDLE;
 }
 VkResult Device::MapMemoryAllocation(MemoryAllocation& allocation, void** data, VkDeviceSize offset, VkDeviceSize size) {
-	#ifdef V4D_VULKAN_USE_VMA
-		VkResult result = vmaMapMemory(allocator, allocation, data);
-		if (result == VK_SUCCESS && offset > 0) {
-			*((uint8_t**)data) += offset;
-		}
-		return result;
-	#else
-		return MapMemory(allocation, offset, size, 0, data);
-	#endif
+	VkResult result = vmaMapMemory(allocator, allocation, data);
+	if (result == VK_SUCCESS && offset > 0) {
+		*((uint8_t**)data) += offset;
+	}
+	return result;
 }
 void Device::UnmapMemoryAllocation(MemoryAllocation& allocation) {
-	#ifdef V4D_VULKAN_USE_VMA
-		if (allocator) {
-			vmaUnmapMemory(allocator, allocation);
-		}
-	#else
-		UnmapMemory(allocation);
-	#endif
+	assert(allocator);
+	vmaUnmapMemory(allocator, allocation);
 }
 VkResult Device::FlushMemoryAllocation(MemoryAllocation& allocation, VkDeviceSize offset, VkDeviceSize size) {
-	#ifdef V4D_VULKAN_USE_VMA
-		return vmaFlushAllocation(allocator, allocation, offset, size);
-	#else
-		VkMappedMemoryRange mappedRange {};{
-			mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
-			mappedRange.memory = allocation;
-			mappedRange.offset = offset;
-			mappedRange.size = size;
-		}
-		return FlushMappedMemoryRanges(1, &mappedRange);
-	#endif
+	return vmaFlushAllocation(allocator, allocation, offset, size);
 }
 void Device::AllocatorSetCurrentFrameIndex(uint32_t frameIndex) {
-	#ifdef V4D_VULKAN_USE_VMA
-		vmaSetCurrentFrameIndex(allocator, frameIndex);
-	#endif
+	vmaSetCurrentFrameIndex(allocator, frameIndex);
 }
 bool Device::TouchAllocation(MemoryAllocation& allocation) {
-	#ifdef V4D_VULKAN_USE_VMA
-		if (!allocator || !allocation) return false;
-		return vmaTouchAllocation(allocator, allocation) == VK_TRUE;
-	#endif
-	return true;
+	if (!allocator || !allocation) return false;
+	return vmaTouchAllocation(allocator, allocation) == VK_TRUE;
+}
+
+uint64_t Device::deferredDeallocationCurrentFrame = 0;
+std::atomic<uint64_t> Device::nextDeferredDeallocationIndex = 0;
+std::array<Device::DeferredDeallocation, V4D_DEFERRED_DEALLOCATION_MAX_COUNT> Device::deferredDeallocations;
+Device::DeferredDeallocation* Device::GetNextDeferredDeallocation() {
+	int nbTries = 0;
+	uint64_t index;
+	bool locked;
+	do {
+		assert(++nbTries < V4D_DEFERRED_DEALLOCATION_MAX_COUNT);
+		index = nextDeferredDeallocationIndex++ % V4D_DEFERRED_DEALLOCATION_MAX_COUNT;
+		locked = deferredDeallocations[index].lock.exchange(true);
+	} while (locked);
+	return &deferredDeallocations[index];
+}
+void Device::SetDeferredDeallocationCurrentFrame(uint64_t frameIndex) {
+	Buffer::currentFrameIndex = frameIndex;
+	deferredDeallocationCurrentFrame = frameIndex;
+}
+void Device::DestroyDeferredDeallocations(bool force) {
+	for (size_t i = 0; i < V4D_DEFERRED_DEALLOCATION_MAX_COUNT; ++i) {
+		auto& deferredDealloc = deferredDeallocations[i];
+		if (deferredDealloc.allocation && (force || deferredDealloc.frameIndex < deferredDeallocationCurrentFrame)) {
+			if (deferredDealloc.lock.exchange(true) == false || force) {
+				if (deferredDealloc.allocation && (force || deferredDealloc.frameIndex < deferredDeallocationCurrentFrame)) {
+					if (deferredDealloc.buffer) {
+						vmaDestroyBuffer(allocator, deferredDealloc.buffer, deferredDealloc.allocation);
+						deferredDealloc.buffer = 0;
+					} else if (deferredDealloc.img) {
+						vmaDestroyImage(allocator, deferredDealloc.img, deferredDealloc.allocation);
+						deferredDealloc.img = 0;
+					}
+					deferredDealloc.allocation = 0;
+				}
+				deferredDealloc.lock = false;
+			}
+		}
+	}
 }

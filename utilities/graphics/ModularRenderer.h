@@ -97,6 +97,26 @@ using Renderer::Renderer;
 	
 #pragma endregion
 
+#pragma region Resources
+
+	void CreateResources() override {
+		V4D_Mod::ForEachSortedModule([](auto* mod){
+			if (mod->Renderer_CreateResources) {
+				mod->Renderer_CreateResources();
+			}
+		});
+	}
+	
+	void DestroyResources() override {
+		V4D_Mod::ForEachSortedModule([](auto* mod){
+			if (mod->Renderer_DestroyResources) {
+				mod->Renderer_DestroyResources();
+			}
+		});
+	}
+	
+#pragma endregion
+
 #pragma region Buffers
 
 	void LoadBuffers() override {

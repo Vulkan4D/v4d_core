@@ -1,7 +1,9 @@
 #include "Buffer.h"
 
 namespace v4d::graphics::vulkan {
-
+	
+	uint64_t Buffer::currentFrameIndex = 0;
+	
 	void Buffer::Allocate(Device* device) {
 		std::lock_guard lock(allocationMutex);
 		if (this->device == nullptr) {
@@ -44,13 +46,14 @@ namespace v4d::graphics::vulkan {
 				}
 			}
 		}
+		Touch();
 	}
 
 	void Buffer::Free() {
 		std::lock_guard lock(allocationMutex);
 		if (device) {
 			if (handle) {
-				device->FreeAndDestroyBuffer(handle, allocation);
+				device->FreeAndDestroyBuffer(handle, allocation, touchedInFrameIndex);
 			}
 			device = nullptr;
 		}

@@ -15,6 +15,10 @@
 #include "utilities/graphics/vulkan/PhysicalDevice.h"
 #include "utilities/graphics/vulkan/Queue.hpp"
 
+#ifndef V4D_DEFERRED_DEALLOCATION_MAX_COUNT
+	#define V4D_DEFERRED_DEALLOCATION_MAX_COUNT 4096
+#endif
+
 namespace v4d::graphics::vulkan {
 
 	struct VertexInputAttributeDescription {
@@ -100,21 +104,15 @@ namespace v4d::graphics::vulkan {
 		MEMORY_USAGE_MAX_ENUM = 0x7FFFFFFF
 	};
 	
-	#ifdef V4D_VULKAN_USE_VMA
-		typedef VmaAllocation MemoryAllocation;
-	#else
-		typedef VkDeviceMemory MemoryAllocation;
-	#endif
+	typedef VmaAllocation MemoryAllocation;
 
 	class V4DLIB Device : public xvk::Interface::DeviceInterface {
 	private:
 		PhysicalDevice* physicalDevice;
 		VkDeviceCreateInfo createInfo {};
+	
+		VmaAllocator allocator;
 		
-		#ifdef V4D_VULKAN_USE_VMA
-			VmaAllocator allocator;
-		#endif
-
 	public:
 		Device(
 			PhysicalDevice* physicalDevice,
@@ -125,10 +123,8 @@ namespace v4d::graphics::vulkan {
 		);
 		~Device();
 		
-		#ifdef V4D_VULKAN_USE_VMA
-			void DumpMemoryAllocationStats();
-			VmaAllocator GetAllocator() const {return allocator;}
-		#endif
+		void DumpMemoryAllocationStats();
+		VmaAllocator GetAllocator() const {return allocator;}
 
 		VkDevice GetHandle() const;
 		VkPhysicalDevice GetPhysicalDeviceHandle() const;
@@ -173,8 +169,8 @@ namespace v4d::graphics::vulkan {
 		VkResult CreateAndAllocateBuffer(const VkBufferCreateInfo&, VmaPool, VkBuffer&, MemoryAllocation*);
 		VkResult CreateAndAllocateBuffer(const VkBufferCreateInfo&, MemoryUsage, VkBuffer&, MemoryAllocation*, bool weakAllocation = false);
 		VkResult CreateAndAllocateImage(const VkImageCreateInfo&, MemoryUsage, VkImage&, MemoryAllocation*, bool weakAllocation = true);
-		void FreeAndDestroyBuffer(VkBuffer&, MemoryAllocation&);
-		void FreeAndDestroyImage(VkImage&, MemoryAllocation&);
+		void FreeAndDestroyBuffer(VkBuffer&, MemoryAllocation&, uint64_t frameIndex = 0);
+		void FreeAndDestroyImage(VkImage&, MemoryAllocation&, uint64_t frameIndex = 0);
 		VkResult MapMemoryAllocation(MemoryAllocation&, void** data, VkDeviceSize offset = 0, VkDeviceSize size = 0);
 		void UnmapMemoryAllocation(MemoryAllocation&);
 		VkResult FlushMemoryAllocation(MemoryAllocation&, VkDeviceSize offset, VkDeviceSize size);
@@ -230,5 +226,39 @@ namespace v4d::graphics::vulkan {
 		__V4D_DECLARE_SET_DEBUG_NAME_FUNC(VkDebugUtilsMessengerEXT, VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT)
 		__V4D_DECLARE_SET_DEBUG_NAME_FUNC(VkAccelerationStructureKHR, VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR)
 		
+		
+		struct DeferredDeallocation {
+			std::atomic<bool> lock = false;
+			VmaAllocation allocation = 0;
+			uint64_t frameIndex = 0;
+			VkBuffer buffer = 0;
+			VkImage img = 0;
+		};
+		template<typename T>
+		inline static void DeferDeallocation(const T& obj, const VmaAllocation& allocation, const uint64_t& frameIndex) {
+			int nbTries = 0;
+			DeferredDeallocation* deferredDealloc = nullptr;
+			do {
+				assert(++nbTries < V4D_DEFERRED_DEALLOCATION_MAX_COUNT);
+				if (deferredDealloc) deferredDealloc->lock = false;
+				deferredDealloc = GetNextDeferredDeallocation();
+			} while(deferredDealloc->allocation);
+			if constexpr (std::is_same_v<T, VkBuffer>) {
+				deferredDealloc->buffer = obj;
+			} else if constexpr (std::is_same_v<T, VkImage>) {
+				deferredDealloc->img = obj;
+			}
+			deferredDealloc->frameIndex = frameIndex;
+			deferredDealloc->allocation = allocation;
+			deferredDealloc->lock = false;
+		}
+		void DestroyDeferredDeallocations(bool = false);
+		static void SetDeferredDeallocationCurrentFrame(uint64_t frameIndex);
+	private:
+		static DeferredDeallocation* GetNextDeferredDeallocation();
+		static uint64_t deferredDeallocationCurrentFrame;
+		static std::atomic<uint64_t> nextDeferredDeallocationIndex;
+		static std::array<DeferredDeallocation, V4D_DEFERRED_DEALLOCATION_MAX_COUNT> deferredDeallocations;
+
 	};
 }

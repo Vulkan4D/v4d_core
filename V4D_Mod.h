@@ -34,6 +34,8 @@ class V4DLIB V4D_Mod {
 		,Renderer_ScorePhysicalDeviceSelection
 		,Renderer_ConfigureDeviceFeatures
 		,Renderer_ConfigureScene
+		,Renderer_CreateResources
+		,Renderer_DestroyResources
 		,Renderer_LoadBuffers
 		,Renderer_UnloadBuffers
 		,Renderer_ConfigureImages
@@ -68,6 +70,8 @@ class V4DLIB V4D_Mod {
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_ConfigureShaders)
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_ConfigureRenderPasses)
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_ConfigureScene)
+	V4D_MODULE_FUNC_DECLARE(void, Renderer_CreateResources)
+	V4D_MODULE_FUNC_DECLARE(void, Renderer_DestroyResources)
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_LoadBuffers)
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_UnloadBuffers)
 	V4D_MODULE_FUNC_DECLARE(void, Renderer_ConfigureImages, uint32_t swapChainWidth, uint32_t swapChainHeight)
