@@ -347,21 +347,21 @@ VkResult Device::CreateAndAllocateImage(const VkImageCreateInfo& imageCreateInfo
 }
 void Device::FreeAndDestroyBuffer(VkBuffer& buffer, MemoryAllocation& allocation, uint64_t frameIndex) {
 	assert(allocator);
-	if (frameIndex == 0 || frameIndex + 1 < deferredDeallocationCurrentFrame) {
+	// if (frameIndex == 0 || frameIndex + 1 < deferredDeallocationCurrentFrame) {
 		vmaDestroyBuffer(allocator, buffer, allocation);
-	} else {
-		DeferDeallocation(buffer, allocation, frameIndex + 1);
-	}
+	// } else {
+	// 	DeferDeallocation(buffer, allocation, frameIndex + 1);
+	// }
 	buffer = VK_NULL_HANDLE;
 	allocation = VK_NULL_HANDLE;
 }
 void Device::FreeAndDestroyImage(VkImage& image, MemoryAllocation& allocation, uint64_t frameIndex) {
 	assert(allocator);
-	if (frameIndex == 0 || frameIndex + 1 < deferredDeallocationCurrentFrame) {
+	// if (frameIndex == 0 || frameIndex + 1 < deferredDeallocationCurrentFrame) {
 		vmaDestroyImage(allocator, image, allocation);
-	} else {
-		DeferDeallocation(image, allocation, frameIndex + 1);
-	}
+	// } else {
+	// 	DeferDeallocation(image, allocation, frameIndex + 1);
+	// }
 	image = VK_NULL_HANDLE;
 	allocation = VK_NULL_HANDLE;
 }
@@ -387,41 +387,41 @@ bool Device::TouchAllocation(MemoryAllocation& allocation) {
 	return vmaTouchAllocation(allocator, allocation) == VK_TRUE;
 }
 
-uint64_t Device::deferredDeallocationCurrentFrame = 0;
-std::atomic<uint64_t> Device::nextDeferredDeallocationIndex = 0;
-std::array<Device::DeferredDeallocation, V4D_DEFERRED_DEALLOCATION_MAX_COUNT> Device::deferredDeallocations;
-Device::DeferredDeallocation* Device::GetNextDeferredDeallocation() {
-	int nbTries = 0;
-	uint64_t index;
-	bool locked;
-	do {
-		assert(++nbTries < V4D_DEFERRED_DEALLOCATION_MAX_COUNT);
-		index = nextDeferredDeallocationIndex++ % V4D_DEFERRED_DEALLOCATION_MAX_COUNT;
-		locked = deferredDeallocations[index].lock.exchange(true);
-	} while (locked);
-	return &deferredDeallocations[index];
-}
-void Device::SetDeferredDeallocationCurrentFrame(uint64_t frameIndex) {
-	Buffer::currentFrameIndex = frameIndex;
-	deferredDeallocationCurrentFrame = frameIndex;
-}
-void Device::DestroyDeferredDeallocations(bool force) {
-	for (size_t i = 0; i < V4D_DEFERRED_DEALLOCATION_MAX_COUNT; ++i) {
-		auto& deferredDealloc = deferredDeallocations[i];
-		if (deferredDealloc.allocation && (force || deferredDealloc.frameIndex < deferredDeallocationCurrentFrame)) {
-			if (deferredDealloc.lock.exchange(true) == false || force) {
-				if (deferredDealloc.allocation && (force || deferredDealloc.frameIndex < deferredDeallocationCurrentFrame)) {
-					if (deferredDealloc.buffer) {
-						vmaDestroyBuffer(allocator, deferredDealloc.buffer, deferredDealloc.allocation);
-						deferredDealloc.buffer = 0;
-					} else if (deferredDealloc.img) {
-						vmaDestroyImage(allocator, deferredDealloc.img, deferredDealloc.allocation);
-						deferredDealloc.img = 0;
-					}
-					deferredDealloc.allocation = 0;
-				}
-				deferredDealloc.lock = false;
-			}
-		}
-	}
-}
+// uint64_t Device::deferredDeallocationCurrentFrame = 0;
+// std::atomic<uint64_t> Device::nextDeferredDeallocationIndex = 0;
+// std::array<Device::DeferredDeallocation, V4D_DEFERRED_DEALLOCATION_MAX_COUNT> Device::deferredDeallocations;
+// Device::DeferredDeallocation* Device::GetNextDeferredDeallocation() {
+// 	int nbTries = 0;
+// 	uint64_t index;
+// 	bool locked;
+// 	do {
+// 		assert(++nbTries < V4D_DEFERRED_DEALLOCATION_MAX_COUNT);
+// 		index = nextDeferredDeallocationIndex++ % V4D_DEFERRED_DEALLOCATION_MAX_COUNT;
+// 		locked = deferredDeallocations[index].lock.exchange(true);
+// 	} while (locked);
+// 	return &deferredDeallocations[index];
+// }
+// void Device::SetDeferredDeallocationCurrentFrame(uint64_t frameIndex) {
+// 	Buffer::currentFrameIndex = frameIndex;
+// 	deferredDeallocationCurrentFrame = frameIndex;
+// }
+// void Device::DestroyDeferredDeallocations(bool force) {
+// 	for (size_t i = 0; i < V4D_DEFERRED_DEALLOCATION_MAX_COUNT; ++i) {
+// 		auto& deferredDealloc = deferredDeallocations[i];
+// 		if (deferredDealloc.allocation && (force || deferredDealloc.frameIndex < deferredDeallocationCurrentFrame)) {
+// 			if (deferredDealloc.lock.exchange(true) == false || force) {
+// 				if (deferredDealloc.allocation && (force || deferredDealloc.frameIndex < deferredDeallocationCurrentFrame)) {
+// 					if (deferredDealloc.buffer) {
+// 						vmaDestroyBuffer(allocator, deferredDealloc.buffer, deferredDealloc.allocation);
+// 						deferredDealloc.buffer = 0;
+// 					} else if (deferredDealloc.img) {
+// 						vmaDestroyImage(allocator, deferredDealloc.img, deferredDealloc.allocation);
+// 						deferredDealloc.img = 0;
+// 					}
+// 					deferredDealloc.allocation = 0;
+// 				}
+// 				deferredDealloc.lock = false;
+// 			}
+// 		}
+// 	}
+// }

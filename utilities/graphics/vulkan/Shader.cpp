@@ -18,8 +18,14 @@ Shader::Shader(std::string filepath, std::string entryPoint)
 	}
 
 	// Read the file
+	int nbRetries = 0;
+	ReadShaderFile:
 	std::ifstream file(filepath, std::fstream::ate | std::fstream::binary);
 	if (!file.is_open()) {
+		if (nbRetries++ < 5) {
+			SLEEP(100ms)
+			goto ReadShaderFile;
+		}
 		throw std::runtime_error("Failed to load shader file '" + filepath + "'");
 	}
 

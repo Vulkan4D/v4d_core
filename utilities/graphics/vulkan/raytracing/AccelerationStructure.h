@@ -14,7 +14,7 @@
 
 namespace v4d::graphics::vulkan::raytracing {
 	
-	struct V4DLIB RayTracingBLASInstance { // VkAccelerationStructureInstanceKHR
+	struct V4DLIB RayTracingASInstance { // VkAccelerationStructureInstanceKHR
 		glm::mat3x4 transform;
 		uint32_t instanceCustomIndex : 24;
 		uint32_t mask : 8;

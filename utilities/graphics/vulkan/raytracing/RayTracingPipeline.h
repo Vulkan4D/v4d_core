@@ -64,7 +64,6 @@ namespace v4d::graphics::vulkan::raytracing {
 		
 		VkDeviceSize GetSbtPipelineBufferSize();
 		VkDeviceSize GetSbtBufferSize();
-		void WritePipelineBuffer();
 		
 		struct RayTracingShaderProgram {
 			ShaderInfo rchit {""};
@@ -74,6 +73,7 @@ namespace v4d::graphics::vulkan::raytracing {
 		using RayTracingShaderPrograms = std::map<int/*subpass/offset*/, RayTracingShaderProgram>;
 
 	public:
+		void WritePipelineBuffer();
 
 		template<template<class> class BufferContainerType, class MappedType>
 		void WriteHitGroupsToSBT(BufferContainerType<MappedType>& buffer, const std::vector<uint32_t>& hitGroupsUsed, bool mayReallocate = false) {

@@ -326,6 +326,7 @@ VkDeviceSize RayTracingPipeline::GetSbtPipelineBufferSize() {
 	addAlignedShaderRegion(rayGenShaderRegionOffset, rayGenShaderRegionSize, rayGenGroups.size());
 	addAlignedShaderRegion(rayMissShaderRegionOffset, rayMissShaderRegionSize, rayMissGroups.size());
 	addAlignedShaderRegion(rayCallableShaderRegionOffset, rayCallableShaderRegionSize, rayCallableGroups.size());
+	addAlignedShaderRegion(rayHitShaderRegionOffset, rayHitShaderRegionSize, rayHitGroups.size());
 	
 	pipelineBufferSize += alignment; // to allow base address alignment
 	
@@ -333,6 +334,10 @@ VkDeviceSize RayTracingPipeline::GetSbtPipelineBufferSize() {
 }
 
 void RayTracingPipeline::WritePipelineBuffer() {
+	if (shadersDirty) {
+		Reload();
+	}
+	
 	uint32_t handleSize = rayTracingPipelineProperties.shaderGroupHandleSize;
 	uint64_t alignment = rayTracingPipelineProperties.shaderGroupBaseAlignment;
 	uint32_t stride = handleSize;
@@ -369,10 +374,17 @@ void RayTracingPipeline::WritePipelineBuffer() {
 		/*size*/rayCallableShaderRegionSize
 	};
 	
-	assert(pipelineGroups.size() > 0);
-	const size_t shaderHandlerStorageSize = pipelineGroups.size()*stride;
+	// Ray Hit
+	rayHitDeviceAddressRegion = {
+		/*deviceAddress*/baseAddress + bufferOffset + rayHitShaderRegionOffset,
+		/*stride*/stride,
+		/*size*/rayHitShaderRegionSize
+	};
+	
+	assert(allGroups.size() > 0);
+	const size_t shaderHandlerStorageSize = allGroups.size()*handleSize;
 	auto shaderHandleStorage = new uint8_t[shaderHandlerStorageSize];
-	if (device->GetRayTracingShaderGroupHandlesKHR(pipeline, 0, (uint)pipelineGroups.size(), shaderHandlerStorageSize, shaderHandleStorage) != VK_SUCCESS)
+	if (device->GetRayTracingShaderGroupHandlesKHR(pipeline, 0, (uint)allGroups.size(), shaderHandlerStorageSize, shaderHandleStorage) != VK_SUCCESS)
 		throw std::runtime_error("Failed to get ray tracing shader group handles");
 	
 	pipelineBuffer->ZeroInitialize();
@@ -406,6 +418,18 @@ void RayTracingPipeline::WritePipelineBuffer() {
 		shaderHandlerStorageOffset += handleSize;
 	}
 	
+	// Ray Hit
+	for (size_t i = 0; i < rayHitGroups.size(); ++i) {
+		pipelineBuffer->Fill(
+			/*SrcPtr*/shaderHandleStorage + shaderHandlerStorageOffset,
+			/*SizeBytes*/handleSize,
+			/*OffsetBytes*/bufferOffset + rayHitShaderRegionOffset + stride * i
+		);
+		shaderHandlerStorageOffset += handleSize;
+	}
+	
+	assert(shaderHandlerStorageOffset == shaderHandlerStorageSize);
+	
 	delete[] shaderHandleStorage;
 	pipelineDirty = true;
 }
@@ -423,12 +447,12 @@ void RayTracingPipeline::Configure(v4d::graphics::Renderer* renderer, Device* de
 }
 
 void RayTracingPipeline::Create(Device* device) {
+	shadersDirty = false;
 	if (this->device == nullptr) {
 		this->device = device;
 		CreateRayTracingPipeline();
 		WritePipelineBuffer();
 	}
-	shadersDirty = false;
 }
 
 void RayTracingPipeline::Push(VkCommandBuffer cmdBuffer) {

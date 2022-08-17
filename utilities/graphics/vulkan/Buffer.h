@@ -294,28 +294,28 @@ public:
 		return hostBuffer = other;
 	}
 	
-	void Push(VkCommandBuffer cmdBuffer, int32_t count = -1, VkDeviceSize offset = 0) {
+	void Push(VkCommandBuffer cmdBuffer, int32_t count = -1, uint32_t first = 0) {
 		if (count == 0) return;
 		if (hostBuffer.size > 0) {
 			assert(hostBuffer.device);
 			assert(count * int32_t(sizeof(T)) <= int32_t(hostBuffer.size));
 			VkBufferCopy region = {};{
-				region.srcOffset = offset;
-				region.dstOffset = offset + deviceBuffer.alignedOffset;
+				region.srcOffset = first * sizeof(T);
+				region.dstOffset = first * sizeof(T) + deviceBuffer.alignedOffset;
 				region.size = count > 0? (uint32_t(count) * sizeof(T)) : hostBuffer.size;
 			}
 			hostBuffer.device->CmdCopyBuffer(cmdBuffer, hostBuffer, deviceBuffer, 1, &region);
 		}
 	}
 	
-	void Pull(VkCommandBuffer cmdBuffer, uint32_t count = -1, VkDeviceSize offset = 0) {
+	void Pull(VkCommandBuffer cmdBuffer, uint32_t count = -1, uint32_t first = 0) {
 		if (count == 0) return;
 		if (hostBuffer.size > 0) {
 			assert(hostBuffer.device);
 			assert(count * int32_t(sizeof(T)) <= int32_t(hostBuffer.size));
 			VkBufferCopy region = {};{
-				region.srcOffset = offset + deviceBuffer.alignedOffset;
-				region.dstOffset = offset;
+				region.srcOffset = first * sizeof(T) + deviceBuffer.alignedOffset;
+				region.dstOffset = first * sizeof(T);
 				region.size = count > 0? (uint32_t(count) * sizeof(T)) : hostBuffer.size;
 			}
 			hostBuffer.device->CmdCopyBuffer(cmdBuffer, deviceBuffer, hostBuffer, 1, &region);
