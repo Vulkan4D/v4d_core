@@ -4,6 +4,7 @@ if(ENABLE_IMGUI)
 	add_library(v4d SHARED
 		${V4DCoreSourceFiles}
 		"${PROJECT_SOURCE_DIR}/src/imgui/backends/imgui_impl_glfw.cpp"
+		"${PROJECT_SOURCE_DIR}/src/imgui/backends/imgui_impl_vulkan.cpp"
 		"${PROJECT_SOURCE_DIR}/src/imgui/imgui.cpp"
 		"${PROJECT_SOURCE_DIR}/src/imgui/imgui_widgets.cpp"
 		"${PROJECT_SOURCE_DIR}/src/imgui/imgui_draw.cpp"

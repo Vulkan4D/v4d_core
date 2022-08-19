@@ -157,11 +157,6 @@ namespace v4d {
 
 // ImGui
 #ifdef _ENABLE_IMGUI
-	#ifndef IMGUI_API
-		#define IMGUI_API V4DLIB
-		#define IMGUI_IMPL_API V4DLIB
-	#endif
-	#include "imgui/imgui.h"
-	#include "utilities/graphics/imgui_vulkan.h"
+	#include "imgui/backends/imgui_impl_vulkan.h"
 	#include "imgui/backends/imgui_impl_glfw.h"
 #endif

@@ -556,12 +556,15 @@ bool Renderer::EndFrame(const std::vector<VkSemaphore>& waitSemaphores) {
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 		imGuiIO = &ImGui::GetIO();
-		imGuiIO->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+		imGuiIO->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_DockingEnable ;//  | ImGuiConfigFlags_ViewportsEnable;
 		ImGui::StyleColorsDark();
 		ImGui::GetStyle().Alpha = 0.8f;
-		ImGui_ImplGlfw_InitForVulkan(window, true);
+		static xvk::Base::LoaderBase* vulkanLoader = loader;
+		static VkInstance instanceHandle = handle;
+		ImGui_ImplVulkan_LoadFunctions([](const char* function_name, void*) { return vulkanLoader->vkGetInstanceProcAddr(instanceHandle, function_name); });
 	}
 	void Renderer::LoadImGui(VkRenderPass renderPass) {
+		ImGui_ImplGlfw_InitForVulkan(imGuiGlfwWindow, true);
 		static ImGui_ImplVulkan_InitInfo init_info {};
 			init_info.Instance = handle;
 			init_info.PhysicalDevice = renderingDevice->GetPhysicalDevice()->GetHandle();
@@ -589,6 +592,7 @@ bool Renderer::EndFrame(const std::vector<VkSemaphore>& waitSemaphores) {
 		if (drawData) drawData->Clear();
 		// Shutdown ImGui
 		ImGui_ImplVulkan_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
 	}
 	void Renderer::DrawImGui(VkCommandBuffer commandBuffer) {
 		auto* drawData = ImGui::GetDrawData();
@@ -609,6 +613,12 @@ bool Renderer::EndFrame(const std::vector<VkSemaphore>& waitSemaphores) {
 	}
 	void Renderer::EndFrameImGui() {
 		ImGui::Render();
+		
+		// // Update and Render additional Platform Windows
+		// if (imGuiIO->ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+		// 	ImGui::UpdatePlatformWindows();
+		// 	ImGui::RenderPlatformWindowsDefault();
+		// }
 	}
 #endif
 
