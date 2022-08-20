@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 namespace v4d {
 	static const char* const base16Chars = "0123456789ABCDEF";
