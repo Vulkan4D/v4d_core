@@ -57,16 +57,17 @@ if(WIN32)
 		PRIVATE
 			wsock32
 			ws2_32
+			OpenAL32
 		PUBLIC
 			stdc++
 			dbghelp
-			OpenAL32
 	)
 else()
 	target_link_libraries(v4d
+		PRIVATE
+			openal
 		PUBLIC
 			dl
-			openal
 	)
 endif()
 

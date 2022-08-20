@@ -1,6 +1,105 @@
 #include "AudioSource.h"
 
+#include <AL/al.h>
+#include <AL/alc.h>
+
 namespace v4d::audio {
+	
+	#define alCall(function, ...) alCallImpl(__FILE__, __LINE__, function, __VA_ARGS__)
+	static bool check_al_errors(const std::string& filename, const std::uint_fast32_t line) {
+		ALenum error = alGetError();
+		if(error != AL_NO_ERROR) {
+			std::cerr << "***ERROR*** (" << filename << ": " << line << ")\n" ;
+			switch(error) {
+			case AL_INVALID_NAME:
+				std::cerr << "AL_INVALID_NAME: a bad name (ID) was passed to an OpenAL function";
+				break;
+			case AL_INVALID_ENUM:
+				std::cerr << "AL_INVALID_ENUM: an invalid enum value was passed to an OpenAL function";
+				break;
+			case AL_INVALID_VALUE:
+				std::cerr << "AL_INVALID_VALUE: an invalid value was passed to an OpenAL function";
+				break;
+			case AL_INVALID_OPERATION:
+				std::cerr << "AL_INVALID_OPERATION: the requested operation is not valid";
+				break;
+			case AL_OUT_OF_MEMORY:
+				std::cerr << "AL_OUT_OF_MEMORY: the requested operation resulted in OpenAL running out of memory";
+				break;
+			default:
+				std::cerr << "UNKNOWN AL ERROR: " << error;
+			}
+			std::cerr << std::endl;
+			return false;
+		}
+		return true;
+	}
+	template<typename alFunction, typename... Params>
+	static auto alCallImpl(const char* filename, const std::uint_fast32_t line, alFunction function, Params... params)
+	->typename std::enable_if_t<!std::is_same_v<void, decltype(function(params...))>, decltype(function(params...))>
+	{
+		auto ret = function(std::forward<Params>(params)...);
+		check_al_errors(filename, line);
+		return ret;
+	}
+	template<typename alFunction, typename... Params>
+	static auto alCallImpl(const char* filename, const std::uint_fast32_t line, alFunction function, Params... params)
+	->typename std::enable_if_t<std::is_same_v<void, decltype(function(params...))>, bool>
+	{
+		function(std::forward<Params>(params)...);
+		return check_al_errors(filename, line);
+	}
+	#define alcCall(function, device, ...) alcCallImpl(__FILE__, __LINE__, function, device, __VA_ARGS__)
+	static bool check_alc_errors(const std::string& filename, const std::uint_fast32_t line, ALCdevice* device) {
+		ALCenum error = alcGetError(device);
+		if(error != ALC_NO_ERROR) {
+			std::cerr << "***ERROR*** (" << filename << ": " << line << ")\n" ;
+			switch(error) {
+			case ALC_INVALID_VALUE:
+				std::cerr << "ALC_INVALID_VALUE: an invalid value was passed to an OpenAL function";
+				break;
+			case ALC_INVALID_DEVICE:
+				std::cerr << "ALC_INVALID_DEVICE: a bad device was passed to an OpenAL function";
+				break;
+			case ALC_INVALID_CONTEXT:
+				std::cerr << "ALC_INVALID_CONTEXT: a bad context was passed to an OpenAL function";
+				break;
+			case ALC_INVALID_ENUM:
+				std::cerr << "ALC_INVALID_ENUM: an unknown enum value was passed to an OpenAL function";
+				break;
+			case ALC_OUT_OF_MEMORY:
+				std::cerr << "ALC_OUT_OF_MEMORY: an unknown enum value was passed to an OpenAL function";
+				break;
+			default:
+				std::cerr << "UNKNOWN ALC ERROR: " << error;
+			}
+			std::cerr << std::endl;
+			return false;
+		}
+		return true;
+	}
+
+	template<typename alcFunction, typename... Params>
+	static auto alcCallImpl(const char* filename, const std::uint_fast32_t line, alcFunction function, ALCdevice* device, Params... params)
+	->typename std::enable_if_t<std::is_same_v<void,decltype(function(params...))>,bool>
+	{
+		function(std::forward<Params>(params)...);
+		return check_alc_errors(filename,line,device);
+	}
+
+	template<typename alcFunction, typename ReturnType, typename... Params>
+	static auto alcCallImpl(const char* filename, const std::uint_fast32_t line, alcFunction function, ReturnType& returnValue, ALCdevice* device, Params... params)
+	->typename std::enable_if_t<!std::is_same_v<void,decltype(function(params...))>,bool>
+	{
+		returnValue = function(std::forward<Params>(params)...);
+		return check_alc_errors(filename,line,device);
+	}
+
+	/////////////////////////////////////////////////////
+	
+	static ALCdevice* openALDevice = nullptr;
+	static ALCboolean contextMadeCurrent = false;
+	static ALCcontext* openALContext = nullptr;
 	
 	AudioSource::AudioSystem::AudioSystem() {
 		openALDevice = alcOpenDevice(nullptr);
@@ -16,6 +115,8 @@ namespace v4d::audio {
 		alcCloseDevice(openALDevice);
 	}
 	
+	/////////////////////////////////////////////////////
+	
 	std::shared_ptr<AudioSource::AudioBuffer> AudioSource::GetAudioBuffer(const char* waveFilePath) {
 		static std::unordered_map<std::string, std::weak_ptr<AudioBuffer>> audioBuffers {};
 		std::shared_ptr<AudioSource::AudioBuffer> buffer = nullptr;
@@ -26,7 +127,7 @@ namespace v4d::audio {
 	}
 	
 	AudioSource::AudioSource(const char* waveFilePath) : AudioSource(std::vector<const char*>{waveFilePath}) {}
-	AudioSource::AudioSource(const std::vector<const char*>& waveFiles) {
+	AudioSource::AudioSource(const std::vector<const char*>& waveFiles) : state(AL_INITIAL) {
 		for (auto& waveFile : waveFiles) {
 			buffers.push_back(GetAudioBuffer(waveFile));
 		}
@@ -209,5 +310,68 @@ namespace v4d::audio {
 
 	AudioSource::AudioBuffer::~AudioBuffer() {
 		if (buffer) alCall(alDeleteBuffers, 1, &buffer);
+	}
+	
+	
+	void AudioSource::Play() {
+		if (source) {
+			alCall(alSourceStop, source);
+			alCall(alSourcePlay, source);
+			state = AL_PLAYING;
+		}
+	}
+	
+	void AudioSource::Stop() {
+		if (source) {
+			alCall(alSourceStop, source);
+			state = AL_STOPPED;
+		}
+	}
+	
+	void AudioSource::Select(uint index) {
+		if (source) {
+			assert(buffers.size());
+			alCall(alSourcei, source, AL_BUFFER, buffers[index % buffers.size()]->GetHandle());
+		}
+	}
+	
+	void AudioSource::SetPitch(float pitch) {
+		if (source) {
+			alCall(alSourcef, source, AL_PITCH, pitch);
+		}
+	}
+	
+	void AudioSource::SetGain(float gain) {
+		if (source) {
+			alCall(alSourcef, source, AL_GAIN, gain);
+		}
+	}
+	
+	void AudioSource::SetPosition(float x, float y, float z) {
+		if (source) {
+			alCall(alSource3f, source, AL_POSITION, x, y, z);
+		}
+	}
+	void AudioSource::SetPosition(const glm::vec3& position) {
+		if (source) {
+			SetPosition(position);
+		}
+	}
+	
+	void AudioSource::SetVelocity(float x, float y, float z) {
+		if (source) {
+			alCall(alSource3f, source, AL_VELOCITY, x, y, z);
+		}
+	}
+	void AudioSource::SetVelocity(const glm::vec3& velocity) {
+		if (source) {
+			SetVelocity(velocity);
+		}
+	}
+	
+	void AudioSource::SetLooping(bool looping) {
+		if (source) {
+			alCall(alSourcei, source, AL_LOOPING, looping);
+		}
 	}
 }
