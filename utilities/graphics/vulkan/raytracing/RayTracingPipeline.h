@@ -21,7 +21,6 @@ namespace v4d::graphics::vulkan::raytracing {
 		std::vector<VkRayTracingShaderGroupCreateInfoKHR> rayGenGroups;
 		std::vector<VkRayTracingShaderGroupCreateInfoKHR> rayMissGroups;
 		std::vector<VkRayTracingShaderGroupCreateInfoKHR> rayCallableGroups;
-		std::vector<VkRayTracingShaderGroupCreateInfoKHR> pipelineGroups; // rgen, rmiss, rcall
 		std::vector<VkRayTracingShaderGroupCreateInfoKHR> rayHitGroups;
 		std::vector<VkRayTracingShaderGroupCreateInfoKHR> allGroups;
 		std::vector<Shader> shaderObjects;
@@ -75,48 +74,48 @@ namespace v4d::graphics::vulkan::raytracing {
 	public:
 		void WritePipelineBuffer();
 
-		template<template<class> class BufferContainerType, class MappedType>
-		void WriteHitGroupsToSBT(BufferContainerType<MappedType>& buffer, const std::vector<uint32_t>& hitGroupsUsed, bool mayReallocate = false) {
-			if (buffer.Count() < hitGroupsUsed.size()) {
-				assert(mayReallocate);
-				buffer.Resize(hitGroupsUsed.size() * 2, true);
-			}
+		// template<template<class> class BufferContainerType, class MappedType>
+		// void WriteHitGroupsToSBT(BufferContainerType<MappedType>& buffer, const std::vector<uint32_t>& hitGroupsUsed, bool mayReallocate = false) {
+		// 	if (buffer.Count() < hitGroupsUsed.size()) {
+		// 		assert(mayReallocate);
+		// 		buffer.Resize(hitGroupsUsed.size() * 2, true);
+		// 	}
 			
-			if (shadersDirty) {
-				Reload();
-			}
+		// 	if (shadersDirty) {
+		// 		Reload();
+		// 	}
 			
-			const VkDeviceAddress& addr = buffer;
-			const size_t& stride = buffer.TypeSize;
-			const size_t count = hitGroupsUsed.size();
-			const size_t size = count * stride;
+		// 	const VkDeviceAddress& addr = buffer;
+		// 	const size_t& stride = buffer.TypeSize;
+		// 	const size_t count = hitGroupsUsed.size();
+		// 	const size_t size = count * stride;
 			
-			// Check Size & Alignment
-			const uint32_t& handleSize = rayTracingPipelineProperties.shaderGroupHandleSize;
-			const uint64_t& alignment = rayTracingPipelineProperties.shaderGroupBaseAlignment;
-			assert(sizeof(MappedType::sbtHandle) >= handleSize);
-			assert(stride >= handleSize);
-			assert(stride >= alignment);
-			assert(buffer.Count() >= count);
-			if (alignment > 0) {
-				assert(stride % alignment == 0);
-				assert(addr % alignment == 0);
-			}
+		// 	// Check Size & Alignment
+		// 	const uint32_t& handleSize = rayTracingPipelineProperties.shaderGroupHandleSize;
+		// 	const uint64_t& alignment = rayTracingPipelineProperties.shaderGroupBaseAlignment;
+		// 	assert(sizeof(MappedType::sbtHandle) >= handleSize);
+		// 	assert(stride >= handleSize);
+		// 	assert(stride >= alignment);
+		// 	assert(buffer.Count() >= count);
+		// 	if (alignment > 0) {
+		// 		assert(stride % alignment == 0);
+		// 		assert(addr % alignment == 0);
+		// 	}
 			
-			// Region
-			rayHitDeviceAddressRegion = {addr, stride, size};
+		// 	// Region
+		// 	rayHitDeviceAddressRegion = {addr, stride, size};
 			
-			// Fill
-			assert(rayHitGroups.size() > 0);
-			const size_t shaderHandleStorageSize = rayHitGroups.size()*handleSize;
-			auto shaderHandleStorage = new uint8_t[shaderHandleStorageSize];
-			if (device->GetRayTracingShaderGroupHandlesKHR(pipeline, (uint)pipelineGroups.size(), (uint)rayHitGroups.size(), shaderHandleStorageSize, shaderHandleStorage) != VK_SUCCESS)
-				throw std::runtime_error("Failed to get ray tracing shader group handles");
-			for (size_t i = 0; i < hitGroupsUsed.size(); ++i) {
-				memcpy(buffer[i].sbtHandle, shaderHandleStorage + hitGroupsUsed[i]*handleSize, handleSize);
-			}
-			delete[] shaderHandleStorage;
-		}
+		// 	// Fill
+		// 	assert(rayHitGroups.size() > 0);
+		// 	const size_t shaderHandleStorageSize = rayHitGroups.size()*handleSize;
+		// 	auto shaderHandleStorage = new uint8_t[shaderHandleStorageSize];
+		// 	if (device->GetRayTracingShaderGroupHandlesKHR(pipeline, (uint)(allGroups.size()-rayHitGroups.size()), (uint)rayHitGroups.size(), shaderHandleStorageSize, shaderHandleStorage) != VK_SUCCESS)
+		// 		throw std::runtime_error("Failed to get ray tracing shader group handles");
+		// 	for (size_t i = 0; i < hitGroupsUsed.size(); ++i) {
+		// 		memcpy(buffer[i].sbtHandle, shaderHandleStorage + hitGroupsUsed[i]*handleSize, handleSize);
+		// 	}
+		// 	delete[] shaderHandleStorage;
+		// }
 		
 		// void WriteSingleHitGroupHandle(void* dstBuffer, uint32_t hitGroupIndex) {
 		// 	assert(dstBuffer);

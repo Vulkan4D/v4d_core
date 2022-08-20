@@ -33,9 +33,7 @@ namespace v4d::processing {
 		
 	public:
 		
-		ThreadPoolBase(const char* name = "ThreadPool") : name(name) {
-			assert(strlen(name) < 16);
-		}
+		ThreadPoolBase(const char* name = "ThreadPool");
 
 		/**
 		 * ThreadPoolBase destructor
@@ -47,52 +45,9 @@ namespace v4d::processing {
 		 * Set a new number of threads
 		 * @param number of threads
 		 */
-		virtual void RunThreads(size_t numThreads, std::function<void()> initPerThread = nullptr) {
-			if (numThreads == this->numThreads) return;
-			
-			std::lock_guard threadsLock(threadsMutex);
-			
-			{
-				std::lock_guard lock(eventMutex);
-				this->numThreads = numThreads;
-				while (threads.size() < numThreads) {
-					StartNewThread(threads.size(), initPerThread);
-				}
-			}
-
-			eventVar.notify_all();
-
-			for (auto& [index, thread] : threads) {
-				if (index >= numThreads && thread.joinable()) {
-					thread.join();
-				}
-			}
-		}
+		virtual void RunThreads(size_t numThreads, std::function<void()> initPerThread = nullptr);
 		
-		void Shutdown() {
-			std::lock_guard threadsLock(threadsMutex);
-			
-			{
-				std::lock_guard lock(eventMutex);
-				stopping = true;
-				numThreads = 0;
-			}
-
-			eventVar.notify_all();
-
-			try {
-				for (auto& [index, thread] : threads) {
-					if (thread.joinable()) {
-						thread.join();
-					}
-				}
-			} catch (std::exception& e) {
-				// LOG_ERROR("Error while joining ThreadPool threads: " << e.what())
-			} catch (...) {
-				// LOG_ERROR("Unknown Error while joining ThreadPool threads")
-			}
-			std::lock_guard lock(eventMutex);
-		}
+		void Shutdown();
 		
 		size_t GetNumberOfThreads() const {return numThreads;}
 

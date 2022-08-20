@@ -250,15 +250,12 @@ VkPipeline RayTracingPipeline::CreateRayTracingPipeline() {
 	allGroups.reserve(nbShaders);
 	for (auto& group : rayGenGroups) {
 		allGroups.push_back(group);
-		pipelineGroups.push_back(group);
 	}
 	for (auto& group : rayMissGroups) {
 		allGroups.push_back(group);
-		pipelineGroups.push_back(group);
 	}
 	for (auto& group : rayCallableGroups) {
 		allGroups.push_back(group);
-		pipelineGroups.push_back(group);
 	}
 	for (auto& group : rayHitGroups) {
 		allGroups.push_back(group);
@@ -292,7 +289,6 @@ void RayTracingPipeline::DestroyRayTracingPipeline() {
 		DestroyShaderStages();
 		pipelineBufferSize = 0;
 		allGroups.clear();
-		pipelineGroups.clear();
 	}
 }
 
@@ -316,6 +312,8 @@ VkDeviceSize RayTracingPipeline::GetSbtPipelineBufferSize() {
 	const uint32_t& alignment = rayTracingPipelineProperties.shaderGroupBaseAlignment;
 	uint32_t stride = handleSize;
 	if (alignment > 0) stride = (handleSize + (alignment - 1)) & ~(alignment - 1);
+	assert(stride >= handleSize);
+	assert(stride >= alignment);
 	
 	auto addAlignedShaderRegion = [this,stride](VkDeviceSize& offset, VkDeviceSize& size, size_t n) {
 		offset = pipelineBufferSize;
@@ -429,6 +427,7 @@ void RayTracingPipeline::WritePipelineBuffer() {
 	}
 	
 	assert(shaderHandlerStorageOffset == shaderHandlerStorageSize);
+	assert(bufferOffset + rayHitShaderRegionOffset + stride * rayHitGroups.size() + handleSize <= pipelineBuffer->Count());
 	
 	delete[] shaderHandleStorage;
 	pipelineDirty = true;
